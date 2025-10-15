@@ -28,6 +28,9 @@
     <Filter Include="ソース ファイル\Works">
       <UniqueIdentifier>{feecb558-690c-40ac-914f-638a3e5b8f6c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ヘッダー ファイル\ECS">
+      <UniqueIdentifier>{ffa69c50-bf5e-4662-8dcf-44c036f45fb2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Main.cpp">
@@ -97,6 +100,9 @@
     </ClInclude>
     <ClInclude Include="Source\Systems\Sprite.h">
       <Filter>ヘッダー ファイル\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ECS\ECS.h">
+      <Filter>ヘッダー ファイル\ECS</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

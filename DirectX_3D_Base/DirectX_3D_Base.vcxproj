@@ -147,6 +147,7 @@
     <ClCompile Include="Source\Works\_model.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\ECS\ECS.h" />
     <ClInclude Include="Source\Main.h" />
     <ClInclude Include="Source\Systems\DirectX\DirectX.h" />
     <ClInclude Include="Source\Systems\DirectX\MeshBuffer.h" />
