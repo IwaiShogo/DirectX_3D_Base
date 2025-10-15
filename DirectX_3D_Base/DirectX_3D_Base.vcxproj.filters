@@ -104,5 +104,11 @@
     <ClInclude Include="Source\ECS\ECS.h">
       <Filter>ヘッダー ファイル\ECS</Filter>
     </ClInclude>
+    <ClInclude Include="Source\ECS\Component.h">
+      <Filter>ヘッダー ファイル\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ECS\System.h">
+      <Filter>ヘッダー ファイル\ECS</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
