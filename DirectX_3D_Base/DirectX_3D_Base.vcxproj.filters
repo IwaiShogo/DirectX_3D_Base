@@ -1,0 +1,102 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ソース ファイル">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="ヘッダー ファイル">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="リソース ファイル">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="ソース ファイル\Systems">
+      <UniqueIdentifier>{6ed3f9df-203d-43e4-87de-2717c676cc74}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Systems\DirectX">
+      <UniqueIdentifier>{2c73117d-8eb7-424e-856b-522308715eb7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Systems">
+      <UniqueIdentifier>{95eda308-d39e-41ed-9854-a348f45566e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\Systems\DirectX">
+      <UniqueIdentifier>{a9178381-56f5-48c7-b5a0-04035b0775ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\Works">
+      <UniqueIdentifier>{feecb558-690c-40ac-914f-638a3e5b8f6c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Main.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\DirectX.cpp">
+      <Filter>ソース ファイル\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\Geometory.cpp">
+      <Filter>ソース ファイル\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\MeshBuffer.cpp">
+      <Filter>ソース ファイル\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\Shader.cpp">
+      <Filter>ソース ファイル\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\Texture.cpp">
+      <Filter>ソース ファイル\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\ShaderList.cpp">
+      <Filter>ソース ファイル\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\Sprite.cpp">
+      <Filter>ソース ファイル\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\Model.cpp">
+      <Filter>ソース ファイル\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\Input.cpp">
+      <Filter>ソース ファイル\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Works\_geometory.cpp">
+      <Filter>ソース ファイル\Works</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Works\_model.cpp">
+      <Filter>ソース ファイル\Works</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Main.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Systems\DirectX\DirectX.h">
+      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Systems\Geometory.h">
+      <Filter>ヘッダー ファイル\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Systems\DirectX\MeshBuffer.h">
+      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Systems\DirectX\Shader.h">
+      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Systems\DirectX\Texture.h">
+      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Systems\DirectX\ShaderList.h">
+      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Systems\Input.h">
+      <Filter>ヘッダー ファイル\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Systems\Model.h">
+      <Filter>ヘッダー ファイル\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Systems\Sprite.h">
+      <Filter>ヘッダー ファイル\Systems</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
