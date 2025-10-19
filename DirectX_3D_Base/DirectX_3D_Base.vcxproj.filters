@@ -31,6 +31,12 @@
     <Filter Include="ヘッダー ファイル\ECS">
       <UniqueIdentifier>{ffa69c50-bf5e-4662-8dcf-44c036f45fb2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ソース ファイル\ECS">
+      <UniqueIdentifier>{ab54a844-6796-48ff-bfe3-5df7a4d741aa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\ECS\Component">
+      <UniqueIdentifier>{f1b12d4f-2365-4976-95b3-59b238056779}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Main.cpp">
@@ -101,13 +107,16 @@
     <ClInclude Include="Source\Systems\Sprite.h">
       <Filter>ヘッダー ファイル\Systems</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ECS\ECS.h">
+    <ClInclude Include="Include\ECS\Entity.h">
       <Filter>ヘッダー ファイル\ECS</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ECS\Component.h">
+    <ClInclude Include="Include\ECS\Component.h">
       <Filter>ヘッダー ファイル\ECS</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ECS\System.h">
+    <ClInclude Include="Include\ECS\Component\TransformComponent.h">
+      <Filter>ヘッダー ファイル\ECS\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\World.h">
       <Filter>ヘッダー ファイル\ECS</Filter>
     </ClInclude>
   </ItemGroup>

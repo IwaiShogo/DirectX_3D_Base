@@ -111,6 +111,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -126,6 +127,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -147,9 +149,10 @@
     <ClCompile Include="Source\Works\_model.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\ECS\Component.h" />
-    <ClInclude Include="Source\ECS\ECS.h" />
-    <ClInclude Include="Source\ECS\System.h" />
+    <ClInclude Include="Include\ECS\Component.h" />
+    <ClInclude Include="Include\ECS\Component\TransformComponent.h" />
+    <ClInclude Include="Include\ECS\Entity.h" />
+    <ClInclude Include="Include\ECS\World.h" />
     <ClInclude Include="Source\Main.h" />
     <ClInclude Include="Source\Systems\DirectX\DirectX.h" />
     <ClInclude Include="Source\Systems\DirectX\MeshBuffer.h" />
