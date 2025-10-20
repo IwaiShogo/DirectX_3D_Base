@@ -218,6 +218,7 @@ void Update()
 void Draw()
 {
 	BeginDrawDirectX();
+	
 
 	// é≤ê¸ÇÃï\é¶
 #ifdef _DEBUG
@@ -286,6 +287,8 @@ void Draw()
 	Geometory::SetView(mat[0]);
 	Geometory::SetProjection(mat[1]);
 #endif
+
+	Geometory::DrawBox();
 
 	EndDrawDirectX();
 }

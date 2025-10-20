@@ -37,6 +37,9 @@
     <Filter Include="ヘッダー ファイル\ECS\Component">
       <UniqueIdentifier>{f1b12d4f-2365-4976-95b3-59b238056779}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ヘッダー ファイル\ECS\System">
+      <UniqueIdentifier>{7fdb1c5d-9d9c-4a9e-88eb-682d41740792}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Main.cpp">
@@ -77,47 +80,56 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Main.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Systems\DirectX\DirectX.h">
-      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Systems\Geometory.h">
-      <Filter>ヘッダー ファイル\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Systems\DirectX\MeshBuffer.h">
-      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Systems\DirectX\Shader.h">
-      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Systems\DirectX\Texture.h">
-      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Systems\DirectX\ShaderList.h">
-      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Systems\Input.h">
-      <Filter>ヘッダー ファイル\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Systems\Model.h">
-      <Filter>ヘッダー ファイル\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Systems\Sprite.h">
-      <Filter>ヘッダー ファイル\Systems</Filter>
-    </ClInclude>
     <ClInclude Include="Include\ECS\Entity.h">
       <Filter>ヘッダー ファイル\ECS</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Component.h">
       <Filter>ヘッダー ファイル\ECS</Filter>
     </ClInclude>
-    <ClInclude Include="Include\ECS\Component\TransformComponent.h">
-      <Filter>ヘッダー ファイル\ECS\Component</Filter>
-    </ClInclude>
     <ClInclude Include="Include\ECS\World.h">
       <Filter>ヘッダー ファイル\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\System\RenderSystem.h">
+      <Filter>ヘッダー ファイル\ECS\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Component\Transform.h">
+      <Filter>ヘッダー ファイル\ECS\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Component\MeshRenderer.h">
+      <Filter>ヘッダー ファイル\ECS\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Component\Rotator.h">
+      <Filter>ヘッダー ファイル\ECS\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\Geometory.h">
+      <Filter>ヘッダー ファイル\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\Input.h">
+      <Filter>ヘッダー ファイル\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\Model.h">
+      <Filter>ヘッダー ファイル\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\Sprite.h">
+      <Filter>ヘッダー ファイル\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\DirectX\DirectX.h">
+      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\DirectX\MeshBuffer.h">
+      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\DirectX\Shader.h">
+      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\DirectX\ShaderList.h">
+      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\DirectX\Texture.h">
+      <Filter>ヘッダー ファイル\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Main.h">
+      <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

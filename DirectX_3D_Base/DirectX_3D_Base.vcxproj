@@ -150,19 +150,22 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\ECS\Component.h" />
-    <ClInclude Include="Include\ECS\Component\TransformComponent.h" />
+    <ClInclude Include="Include\ECS\Component\MeshRenderer.h" />
+    <ClInclude Include="Include\ECS\Component\Rotator.h" />
+    <ClInclude Include="Include\ECS\Component\Transform.h" />
     <ClInclude Include="Include\ECS\Entity.h" />
+    <ClInclude Include="Include\ECS\System\RenderSystem.h" />
     <ClInclude Include="Include\ECS\World.h" />
-    <ClInclude Include="Source\Main.h" />
-    <ClInclude Include="Source\Systems\DirectX\DirectX.h" />
-    <ClInclude Include="Source\Systems\DirectX\MeshBuffer.h" />
-    <ClInclude Include="Source\Systems\DirectX\Shader.h" />
-    <ClInclude Include="Source\Systems\DirectX\ShaderList.h" />
-    <ClInclude Include="Source\Systems\DirectX\Texture.h" />
-    <ClInclude Include="Source\Systems\Geometory.h" />
-    <ClInclude Include="Source\Systems\Input.h" />
-    <ClInclude Include="Source\Systems\Model.h" />
-    <ClInclude Include="Source\Systems\Sprite.h" />
+    <ClInclude Include="Include\Main.h" />
+    <ClInclude Include="Include\Systems\DirectX\DirectX.h" />
+    <ClInclude Include="Include\Systems\DirectX\MeshBuffer.h" />
+    <ClInclude Include="Include\Systems\DirectX\Shader.h" />
+    <ClInclude Include="Include\Systems\DirectX\ShaderList.h" />
+    <ClInclude Include="Include\Systems\DirectX\Texture.h" />
+    <ClInclude Include="Include\Systems\Geometory.h" />
+    <ClInclude Include="Include\Systems\Input.h" />
+    <ClInclude Include="Include\Systems\Model.h" />
+    <ClInclude Include="Include\Systems\Sprite.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

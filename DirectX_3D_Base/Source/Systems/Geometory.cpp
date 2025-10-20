@@ -1,4 +1,4 @@
-#include "Geometory.h"
+#include "Systems/Geometory.h"
 
 MeshBuffer* Geometory::m_pBox;
 MeshBuffer* Geometory::m_pCylinder;

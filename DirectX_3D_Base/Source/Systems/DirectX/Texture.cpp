@@ -1,4 +1,4 @@
-#include "Texture.h"
+#include "Systems/DirectX/Texture.h"
 #include "../../DirectXTex/TextureLoad.h"
 
 /// <summary>

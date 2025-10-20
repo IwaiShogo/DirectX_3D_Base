@@ -1,4 +1,4 @@
-#include "MeshBuffer.h"
+#include "Systems/DirectX/MeshBuffer.h"
 
 MeshBuffer::MeshBuffer()
 	: m_pVtxBuffer(NULL), m_pIdxBuffer(NULL), m_desc{}

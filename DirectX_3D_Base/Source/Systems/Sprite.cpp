@@ -1,4 +1,4 @@
-#include "Sprite.h"
+#include "Systems/Sprite.h"
 
 Sprite::Data Sprite::m_data;
 std::shared_ptr<VertexShader> Sprite::m_defVS;

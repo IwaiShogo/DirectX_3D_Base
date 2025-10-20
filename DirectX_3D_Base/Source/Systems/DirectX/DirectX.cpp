@@ -1,5 +1,5 @@
-#include "DirectX.h"
-#include "Texture.h"
+#include "Systems/DirectX/DirectX.h"
+#include "Systems/DirectX/Texture.h"
 
 //--- ƒOƒ[ƒoƒ‹•Ï”
 ID3D11Device*				g_pDevice;

@@ -29,7 +29,7 @@
 
 // ===== インクルード =====
 #include <DirectXMath.h>
-#include "../Component.h"	// DEFINE_DATA_COMPONENTを使用
+#include "ECS/Component.h"	// DEFINE_DATA_COMPONENTを使用
 
 /**
  * @struct	Transform

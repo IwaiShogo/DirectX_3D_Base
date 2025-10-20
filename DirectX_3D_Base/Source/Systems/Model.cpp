@@ -1,4 +1,4 @@
-#include "Model.h"
+#include "Systems/Model.h"
 #include "../../DirectXTex/DirectXTex.h"
 #include <algorithm>
 #include <assimp/Importer.hpp>
@@ -6,7 +6,7 @@
 #include <assimp/postprocess.h>
 
 #ifdef _DEBUG
-#include "Geometory.h"
+#include "Systems/Geometory.h"
 #endif
 
 #if _MSC_VER >= 1930

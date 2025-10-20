@@ -2,7 +2,7 @@
 #define __SHADER_LIST_H__
 
 #include "Shader.h"
-#include "../Model.h"
+#include "Systems/Model.h"
 
 
 class ShaderList
