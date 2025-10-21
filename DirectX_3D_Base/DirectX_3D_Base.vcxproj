@@ -136,6 +136,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\Main.cpp" />
+    <ClCompile Include="Source\Scene\GameScene.cpp" />
     <ClCompile Include="Source\Systems\DirectX\DirectX.cpp" />
     <ClCompile Include="Source\Systems\DirectX\MeshBuffer.cpp" />
     <ClCompile Include="Source\Systems\DirectX\Shader.cpp" />
@@ -157,6 +158,8 @@
     <ClInclude Include="Include\ECS\System\RenderSystem.h" />
     <ClInclude Include="Include\ECS\World.h" />
     <ClInclude Include="Include\Main.h" />
+    <ClInclude Include="Include\Scene\GameScene.h" />
+    <ClInclude Include="Include\Scene\Scene.h" />
     <ClInclude Include="Include\Systems\DirectX\DirectX.h" />
     <ClInclude Include="Include\Systems\DirectX\MeshBuffer.h" />
     <ClInclude Include="Include\Systems\DirectX\Shader.h" />

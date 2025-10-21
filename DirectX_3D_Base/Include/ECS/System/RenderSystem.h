@@ -84,7 +84,8 @@ struct RenderSystem
             DirectX::XMMATRIX R = DirectX::XMMatrixRotationRollPitchYaw(
                 DirectX::XMConvertToRadians(t->rotation.x),
                 DirectX::XMConvertToRadians(t->rotation.y),
-                DirectX::XMConvertToRadians(t->rotation.z));
+                DirectX::XMConvertToRadians(t->rotation.z)
+            );
             DirectX::XMMATRIX T = DirectX::XMMatrixTranslation(t->position.x, t->position.y, t->position.z);
             DirectX::XMMATRIX W = S * R * T;
             DirectX::XMStoreFloat4x4(&t->worldMatrix, W);

@@ -1,6 +1,6 @@
-/*****************************************************************//**
+ï»¿/*****************************************************************//**
  * @file	Main.cpp
- * @brief	ƒvƒƒOƒ‰ƒ€‚ÌƒGƒ“ƒgƒŠ[ƒ|ƒCƒ“ƒg
+ * @brief	ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã®ã‚¨ãƒ³ãƒˆãƒªãƒ¼ãƒã‚¤ãƒ³ãƒˆ
  * 
  * @details	
  * 
@@ -8,21 +8,21 @@
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  * 
- * @date	2025/10/15	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁFECS‚ÌƒRƒA’è‹`iEntityID, ComponentTypeID, Signaturej‚¨‚æ‚ÑIDƒWƒFƒlƒŒ[ƒ^‚ğ’è‹`‚·‚é `ECS.h` ƒtƒ@ƒCƒ‹‚ğì¬B
- *                      - ’Ç‰ÁFSystem’ŠÛŠî’êƒNƒ‰ƒX‚ğ’è‹`B
+ * @date	2025/10/15	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼šECSã®ã‚³ã‚¢å®šç¾©ï¼ˆEntityID, ComponentTypeID, Signatureï¼‰ãŠã‚ˆã³IDã‚¸ã‚§ãƒãƒ¬ãƒ¼ã‚¿ã‚’å®šç¾©ã™ã‚‹ `ECS.h` ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½œæˆã€‚
+ *                      - è¿½åŠ ï¼šSystemæŠ½è±¡åŸºåº•ã‚¯ãƒ©ã‚¹ã‚’å®šç¾©ã€‚
  * 
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
+ * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- XXï¼š
  * 
- * @note	iÈ—ª‰Âj
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
-// ===== ƒCƒ“ƒNƒ‹[ƒh =====
-// Windows API ‚ÌŠî–{‹@”\
+// ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
+// Windows API ã®åŸºæœ¬æ©Ÿèƒ½
 #include <windows.h>
 
-// ©ìƒwƒbƒ_ƒtƒ@ƒCƒ‹
+// è‡ªä½œãƒ˜ãƒƒãƒ€ãƒ•ã‚¡ã‚¤ãƒ«
 #include "Main.h"
 #include "Systems/DirectX/DirectX.h"
 #include "Systems/DirectX/ShaderList.h"
@@ -30,55 +30,55 @@
 #include "Systems/Sprite.h"
 #include "Systems/Input.h"
 
-
 #include <stdio.h>
 #include <iostream>
 #include <crtdbg.h>
+#include <DirectXMath.h>
 
-// timeGetTimeü‚è‚Ìg—p
+// timeGetTimeå‘¨ã‚Šã®ä½¿ç”¨
 #pragma comment(lib, "winmm.lib")
 
-// ===== ƒvƒƒgƒ^ƒCƒvéŒ¾ =====
-int Init(HINSTANCE hInstance, int nCmdShow);	// ‰Šú‰»
-void Uninit();									// I—¹
-void Update();									// XV
-void Draw();									// •`‰æ
+// ===== ãƒ—ãƒ­ãƒˆã‚¿ã‚¤ãƒ—å®£è¨€ =====
+int Init(HINSTANCE hInstance, int nCmdShow);	// åˆæœŸåŒ–
+void Uninit();									// çµ‚äº†
+void Update();									// æ›´æ–°
+void Draw();									// æç”»
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 /**
  * [int  - WinMain]
- * @brief	ƒvƒƒOƒ‰ƒ€‚ÌƒGƒ“ƒgƒŠ[ƒ|ƒCƒ“ƒg
+ * @brief	ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã®ã‚¨ãƒ³ãƒˆãƒªãƒ¼ãƒã‚¤ãƒ³ãƒˆ
  * 
  * @param	[in] hInstance 
  * @param	[in] hPrevInstance 
  * @param	[in] lpCmdLine 
  * @param	[in] nCmdShow 
- * @return	int - 0.¬Œ÷ 1.¸”s
+ * @return	int - 0.æˆåŠŸ 1.å¤±æ•—
  */
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	/* ƒƒ‚ƒŠƒŠ[ƒNƒ`ƒFƒbƒN */
+	/* ãƒ¡ãƒ¢ãƒªãƒªãƒ¼ã‚¯ãƒã‚§ãƒƒã‚¯ */
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
 	// ********************************************** //
-	//          ¥ Console‰æ–ÊiƒfƒoƒbƒO—pj          //
+	//          â–¼ Consoleç”»é¢ï¼ˆãƒ‡ãƒãƒƒã‚°ç”¨ï¼‰          //
 	// ********************************************** //
 #ifdef _DEBUG
 	if (AllocConsole()) {
 		FILE* fp = nullptr;
-		// •W€o—Í(stdout)‚ğV‚µ‚¢ƒRƒ“ƒ\[ƒ‹‚ÉŒü‚¯‚é
+		// æ¨™æº–å‡ºåŠ›(stdout)ã‚’æ–°ã—ã„ã‚³ãƒ³ã‚½ãƒ¼ãƒ«ã«å‘ã‘ã‚‹
 		freopen_s(&fp, "CONOUT$", "w", stdout);
-		// •W€ƒGƒ‰[o—Í(stderr)‚à“¯—l
+		// æ¨™æº–ã‚¨ãƒ©ãƒ¼å‡ºåŠ›(stderr)ã‚‚åŒæ§˜
 		freopen_s(&fp, "CONOUT$", "w", stderr);
-		// •W€“ü—Í(stdin)‚à“¯—l
+		// æ¨™æº–å…¥åŠ›(stdin)ã‚‚åŒæ§˜
 		freopen_s(&fp, "CONIN$", "r", stdin);
-		// C++‚Ìcout‚ÆC‚Ìstdout‚ğ“¯Šú‚³‚¹‚é
+		// C++ã®coutã¨Cã®stdoutã‚’åŒæœŸã•ã›ã‚‹
 		std::cout.sync_with_stdio();
 	}
 #endif
 
 	// ******************************* //
-	//          ¥ ‰Šú‰»ˆ—          //
+	//          â–¼ åˆæœŸåŒ–å‡¦ç†          //
 	// ******************************* //
 	if (FAILED(Init(hInstance, nCmdShow))) {
 		Uninit();
@@ -86,14 +86,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 	
 	// ********************************* //
-	//          ¥ ƒQ[ƒ€ƒ‹[ƒv          //
+	//          â–¼ ã‚²ãƒ¼ãƒ ãƒ«ãƒ¼ãƒ—          //
 	// ********************************* //
-	/* FPS§Œä */
+	/* FPSåˆ¶å¾¡ */
 	timeBeginPeriod(1);
 	DWORD countStartTime = timeGetTime();
 	DWORD preExecTime = countStartTime;
 
-	/* ƒƒbƒZ[ƒWƒ‹[ƒv */
+	/* ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒ«ãƒ¼ãƒ— */
 	MSG message;
 	while (1)
 	{
@@ -116,12 +116,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			if (diff >= 1000.0f / fFPS)
 			{
 				// ***************************** //
-				//          ¥ XVˆ—          //
+				//          â–¼ æ›´æ–°å‡¦ç†          //
 				// ***************************** //
 				Update();
 
 				// ***************************** //
-				//          ¥ •`‰æˆ—          //
+				//          â–¼ æç”»å‡¦ç†          //
 				// ***************************** //
 				Draw();
 				preExecTime = nowTime;
@@ -130,7 +130,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	// ***************************** //
-	//          ¥ I—¹ˆ—          //
+	//          â–¼ çµ‚äº†å‡¦ç†          //
 	// ***************************** //
 	timeEndPeriod(1);
 	Uninit();
@@ -140,59 +140,59 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 int Init(HINSTANCE hInstance, int nCmdShow)
 {
-	/* ƒEƒBƒ“ƒhƒEƒNƒ‰ƒXî•ñ‚Ìì¬ */
+	/* ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚¯ãƒ©ã‚¹æƒ…å ±ã®ä½œæˆ */
 	WNDCLASSEX wcex;
-	// w’è‚³‚ê‚½ƒAƒhƒŒƒX‚Ì•Ï”‚ğ0‚Å‰Šú‰»‚·‚éŠÖ”
+	// æŒ‡å®šã•ã‚ŒãŸã‚¢ãƒ‰ãƒ¬ã‚¹ã®å¤‰æ•°ã‚’0ã§åˆæœŸåŒ–ã™ã‚‹é–¢æ•°
 	ZeroMemory(&wcex, sizeof(wcex));
-	/* ƒEƒBƒ“ƒhƒEƒNƒ‰ƒXî•ñ‚Ìİ’è */
-	wcex.hInstance = hInstance;									// ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚Ì¯•Ê”Ô†
+	/* ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚¯ãƒ©ã‚¹æƒ…å ±ã®è¨­å®š */
+	wcex.hInstance = hInstance;									// ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®è­˜åˆ¥ç•ªå·
 	wcex.lpszClassName = "Class Name";
-	wcex.lpfnWndProc = WndProc;									// ƒEƒBƒ“ƒhƒEƒvƒƒV[ƒWƒƒ‚Ìİ’èiŠÖ”ƒ|ƒCƒ“ƒ^j
-	wcex.style = CS_CLASSDC | CS_DBLCLKS;						// ƒEƒBƒ“ƒhƒE‚Ì‹““®
+	wcex.lpfnWndProc = WndProc;									// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãƒ—ãƒ­ã‚·ãƒ¼ã‚¸ãƒ£ã®è¨­å®šï¼ˆé–¢æ•°ãƒã‚¤ãƒ³ã‚¿ï¼‰
+	wcex.style = CS_CLASSDC | CS_DBLCLKS;						// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®æŒ™å‹•
 	wcex.cbSize = sizeof(WNDCLASSEX);
-	wcex.hIcon = LoadIcon(NULL, IDI_APPLICATION);				// ƒAƒvƒŠ‚ÌƒAƒCƒRƒ“İ’è
+	wcex.hIcon = LoadIcon(NULL, IDI_APPLICATION);				// ã‚¢ãƒ—ãƒªã®ã‚¢ã‚¤ã‚³ãƒ³è¨­å®š
 	wcex.hIconSm = wcex.hIcon;
-	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);					// ƒ}ƒEƒX‚ÌƒAƒCƒRƒ“İ’è
-	wcex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);	// ”wŒi‚ÌF
+	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);					// ãƒã‚¦ã‚¹ã®ã‚¢ã‚¤ã‚³ãƒ³è¨­å®š
+	wcex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);	// èƒŒæ™¯ã®è‰²
 
-	/* ƒEƒBƒ“ƒhƒEƒNƒ‰ƒXî•ñ‚Ì“o˜^ */
+	/* ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚¯ãƒ©ã‚¹æƒ…å ±ã®ç™»éŒ² */
 	if (!RegisterClassEx(&wcex))
 	{
 		MessageBox(NULL, "Failed to RegisterClassEx", "Error", MB_OK);
 		return 0;
 	}
 
-	/* ƒEƒBƒ“ƒhƒE‚Ìì¬ */
+	/* ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®ä½œæˆ */
 	RECT rect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 	DWORD style = WS_CAPTION | WS_SYSMENU;
 	DWORD exStyle = WS_EX_OVERLAPPEDWINDOW;
-	AdjustWindowRectEx(&rect, style, false, exStyle);	// ƒEƒBƒ“ƒhƒEƒTƒCƒY‚ÌZo
+	AdjustWindowRectEx(&rect, style, false, exStyle);	// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚µã‚¤ã‚ºã®ç®—å‡º
 	HWND hWnd = CreateWindowEx(
-		exStyle,						// ƒEƒBƒ“ƒhƒE‚ÌŒ©‚½–Ú‚P
-		wcex.lpszClassName, APP_TITLE,	// ƒ^ƒCƒgƒ‹ƒo[‚É•\¦‚·‚é•¶š
-		style,							// ƒEƒBƒ“ƒhƒE‚ÌŒ©‚½–Ú‚Q
-		CW_USEDEFAULT, CW_USEDEFAULT,	// ƒEƒBƒ“ƒhƒE‚Ì•\¦ˆÊ’u
-		rect.right - rect.left,			// ƒEƒBƒ“ƒhƒE‚Ì‘å‚«‚³
+		exStyle,						// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®è¦‹ãŸç›®ï¼‘
+		wcex.lpszClassName, APP_TITLE,	// ã‚¿ã‚¤ãƒˆãƒ«ãƒãƒ¼ã«è¡¨ç¤ºã™ã‚‹æ–‡å­—
+		style,							// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®è¦‹ãŸç›®ï¼’
+		CW_USEDEFAULT, CW_USEDEFAULT,	// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®è¡¨ç¤ºä½ç½®
+		rect.right - rect.left,			// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®å¤§ãã•
 		rect.bottom - rect.top,
 		HWND_DESKTOP, NULL, hInstance, NULL
 	);
 	if (hWnd == NULL)
 	{
-		MessageBox(NULL, "ƒEƒBƒ“ƒhƒE‚Ìì¬‚É¸”s", "Error", MB_OK);
+		MessageBox(NULL, "ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®ä½œæˆã«å¤±æ•—", "Error", MB_OK);
 		return 0;
 	}
 
-	/* ƒEƒBƒ“ƒhƒE‚Ì•\¦ */
+	/* ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®è¡¨ç¤º */
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
 
-	/* DirectX‚Ì‰Šú‰» */
+	/* DirectXã®åˆæœŸåŒ– */
 	if (FAILED(InitDirectX(hWnd, SCREEN_WIDTH, SCREEN_HEIGHT, false))) {
-		MessageBox(hWnd, "DirectX‚Ì‰Šú‰»‚É¸”s", "ƒGƒ‰[", MB_OK);
+		MessageBox(hWnd, "DirectXã®åˆæœŸåŒ–ã«å¤±æ•—", "ã‚¨ãƒ©ãƒ¼", MB_OK);
 		return 0;
 	}
 
-	/* ‘½‹@”\‰Šú‰» */
+	/* å¤šæ©Ÿèƒ½åˆæœŸåŒ– */
 	Geometory::Init();	// Geometory
 	Sprite::Init();		// Sprite
 	InitInput();		// Input
@@ -220,9 +220,9 @@ void Draw()
 	BeginDrawDirectX();
 	
 
-	// ²ü‚Ì•\¦
+	// è»¸ç·šã®è¡¨ç¤º
 #ifdef _DEBUG
-	// ƒOƒŠƒbƒh
+	// ã‚°ãƒªãƒƒãƒ‰
 	DirectX::XMFLOAT4 lineColor(0.5f, 0.5f, 0.5f, 1.0f);
 	float size = DEBUG_GRID_NUM * DEBUG_GRID_MARGIN;
 	for (int i = 1; i <= DEBUG_GRID_NUM; ++i)
@@ -242,7 +242,7 @@ void Draw()
 		pos[0].z = pos[1].z = -grid;
 		Geometory::AddLine(pos[0], pos[1], lineColor);
 	}
-	// ²
+	// è»¸
 	Geometory::AddLine(DirectX::XMFLOAT3(0, 0, 0), DirectX::XMFLOAT3(size, 0, 0), DirectX::XMFLOAT4(1, 0, 0, 1));
 	Geometory::AddLine(DirectX::XMFLOAT3(0, 0, 0), DirectX::XMFLOAT3(0, size, 0), DirectX::XMFLOAT4(0, 1, 0, 1));
 	Geometory::AddLine(DirectX::XMFLOAT3(0, 0, 0), DirectX::XMFLOAT3(0, 0, size), DirectX::XMFLOAT4(0, 0, 1, 1));
@@ -251,7 +251,7 @@ void Draw()
 
 	Geometory::DrawLines();
 
-	// ƒJƒƒ‰‚Ì’l
+	// ã‚«ãƒ¡ãƒ©ã®å€¤
 	static bool camAutoSwitch = false;
 	static bool camUpDownSwitch = true;
 	static float camAutoRotate = 1.0f;
@@ -272,7 +272,7 @@ void Draw()
 		sinf(camAutoRotate) * 5.0f,
 		0.0f);
 
-	// ƒWƒIƒƒgƒŠ—pƒJƒƒ‰‰Šú‰»
+	// ã‚¸ã‚ªãƒ¡ãƒˆãƒªç”¨ã‚«ãƒ¡ãƒ©åˆæœŸåŒ–
 	DirectX::XMFLOAT4X4 mat[2];
 	DirectX::XMStoreFloat4x4(&mat[0], DirectX::XMMatrixTranspose(
 		DirectX::XMMatrixLookAtLH(
@@ -288,6 +288,56 @@ void Draw()
 	Geometory::SetProjection(mat[1]);
 #endif
 
+
+	// ***** å¾Œã€…ã‚²ãƒ¼ãƒ ã‚·ãƒ¼ãƒ³ã«ç§»å‹• *****
+	//--- ï¼‘ã¤ç›®ã®åœ°é¢ 
+	DirectX::XMMATRIX T = DirectX::XMMatrixTranslation(0.0f, -0.1f, 0.0f);   // å¤©é¢ãŒã‚°ãƒªãƒƒãƒ‰ã‚ˆã‚Šã‚‚ä¸‹ã«æ¥ã‚‹ã‚ˆã†ã«ç§»å‹• 
+	DirectX::XMMATRIX S = DirectX::XMMatrixScaling(10.0f, 0.2f, 10.0f); // åœ°é¢ã¨ãªã‚‹ã‚ˆã†ã«ã€å‰å¾Œå·¦å³ã«åºƒãã€ä¸Šä¸‹ã«ç‹­ãã™ã‚‹ 
+	DirectX::XMMATRIX mat1 = S * T;
+	mat1 = DirectX::XMMatrixTranspose(mat1);
+	DirectX::XMFLOAT4X4 fMat; // è¡Œåˆ—ã®æ ¼ç´å…ˆ 
+	DirectX::XMStoreFloat4x4(&fMat, mat1);
+	Geometory::SetWorld(fMat); // ãƒœãƒƒã‚¯ã‚¹ã«å¤‰æ›è¡Œåˆ—ã‚’è¨­å®š 
+	Geometory::DrawBox();
+
+	//--- 2ã¤ç›®ã®åœ°é¢ 
+	T = DirectX::XMMatrixTranslation(0.0f, 1.0f, 0.0f);
+	S = DirectX::XMMatrixScaling(0.2f, 3.0f, 0.2f);
+	mat1 = S * T;
+	mat1 = DirectX::XMMatrixTranspose(mat1);
+	DirectX::XMStoreFloat4x4(&fMat, mat1);
+	Geometory::SetWorld(fMat);
+	Geometory::DrawBox();
+
+	static float rad = 0.0f;
+	static float newY;
+	DirectX::XMMATRIX Rx = DirectX::XMMatrixRotationX(0.0f);
+	DirectX::XMMATRIX Ry = DirectX::XMMatrixRotationY(rad);
+	DirectX::XMMATRIX Rz = DirectX::XMMatrixRotationZ(0.0f);
+	T = DirectX::XMMatrixTranslation(1.0f, newY, 0.0f);   // ã‚´ãƒ¼ãƒ«ã®å ´æ‰€ã¸ç§»å‹• 
+	mat1 = Rx * Ry * Rz * T; // ç§»å‹•â¡å›è»¢ï¼Ÿ å›è»¢â¡ç§»å‹•ï¼Ÿ 
+	mat1 = DirectX::XMMatrixTranspose(mat1);
+	DirectX::XMStoreFloat4x4(&fMat, mat1);
+	Geometory::SetWorld(fMat); // ãƒœãƒƒã‚¯ã‚¹ã«å¤‰æ›è¡Œåˆ—ã‚’è¨­å®š 
+	// rad += å›è»¢è§’ã®æ›´æ–°(é€Ÿåº¦ã¯ãŠä»»ã›); ã®éƒ¨åˆ†
+	const float ROTATION_INCREMENT = 1.01f; // 1ãƒ•ãƒ¬ãƒ¼ãƒ ã‚ãŸã‚Š0.01ãƒ©ã‚¸ã‚¢ãƒ³å›è»¢
+	rad += ROTATION_INCREMENT;
+
+	static float time = 0.0f; // å®Ÿè¡Œæ™‚é–“ã‚’æ¨¡å€£ã—ãŸå¤‰æ•°
+	const float CENTER_Y = 1.5f; // æŒ¯å‹•ã®ä¸­å¿ƒã¨ãªã‚‹Yåº§æ¨™ (å…ƒã®Tã®Yåº§æ¨™)
+	const float AMPLITUDE = 0.5f; // æŒ¯å‹•ã®æŒ¯å¹… (ä¸Šä¸‹ã«ã©ã‚Œã ã‘å‹•ãã‹)
+	const float FREQUENCY = 2.0f; // æŒ¯å‹•ã®å‘¨æ³¢æ•° (é€Ÿåº¦ã€‚å€¤ãŒå¤§ãã„ã»ã©é€Ÿã„)
+	const float TIME_INCREMENT = 0.05f; // æ¯ãƒ•ãƒ¬ãƒ¼ãƒ ã®æ™‚é–“ã®é€²ã¿å…·åˆ
+	time += TIME_INCREMENT;
+	// Yè»¸åº§æ¨™ã®è¨ˆç®—
+	newY = CENTER_Y + AMPLITUDE * sin(time * FREQUENCY);
+
+	// ãƒ©ã‚¸ã‚¢ãƒ³å€¤ãŒ360åº¦ï¼ˆ2Ï€ï¼‰ã‚’è¶…ãˆãŸã‚‰ãƒªã‚»ãƒƒãƒˆ
+	if (rad > DirectX::XM_2PI)
+	{
+		rad -= DirectX::XM_2PI;
+	}
+
 	Geometory::DrawBox();
 
 	EndDrawDirectX();
@@ -295,7 +345,7 @@ void Draw()
 
 /**
  * [LRESULT - WndProc]
- * @brief	ƒEƒBƒ“ƒhƒEƒvƒƒV[ƒWƒƒ
+ * @brief	ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãƒ—ãƒ­ã‚·ãƒ¼ã‚¸ãƒ£
  * 
  * @param	[in] hWnd 
  * @param	[in] message 
@@ -308,7 +358,7 @@ LRESULT WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_CLOSE:
-		if (IDNO == MessageBox(hWnd, "ƒQ[ƒ€‚ğI—¹‚µ‚Ü‚·‚©H", "Šm”F", MB_YESNO)) {
+		if (IDNO == MessageBox(hWnd, "ã‚²ãƒ¼ãƒ ã‚’çµ‚äº†ã—ã¾ã™ã‹ï¼Ÿ", "ç¢ºèª", MB_YESNO)) {
 			return 0;
 		}
 
