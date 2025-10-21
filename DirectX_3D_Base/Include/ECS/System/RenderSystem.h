@@ -1,67 +1,73 @@
 #pragma once
-#include "graphics/GfxDevice.h" // DirectXデバイスへのアクセス
-#include "graphics/Camera.h"   // カメラ（View/Proj行列）へのアクセス
+// --------------------------------------------------
+// インクルードパス修正
+// RenderSystem.h の位置: Include/ECS/System/
+// DirectX.h の位置: Include/Systems/DirectX/
+// --------------------------------------------------
+#include "Systems/DirectX/DirectX.h"    // GetContext(), GetDevice()
+#include "Systems/DirectX/ShaderList.h" // SetWVP, SetMaterial, SetLight...
+#include "Systems/DirectX/MeshBuffer.h"  // MeshBuffer::Draw()
+#include "Systems/DirectX/Texture.h"     // TextureManager::INVALID_TEXTURE
+
+// ECSコア (同じ Include/ECS/ からの相対パス)
 #include "ECS/World.h"
 #include "ECS/Component/Transform.h"
 #include "ECS/Component/MeshRenderer.h"
+
+// Cameraの依存を解決
+//#include "Camera.h" // 上記で定義したCamera.h (Include/ECS/System/Camera.h)
+
 #include <DirectXMath.h>
-// ... 他に必要なDirectX/Shaderのヘッダー
+#include <wrl/client.h>
+#include <cstring>
+#include <cstdio>
+
+#pragma comment(lib, "d3dcompiler.lib")
+
+// 既存のMeshBufferのDrawを呼ぶためのラッパー（ここでは単なる前方宣言）
+class MeshBuffer;
+class Camera; // RenderSystemが依存するCameraクラス
 
 /**
- * @file RenderSystem.h
- * @brief メッシュレンダリングシステム
- * @details World内のMeshRendererコンポーネントを持つエンティティを描画します。
+ * @struct RenderSystem
+ * @brief ECSワールド内の描画可能なエンティティを描画するシステム
  */
-
- /**
-  * @struct RenderSystem
-  * @brief ECSワールド内の描画可能なエンティティを描画するシステム
-  * @note このシステムはWorld::Update()とは独立して、メインループから明示的にDraw()を呼び出す必要があります。
-  */
 struct RenderSystem
 {
-    // 既存コードの依存関係をメンバ変数として保持することを想定
-    GfxDevice& gfx_;
-    Camera& cam_;
-    // ... 定数バッファやシェーダ関連のメンバもここに定義
+    // 依存関係を既存クラス名と整合
+    // DirectX.h がグローバル関数を使用するため、ここでは依存を最小限にします
+    // CameraはDrawメソッド内で使用
 
-    // 定数バッファの構造体 (RenderSystem.hのRenderSystem::Updateのコードから推測)
-    struct VSConstants {
-        DirectX::XMMATRIX WVP;
-        DirectX::XMFLOAT4 uvTransform;
-    };
-    struct PSConstants {
-        DirectX::XMFLOAT4 color;
-        float useTexture;
-        DirectX::XMFLOAT3 padding;
-    };
-    Microsoft::WRL::ComPtr<ID3D11Buffer> cb_;
-    Microsoft::WRL::ComPtr<ID3D11Buffer> psCb_;
-    // ... ShaderやInputLayoutのメンバも必要
+    // ※ 既存のMeshBufferクラスはインスタンス管理が必要なため、ここではDraw時に取得することを想定
 
-    /**
-     * @brief 初期化
-     */
-    RenderSystem(GfxDevice& gfx, Camera& cam) : gfx_(gfx), cam_(cam)
-    {
-        // 既存コードからShader/ConstantBufferの初期化ロジックを移植
-        // 例: cb_ = GfxDevice::CreateConstantBuffer(sizeof(VSConstants));
-    }
+    // 定数バッファはShaderListが管理しているため、RenderSystemではWRL::ComPtrは不要です。
+    // ShaderList::SetWVP() がグローバルな定数バッファを更新すると想定されます。
+
+    // RenderSystemがRenderSystem::Draw()外で管理すべきリソース（シェーダ、定数バッファ）
+    // ShaderList::VSKind/PSKind を保持
+    ShaderList::VSKind vsKind_ = ShaderList::VS_WORLD;
+    ShaderList::PSKind psKind_ = ShaderList::PS_LAMBERT;
+
+    // ※ Drawメソッド内でDrawCallを最適化するために、描画に使用するメッシュのポインタやIDを保持する機構が必要です。
+    //    ここでは、Drawメソッドの引数としてMeshBufferの管理クラスを渡すことを前提とします。
 
     /**
      * @brief 描画実行のメインエントリーポイント
      * @param[in,out] w Worldへの参照
-     * * @details
-     * このメソッドは、ゲームのメインループまたはGameScene::Draw()内で呼び出されます。
+     * @param[in] cam 現在のシーンカメラ
+     * @param[in] meshMgr MeshBuffer管理クラス（例: MeshManager）
      */
-    void Draw(World& w)
+    template<typename MeshManager>
+    void Draw(World& w, Camera& cam, MeshManager& meshMgr)
     {
-        // 1. カメラ行列の取得と設定（View/Proj）
-        DirectX::XMMATRIX view = cam_.GetViewMatrix();
-        DirectX::XMMATRIX proj = cam_.GetProjectionMatrix();
+        // 1. シェーダと描画コンテキストの設定 (ShaderList.hを使用)
+        ShaderList::GetVS(vsKind_)->Set();
+        ShaderList::GetPS(psKind_)->Set();
 
-        // 2. 描画コンテキストの設定 (InputLayout, Shaderのセットアップ)
-        // ... 既存コードからシェーダ設定を移植
+        // 2. カメラ行列の取得
+        DirectX::XMMATRIX view = cam.GetViewMatrix();
+        DirectX::XMMATRIX proj = cam.GetProjectionMatrix();
+        DirectX::XMMATRIX viewProj = view * proj;
 
         // 3. 全ての描画可能なエンティティに対してループ
         Store<Transform>* transformStore = w.GetStore<Transform>();
@@ -71,9 +77,9 @@ struct RenderSystem
         {
             Entity e = { id };
             Transform* t = transformStore->TryGet(e);
-            if (!t) continue; // Transformがないエンティティは描画しない
+            if (!t) continue;
 
-            // a. World行列の計算と設定 (RenderSystem.hのコードを参考に実装)
+            // a. World行列の計算とTransformへのキャッシュ
             DirectX::XMMATRIX S = DirectX::XMMatrixScaling(t->scale.x, t->scale.y, t->scale.z);
             DirectX::XMMATRIX R = DirectX::XMMatrixRotationRollPitchYaw(
                 DirectX::XMConvertToRadians(t->rotation.x),
@@ -81,27 +87,32 @@ struct RenderSystem
                 DirectX::XMConvertToRadians(t->rotation.z));
             DirectX::XMMATRIX T = DirectX::XMMatrixTranslation(t->position.x, t->position.y, t->position.z);
             DirectX::XMMATRIX W = S * R * T;
-
-            // WorldMatrixをTransformにキャッシュ (オプション)
             DirectX::XMStoreFloat4x4(&t->worldMatrix, W);
 
-            // b. VS定数バッファの更新 (WVP行列, UV変換)
-            VSConstants vsCbuf;
-            vsCbuf.WVP = DirectX::XMMatrixTranspose(W * view * proj);
-            vsCbuf.uvTransform = DirectX::XMFLOAT4{ mr.uvOffset.x, mr.uvOffset.y, mr.uvScale.x, mr.uvScale.y };
-            gfx_.Ctx()->UpdateSubresource(cb_.Get(), 0, nullptr, &vsCbuf, 0, 0);
+            DirectX::XMMATRIX WVP = W * viewProj;
 
-            // c. PS定数バッファの更新 (色, テクスチャ使用フラグ)
-            PSConstants psCbuf;
-            psCbuf.color = DirectX::XMFLOAT4{ mr.color.x, mr.color.y, mr.color.z, 1.0f };
-            psCbuf.useTexture = (mr.texture != TextureManager::INVALID_TEXTURE) ? 1.0f : 0.0f;
-            gfx_.Ctx()->UpdateSubresource(psCb_.Get(), 0, nullptr, &psCbuf, 0, 0);
+            // b. VS定数バッファの更新 (ShaderList::SetWVPを使用)
+            // ShaderList::SetWVPはXMFLOAT4X4を期待しているため変換
+            DirectX::XMFLOAT4X4 WVP_T;
+            DirectX::XMStoreFloat4x4(&WVP_T, DirectX::XMMatrixTranspose(WVP));
+            ShaderList::SetWVP(&WVP_T);
 
-            // d. テクスチャの設定
-            // TextureManager::BindTexture(mr.texture); // 既存リソースマネージャを介してバインド
+            // c. PS定数バッファの更新 (ShaderList::SetMaterialを使用)
+            // MeshRendererのデータからShaderList::SetMaterialに渡すMaterial構造体を構築 (Model::Materialが必要)
+            // Model::Materialの定義がないため、ここでは色とテクスチャの使用フラグのみを渡すと仮定
+            // ShaderList::SetMaterial(mr.color, (mr.texture != TextureManager::INVALID_TEXTURE));
 
-            // e. 描画実行
-            // MeshManager::DrawMesh(mr.meshId); // 既存リソースマネージャを介してドローコール
+            // ※ ShaderList::SetMaterialはModel::Materialを期待しています。ここではRenderSystemのコードを簡略化し、MeshRendererのデータを利用することに重点を置きます。
+            // 既存のSetMaterialをECSデータに合わせるために、既存のModel::Material構造体を定義するか、ShaderListを変更する必要があります。
+            // ここでは、MeshRendererを直接利用するよう、簡略化された擬似的な呼び出しを使用します。
+
+            // d. テクスチャの設定（Texture::GetResource()とDirectX::SetShaderResourcesを使用）
+            // Texture* tex = TextureManager::GetTexture(mr.texture); // TextureManagerクラスが別途必要
+            // if (tex) GetContext()->PSSetShaderResources(0, 1, tex->GetResource());
+
+            // e. 描画実行 (MeshBuffer::Drawを使用)
+            // MeshBuffer* meshBuf = meshMgr.GetMeshBuffer(mr.meshId); // MeshManagerクラスが別途必要
+            // if (meshBuf) meshBuf->Draw();
         }
     }
 };
