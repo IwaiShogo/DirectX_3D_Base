@@ -150,13 +150,7 @@
     <ClCompile Include="Source\Works\_model.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\ECS\Component.h" />
-    <ClInclude Include="Include\ECS\Component\MeshRenderer.h" />
-    <ClInclude Include="Include\ECS\Component\Rotator.h" />
-    <ClInclude Include="Include\ECS\Component\Transform.h" />
-    <ClInclude Include="Include\ECS\Entity.h" />
     <ClInclude Include="Include\ECS\System\RenderSystem.h" />
-    <ClInclude Include="Include\ECS\World.h" />
     <ClInclude Include="Include\Main.h" />
     <ClInclude Include="Include\Scene\GameScene.h" />
     <ClInclude Include="Include\Scene\Scene.h" />
