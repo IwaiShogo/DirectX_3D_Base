@@ -20,38 +20,52 @@
 #ifndef ___GAMESCENE_H___
 #define ___GAMESCENE_H___
 
-// ===== インクルード =====
-#include "Scene/Scene.h"
-#include "ECS/Component/Transform.h"
-#include "ECS/Component/MeshRenderer.h"
-#include "ECS/Component/Rotator.h"
-//#include "ECS/Component/InputState.h"
-//#include "ECS/Component/PlayerMovement.h"
-#include "Systems/DirectX/DirectX.h" // DirectXクラス（GfxDevice）
-#include "Systems/DirectX/MeshBuffer.h" // MeshBuffer（MeshManager）
-#include "Systems/DirectX/ShaderList.h" // ShaderList
+#include "Scene.h"           // 基底クラス Scene
+#include "ECS/Coordinator.h" // ECSコア管理クラス
 
-class GameScene : public Scene
+// シーン内で利用する全てのSystemを前方宣言 (Coordinatorに登録するため)
+class MovementSystem;
+class RenderSystem;
+
+/**
+ * @class GameScene
+ * @brief 実際のゲームロジックとECSのライフサイクルを管理するシーン
+ */
+class GameScene
+    : public Scene
 {
+private:
+    // --------------------------------------------------
+    // ECS管理コア
+    // --------------------------------------------------
+    Coordinator coordinator_;
+
+    // --------------------------------------------------
+    // Systemのインスタンス (Coordinatorから取得し、毎フレーム実行のために保持)
+    // --------------------------------------------------
+    std::shared_ptr<MovementSystem> movementSystem_;
+    std::shared_ptr<RenderSystem> renderSystem_;
+
 public:
-    // 初期化時、SceneManagerから呼ばれる
-    void Initialize(SceneManager& manager) override;
+    GameScene() = default;
+    ~GameScene() override = default;
 
-    // 毎フレーム呼ばれる更新
-    void Update(float dt) override;
-
-    // 毎フレーム呼ばれる描画
+    // Sceneインターフェースの実装
+    void Initialize() override;
+    void Update(float deltaTime) override;
     void Draw() override;
-
-    // 終了処理
     void Finalize() override;
 
 private:
-    // RenderSystem初期化に必要な依存オブジェクトを保持 (仮の依存性注入)
-    DirectX* gfx_ = nullptr;
-    Camera* cam_ = nullptr; // 既存コードのCameraクラスを想定
-    MeshBuffer* meshMgr_ = nullptr;
-    ShaderList* shaderList_ = nullptr;
+    /**
+     * @brief ECSコア、Component、Systemの初期化と登録を行う
+     */
+    void SetupECS();
+
+    /**
+     * @brief ECS Entityの初期配置（テスト用Entityの生成など）を行う
+     */
+    void SetupEntities();
 };
 
 #endif // !___GAMESCENE_H___

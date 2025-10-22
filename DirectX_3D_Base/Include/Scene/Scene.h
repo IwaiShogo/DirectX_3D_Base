@@ -20,18 +20,9 @@
 #ifndef ___SCENE_H___
 #define ___SCENE_H___
 
-// ===== インクルード =====
-#include <string>
-#include <memory>
-#include "ECS/World.h"
-#include "ECS/System/RenderSystem.h" // RenderSystemを各シーンで保持・実行するため
-
-// ===== 前方宣言 =====
-class SceneManager;
-
 /**
- * @interface   Scene
- * @brief       各シーンの抽象基底クラス
+ * @class   Scene
+ * @brief   シーン管理のための抽象基底クラス
  */
 class Scene
 {
@@ -39,49 +30,28 @@ public:
     virtual ~Scene() = default;
 
     /**
-     * @brief   シーン開始時の初期化処理
-     * @details Worldの初期化、Entityの生成、RenderSystemなどのセットアップを行う
+     * @brief シーンの初期化処理
+     * @note ECSコンポーネントとシステム、およびシーン固有のリソースの読み込みを行う
      */
-    virtual void Initialize(SceneManager& manager) = 0;
+    virtual void Initialize() = 0;
 
     /**
-     * @brief 毎フレームの更新処理
-     * @param[in] dt デルタタイム
+     * @brief シーンの更新処理
+     * @param[in] deltaTime 前フレームからの経過時間（秒）
+     * @note ECSシステム（MovementSystemなど）のUpdateメソッドを呼び出す
      */
-    virtual void Update(float dt) = 0;
+    virtual void Update(float deltaTime) = 0;
 
     /**
-     * @brief 毎フレームの描画処理
+     * @brief シーンの描画処理
+     * @note ECSシステム（RenderSystemなど）のDrawメソッドを呼び出す
      */
     virtual void Draw() = 0;
 
     /**
-     * @brief シーン終了時の後処理
+     * @brief シーンの終了処理
      */
     virtual void Finalize() = 0;
-
-protected:
-    // 各シーンが独立したWorldとRenderSystemのインスタンスを所有
-    std::unique_ptr<World> world_;
-    std::unique_ptr<RenderSystem> renderer_;
-};
-
-/**
- * @class SceneManager
- * @brief シーン遷移と現在のシーンの更新・描画を管理するクラス
- */
-class SceneManager
-{
-public:
-    void RegisterScene(const std::string& name, std::unique_ptr<Scene> scene);
-    void ChangeScene(const std::string& name);
-    void Update(float deltaTime);
-    void Draw();
-
-private:
-    std::unordered_map<std::string, std::unique_ptr<Scene>> mScenes;
-    Scene* mCurrentScene = nullptr;
-    std::string mNextSceneName;
 };
 
 #endif // !___SCENE_H___
