@@ -1,12 +1,19 @@
 #ifndef ___COORDINATOR_H___
 #define ___COORDINATOR_H___
 
-
-
+// ===== インクルード =====
 #include "Types.h"
-#include "ComponentManager.h" // 後で実装
-#include "EntityManager.h"    // 後で実装
-#include "SystemManager.h"    // 後で実装
+#include "ComponentManager.h"
+#include "EntityManager.h"
+#include "SystemManager.h"
+
+/* Component */
+#include "ECS/Component/MeshRenderer.h"
+
+// ===== 前方宣言 =====
+// 外部リソースマネージャー
+class ModelManager;
+class TextureManager;
 
 /**
  * @class Coordinator
@@ -17,9 +24,14 @@
 class Coordinator
 {
 private:
-    std::unique_ptr<ComponentManager> componentManager_;
-    std::unique_ptr<EntityManager> entityManager_;
-    std::unique_ptr<SystemManager> systemManager_;
+    // ECS管理
+    std::unique_ptr<ComponentManager>   componentManager_;
+    std::unique_ptr<EntityManager>      entityManager_;
+    std::unique_ptr<SystemManager>      systemManager_;
+
+    // リソース管理
+    ModelManager*   modelManager_ = nullptr;
+    TextureManager* textureManager_ = nullptr;
 
 public:
     void Init()
@@ -113,6 +125,65 @@ public:
     {
         systemManager_->SetSignature<T>(signature);
     }
+
+    // -----------------------------------------
+    // リソースマネージャーの登録 (GameScene::Initializeで呼び出す)
+    // -----------------------------------------
+    void RegisterModelManager(ModelManager* manager)
+    {
+        modelManager_ = manager;
+    }
+
+    void RegisterTextureManager(TextureManager* manager)
+    {
+        textureManager_ = manager;
+    }
+
+    // -----------------------------------------
+    // リソースロードとEntityへのComponent付与のヘルパー関数
+    // -----------------------------------------
+
+    /**
+     * @brief モデルをロードし、MeshRenderer ComponentをEntityに付与するヘルパー
+     * @param[in] entity 対象のEntity ID
+     * @param[in] path モデルファイルのパス (例: "Assets/Model/cube.fbx")
+     * @param[in] texturePath テクスチャファイルのパス (ModelManagerがテクスチャを内部でロードする場合に利用)
+     * @return 成功した場合はModel ID、失敗した場合は0
+     */
+    std::uint32_t LoadModelAndAttachRenderer(Entity entity, const std::string& path, const std::string& texturePath = "")
+    {
+        if (!modelManager_ || !textureManager_)
+        {
+            // エラー処理
+            return 0;
+        }
+
+        // 1. モデルのロードまたは取得
+        std::uint32_t modelId = 0; // modelManager_->LoadModel(path); // 擬似コード
+
+        // 2. テクスチャのロードまたは取得
+        std::uint32_t textureId = 0; // textureManager_->LoadTexture(texturePath); // 擬似コード
+
+        if (modelId != 0)
+        {
+            // 3. MeshRenderer Componentを作成し、Entityに付与
+            MeshRenderer mr;
+            mr.meshId = modelId;
+            mr.textureId = textureId;
+            mr.isLoaded = true;
+
+            AddComponent(entity, mr);
+        }
+
+        return modelId;
+    }
+
+    // -----------------------------------------
+    // SystemがリソースにアクセスするためのGetter
+    // -----------------------------------------
+
+    ModelManager* GetModelManager() const { return modelManager_; }
+    TextureManager* GetTextureManager() const { return textureManager_; }
 };
 
 // --------------------------------------------------

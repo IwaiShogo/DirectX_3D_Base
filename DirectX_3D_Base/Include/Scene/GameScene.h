@@ -26,6 +26,8 @@
 // シーン内で利用する全てのSystemを前方宣言 (Coordinatorに登録するため)
 class MovementSystem;
 class RenderSystem;
+class InputSystem;
+class CollisionSystem;
 
 /**
  * @class GameScene
@@ -45,6 +47,8 @@ private:
     // --------------------------------------------------
     std::shared_ptr<MovementSystem> movementSystem_;
     std::shared_ptr<RenderSystem> renderSystem_;
+    std::shared_ptr<InputSystem> inputSystem_;
+    std::shared_ptr<CollisionSystem> collisionSystem_;
 
 public:
     GameScene() = default;
