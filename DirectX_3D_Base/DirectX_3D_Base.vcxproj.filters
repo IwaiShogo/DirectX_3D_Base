@@ -96,6 +96,9 @@
     <ClCompile Include="Source\Scene\SceneManager.cpp">
       <Filter>ソース ファイル\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\PhysicsSystem.cpp">
+      <Filter>ソース ファイル\ECS\Systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Systems\Geometory.h">
@@ -162,6 +165,15 @@
       <Filter>ヘッダー ファイル\ECS\Components</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Systems\RenderSystem.h">
+      <Filter>ヘッダー ファイル\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\RigidBodyComponent.h">
+      <Filter>ヘッダー ファイル\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\CollisionComponent.h">
+      <Filter>ヘッダー ファイル\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\PhysicsSystem.h">
       <Filter>ヘッダー ファイル\ECS\Systems</Filter>
     </ClInclude>
   </ItemGroup>

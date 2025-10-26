@@ -135,6 +135,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\ECS\Systems\PhysicsSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\RenderSystem.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Scene\GameScene.cpp" />
@@ -153,11 +154,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\ECS\ComponentManager.h" />
+    <ClInclude Include="Include\ECS\Components\CollisionComponent.h" />
     <ClInclude Include="Include\ECS\Components\RenderComponent.h" />
+    <ClInclude Include="Include\ECS\Components\RigidBodyComponent.h" />
     <ClInclude Include="Include\ECS\Components\TransformComponent.h" />
     <ClInclude Include="Include\ECS\Coordinator.h" />
     <ClInclude Include="Include\ECS\EntityManager.h" />
     <ClInclude Include="Include\ECS\SystemManager.h" />
+    <ClInclude Include="Include\ECS\Systems\PhysicsSystem.h" />
     <ClInclude Include="Include\ECS\Systems\RenderSystem.h" />
     <ClInclude Include="Include\ECS\Types.h" />
     <ClInclude Include="Include\Main.h" />

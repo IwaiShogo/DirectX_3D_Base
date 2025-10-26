@@ -29,6 +29,7 @@
 
 // ===== 前方宣言 =====
 class RenderSystem;
+class PhysicsSystem;
 
  /**
   * @class GameScene
@@ -43,6 +44,7 @@ private:
 
 	// 常に利用するSystemへの参照を保持 (Update/Drawの呼び出しを容易にする)
 	std::shared_ptr<RenderSystem> m_renderSystem;
+	std::shared_ptr<PhysicsSystem> m_physicsSystem;
 
 	// ECSのグローバルアクセス用 (SystemなどがECS操作を行うための窓口)
 	static ECS::Coordinator* s_coordinator;

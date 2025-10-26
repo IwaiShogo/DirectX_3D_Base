@@ -24,9 +24,11 @@
 // Component
 #include "ECS/Components/TransformComponent.h"
 #include "ECS/Components/RenderComponent.h"
+#include "ECS/Components/RigidBodyComponent.h"
 
 // System
 #include "ECS/Systems/RenderSystem.h"
+#include "ECS/Systems/PhysicsSystem.h"
 
 #include <DirectXMath.h>
 #include <iostream>
@@ -76,6 +78,9 @@ static void CreateDemoEntities(ECS::Coordinator* coordinator)
 		RenderComponent(
 			MESH_BOX,
 			XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f)
+		),
+		RigidBodyComponent(
+
 		)
 	);
 
@@ -118,17 +123,26 @@ void GameScene::Init()
 	// --- 2. Component‚Ì“o˜^ ---
 	m_coordinator->RegisterComponentType<TransformComponent>();
 	m_coordinator->RegisterComponentType<RenderComponent>();
+	m_coordinator->RegisterComponentType<RigidBodyComponent>();
 
 	// --- 3. System‚Ì“o˜^‚ÆSignature‚ÌÝ’è ---
 	// RenderSystem‚Ì“o˜^
 	m_renderSystem = m_coordinator->RegisterSystem<RenderSystem>();
 
-	// RenderSystem‚Ì‰Šú‰»‚ÆSignature‚ÌÝ’è
-	m_renderSystem->Init();
 	ECS::Signature renderSignature;
 	renderSignature.set(m_coordinator->GetComponentTypeID<TransformComponent>());
 	renderSignature.set(m_coordinator->GetComponentTypeID<RenderComponent>());
 	m_coordinator->SetSystemSignature<RenderSystem>(renderSignature);
+	m_renderSystem->Init();
+
+	// PhysicsSystem‚Ì“o˜^
+	m_physicsSystem = m_coordinator->RegisterSystem<PhysicsSystem>();
+
+	ECS::Signature physicsSignature;
+	physicsSignature.set(m_coordinator->GetComponentTypeID<TransformComponent>());
+	physicsSignature.set(m_coordinator->GetComponentTypeID<RigidBodyComponent>());
+	m_coordinator->SetSystemSignature<PhysicsSystem>(physicsSignature);
+	m_physicsSystem->Init();
 
 	// --- 4. ƒfƒ‚—pEntity‚Ìì¬ ---
 	CreateDemoEntities(m_coordinator.get());
@@ -175,6 +189,10 @@ void GameScene::Update(float deltaTime)
 	}
 
 	// TODO: PhysicsSystem‚È‚Ç‚ªŽÀ‘•‚³‚ê‚½‚çA‚±‚±‚ÅUpdateSystem‚ðŽÀs‚·‚é
+	if (m_physicsSystem)
+	{
+		m_physicsSystem->Update();
+	}
 }
 
 void GameScene::Draw()
