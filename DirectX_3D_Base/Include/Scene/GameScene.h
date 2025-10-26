@@ -28,6 +28,7 @@ class MovementSystem;
 class RenderSystem;
 class InputSystem;
 class CollisionSystem;
+class CameraSystem;
 
 /**
  * @class GameScene
@@ -49,6 +50,10 @@ private:
     std::shared_ptr<RenderSystem> renderSystem_;
     std::shared_ptr<InputSystem> inputSystem_;
     std::shared_ptr<CollisionSystem> collisionSystem_;
+    std::shared_ptr<CameraSystem> cameraSystem_;
+
+    // ƒƒCƒ“ƒJƒƒ‰‚ÌEntity ID
+    Entity mainCameraEntity_ = 0;
 
 public:
     GameScene() = default;

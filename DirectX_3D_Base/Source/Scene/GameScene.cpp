@@ -25,11 +25,13 @@
 #include "ECS/Component/MeshRenderer.h"
 #include "ECS/Component/Input.h"
 #include "ECS/Component/Collider.h"
+#include "ECS/Component/Camera.h"
 // System
 #include "ECS/System/MovementSystem.h"
 #include "ECS/System/RenderSystem.h"
 #include "ECS/System/InputSystem.h"
 #include "ECS/System/CollisionSystem.h"
+#include "ECS/System/CameraSystem.h"
 
 /* リソースマネージャー */
 #include "Systems/Model.h"
@@ -42,10 +44,6 @@
 //    ここではECSのコア構造をシンプルに動作させるため、GameSceneが保持するインスタンスへの
 //    グローバルアクセスを許可する形で定義します。
 Coordinator* g_pCoordinator = nullptr;
-
-// 既存のマネージャーのインスタンス
-ModelManager g_ModelManager;
-TextureManager g_TextureManager;
 
 // --------------------------------------------------
 // 内部関数: ECSの初期設定
@@ -65,6 +63,7 @@ void GameScene::SetupECS()
     coordinator_.RegisterComponent<MeshRenderer>();
     coordinator_.RegisterComponent<Input>();
     coordinator_.RegisterComponent<Collider>();
+    coordinator_.RegisterComponent<CameraSetting>();
     // ... 今後追加する Component (例: Input, Health, Collider) もここに追加
 
     // 3. Systemの登録とSignatureの設定
@@ -100,9 +99,13 @@ void GameScene::SetupECS()
     coordinator_.SetSystemSignature<CollisionSystem>(collisionSignature);
     //collisionSystem_->Initialize();
 
-    // 4. リソースマネージャーの登録
-    coordinator_.RegisterModelManager(&g_ModelManager);
-    coordinator_.RegisterTextureManager(&g_TextureManager);
+    // CameraSystemの登録とシグネチャ設定
+    cameraSystem_ = coordinator_.RegisterSystem<CameraSystem>(); // ★追加
+    Signature cameraSignature;
+    cameraSignature.set(coordinator_.GetComponentType<Transform>(), true);
+    cameraSignature.set(coordinator_.GetComponentType<CameraSetting>(), true);
+    coordinator_.SetSystemSignature<CameraSystem>(cameraSignature);
+    cameraSystem_->Initialize();
 
     // 4. グローバルなCoordinatorへの参照を設定
     // GameSceneが持つインスタンスをグローバル参照に設定
@@ -115,6 +118,26 @@ void GameScene::SetupECS()
  */
 void GameScene::SetupEntities()
 {
+    // --------------------------------------------------
+    // メインカメラ Entityの生成
+    // --------------------------------------------------
+    mainCameraEntity_ = coordinator_.CreateEntity();
+
+    // Transform
+    Transform camT;
+    camT.position = { 0.0f, 10.0f, -20.0f };
+    camT.rotation = { 20.0f, 0.0f, 0.0f };
+    coordinator_.AddComponent(mainCameraEntity_, camT);
+
+    // CameraSetting
+    CameraSetting camS;
+    camS.aspectRatio = 1280.0f / 720.0f;
+    coordinator_.AddComponent(mainCameraEntity_, camS);
+
+
+
+
+
     // テスト用のEntityを生成
     Entity cube = coordinator_.CreateEntity();
 
@@ -159,6 +182,9 @@ void GameScene::Update(float deltaTime)
     // 1. InputSystemの更新（外部の状態をECSデータに書き込む）
     inputSystem_->Update(deltaTime);
 
+    // 2. カメラSystemの更新
+    cameraSystem_->Update(deltaTime);
+
     // 2. ロジックSystemの更新
     // MovementSystemはTransform Componentを更新し、位置を変化させる
     movementSystem_->Update(deltaTime);
@@ -190,6 +216,17 @@ void GameScene::Draw()
     // renderSystem_->Draw(cam, meshMgr); 
 
     // DirectXの描画終了処理（例: Presentなど）
+
+    // 1. カメラSystemから最新のViewProjection行列を取得
+    // CameraSystemは既にUpdateで計算済み
+    DirectX::XMMATRIX viewProjMatrix = cameraSystem_->GetViewProjectionMatrix(); // ★修正
+
+    // 2. RenderSystemの実行
+    // RenderSystem.hのDrawメソッドのシグネチャに合わせて、ダミーのMeshManagerを使用
+    class DummyMeshManager {};
+    DummyMeshManager meshMgr;
+
+    renderSystem_->Draw(viewProjMatrix, meshMgr); // ★修正: ViewProj行列を渡す
 
 }
 

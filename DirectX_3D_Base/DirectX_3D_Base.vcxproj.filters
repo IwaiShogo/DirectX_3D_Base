@@ -164,5 +164,14 @@
     <ClInclude Include="Include\ECS\System\CollisionSystem.h">
       <Filter>ヘッダー ファイル\ECS\System</Filter>
     </ClInclude>
+    <ClInclude Include="Include\Systems\Camera.h">
+      <Filter>ヘッダー ファイル\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Component\Camera.h">
+      <Filter>ヘッダー ファイル\ECS\Component</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\System\CameraSystem.h">
+      <Filter>ヘッダー ファイル\ECS\System</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
