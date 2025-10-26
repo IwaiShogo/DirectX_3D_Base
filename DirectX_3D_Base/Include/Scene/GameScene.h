@@ -21,7 +21,7 @@
 #define ___GAMESCENE_H___
 
 #include "Scene.h"           // 基底クラス Scene
-#include "ECS/Coordinator.h" // ECSコア管理クラス
+
 
 // シーン内で利用する全てのSystemを前方宣言 (Coordinatorに登録するため)
 class MovementSystem;
@@ -38,22 +38,7 @@ class GameScene
     : public Scene
 {
 private:
-    // --------------------------------------------------
-    // ECS管理コア
-    // --------------------------------------------------
-    Coordinator coordinator_;
 
-    // --------------------------------------------------
-    // Systemのインスタンス (Coordinatorから取得し、毎フレーム実行のために保持)
-    // --------------------------------------------------
-    std::shared_ptr<MovementSystem> movementSystem_;
-    std::shared_ptr<RenderSystem> renderSystem_;
-    std::shared_ptr<InputSystem> inputSystem_;
-    std::shared_ptr<CollisionSystem> collisionSystem_;
-    std::shared_ptr<CameraSystem> cameraSystem_;
-
-    // メインカメラのEntity ID
-    Entity mainCameraEntity_ = 0;
 
 public:
     GameScene() = default;

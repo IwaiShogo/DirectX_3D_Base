@@ -150,21 +150,6 @@
     <ClCompile Include="Source\Works\_model.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\ECS\ComponentManager.h" />
-    <ClInclude Include="Include\ECS\Component\Camera.h" />
-    <ClInclude Include="Include\ECS\Component\Input.h" />
-    <ClInclude Include="Include\ECS\Component\MeshRenderer.h" />
-    <ClInclude Include="Include\ECS\Component\Transform.h" />
-    <ClInclude Include="Include\ECS\Component\Collider.h" />
-    <ClInclude Include="Include\ECS\Coordinator.h" />
-    <ClInclude Include="Include\ECS\EntityManager.h" />
-    <ClInclude Include="Include\ECS\SystemManager.h" />
-    <ClInclude Include="Include\ECS\System\CameraSystem.h" />
-    <ClInclude Include="Include\ECS\System\CollisionSystem.h" />
-    <ClInclude Include="Include\ECS\System\InputSystem.h" />
-    <ClInclude Include="Include\ECS\System\MovementSystem.h" />
-    <ClInclude Include="Include\ECS\System\RenderSystem.h" />
-    <ClInclude Include="Include\ECS\Types.h" />
     <ClInclude Include="Include\Main.h" />
     <ClInclude Include="Include\Scene\GameScene.h" />
     <ClInclude Include="Include\Scene\Scene.h" />

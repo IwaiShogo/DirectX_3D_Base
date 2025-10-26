@@ -89,15 +89,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\ECS\System\RenderSystem.h">
-      <Filter>ヘッダー ファイル\ECS\System</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Component\Transform.h">
-      <Filter>ヘッダー ファイル\ECS\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Component\MeshRenderer.h">
-      <Filter>ヘッダー ファイル\ECS\Component</Filter>
-    </ClInclude>
     <ClInclude Include="Include\Systems\Geometory.h">
       <Filter>ヘッダー ファイル\Systems</Filter>
     </ClInclude>
@@ -134,44 +125,8 @@
     <ClInclude Include="Include\Scene\GameScene.h">
       <Filter>ヘッダー ファイル\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Include\ECS\Component\Input.h">
-      <Filter>ヘッダー ファイル\ECS\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\System\InputSystem.h">
-      <Filter>ヘッダー ファイル\ECS\System</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\ComponentManager.h">
-      <Filter>ヘッダー ファイル\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\SystemManager.h">
-      <Filter>ヘッダー ファイル\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Coordinator.h">
-      <Filter>ヘッダー ファイル\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\EntityManager.h">
-      <Filter>ヘッダー ファイル\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Types.h">
-      <Filter>ヘッダー ファイル\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\System\MovementSystem.h">
-      <Filter>ヘッダー ファイル\ECS\System</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Component\Collider.h">
-      <Filter>ヘッダー ファイル\ECS\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\System\CollisionSystem.h">
-      <Filter>ヘッダー ファイル\ECS\System</Filter>
-    </ClInclude>
     <ClInclude Include="Include\Systems\Camera.h">
       <Filter>ヘッダー ファイル\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Component\Camera.h">
-      <Filter>ヘッダー ファイル\ECS\Component</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\System\CameraSystem.h">
-      <Filter>ヘッダー ファイル\ECS\System</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
