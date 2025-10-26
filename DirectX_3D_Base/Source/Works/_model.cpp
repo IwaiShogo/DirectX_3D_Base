@@ -78,6 +78,7 @@ void Model::MakeMesh(const void* ptr, float scale, Flip flip)
 		m_meshes[i].pMesh->Create(desc);
 	}
 }
+
 void Model::MakeMaterial(const void* ptr, std::string directory)
 {
 	// –‘O€”õ

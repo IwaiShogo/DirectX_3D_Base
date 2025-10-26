@@ -30,6 +30,9 @@
 #include "Systems/Sprite.h"
 #include "Systems/Input.h"
 
+// Scene
+#include "Scene/SceneManager.h"
+
 #include <stdio.h>
 #include <iostream>
 #include <crtdbg.h>
@@ -41,7 +44,7 @@
 // ===== プロトタイプ宣言 =====
 int Init(HINSTANCE hInstance, int nCmdShow);	// 初期化
 void Uninit();									// 終了
-void Update();									// 更新
+void Update(float deltaTime);					// 更新
 void Draw();									// 描画
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -118,7 +121,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				// ***************************** //
 				//          ▼ 更新処理          //
 				// ***************************** //
-				Update();
+				Update(0.016666666f);
 
 				// ***************************** //
 				//          ▼ 描画処理          //
@@ -198,11 +201,19 @@ int Init(HINSTANCE hInstance, int nCmdShow)
 	InitInput();		// Input
 	ShaderList::Init();	// ShaderList
 
+	// シーンマネージャー
+	SceneManager::Init();
+	SceneManager::RegisterScene<GameScene>();
+	SceneManager::ChangeScene<GameScene>();
+
 	return 0;
 }
 
 void Uninit()
 {
+	// シーンマネージャー
+	SceneManager::Uninit();
+
 	ShaderList::Uninit();
 	UninitInput();
 	Sprite::Uninit();
@@ -210,135 +221,19 @@ void Uninit()
 	UninitDirectX();
 }
 
-void Update()
+void Update(float deltaTime)
 {
 	UpdateInput();
+
+	// シーンマネージャー
+	SceneManager::Update(deltaTime);
 }
 
 void Draw()
 {
 	BeginDrawDirectX();
 	
-
-	// 軸線の表示
-#ifdef _DEBUG
-	// グリッド
-	DirectX::XMFLOAT4 lineColor(0.5f, 0.5f, 0.5f, 1.0f);
-	float size = DEBUG_GRID_NUM * DEBUG_GRID_MARGIN;
-	for (int i = 1; i <= DEBUG_GRID_NUM; ++i)
-	{
-		float grid = i * DEBUG_GRID_MARGIN;
-		DirectX::XMFLOAT3 pos[2] = {
-			DirectX::XMFLOAT3(grid, 0.0f, size),
-			DirectX::XMFLOAT3(grid, 0.0f,-size),
-		};
-		Geometory::AddLine(pos[0], pos[1], lineColor);
-		pos[0].x = pos[1].x = -grid;
-		Geometory::AddLine(pos[0], pos[1], lineColor);
-		pos[0].x = size;
-		pos[1].x = -size;
-		pos[0].z = pos[1].z = grid;
-		Geometory::AddLine(pos[0], pos[1], lineColor);
-		pos[0].z = pos[1].z = -grid;
-		Geometory::AddLine(pos[0], pos[1], lineColor);
-	}
-	// 軸
-	Geometory::AddLine(DirectX::XMFLOAT3(0, 0, 0), DirectX::XMFLOAT3(size, 0, 0), DirectX::XMFLOAT4(1, 0, 0, 1));
-	Geometory::AddLine(DirectX::XMFLOAT3(0, 0, 0), DirectX::XMFLOAT3(0, size, 0), DirectX::XMFLOAT4(0, 1, 0, 1));
-	Geometory::AddLine(DirectX::XMFLOAT3(0, 0, 0), DirectX::XMFLOAT3(0, 0, size), DirectX::XMFLOAT4(0, 0, 1, 1));
-	Geometory::AddLine(DirectX::XMFLOAT3(0, 0, 0), DirectX::XMFLOAT3(-size, 0, 0), DirectX::XMFLOAT4(0, 0, 0, 1));
-	Geometory::AddLine(DirectX::XMFLOAT3(0, 0, 0), DirectX::XMFLOAT3(0, 0, -size), DirectX::XMFLOAT4(0, 0, 0, 1));
-
-	Geometory::DrawLines();
-
-	// カメラの値
-	static bool camAutoSwitch = false;
-	static bool camUpDownSwitch = true;
-	static float camAutoRotate = 1.0f;
-	if (IsKeyTrigger(VK_RETURN)) {
-		camAutoSwitch ^= true;
-	}
-	if (IsKeyTrigger(VK_SPACE)) {
-		camUpDownSwitch ^= true;
-	}
-
-	DirectX::XMVECTOR camPos;
-	if (camAutoSwitch) {
-		camAutoRotate += 0.01f;
-	}
-	camPos = DirectX::XMVectorSet(
-		cosf(camAutoRotate) * 5.0f,
-		3.5f * (camUpDownSwitch ? 1.0f : -1.0f),
-		sinf(camAutoRotate) * 5.0f,
-		0.0f);
-
-	// ジオメトリ用カメラ初期化
-	DirectX::XMFLOAT4X4 mat[2];
-	DirectX::XMStoreFloat4x4(&mat[0], DirectX::XMMatrixTranspose(
-		DirectX::XMMatrixLookAtLH(
-			camPos,
-			DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
-			DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)
-		)));
-	DirectX::XMStoreFloat4x4(&mat[1], DirectX::XMMatrixTranspose(
-		DirectX::XMMatrixPerspectiveFovLH(
-			DirectX::XMConvertToRadians(60.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1f, 1000.0f)
-	));
-	Geometory::SetView(mat[0]);
-	Geometory::SetProjection(mat[1]);
-#endif
-
-
-	// ***** 後々ゲームシーンに移動 *****
-	//--- １つ目の地面 
-	DirectX::XMMATRIX T = DirectX::XMMatrixTranslation(0.0f, -0.1f, 0.0f);   // 天面がグリッドよりも下に来るように移動 
-	DirectX::XMMATRIX S = DirectX::XMMatrixScaling(10.0f, 0.2f, 10.0f); // 地面となるように、前後左右に広く、上下に狭くする 
-	DirectX::XMMATRIX mat1 = S * T;
-	mat1 = DirectX::XMMatrixTranspose(mat1);
-	DirectX::XMFLOAT4X4 fMat; // 行列の格納先 
-	DirectX::XMStoreFloat4x4(&fMat, mat1);
-	Geometory::SetWorld(fMat); // ボックスに変換行列を設定 
-	Geometory::DrawBox();
-
-	//--- 2つ目の地面 
-	T = DirectX::XMMatrixTranslation(0.0f, 1.0f, 0.0f);
-	S = DirectX::XMMatrixScaling(0.2f, 3.0f, 0.2f);
-	mat1 = S * T;
-	mat1 = DirectX::XMMatrixTranspose(mat1);
-	DirectX::XMStoreFloat4x4(&fMat, mat1);
-	Geometory::SetWorld(fMat);
-	Geometory::DrawBox();
-
-	static float rad = 0.0f;
-	static float newY;
-	DirectX::XMMATRIX Rx = DirectX::XMMatrixRotationX(0.0f);
-	DirectX::XMMATRIX Ry = DirectX::XMMatrixRotationY(rad);
-	DirectX::XMMATRIX Rz = DirectX::XMMatrixRotationZ(0.0f);
-	T = DirectX::XMMatrixTranslation(1.0f, newY, 0.0f);   // ゴールの場所へ移動 
-	mat1 = Rx * Ry * Rz * T; // 移動➡回転？ 回転➡移動？ 
-	mat1 = DirectX::XMMatrixTranspose(mat1);
-	DirectX::XMStoreFloat4x4(&fMat, mat1);
-	Geometory::SetWorld(fMat); // ボックスに変換行列を設定 
-	// rad += 回転角の更新(速度はお任せ); の部分
-	const float ROTATION_INCREMENT = 1.01f; // 1フレームあたり0.01ラジアン回転
-	rad += ROTATION_INCREMENT;
-
-	static float time = 0.0f; // 実行時間を模倣した変数
-	const float CENTER_Y = 1.5f; // 振動の中心となるY座標 (元のTのY座標)
-	const float AMPLITUDE = 0.5f; // 振動の振幅 (上下にどれだけ動くか)
-	const float FREQUENCY = 2.0f; // 振動の周波数 (速度。値が大きいほど速い)
-	const float TIME_INCREMENT = 0.05f; // 毎フレームの時間の進み具合
-	time += TIME_INCREMENT;
-	// Y軸座標の計算
-	newY = CENTER_Y + AMPLITUDE * sin(time * FREQUENCY);
-
-	// ラジアン値が360度（2π）を超えたらリセット
-	if (rad > DirectX::XM_2PI)
-	{
-		rad -= DirectX::XM_2PI;
-	}
-
-	Geometory::DrawBox();
+	SceneManager::Draw();
 
 	EndDrawDirectX();
 }

@@ -33,7 +33,7 @@ public:
      * @brief シーンの初期化処理
      * @note ECSコンポーネントとシステム、およびシーン固有のリソースの読み込みを行う
      */
-    virtual void Initialize() = 0;
+    virtual void Init() = 0;
 
     /**
      * @brief シーンの更新処理
@@ -51,7 +51,7 @@ public:
     /**
      * @brief シーンの終了処理
      */
-    virtual void Finalize() = 0;
+    virtual void Uninit() = 0;
 };
 
 #endif // !___SCENE_H___

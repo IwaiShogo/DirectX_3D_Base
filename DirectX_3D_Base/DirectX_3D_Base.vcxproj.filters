@@ -34,17 +34,20 @@
     <Filter Include="ソース ファイル\ECS">
       <UniqueIdentifier>{ab54a844-6796-48ff-bfe3-5df7a4d741aa}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ヘッダー ファイル\ECS\Component">
-      <UniqueIdentifier>{f1b12d4f-2365-4976-95b3-59b238056779}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ヘッダー ファイル\ECS\System">
-      <UniqueIdentifier>{7fdb1c5d-9d9c-4a9e-88eb-682d41740792}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ヘッダー ファイル\Scene">
       <UniqueIdentifier>{f9e0378e-30c0-4d4b-bccd-406304170bdc}</UniqueIdentifier>
     </Filter>
     <Filter Include="ソース ファイル\Scene">
       <UniqueIdentifier>{04c0e80d-aae4-478f-bc0c-3e45d0ad71c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\ECS\Systems">
+      <UniqueIdentifier>{a67027e4-c59f-4663-83c9-268ac688139f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\ECS\Components">
+      <UniqueIdentifier>{f1b12d4f-2365-4976-95b3-59b238056779}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\ECS\Systems">
+      <UniqueIdentifier>{7fdb1c5d-9d9c-4a9e-88eb-682d41740792}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -87,6 +90,12 @@
     <ClCompile Include="Source\Scene\GameScene.cpp">
       <Filter>ソース ファイル\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\RenderSystem.cpp">
+      <Filter>ソース ファイル\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\SceneManager.cpp">
+      <Filter>ソース ファイル\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Systems\Geometory.h">
@@ -127,6 +136,33 @@
     </ClInclude>
     <ClInclude Include="Include\Systems\Camera.h">
       <Filter>ヘッダー ファイル\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Types.h">
+      <Filter>ヘッダー ファイル\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\ComponentManager.h">
+      <Filter>ヘッダー ファイル\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\EntityManager.h">
+      <Filter>ヘッダー ファイル\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\SystemManager.h">
+      <Filter>ヘッダー ファイル\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Coordinator.h">
+      <Filter>ヘッダー ファイル\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\SceneManager.h">
+      <Filter>ヘッダー ファイル\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\RenderComponent.h">
+      <Filter>ヘッダー ファイル\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\TransformComponent.h">
+      <Filter>ヘッダー ファイル\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\RenderSystem.h">
+      <Filter>ヘッダー ファイル\ECS\Systems</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
