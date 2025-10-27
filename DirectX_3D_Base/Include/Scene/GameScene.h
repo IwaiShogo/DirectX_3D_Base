@@ -22,6 +22,7 @@
 #ifndef ___GAME_SCENE_H___
 #define ___GAME_SCENE_H___
 
+// ===== インクルード =====
 #include "Scene.h"
 #include "ECS/Coordinator.h"
 
@@ -30,6 +31,9 @@
 // ===== 前方宣言 =====
 class RenderSystem;
 class PhysicsSystem;
+class PlayerControlSystem;
+class CollisionSystem;
+class CameraControlSystem;
 
  /**
   * @class GameScene
@@ -43,8 +47,11 @@ private:
 	std::unique_ptr<ECS::Coordinator> m_coordinator;
 
 	// 常に利用するSystemへの参照を保持 (Update/Drawの呼び出しを容易にする)
-	std::shared_ptr<RenderSystem> m_renderSystem;
-	std::shared_ptr<PhysicsSystem> m_physicsSystem;
+	std::shared_ptr<RenderSystem>			m_renderSystem;
+	std::shared_ptr<PhysicsSystem>			m_physicsSystem;
+	std::shared_ptr<PlayerControlSystem>	m_playerControlSystem;
+	std::shared_ptr<CollisionSystem>		m_collisionSystem;
+	std::shared_ptr<CameraControlSystem>	m_cameraControlSystem;
 
 	// ECSのグローバルアクセス用 (SystemなどがECS操作を行うための窓口)
 	static ECS::Coordinator* s_coordinator;

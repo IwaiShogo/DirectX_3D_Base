@@ -1,0 +1,63 @@
+/*****************************************************************//**
+ * @file	CameraControlSystem.h
+ * @brief	CameraComponentとRenderSystemのDrawSetupを連携し、カメラの追従と設定を行うSystem。
+ * 
+ * @details	
+ * 
+ * ------------------------------------------------------------
+ * @author	Iwai Shogo
+ * ------------------------------------------------------------
+ * 
+ * @date	2025/10/28	初回作成日
+ * 			作業内容：	- 追加：ECS::Systemを継承した `CameraControlSystem` を作成。
+ * 
+ * @update	2025/xx/xx	最終更新日
+ * 			作業内容：	- XX：
+ * 
+ * @note	（省略可）
+ *********************************************************************/
+
+#ifndef ___CAMERA_CONTROL_SYSTEM_H___
+#define ___CAMERA_CONTROL_SYSTEM_H___
+
+// ===== インクルード =====
+// ECS
+#include "ECS/Coordinator.h"
+#include "ECS/SystemManager.h"
+// Components
+#include "ECS/Components/TransformComponent.h"
+#include "ECS/Components/CameraComponent.h"
+// Scene
+#include "Scene/GameScene.h" 
+#include "Main.h" // 画面サイズ定数にアクセス
+#include <DirectXMath.h>
+
+/**
+ * @class CameraControlSystem
+ * @brief カメラの追従ロジックとビュー・プロジェクション行列の計算を担当
+ * 
+ * 処理対象: CameraComponent を持つ Entity
+ */
+class CameraControlSystem : public ECS::System
+{
+private:
+	ECS::Coordinator* m_coordinator;
+
+	// 現在のカメラの位置と注視点（前フレームの結果を保持し、補間に使用）
+	DirectX::XMFLOAT3 m_currentCameraPos;
+	DirectX::XMFLOAT3 m_currentLookAt;
+
+public:
+	void Init()
+	{
+		m_coordinator = GameScene::GetCoordinator();
+		// 初期値設定 (デモ描画時の初期位置に合わせる)
+		m_currentCameraPos = DirectX::XMFLOAT3(0.0f, 3.5f, 5.0f);
+		m_currentLookAt = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+	}
+
+	/// @brief カメラの位置を計算し、RenderSystemのカメラ設定関数を呼び出す
+	void Update();
+};
+
+#endif // !___CAMERA_CONTROL_SYSTEM_H___

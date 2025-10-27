@@ -20,6 +20,8 @@
 #define ___MAIN_H___
 
 // ===== 定数・マクロ定義 =====
+#define NOMINMAX
+
 /* リソースパス */
 #define ASSET(path)	"Assets/"path
 
@@ -28,7 +30,7 @@
 #define METER(value) (value * 1.0f)
 #define MSEC(value) (value / fFPS)
 #define CMSEC(value) MSEC(CMETER(value))
-static const float GRAVITY = 0.98f;
+static const float GRAVITY = 5.98f;
  
 // @brief	画面サイズ
 static const int SCREEN_WIDTH	= 1280;

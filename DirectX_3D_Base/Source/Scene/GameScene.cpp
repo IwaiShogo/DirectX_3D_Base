@@ -25,10 +25,16 @@
 #include "ECS/Components/TransformComponent.h"
 #include "ECS/Components/RenderComponent.h"
 #include "ECS/Components/RigidBodyComponent.h"
+#include "ECS/Components/CollisionComponent.h"
+#include "ECS/Components/PlayerControlComponent.h"
+#include "ECS/Components/CameraComponent.h"
 
 // System
 #include "ECS/Systems/RenderSystem.h"
 #include "ECS/Systems/PhysicsSystem.h"
+#include "ECS/Systems/CollisionSystem.h"
+#include "ECS/Systems/PlayerControlSystem.h"
+#include "ECS/Systems/CameraControlSystem.h"
 
 #include <DirectXMath.h>
 #include <iostream>
@@ -55,45 +61,93 @@ using namespace DirectX;
  */
 static void CreateDemoEntities(ECS::Coordinator* coordinator)
 {
-	// --- 1. 1つ目の地面 (Transform + Render) ---
+	// --- 1. 1つ目の地面（静的オブジェクト） ---
 	ECS::EntityID ground1 = coordinator->CreateEntity(
 		TransformComponent(
-			XMFLOAT3(0.0f, -0.1f, 0.0f),
-			XMFLOAT3(0.0f, 0.0f, 0.0f),
-			XMFLOAT3(10.0f, 0.2f, 10.0f)
+			/* Position	*/	XMFLOAT3(0.0f, -0.1f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(10.0f, 0.2f, 10.0f)
 		),
 		RenderComponent(
-			MESH_BOX,
-			XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
+			/* MeshType	*/	MESH_BOX,
+			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
+		),
+		RigidBodyComponent(
+			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass			*/	0.0f,
+			/* Friction		*/	0.8f,
+			/* Restitution	*/	0.2f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(5.0f, 0.1f, 5.0f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_STATIC
 		)
 	);
 
 	// --- 2. 2つ目の地面（柱） (Transform + Render) ---
 	ECS::EntityID ground2 = coordinator->CreateEntity(
 		TransformComponent(
-			XMFLOAT3(0.0f, 1.0f, 0.0f),
-			XMFLOAT3(0.0f, 0.0f, 0.0f),
-			XMFLOAT3(0.2f, 3.0f, 0.2f)
+			/* Position	*/	XMFLOAT3(0.0f, 1.0f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(0.2f, 3.0f, 0.2f)
 		),
 		RenderComponent(
-			MESH_BOX,
-			XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f)
+			/* MeshType	*/	MESH_BOX,
+			/* Color	*/	XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f)
 		),
 		RigidBodyComponent(
-
+			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass			*/	0.0f,
+			/* Friction		*/	0.8f,
+			/* Restitution	*/	0.2f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(0.1f, 0.5f, 0.1f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_STATIC
 		)
 	);
 
 	// --- 3. 回転する箱 (Transform + Render) ---
-	ECS::EntityID rotatingBox = coordinator->CreateEntity(
+	ECS::EntityID player = coordinator->CreateEntity(
 		TransformComponent(
-			XMFLOAT3(1.0f, 1.5f, 0.0f),
-			XMFLOAT3(0.0f, SceneDemo::RotationRad, 0.0f),
-			XMFLOAT3(1.0f, 1.0f, 1.0f)
+			/* Position	*/	XMFLOAT3(1.0f, 1.5f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			MESH_BOX,
-			XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
+			/* MeshType	*/	MESH_BOX,
+			/* Color	*/	XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
+		),
+		RigidBodyComponent(
+			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass			*/	1.0f,
+			/* Friction		*/	0.8f,
+			/* Restitution	*/	0.2f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_DYNAMIC // 動的
+		),
+		PlayerControlComponent(
+			/* MoveSpeed	*/	4.0f,
+			/* JumpPower	*/	3.0f
+		)
+	);
+
+	const static ECS::EntityID s_playerID = player;
+
+	// カメラEntityの生成（プレイヤー EntityID を追従対象に設定）
+	ECS::EntityID mainCamera = coordinator->CreateEntity(
+		CameraComponent(
+			/* FocusID		*/	s_playerID,
+			/* Offset		*/	XMFLOAT3(0.0f, METER(3.0f), METER(-5.0f)),
+			/* FollowSpeed	*/	0.1f
 		)
 	);
 }
@@ -124,6 +178,9 @@ void GameScene::Init()
 	m_coordinator->RegisterComponentType<TransformComponent>();
 	m_coordinator->RegisterComponentType<RenderComponent>();
 	m_coordinator->RegisterComponentType<RigidBodyComponent>();
+	m_coordinator->RegisterComponentType<CollisionComponent>();
+	m_coordinator->RegisterComponentType<PlayerControlComponent>();
+	m_coordinator->RegisterComponentType<CameraComponent>();
 
 	// --- 3. Systemの登録とSignatureの設定 ---
 	// RenderSystemの登録
@@ -143,6 +200,33 @@ void GameScene::Init()
 	physicsSignature.set(m_coordinator->GetComponentTypeID<RigidBodyComponent>());
 	m_coordinator->SetSystemSignature<PhysicsSystem>(physicsSignature);
 	m_physicsSystem->Init();
+
+	// PlayerControlSystemの登録
+	m_playerControlSystem = m_coordinator->RegisterSystem<PlayerControlSystem>();
+	// Signature設定
+	ECS::Signature controlSignature;
+	controlSignature.set(m_coordinator->GetComponentTypeID<RigidBodyComponent>());
+	controlSignature.set(m_coordinator->GetComponentTypeID<PlayerControlComponent>());
+	m_coordinator->SetSystemSignature<PlayerControlSystem>(controlSignature);
+	m_playerControlSystem->Init();
+
+	// CollisionSystemの登録
+	m_collisionSystem = m_coordinator->RegisterSystem<CollisionSystem>();
+	// Signature設定: Transform, RigidBody, Collisionを持つEntityを処理
+	ECS::Signature collisionSignature;
+	collisionSignature.set(m_coordinator->GetComponentTypeID<TransformComponent>());
+	collisionSignature.set(m_coordinator->GetComponentTypeID<RigidBodyComponent>());
+	collisionSignature.set(m_coordinator->GetComponentTypeID<CollisionComponent>());
+	m_coordinator->SetSystemSignature<CollisionSystem>(collisionSignature);
+	m_collisionSystem->Init();
+
+	// CameraControlSystemの登録
+	m_cameraControlSystem = m_coordinator->RegisterSystem<CameraControlSystem>();
+	// Signature設定: CameraComponentを持つEntityを処理
+	ECS::Signature cameraSignature;
+	cameraSignature.set(m_coordinator->GetComponentTypeID<CameraComponent>());
+	m_coordinator->SetSystemSignature<CameraControlSystem>(cameraSignature);
+	m_cameraControlSystem->Init();
 
 	// --- 4. デモ用Entityの作成 ---
 	CreateDemoEntities(m_coordinator.get());
@@ -177,21 +261,40 @@ void GameScene::Update(float deltaTime)
 	const float FREQUENCY = 2.0f;
 	float newY = CENTER_Y + AMPLITUDE * sin(SceneDemo::Time * FREQUENCY);
 
-	// --- 2. ECS EntityのComponent更新 ---
+	// --- 2. ECS Systemの更新
+	// 1. 入力
+	if (m_playerControlSystem)
+	{
+		m_playerControlSystem->Update();
+	}
+	
+	// 2. 物理計算（位置の更新）
+	if (m_physicsSystem)
+	{
+		m_physicsSystem->Update();
+	}
+
+	// 3. 衝突検出と応答（位置の修正）
+	if (m_collisionSystem)
+	{
+		m_collisionSystem->Update();
+	}
+
+	// 4. カメラ制御（ビュー・プロジェクション行列の更新）
+	if (m_cameraControlSystem)
+	{
+		m_cameraControlSystem->Update();
+	}
+
+	// --- 3. ECS EntityのComponent更新 ---
 	// 3つ目のEntity（ID: 2）は回転する箱と仮定
 	const ECS::EntityID rotatingBoxID = 2;
 
 	if (m_coordinator && m_coordinator->m_entityManager->GetSignature(rotatingBoxID).test(m_coordinator->m_componentManager->GetComponentTypeID<TransformComponent>()))
 	{
 		TransformComponent& transform = m_coordinator->GetComponent<TransformComponent>(rotatingBoxID);
-		transform.Rotation.y = SceneDemo::RotationRad; // Y軸回転を更新
-		transform.Position.y = newY; // Y軸位置を更新
-	}
-
-	// TODO: PhysicsSystemなどが実装されたら、ここでUpdateSystemを実行する
-	if (m_physicsSystem)
-	{
-		m_physicsSystem->Update();
+		//transform.Rotation.y = SceneDemo::RotationRad; // Y軸回転を更新
+		//transform.Position.y = newY; // Y軸位置を更新
 	}
 }
 

@@ -65,41 +65,41 @@ void RenderSystem::DrawSetup()
 
 	Geometory::DrawLines();
 
-	// カメラの値
-	static bool camAutoSwitch = false;
-	static bool camUpDownSwitch = true;
-	static float camAutoRotate = 1.0f;
-	if (IsKeyTrigger(VK_RETURN)) {
-		camAutoSwitch ^= true;
-	}
-	if (IsKeyTrigger(VK_SPACE)) {
-		camUpDownSwitch ^= true;
-	}
+	//// カメラの値
+	//static bool camAutoSwitch = false;
+	//static bool camUpDownSwitch = true;
+	//static float camAutoRotate = 1.0f;
+	//if (IsKeyTrigger(VK_RETURN)) {
+	//	camAutoSwitch ^= true;
+	//}
+	//if (IsKeyTrigger(VK_SPACE)) {
+	//	camUpDownSwitch ^= true;
+	//}
 
-	XMVECTOR camPos;
-	if (camAutoSwitch) {
-		camAutoRotate += 0.01f;
-	}
-	camPos = XMVectorSet(
-		cosf(camAutoRotate) * 5.0f,
-		3.5f * (camUpDownSwitch ? 1.0f : -1.0f),
-		sinf(camAutoRotate) * 5.0f,
-		0.0f);
+	//XMVECTOR camPos;
+	//if (camAutoSwitch) {
+	//	camAutoRotate += 0.01f;
+	//}
+	//camPos = XMVectorSet(
+	//	cosf(camAutoRotate) * 5.0f,
+	//	3.5f * (camUpDownSwitch ? 1.0f : -1.0f),
+	//	sinf(camAutoRotate) * 5.0f,
+	//	0.0f);
 
-	// ジオメトリ用カメラ初期化
-	XMFLOAT4X4 mat[2];
-	XMStoreFloat4x4(&mat[0], XMMatrixTranspose(
-		XMMatrixLookAtLH(
-			camPos,
-			XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
-			XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)
-		)));
-	XMStoreFloat4x4(&mat[1], XMMatrixTranspose(
-		XMMatrixPerspectiveFovLH(
-			XMConvertToRadians(60.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1f, 1000.0f)
-	));
-	Geometory::SetView(mat[0]);
-	Geometory::SetProjection(mat[1]);
+	//// ジオメトリ用カメラ初期化
+	//XMFLOAT4X4 mat[2];
+	//XMStoreFloat4x4(&mat[0], XMMatrixTranspose(
+	//	XMMatrixLookAtLH(
+	//		camPos,
+	//		XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
+	//		XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)
+	//	)));
+	//XMStoreFloat4x4(&mat[1], XMMatrixTranspose(
+	//	XMMatrixPerspectiveFovLH(
+	//		XMConvertToRadians(60.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1f, 1000.0f)
+	//));
+	//Geometory::SetView(mat[0]);
+	//Geometory::SetProjection(mat[1]);
 #endif
 }
 

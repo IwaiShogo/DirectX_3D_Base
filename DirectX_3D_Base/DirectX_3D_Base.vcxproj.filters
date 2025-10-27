@@ -99,6 +99,15 @@
     <ClCompile Include="Source\ECS\Systems\PhysicsSystem.cpp">
       <Filter>ソース ファイル\ECS\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\PlayerControlSystem.cpp">
+      <Filter>ソース ファイル\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\CollisionSystem.cpp">
+      <Filter>ソース ファイル\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\CameraControlSystem.cpp">
+      <Filter>ソース ファイル\ECS\Systems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Systems\Geometory.h">
@@ -178,6 +187,18 @@
     </ClInclude>
     <ClInclude Include="Include\ECS\Components\PlayerControlComponent.h">
       <Filter>ヘッダー ファイル\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\PlayerControlSystem.h">
+      <Filter>ヘッダー ファイル\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\CollisionSystem.h">
+      <Filter>ヘッダー ファイル\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\CameraComponent.h">
+      <Filter>ヘッダー ファイル\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\CameraControlSystem.h">
+      <Filter>ヘッダー ファイル\ECS\Systems</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
