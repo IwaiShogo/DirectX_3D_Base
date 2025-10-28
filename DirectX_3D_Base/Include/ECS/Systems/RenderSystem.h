@@ -32,7 +32,7 @@
 // Scene
 #include "Scene/GameScene.h"
 
-#include "Systems//Model.h"
+#include "Systems/Model.h"
 
 #include <DirectXMath.h>
 #include <memory>

@@ -20,7 +20,6 @@
 
 // ===== インクルード =====
 #include "Scene/GameScene.h"
-#include "Main.h"
 
 // Component
 #include "ECS/Components/TransformComponent.h"
@@ -109,7 +108,7 @@ static void CreateDemoEntities(ECS::Coordinator* coordinator)
 		CollisionComponent(
 			/* Size			*/	XMFLOAT3(0.1f, 0.5f, 0.1f),
 			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType	*/	COLLIDER_DYNAMIC
+			/* ColliderType	*/	COLLIDER_STATIC
 		)
 	);
 
@@ -163,9 +162,9 @@ GameScene::GameScene()
 
 	// 仮
 	m_pModel = new Model();
-	if (!m_pModel->Load("Assets/Model/まけん式赤見かるび姫衣装MMD/まけん式赤見かるび姫衣装ver1.0.pmx", 1.0f, Model::None))
+	if (!m_pModel->Load(ASSET("Model/まけん式赤見かるび姫衣装MMD/まけん式赤見かるび姫衣装ver1.0.pmx"), 0.05f, Model::ZFlip))
 	{
-		MessageBox(NULL, "まけん式赤見かるび姫衣装ver1.0.pmx", "Error", MB_OK);
+		MessageBox(NULL, "モデルのロードに失敗", "Error", MB_OK);
 	}
 
 	RenderTarget* pRTV = GetDefaultRTV();	// デフォルトのRenderTargetViewを取得

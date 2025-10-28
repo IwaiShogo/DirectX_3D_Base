@@ -22,6 +22,8 @@
 #include "Systems/DirectX/DirectX.h"
 #include "Systems/Geometory.h"
 #include "Systems/Input.h"
+#include "Systems/Model.h"
+#include "Systems/DirectX/Texture.h"
 #include <iostream>
 
 using namespace DirectX;
@@ -46,17 +48,6 @@ void RenderSystem::Init()
 	// モデルシステムAPI (Model.h/cppに存在する想定) を利用してモデルとテクスチャをロード
 	// Model::Init()はMain.cppのInitDirectX後で呼び出し済みと仮定、ここではリソースをロードする
 
-	// 地面モデルをロード
-	//
-	//RenderResource::GroundModelID = Model::LoadModel(ASSET("Model/LowPolyNature/Ground_01.fbx"));
-
-	//// プレイヤーモデルを仮にRock_01.fbxで代替
-	////
-	//RenderResource::PlayerModelID = Model::LoadModel(ASSET("Model/LowPolyNature/Rock_01.fbx"));
-
-	//// 共通テクスチャをロード
-	////
-	//RenderResource::NatureTexID = Texture::LoadTexture(ASSET("Model/LowPolyNature/Nature_Texture_01.png"));
 }
 
 /**
