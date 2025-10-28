@@ -20,6 +20,7 @@
 
 // ===== インクルード =====
 #include "Scene/GameScene.h"
+#include "Main.h"
 
 // Component
 #include "ECS/Components/TransformComponent.h"
@@ -28,6 +29,7 @@
 #include "ECS/Components/CollisionComponent.h"
 #include "ECS/Components/PlayerControlComponent.h"
 #include "ECS/Components/CameraComponent.h"
+#include "ECS/Components/ModelComponent.h"
 
 // System
 #include "ECS/Systems/RenderSystem.h"
@@ -39,8 +41,8 @@
 #include <DirectXMath.h>
 #include <iostream>
 #include <typeindex> // SystemManagerからのRenderSystem取得に使用
-
-// ===== 静的メンバー変数の定義 =====
+ 
+// ===== 静的メンバー変数の定義 =====u
 // 他のシステムからECSにアクセスするための静的ポインタ
 ECS::Coordinator* GameScene::s_coordinator = nullptr;
 
@@ -107,7 +109,7 @@ static void CreateDemoEntities(ECS::Coordinator* coordinator)
 		CollisionComponent(
 			/* Size			*/	XMFLOAT3(0.1f, 0.5f, 0.1f),
 			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType	*/	COLLIDER_STATIC
+			/* ColliderType	*/	COLLIDER_DYNAMIC
 		)
 	);
 
@@ -158,11 +160,29 @@ static void CreateDemoEntities(ECS::Coordinator* coordinator)
 GameScene::GameScene()
 {
 	// コンストラクタで特に処理は行わず、Init()でECSを初期化する
+
+	// 仮
+	m_pModel = new Model();
+	if (!m_pModel->Load("Assets/Model/まけん式赤見かるび姫衣装MMD/まけん式赤見かるび姫衣装ver1.0.pmx", 1.0f, Model::None))
+	{
+		MessageBox(NULL, "まけん式赤見かるび姫衣装ver1.0.pmx", "Error", MB_OK);
+	}
+
+	RenderTarget* pRTV = GetDefaultRTV();	// デフォルトのRenderTargetViewを取得
+	DepthStencil* pDSV = GetDefaultDSV();	// デフォルトのDepthStencilViewを取得
+	SetRenderTargets(1, &pRTV, pDSV);	// 第3引数がnullの場合、2D表示となる
+
+	SetDepthTest(true);
 }
 
 GameScene::~GameScene()
 {
 	// デストラクタでUninit()が呼ばれ、m_coordinatorが解放される
+	if (m_pModel)
+	{
+		delete m_pModel;
+		m_pModel = nullptr;
+	}
 }
 
 void GameScene::Init()
@@ -181,6 +201,7 @@ void GameScene::Init()
 	m_coordinator->RegisterComponentType<CollisionComponent>();
 	m_coordinator->RegisterComponentType<PlayerControlComponent>();
 	m_coordinator->RegisterComponentType<CameraComponent>();
+	m_coordinator->RegisterComponentType<ModelComponent>();
 
 	// --- 3. Systemの登録とSignatureの設定 ---
 	// RenderSystemの登録
@@ -308,5 +329,11 @@ void GameScene::Draw()
 
 		// 2. ECS Entityの描画
 		m_renderSystem->DrawEntities();
+	}
+
+	// 仮
+	if (m_pModel)
+	{
+		m_pModel->Draw();
 	}
 }

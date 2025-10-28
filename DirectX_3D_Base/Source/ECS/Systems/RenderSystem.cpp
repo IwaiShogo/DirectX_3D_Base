@@ -26,6 +26,39 @@
 
 using namespace DirectX;
 
+// ===== 描画リソースの静的定義 =====
+namespace RenderResource
+{
+	// 事前にロードするモデルのリソースID
+	static uint32_t PlayerModelID = 0;
+	static uint32_t GroundModelID = 0;
+	// 事前にロードするテクスチャのリソースID
+	static uint32_t NatureTexID = 0;
+}
+
+void RenderSystem::Init()
+{
+	m_coordinator = GameScene::GetCoordinator();
+
+	// --- 3Dモデルとテクスチャのロード ---
+	// 提供されたAssetsから、地面とプレイヤーに利用できそうなモデルをロード
+
+	// モデルシステムAPI (Model.h/cppに存在する想定) を利用してモデルとテクスチャをロード
+	// Model::Init()はMain.cppのInitDirectX後で呼び出し済みと仮定、ここではリソースをロードする
+
+	// 地面モデルをロード
+	//
+	//RenderResource::GroundModelID = Model::LoadModel(ASSET("Model/LowPolyNature/Ground_01.fbx"));
+
+	//// プレイヤーモデルを仮にRock_01.fbxで代替
+	////
+	//RenderResource::PlayerModelID = Model::LoadModel(ASSET("Model/LowPolyNature/Rock_01.fbx"));
+
+	//// 共通テクスチャをロード
+	////
+	//RenderResource::NatureTexID = Texture::LoadTexture(ASSET("Model/LowPolyNature/Nature_Texture_01.png"));
+}
+
 /**
  * @brief カメラ設定とデバッグ描画を行う
  */
@@ -65,7 +98,7 @@ void RenderSystem::DrawSetup()
 
 	Geometory::DrawLines();
 
-	//// カメラの値
+	// カメラの値
 	//static bool camAutoSwitch = false;
 	//static bool camUpDownSwitch = true;
 	//static float camAutoRotate = 1.0f;

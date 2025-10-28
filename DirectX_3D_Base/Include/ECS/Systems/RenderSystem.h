@@ -32,6 +32,8 @@
 // Scene
 #include "Scene/GameScene.h"
 
+#include "Systems//Model.h"
+
 #include <DirectXMath.h>
 #include <memory>
 
@@ -49,10 +51,7 @@ private:
 
 public:
 	// Systemの初期化
-	void Init()
-	{
-		m_coordinator = GameScene::GetCoordinator();
-	}
+	void Init();
 
 	/// @brief 描画に必要なカメラ設定、デバッグ描画などを行う
 	void DrawSetup();

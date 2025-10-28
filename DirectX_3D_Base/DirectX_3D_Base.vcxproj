@@ -159,6 +159,7 @@
     <ClInclude Include="Include\ECS\ComponentManager.h" />
     <ClInclude Include="Include\ECS\Components\CameraComponent.h" />
     <ClInclude Include="Include\ECS\Components\CollisionComponent.h" />
+    <ClInclude Include="Include\ECS\Components\ModelComponent.h" />
     <ClInclude Include="Include\ECS\Components\PlayerControlComponent.h" />
     <ClInclude Include="Include\ECS\Components\RenderComponent.h" />
     <ClInclude Include="Include\ECS\Components\RigidBodyComponent.h" />

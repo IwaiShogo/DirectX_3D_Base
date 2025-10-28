@@ -28,6 +28,9 @@
 
 #include <memory>
 
+// 仮
+#include "Systems/Model.h"
+
 // ===== 前方宣言 =====
 class RenderSystem;
 class PhysicsSystem;
@@ -55,6 +58,9 @@ private:
 
 	// ECSのグローバルアクセス用 (SystemなどがECS操作を行うための窓口)
 	static ECS::Coordinator* s_coordinator;
+
+	// 仮
+	Model* m_pModel;
 
 public:
 	// コンストラクタとデストラクタ（Sceneを継承しているため仮想デストラクタはScene側で定義済みと仮定）
