@@ -79,23 +79,26 @@ void CameraControlSystem::Update()
 
 		XMVECTOR camPos = XMLoadFloat3(&m_currentCameraPos);
 		XMVECTOR lookAt = XMLoadFloat3(&m_currentLookAt);
-		XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f); // Y-up
+		XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
-		// ビュー行列
-		XMFLOAT4X4 matView;
-		XMStoreFloat4x4(&matView, XMMatrixTranspose(
-			XMMatrixLookAtLH(camPos, lookAt, up)));
-		Geometory::SetView(matView);
+		// View行列
+		XMMATRIX viewMatrix = XMMatrixLookAtLH(camPos, lookAt, up);
 
-		// プロジェクション行列の計算と設定 (RenderSystemの役割を肩代わり)
-		XMFLOAT4X4 matProj;
-		XMStoreFloat4x4(&matProj, XMMatrixTranspose(
-			XMMatrixPerspectiveFovLH(
-				cameraComp.FOV,
-				(float)SCREEN_WIDTH / SCREEN_HEIGHT,
-				cameraComp.NearClip,
-				cameraComp.FarClip)
-		));
-		Geometory::SetProjection(matProj);
+		// Projection行列
+		XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH(
+			cameraComp.FOV, (float)SCREEN_WIDTH / SCREEN_HEIGHT, cameraComp.NearClip, cameraComp.FarClip
+		);
+
+		// DirectXへ渡すために転置して格納
+		XMFLOAT4X4 fMatView;
+		XMStoreFloat4x4(&fMatView, XMMatrixTranspose(viewMatrix));
+
+		XMFLOAT4X4 fMatProjection;
+		XMStoreFloat4x4(&fMatProjection, XMMatrixTranspose(projectionMatrix));
+
+		// ★ 追加: 計算結果をCameraComponentに格納
+		cameraComp.ViewMatrix = fMatView;
+		cameraComp.ProjectionMatrix = fMatProjection;
+		cameraComp.WorldPosition = m_currentCameraPos; // カメラ位置も格納
 	}
 }

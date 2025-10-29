@@ -33,6 +33,8 @@ struct ModelComponent
 	// 3DモデルのリソースID (Model::LoadModelなどが返すIDを想定)
 	uint32_t ModelID;
 
+	Model* pModel = new Model();
+
 	// モデル描画で使用するテクスチャのリソースID
 	uint32_t TextureID;
 
@@ -42,12 +44,16 @@ struct ModelComponent
 	/**
 	 * @brief コンストラクタ
 	 */
-	ModelComponent(
-		uint32_t modelId = 0,
-		uint32_t textureId = 0,
-		uint32_t animationId = 0
-	) : ModelID(modelId), TextureID(textureId), AnimationID(animationId)
-	{}
+	ModelComponent() = default;
+
+	// ユーザーが作成した引数付きコンストラクタ
+	ModelComponent(const char* path, float scale, Model::Flip flip)
+	{
+		if (!pModel->Load(path, scale, flip))
+		{
+			MessageBox(NULL, "モデルのロードに失敗", "Error", MB_OK);
+		}
+	}
 };
 
 #endif // !___MODEL_COMPONENT_H___

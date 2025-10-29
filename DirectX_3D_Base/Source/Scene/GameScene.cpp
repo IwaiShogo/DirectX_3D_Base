@@ -90,12 +90,12 @@ static void CreateDemoEntities(ECS::Coordinator* coordinator)
 	// --- 2. 2つ目の地面（柱） (Transform + Render) ---
 	ECS::EntityID ground2 = coordinator->CreateEntity(
 		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.0f, 1.0f, 0.0f),
+			/* Position	*/	XMFLOAT3(2.0f, 0.0f, 0.0f),
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(0.2f, 3.0f, 0.2f)
+			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
+			/* MeshType	*/	MESH_MODEL,
 			/* Color	*/	XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f)
 		),
 		RigidBodyComponent(
@@ -106,9 +106,14 @@ static void CreateDemoEntities(ECS::Coordinator* coordinator)
 			/* Restitution	*/	0.2f
 		),
 		CollisionComponent(
-			/* Size			*/	XMFLOAT3(0.1f, 0.5f, 0.1f),
+			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
 			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* ColliderType	*/	COLLIDER_STATIC
+		),
+		ModelComponent(
+			/* Path		*/	"Assets/Model/Rizu/dousakakuninn11 1.fbx",
+			/* Scale	*/	0.1f,
+			/* Flip		*/	Model::ZFlip
 		)
 	);
 
@@ -149,7 +154,8 @@ static void CreateDemoEntities(ECS::Coordinator* coordinator)
 			/* FocusID		*/	s_playerID,
 			/* Offset		*/	XMFLOAT3(0.0f, METER(3.0f), METER(-5.0f)),
 			/* FollowSpeed	*/	0.1f
-		)
+		),
+		RenderComponent(),TransformComponent()	// RenderSystem内から探すため
 	);
 }
 
@@ -160,34 +166,16 @@ GameScene::GameScene()
 {
 	// コンストラクタで特に処理は行わず、Init()でECSを初期化する
 
-	// 仮
-	m_pModel = new Model();
-	if (!m_pModel->Load(ASSET("Model/LowPolyNature/Mushroom_01.fbx"), 0.02f, Model::ZFlip))
-	{
-		MessageBox(NULL, "モデルのロードに失敗", "Error", MB_OK);
-	}
-	/*m_pTexture = new Texture();
-	HRESULT hr = m_pTexture->Create(ASSET("Texture/Star.png"));
-	if (!hr)
-	{
-		MessageBox(NULL, "テクスチャのロードに失敗", "Error", MB_OK);
-	}*/
+	RenderTarget* pRTV = GetDefaultRTV();    // デフォルトのRenderTargetViewを取得
+	DepthStencil* pDSV = GetDefaultDSV();    // デフォルトのDepthStencilViewを取得
+	SetRenderTargets(1, &pRTV, pDSV);    // 第3引数がnullの場合、2D表示となる
 
-	RenderTarget* pRTV = GetDefaultRTV();	// デフォルトのRenderTargetViewを取得
-	DepthStencil* pDSV = GetDefaultDSV();	// デフォルトのDepthStencilViewを取得
-	SetRenderTargets(1, &pRTV, pDSV);	// 第3引数がnullの場合、2D表示となる
-
-	SetDepthTest(true);
+	SetDepthTest(true); // 【確認・維持】デプス・テストが有効化されていることを確認
 }
 
 GameScene::~GameScene()
 {
-	// デストラクタでUninit()が呼ばれ、m_coordinatorが解放される
-	if (m_pModel)
-	{
-		delete m_pModel;
-		m_pModel = nullptr;
-	}
+
 }
 
 void GameScene::Init()
@@ -215,6 +203,7 @@ void GameScene::Init()
 	ECS::Signature renderSignature;
 	renderSignature.set(m_coordinator->GetComponentTypeID<TransformComponent>());
 	renderSignature.set(m_coordinator->GetComponentTypeID<RenderComponent>());
+	//renderSignature.set(m_coordinator->GetComponentTypeID<ModelComponent>());
 	m_coordinator->SetSystemSignature<RenderSystem>(renderSignature);
 	m_renderSystem->Init();
 
@@ -334,11 +323,5 @@ void GameScene::Draw()
 
 		// 2. ECS Entityの描画
 		m_renderSystem->DrawEntities();
-	}
-
-	// 仮
-	if (m_pModel)
-	{
-		m_pModel->Draw();
 	}
 }

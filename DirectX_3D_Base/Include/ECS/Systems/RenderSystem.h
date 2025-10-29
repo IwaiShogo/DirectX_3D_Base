@@ -29,6 +29,7 @@
 // Components
 #include "ECS/Components/TransformComponent.h"
 #include "ECS/Components/RenderComponent.h"
+#include "ECS/Components/ModelComponent.h"
 // Scene
 #include "Scene/GameScene.h"
 

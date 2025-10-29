@@ -18,12 +18,15 @@
  *********************************************************************/
 
 #include "ECS/Systems/RenderSystem.h"
+#include "ECS/Components/ModelComponent.h"
+#include "ECS/Components/CameraComponent.h"
 #include "Main.h"
 #include "Systems/DirectX/DirectX.h"
 #include "Systems/Geometory.h"
 #include "Systems/Input.h"
 #include "Systems/Model.h"
 #include "Systems/DirectX/Texture.h"
+#include "Systems/DirectX/ShaderList.h"
 #include <iostream>
 
 using namespace DirectX;
@@ -39,8 +42,6 @@ void RenderSystem::Init()
  */
 void RenderSystem::DrawSetup()
 {
-	// ***** Main.cppから移植したカメラとグリッドの描画ロジック *****
-
 #ifdef _DEBUG
 	// 軸線の表示
 	// グリッド
@@ -116,6 +117,37 @@ void RenderSystem::DrawSetup()
  */
 void RenderSystem::DrawEntities()
 {
+	// 1. CameraComponentを持つEntityを検索し、カメラ座標と行列を取得
+	ECS::EntityID cameraID = ECS::INVALID_ENTITY_ID;
+
+	// Coordinatorの全Entityを走査 (非効率だが確実)
+	for (auto const& entity : m_entities)
+	{
+		if (m_coordinator->m_entityManager->GetSignature(entity).test(m_coordinator->GetComponentTypeID<CameraComponent>()))
+		{
+			cameraID = entity;
+			break;
+		}
+	}
+
+    CameraComponent* cameraComp = nullptr;  
+    if (cameraID != ECS::INVALID_ENTITY_ID)  
+    {  
+        cameraComp = &m_coordinator->GetComponent<CameraComponent>(cameraID);  
+
+        // ★★★ 2. Geometoryに行列とカメラ位置を設定 ★★★  
+        Geometory::SetView(cameraComp->ViewMatrix);  
+        Geometory::SetProjection(cameraComp->ProjectionMatrix);  
+    }
+	if (cameraID != ECS::INVALID_ENTITY_ID)
+	{
+		*cameraComp = m_coordinator->GetComponent<CameraComponent>(cameraID);
+
+		// ★★★ 2. Geometoryに行列とカメラ位置を設定 ★★★
+		Geometory::SetView(cameraComp->ViewMatrix);
+		Geometory::SetProjection(cameraComp->ProjectionMatrix);
+	}
+
 	// Systemが保持するEntityセットをイテレート
 	for (auto const& entity : m_entities)
 	{
@@ -123,31 +155,32 @@ void RenderSystem::DrawEntities()
 		TransformComponent& transform = m_coordinator->GetComponent<TransformComponent>(entity);
 		RenderComponent& render = m_coordinator->GetComponent<RenderComponent>(entity);
 
+		DirectX::XMFLOAT4X4 wvp[3];
+		DirectX::XMMATRIX world, view, proj;
+
 		// 1. ワールド行列の計算 (TransformComponent -> XMMATRIX -> XMFLOAT4X4)
-
-		// スケール行列
+		// ... (スケール、回転、平行移動の計算ロジックは維持) ...
 		XMMATRIX S = XMMatrixScaling(transform.Scale.x, transform.Scale.y, transform.Scale.z);
-
-		// 回転行列 (Z -> X -> Y の順で適用)
 		XMMATRIX Rx = XMMatrixRotationX(transform.Rotation.x);
 		XMMATRIX Ry = XMMatrixRotationY(transform.Rotation.y);
 		XMMATRIX Rz = XMMatrixRotationZ(transform.Rotation.z);
 		XMMATRIX R = Rz * Rx * Ry;
-
-		// 平行移動行列
 		XMMATRIX T = XMMatrixTranslation(transform.Position.x, transform.Position.y, transform.Position.z);
+		world = S * R * T;
 
-		// ワールド行列: S * R * T (スケール -> 回転 -> 移動)
-		XMMATRIX worldMatrix = S * R * T;
+		// ビュー行列
 
-		// DirectXへ渡すために転置して格納
-		XMFLOAT4X4 fMat;
-		XMStoreFloat4x4(&fMat, XMMatrixTranspose(worldMatrix));
+		XMStoreFloat4x4(&wvp[0], XMMatrixTranspose(world));
+		wvp[1] = cameraComp->ViewMatrix;
+		wvp[2] = cameraComp->ProjectionMatrix;
 
+		// シェーダーへの変換行列を設定
+		Geometory::SetWorld(wvp[0]);
+		Geometory::SetView(wvp[1]);
+		Geometory::SetProjection(wvp[2]);
+
+		ShaderList::SetWVP(wvp);
 		// 2. 描画処理 (RenderComponent)
-
-		// 行列を設定
-		Geometory::SetWorld(fMat);
 
 		// 形状に応じて描画
 		switch (render.Type)
@@ -160,6 +193,28 @@ void RenderSystem::DrawEntities()
 			break;
 		case MESH_MODEL:
 			// ModelSystemに移行後、実装
+		{
+			// ModelComponentを取得し、Model::Draw()を呼び出す
+			// RenderSystemのシグネチャにModelComponentが含まれている前提
+			ModelComponent& model = m_coordinator->GetComponent<ModelComponent>(entity);
+			if (model.pModel)
+			{
+				model.pModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_WORLD));
+				model.pModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
+
+				for (int i = 0; i < model.pModel->GetMeshNum(); ++i) {
+					// モデルのメッシュを取得
+					Model::Mesh mesh = *model.pModel->GetMesh(i);
+					// メッシュに割り当てられているマテリアルを取得
+					Model::Material	material = *model.pModel->GetMaterial(mesh.materialID);
+					// シェーダーへマテリアルを設定
+					ShaderList::SetMaterial(material);
+					// モデルの描画
+					model.pModel->Draw(i);
+				}
+
+			}
+		}
 			break;
 		case MESH_NONE:
 			// 何もしない

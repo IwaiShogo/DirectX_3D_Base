@@ -39,6 +39,10 @@ struct CameraComponent
 	float NearClip;					///< 近クリップ平面
 	float FarClip;					///< 遠クリップ平面
 
+	DirectX::XMFLOAT4X4 ViewMatrix;
+	DirectX::XMFLOAT4X4 ProjectionMatrix;
+	DirectX::XMFLOAT3	WorldPosition;
+
 	/**
 	 * @brief コンストラクタ
 	 */

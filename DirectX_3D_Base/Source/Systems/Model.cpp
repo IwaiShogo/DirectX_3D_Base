@@ -60,6 +60,12 @@ DirectX::XMMATRIX GetMatrixFromAssimpMatrix(aiMatrix4x4 M)
 void MakeModelDefaultShader(VertexShader** vs, PixelShader** ps)
 {
 	const char* ModelVS = R"EOT(
+cbuffer MatrixBuffer : register(b0) { // Geometoryと共有のb0を使用すると仮定
+	matrix world;
+	matrix view;
+	matrix projection;
+	float4 cameraPos;
+};
 struct VS_IN {
 	float3 pos : POSITION0;
 	float3 normal : NORMAL0;
@@ -72,10 +78,18 @@ struct VS_OUT {
 };
 VS_OUT main(VS_IN vin) {
 	VS_OUT vout;
-	vout.pos = float4(vin.pos, 1.0f);
-	vout.pos.z += 0.5f;
-	vout.pos.y -= 0.8f;
-	vout.normal = vin.normal;
+
+
+	// WVP行列を結合: W * V * P
+	matrix wvp = mul(world, view); // W * V
+	wvp = mul(wvp, projection);    // (W * V) * P
+
+	// 頂点座標をWVP行列で一度に変換
+	vout.pos = mul(float4(vin.pos, 1.0f), wvp); // ← WVP行列による変換
+
+	// 法線はワールド行列の回転成分のみを適用 (簡易的な実装)
+	vout.normal = mul(vin.normal, (float3x3)world);
+
 	vout.uv = vin.uv;
 	return vout;
 })EOT";
