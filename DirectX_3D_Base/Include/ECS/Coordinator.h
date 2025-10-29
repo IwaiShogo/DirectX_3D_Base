@@ -65,6 +65,8 @@ namespace ECS
 			m_componentManager->RegisterComponentType<T>();
 		}
 
+
+
 		/// @brief Entity‚ÉComponent‚ğ’Ç‰Á‚µA‰Šú’l‚ğİ’è‚·‚é
 		template<typename T, typename... Args>
 		void AddComponent(EntityID entityID, Args&&... args)

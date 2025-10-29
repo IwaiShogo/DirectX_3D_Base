@@ -22,6 +22,7 @@
 
 // ===== インクルード =====
 #include <cstdint>
+#include "Systems/Model.h"
 
  /**
   * @struct ModelComponent

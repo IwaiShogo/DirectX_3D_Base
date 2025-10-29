@@ -65,7 +65,7 @@ static void CreateDemoEntities(ECS::Coordinator* coordinator)
 	// --- 1. 1つ目の地面（静的オブジェクト） ---
 	ECS::EntityID ground1 = coordinator->CreateEntity(
 		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.0f, -0.1f, 0.0f),
+			/* Position	*/	XMFLOAT3(0.0f, -0.5f, 0.0f),
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Scale	*/	XMFLOAT3(10.0f, 0.2f, 10.0f)
 		),
@@ -162,10 +162,16 @@ GameScene::GameScene()
 
 	// 仮
 	m_pModel = new Model();
-	if (!m_pModel->Load(ASSET("Model/まけん式赤見かるび姫衣装MMD/まけん式赤見かるび姫衣装ver1.0.pmx"), 0.05f, Model::ZFlip))
+	if (!m_pModel->Load(ASSET("Model/LowPolyNature/Mushroom_01.fbx"), 0.02f, Model::ZFlip))
 	{
 		MessageBox(NULL, "モデルのロードに失敗", "Error", MB_OK);
 	}
+	/*m_pTexture = new Texture();
+	HRESULT hr = m_pTexture->Create(ASSET("Texture/Star.png"));
+	if (!hr)
+	{
+		MessageBox(NULL, "テクスチャのロードに失敗", "Error", MB_OK);
+	}*/
 
 	RenderTarget* pRTV = GetDefaultRTV();	// デフォルトのRenderTargetViewを取得
 	DepthStencil* pDSV = GetDefaultDSV();	// デフォルトのDepthStencilViewを取得

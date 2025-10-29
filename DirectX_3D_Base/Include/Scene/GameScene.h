@@ -30,6 +30,7 @@
 
 // 仮
 #include "Systems/Model.h"
+#include "Systems/DirectX/Texture.h"
 
 // ===== 前方宣言 =====
 class RenderSystem;
@@ -61,6 +62,7 @@ private:
 
 	// 仮
 	Model* m_pModel;
+	Texture* m_pTexture;
 
 public:
 	// コンストラクタとデストラクタ（Sceneを継承しているため仮想デストラクタはScene側で定義済みと仮定）

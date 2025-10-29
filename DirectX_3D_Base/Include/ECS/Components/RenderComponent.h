@@ -45,8 +45,6 @@ struct RenderComponent
 	MeshType Type;				///< 描画するメッシュの形状
 	DirectX::XMFLOAT4 Color;	///< 描画時の色 (R, G, B, A)
 
-	// TODO: テクスチャやシェーダーなどの描画リソースIDを追加
-
 	/**
 	 * @brief コンストラクタ
 	 * @param type - メッシュ形状
@@ -55,9 +53,10 @@ struct RenderComponent
 	RenderComponent(
 		MeshType type = MESH_BOX,
 		DirectX::XMFLOAT4 color = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
-	) : Type(type), Color(color)
-	{
-	}
+	)
+		: Type(type)
+		, Color(color)
+	{}
 };
 
 #endif // !___RENDER_COMPONENT_H___
