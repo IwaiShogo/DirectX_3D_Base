@@ -33,7 +33,7 @@ struct ModelComponent
 	// 3DモデルのリソースID (Model::LoadModelなどが返すIDを想定)
 	uint32_t ModelID;
 
-	Model* pModel = new Model();
+	std::unique_ptr<Model> pModel = std::make_unique<Model>();
 
 	// モデル描画で使用するテクスチャのリソースID
 	uint32_t TextureID;
