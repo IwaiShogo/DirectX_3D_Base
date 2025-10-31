@@ -136,6 +136,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\ECS\ECSInitializer.cpp" />
     <ClCompile Include="Source\ECS\Systems\CameraControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\CollisionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\PhysicsSystem.cpp" />
@@ -158,6 +159,7 @@
     <ClCompile Include="Source\Works\_model.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\ECS\AllSystems.h" />
     <ClInclude Include="Include\ECS\ComponentManager.h" />
     <ClInclude Include="Include\ECS\Components\CameraComponent.h" />
     <ClInclude Include="Include\ECS\Components\CollisionComponent.h" />
@@ -168,6 +170,7 @@
     <ClInclude Include="Include\ECS\Components\TransformComponent.h" />
     <ClInclude Include="Include\ECS\Components\UIComponent.h" />
     <ClInclude Include="Include\ECS\Coordinator.h" />
+    <ClInclude Include="Include\ECS\ECSInitializer.h" />
     <ClInclude Include="Include\ECS\EntityManager.h" />
     <ClInclude Include="Include\ECS\SystemManager.h" />
     <ClInclude Include="Include\ECS\Systems\CameraControlSystem.h" />
@@ -177,6 +180,8 @@
     <ClInclude Include="Include\ECS\Systems\RenderSystem.h" />
     <ClInclude Include="Include\ECS\Systems\UISystem.h" />
     <ClInclude Include="Include\ECS\Types.h" />
+    <ClInclude Include="Include\ECS\AllComponents.h" />
+    <ClInclude Include="Include\ECS\ECS.h" />
     <ClInclude Include="Include\Main.h" />
     <ClInclude Include="Include\Scene\GameScene.h" />
     <ClInclude Include="Include\Scene\Scene.h" />

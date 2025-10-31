@@ -22,6 +22,7 @@
 
 // ===== インクルード =====
 #include <cstdint>
+#include <memory>
 #include "Systems/Model.h"
 
  /**
@@ -54,6 +55,13 @@ struct ModelComponent
 			MessageBox(NULL, "モデルのロードに失敗", "Error", MB_OK);
 		}
 	}
+
+	ModelComponent(const ModelComponent&) = delete;
+	ModelComponent& operator=(const ModelComponent&) = delete;
+
+	// ムーブ操作は noexcept 付きで明示的にデフォルト化（前回修正済み）
+	ModelComponent(ModelComponent&&) noexcept = default;
+	ModelComponent& operator=(ModelComponent&&) noexcept = default;
 };
 
 #endif // !___MODEL_COMPONENT_H___

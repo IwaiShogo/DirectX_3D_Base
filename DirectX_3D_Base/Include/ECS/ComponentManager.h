@@ -73,7 +73,7 @@ namespace ECS
 		ComponentArray()
 		{
 			// MAX_ENTITIESに合わせて予め予約することで、リサイズによるポインタの無効化を防ぐ
-			m_componentArray.resize(MAX_ENTITIES);
+			m_componentArray.reserve(MAX_ENTITIES);
 		}
 
 		/// @brief EntityにComponentを追加し、初期値を設定する
@@ -91,10 +91,31 @@ namespace ECS
 			// 配列の末尾に新しいComponentを配置
 			size_t newIndex = m_size;
 
-			// インプレースでコンストラクタ呼び出し
-			m_componentArray[newIndex] = T(std::forward<Args>(args)...);
+			m_componentArray.emplace_back(std::forward<Args>(args)...);
 
 			// マッピングの更新
+			m_entityToIndexMap[entityID] = newIndex;
+			m_indexToEntityMap[newIndex] = entityID;
+
+			m_size++;
+		}
+
+		template<typename T_Instance>
+		void AddComponent(EntityID entityID, T_Instance&& component)
+		{
+			// ... (エラーチェック) ...
+			if (m_entityToIndexMap.count(entityID))
+			{
+				// TODO: エラー処理を実装
+				return;
+			}
+
+			size_t newIndex = m_size;
+
+			// ★【修正3】インスタンスを emplace_back でムーブ構築
+			m_componentArray.emplace_back(std::forward<T_Instance>(component));
+
+			// ... (マッピングの更新) ...
 			m_entityToIndexMap[entityID] = newIndex;
 			m_indexToEntityMap[newIndex] = entityID;
 
@@ -120,16 +141,23 @@ namespace ECS
 			{
 				// 最後の要素を削除位置に移動
 				EntityID lastEntityID = m_indexToEntityMap[m_size - 1];
-				m_componentArray[indexOfRemoved] = m_componentArray[m_size - 1];
+
+				// unique_ptrの所有権を移動させ、コピーを避ける
+				m_componentArray[indexOfRemoved] = std::move(m_componentArray[m_size - 1]);
 
 				// マッピングの更新
 				m_entityToIndexMap[lastEntityID] = indexOfRemoved;
 				m_indexToEntityMap[indexOfRemoved] = lastEntityID;
 			}
 
+			// emplace_backに合わせた変更として、pop_backでリソースを解放する
+			// Tのデストラクタが呼ばれるため、unique_ptr<Model>もここで解放される
+			m_componentArray.pop_back();
+
 			// 削除対象のEntityのマップ情報をクリア
 			m_entityToIndexMap.erase(entityID);
-			m_indexToEntityMap.erase(m_size - 1); // 末尾のインデックスを削除
+			// pop_backを使用しているため、m_indexToEntityMapの末尾削除も不要になる
+			// m_indexToEntityMap.erase(m_size - 1);
 
 			m_size--;
 		}

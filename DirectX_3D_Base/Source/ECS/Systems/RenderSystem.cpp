@@ -31,12 +31,6 @@
 
 using namespace DirectX;
 
-void RenderSystem::Init()
-{
-	m_coordinator = GameScene::GetCoordinator();
-
-}
-
 /**
  * @brief カメラ設定とデバッグ描画を行う
  */
@@ -203,6 +197,12 @@ void RenderSystem::DrawEntities()
 				model.pModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
 
 				for (int i = 0; i < model.pModel->GetMeshNum(); ++i) {
+					RenderTarget* pRTV = GetDefaultRTV();    // デフォルトのRenderTargetViewを取得
+					DepthStencil* pDSV = GetDefaultDSV();    // デフォルトのDepthStencilViewを取得
+					SetRenderTargets(1, &pRTV, pDSV);    // 第3引数がnullの場合、2D表示となる
+
+					SetDepthTest(true); // 【確認・維持】デプス・テストが有効化されていることを確認
+
 					// モデルのメッシュを取得
 					Model::Mesh mesh = *model.pModel->GetMesh(i);
 					// メッシュに割り当てられているマテリアルを取得

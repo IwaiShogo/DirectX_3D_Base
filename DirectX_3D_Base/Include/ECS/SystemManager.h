@@ -32,6 +32,8 @@
 
 namespace ECS
 {
+	class Coordinator;
+
 	/**
 	 * @class System
 	 * @brief 全てのSystemの抽象基底クラス。
@@ -43,6 +45,12 @@ namespace ECS
 	public:
 		/// @brief このSystemが処理すべきEntityIDの集合
 		std::set<EntityID> m_entities;
+
+		/**
+		 * @brief Systemの初期化とCoordinatorの依存性注入を行う
+		 * @param coordinator - Coordinatorインスタンスへの生ポインタ
+		 */
+		virtual void Init(Coordinator* coordinator) {}
 	};
 
 	/**

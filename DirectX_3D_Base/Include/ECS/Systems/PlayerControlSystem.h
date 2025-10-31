@@ -41,9 +41,9 @@ private:
 	ECS::Coordinator* m_coordinator;
 
 public:
-	void Init()
+	void Init(ECS::Coordinator* coordinator) override
 	{
-		m_coordinator = GameScene::GetCoordinator();
+		m_coordinator = coordinator;
 	}
 
 	/// @brief “ü—Í‚É‰‚¶‚ÄRigidBody‚Ì‘¬“x‚ğXV‚·‚é

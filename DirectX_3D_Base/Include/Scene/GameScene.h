@@ -44,7 +44,7 @@ class GameScene
 {
 private:
 	// ECSの中心となるコーディネーター (シーンがECSのライフサイクルを管理)
-	std::unique_ptr<ECS::Coordinator> m_coordinator;
+	std::shared_ptr<ECS::Coordinator> m_coordinator;
 
 	// 常に利用するSystemへの参照を保持 (Update/Drawの呼び出しを容易にする)
 	std::shared_ptr<RenderSystem>			m_renderSystem;
@@ -58,8 +58,10 @@ private:
 
 public:
 	// コンストラクタとデストラクタ（Sceneを継承しているため仮想デストラクタはScene側で定義済みと仮定）
-	GameScene();
-	~GameScene() override; // 仮想デストラクタを実装
+	GameScene()
+		: m_coordinator(nullptr)
+	{}
+	~GameScene() override {} // 仮想デストラクタを実装
 
 	// Sceneインターフェースの実装
 	void Init() override;

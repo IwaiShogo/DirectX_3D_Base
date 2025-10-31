@@ -48,9 +48,9 @@ private:
 	DirectX::XMFLOAT3 m_currentLookAt;
 
 public:
-	void Init()
+	void Init(ECS::Coordinator* coordinator) override
 	{
-		m_coordinator = GameScene::GetCoordinator();
+		m_coordinator = coordinator;
 		// ‰Šú’lİ’è (ƒfƒ‚•`‰æ‚Ì‰ŠúˆÊ’u‚É‡‚í‚¹‚é)
 		m_currentCameraPos = DirectX::XMFLOAT3(0.0f, 3.5f, 5.0f);
 		m_currentLookAt = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);

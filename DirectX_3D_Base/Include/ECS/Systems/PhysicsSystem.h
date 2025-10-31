@@ -48,10 +48,9 @@ private:
 
 public:
 	// Systemの初期化
-	void Init()
+	void Init(ECS::Coordinator* coordinator) override
 	{
-		// GameSceneの静的アクセサを通じてCoordinatorを取得
-		m_coordinator = GameScene::GetCoordinator();
+		m_coordinator = coordinator;
 	}
 
 	/// @brief 運動積分と基本的な衝突前処理を行う

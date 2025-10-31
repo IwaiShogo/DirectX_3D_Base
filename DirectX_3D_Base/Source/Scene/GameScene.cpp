@@ -21,21 +21,8 @@
 // ===== インクルード =====
 #include "Scene/GameScene.h"
 
-// Component
-#include "ECS/Components/TransformComponent.h"
-#include "ECS/Components/RenderComponent.h"
-#include "ECS/Components/RigidBodyComponent.h"
-#include "ECS/Components/CollisionComponent.h"
-#include "ECS/Components/PlayerControlComponent.h"
-#include "ECS/Components/CameraComponent.h"
-#include "ECS/Components/ModelComponent.h"
-
-// System
-#include "ECS/Systems/RenderSystem.h"
-#include "ECS/Systems/PhysicsSystem.h"
-#include "ECS/Systems/CollisionSystem.h"
-#include "ECS/Systems/PlayerControlSystem.h"
-#include "ECS/Systems/CameraControlSystem.h"
+#include "ECS/ECS.h"
+#include "ECS/ECSInitializer.h"
 
 #include <DirectXMath.h>
 #include <iostream>
@@ -162,86 +149,15 @@ static void CreateDemoEntities(ECS::Coordinator* coordinator)
 
 // ===== GameScene メンバー関数の実装 =====
 
-GameScene::GameScene()
-{
-	// コンストラクタで特に処理は行わず、Init()でECSを初期化する
-
-	RenderTarget* pRTV = GetDefaultRTV();    // デフォルトのRenderTargetViewを取得
-	DepthStencil* pDSV = GetDefaultDSV();    // デフォルトのDepthStencilViewを取得
-	SetRenderTargets(1, &pRTV, pDSV);    // 第3引数がnullの場合、2D表示となる
-
-	SetDepthTest(true); // 【確認・維持】デプス・テストが有効化されていることを確認
-}
-
-GameScene::~GameScene()
-{
-
-}
-
 void GameScene::Init()
 {
 	// --- 1. ECS Coordinatorの初期化 ---
 	m_coordinator = std::make_unique<ECS::Coordinator>();
-	m_coordinator->Init();
 
 	// 静的ポインタに現在のCoordinatorを設定
 	s_coordinator = m_coordinator.get();
 
-	// --- 2. Componentの登録 ---
-	m_coordinator->RegisterComponentType<TransformComponent>();
-	m_coordinator->RegisterComponentType<RenderComponent>();
-	m_coordinator->RegisterComponentType<RigidBodyComponent>();
-	m_coordinator->RegisterComponentType<CollisionComponent>();
-	m_coordinator->RegisterComponentType<PlayerControlComponent>();
-	m_coordinator->RegisterComponentType<CameraComponent>();
-	m_coordinator->RegisterComponentType<ModelComponent>();
-
-	// --- 3. Systemの登録とSignatureの設定 ---
-	// RenderSystemの登録
-	m_renderSystem = m_coordinator->RegisterSystem<RenderSystem>();
-
-	ECS::Signature renderSignature;
-	renderSignature.set(m_coordinator->GetComponentTypeID<TransformComponent>());
-	renderSignature.set(m_coordinator->GetComponentTypeID<RenderComponent>());
-	//renderSignature.set(m_coordinator->GetComponentTypeID<ModelComponent>());
-	m_coordinator->SetSystemSignature<RenderSystem>(renderSignature);
-	m_renderSystem->Init();
-
-	// PhysicsSystemの登録
-	m_physicsSystem = m_coordinator->RegisterSystem<PhysicsSystem>();
-
-	ECS::Signature physicsSignature;
-	physicsSignature.set(m_coordinator->GetComponentTypeID<TransformComponent>());
-	physicsSignature.set(m_coordinator->GetComponentTypeID<RigidBodyComponent>());
-	m_coordinator->SetSystemSignature<PhysicsSystem>(physicsSignature);
-	m_physicsSystem->Init();
-
-	// PlayerControlSystemの登録
-	m_playerControlSystem = m_coordinator->RegisterSystem<PlayerControlSystem>();
-	// Signature設定
-	ECS::Signature controlSignature;
-	controlSignature.set(m_coordinator->GetComponentTypeID<RigidBodyComponent>());
-	controlSignature.set(m_coordinator->GetComponentTypeID<PlayerControlComponent>());
-	m_coordinator->SetSystemSignature<PlayerControlSystem>(controlSignature);
-	m_playerControlSystem->Init();
-
-	// CollisionSystemの登録
-	m_collisionSystem = m_coordinator->RegisterSystem<CollisionSystem>();
-	// Signature設定: Transform, RigidBody, Collisionを持つEntityを処理
-	ECS::Signature collisionSignature;
-	collisionSignature.set(m_coordinator->GetComponentTypeID<TransformComponent>());
-	collisionSignature.set(m_coordinator->GetComponentTypeID<RigidBodyComponent>());
-	collisionSignature.set(m_coordinator->GetComponentTypeID<CollisionComponent>());
-	m_coordinator->SetSystemSignature<CollisionSystem>(collisionSignature);
-	m_collisionSystem->Init();
-
-	// CameraControlSystemの登録
-	m_cameraControlSystem = m_coordinator->RegisterSystem<CameraControlSystem>();
-	// Signature設定: CameraComponentを持つEntityを処理
-	ECS::Signature cameraSignature;
-	cameraSignature.set(m_coordinator->GetComponentTypeID<CameraComponent>());
-	m_coordinator->SetSystemSignature<CameraControlSystem>(cameraSignature);
-	m_cameraControlSystem->Init();
+	ECS::ECSInitializer::InitECS(m_coordinator);
 
 	// --- 4. デモ用Entityの作成 ---
 	CreateDemoEntities(m_coordinator.get());
@@ -251,9 +167,11 @@ void GameScene::Init()
 
 void GameScene::Uninit()
 {
+	// 1. ECS Systemの静的リソースを解放
+	ECS::ECSInitializer::UninitECS();
+
 	// Coordinatorの破棄（unique_ptrが自動的にdeleteを実行）
 	m_coordinator.reset();
-	m_renderSystem.reset();
 
 	// 静的ポインタをクリア
 	s_coordinator = nullptr;
@@ -278,27 +196,31 @@ void GameScene::Update(float deltaTime)
 
 	// --- 2. ECS Systemの更新
 	// 1. 入力
-	if (m_playerControlSystem)
+	// if (m_playerControlSystem) // 削除
+	if (auto system = ECS::ECSInitializer::GetSystem<PlayerControlSystem>())
 	{
-		m_playerControlSystem->Update();
+		system->Update();
 	}
-	
+
 	// 2. 物理計算（位置の更新）
-	if (m_physicsSystem)
+	// if (m_physicsSystem) // 削除
+	if (auto system = ECS::ECSInitializer::GetSystem<PhysicsSystem>())
 	{
-		m_physicsSystem->Update();
+		system->Update();
 	}
 
 	// 3. 衝突検出と応答（位置の修正）
-	if (m_collisionSystem)
+	// if (m_collisionSystem) // 削除
+	if (auto system = ECS::ECSInitializer::GetSystem<CollisionSystem>())
 	{
-		m_collisionSystem->Update();
+		system->Update();
 	}
 
 	// 4. カメラ制御（ビュー・プロジェクション行列の更新）
-	if (m_cameraControlSystem)
+	// if (m_cameraControlSystem) // 削除
+	if (auto system = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
 	{
-		m_cameraControlSystem->Update();
+		system->Update();
 	}
 
 	// --- 3. ECS EntityのComponent更新 ---
@@ -316,12 +238,12 @@ void GameScene::Update(float deltaTime)
 void GameScene::Draw()
 {
 	// RenderSystemは常に存在すると仮定
-	if (m_renderSystem)
+	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
 	{
 		// 1. カメラ設定やデバッググリッド描画
-		m_renderSystem->DrawSetup();
+		system->DrawSetup();
 
 		// 2. ECS Entityの描画
-		m_renderSystem->DrawEntities();
+		system->DrawEntities();
 	}
 }

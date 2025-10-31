@@ -52,7 +52,10 @@ private:
 
 public:
 	// Systemの初期化
-	void Init();
+	void Init(ECS::Coordinator* coordinator) override
+	{
+		m_coordinator = coordinator;
+	}
 
 	/// @brief 描画に必要なカメラ設定、デバッグ描画などを行う
 	void DrawSetup();

@@ -65,14 +65,12 @@ namespace ECS
 			m_componentManager->RegisterComponentType<T>();
 		}
 
-
-
 		/// @brief EntityにComponentを追加し、初期値を設定する
 		template<typename T, typename... Args>
 		void AddComponent(EntityID entityID, Args&&... args)
 		{
 			// 1. ComponentManagerにComponentの追加を依頼
-			m_componentManager->AddComponent<T>(entityID, std::forward<Args>(args)...);
+			m_componentManager->template AddComponent(entityID, std::forward<Args>(args)...);
 
 			// 2. EntityのSignatureを更新
 			Signature signature = m_entityManager->GetSignature(entityID);
@@ -81,6 +79,14 @@ namespace ECS
 
 			// 3. SystemManagerにSignatureの変更を通知し、Systemへの登録/解除を促す
 			m_systemManager->EntitySignatureChanged(entityID, signature);
+		}
+
+		template<typename T>
+		void AddComponent(EntityID entityID, T&& component)
+		{
+			// ComponentArray<T> を取得し、ムーブしてAddComponentを呼び出す
+			// この呼び出しは ComponentArray<T>::AddComponent<T&&> に繋がる
+			m_componentManager->template AddComponent(entityID, std::forward<T>(component));
 		}
 
 		/// @brief EntityからComponentを削除する
@@ -133,11 +139,11 @@ namespace ECS
 		// --- 【新規】一括追加ヘルパーの本体（再帰関数） ---
 		// 最初のコンポーネントを追加し、残りを再帰的に処理する
 		template<typename T, typename... Rest>
-		void AddComponentsInternal(EntityID entityID, T component, Rest&&... rest)
+		void AddComponentsInternal(EntityID entityID, T&& component, Rest&&... rest)
 		{
 			// 1. ComponentManagerにComponentインスタンスの追加を依頼
 			// ComponentManagerに実装したオーバーロードを使用
-			m_componentManager->AddComponent<T>(entityID, component);
+			m_componentManager->template AddComponent<T>(entityID, std::forward<T>(component));
 
 			// 2. EntityのSignatureを更新（AddComponentのロジックをコピー）
 			Signature signature = m_entityManager->GetSignature(entityID);

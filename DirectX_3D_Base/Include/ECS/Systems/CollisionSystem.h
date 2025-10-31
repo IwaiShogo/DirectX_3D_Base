@@ -62,9 +62,9 @@ private:
 	void ResolveCollision(ECS::EntityID entityA, ECS::EntityID entityB, const DirectX::XMFLOAT3& mtv);
 
 public:
-	void Init()
+	void Init(ECS::Coordinator* coordinator) override
 	{
-		m_coordinator = GameScene::GetCoordinator();
+		m_coordinator = coordinator;
 	}
 
 	/// @brief Õ“ËŒŸo‚Æ‰“š‚ğs‚¤
