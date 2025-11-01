@@ -60,4 +60,8 @@ struct CameraComponent
 	}
 };
 
+// Component‚ÌŽ©“®“o˜^
+#include "ECS/ComponentRegistry.h"
+REGISTER_COMPONENT_TYPE(CameraComponent)
+
 #endif // !___CAMERA_COMPONENT_H___

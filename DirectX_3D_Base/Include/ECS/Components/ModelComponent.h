@@ -64,4 +64,8 @@ struct ModelComponent
 	ModelComponent& operator=(ModelComponent&&) noexcept = default;
 };
 
+// Component‚ÌŽ©“®“o˜^
+#include "ECS/ComponentRegistry.h"
+REGISTER_COMPONENT_TYPE(ModelComponent)
+
 #endif // !___MODEL_COMPONENT_H___

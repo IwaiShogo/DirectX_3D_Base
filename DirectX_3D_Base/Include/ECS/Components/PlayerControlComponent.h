@@ -44,4 +44,8 @@ struct PlayerControlComponent
 	{}
 };
 
+// Component‚ÌŽ©“®“o˜^
+#include "ECS/ComponentRegistry.h"
+REGISTER_COMPONENT_TYPE(PlayerControlComponent)
+
 #endif // !___PLAYER_CONTROL_COMPONENT_H___

@@ -23,6 +23,7 @@
 
 #include "ECS/ECS.h"
 #include "ECS/ECSInitializer.h"
+#include "ECS/EntityFactory.h"
 
 #include <DirectXMath.h>
 #include <iostream>
@@ -43,110 +44,6 @@ namespace SceneDemo
 
 using namespace DirectX;
 
-/**
- * @brief デモ用のEntity（地面と回転する箱）を作成し、ECSに登録する
- * @param coordinator - Coordinatorインスタンスへのポインタ
- */
-static void CreateDemoEntities(ECS::Coordinator* coordinator)
-{
-	// --- 1. 1つ目の地面（静的オブジェクト） ---
-	ECS::EntityID ground1 = coordinator->CreateEntity(
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.0f, -0.5f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(10.0f, 0.2f, 10.0f)
-		),
-		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
-		),
-		RigidBodyComponent(
-			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Mass			*/	0.0f,
-			/* Friction		*/	0.8f,
-			/* Restitution	*/	0.2f
-		),
-		CollisionComponent(
-			/* Size			*/	XMFLOAT3(5.0f, 0.1f, 5.0f),
-			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType	*/	COLLIDER_STATIC
-		)
-	);
-
-	// --- 2. 2つ目の地面（柱） (Transform + Render) ---
-	ECS::EntityID ground2 = coordinator->CreateEntity(
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(2.0f, 0.0f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
-		),
-		RenderComponent(
-			/* MeshType	*/	MESH_MODEL,
-			/* Color	*/	XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f)
-		),
-		RigidBodyComponent(
-			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Mass			*/	0.0f,
-			/* Friction		*/	0.8f,
-			/* Restitution	*/	0.2f
-		),
-		CollisionComponent(
-			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
-			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType	*/	COLLIDER_STATIC
-		),
-		ModelComponent(
-			/* Path		*/	"Assets/Model/Rizu/dousakakuninn11 1.fbx",
-			/* Scale	*/	0.1f,
-			/* Flip		*/	Model::ZFlip
-		)
-	);
-
-	// --- 3. 回転する箱 (Transform + Render) ---
-	ECS::EntityID player = coordinator->CreateEntity(
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(1.0f, 1.5f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
-		),
-		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
-		),
-		RigidBodyComponent(
-			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Mass			*/	1.0f,
-			/* Friction		*/	0.8f,
-			/* Restitution	*/	0.2f
-		),
-		CollisionComponent(
-			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
-			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType	*/	COLLIDER_DYNAMIC // 動的
-		),
-		PlayerControlComponent(
-			/* MoveSpeed	*/	4.0f,
-			/* JumpPower	*/	3.0f
-		)
-	);
-
-	const static ECS::EntityID s_playerID = player;
-
-	// カメラEntityの生成（プレイヤー EntityID を追従対象に設定）
-	ECS::EntityID mainCamera = coordinator->CreateEntity(
-		CameraComponent(
-			/* FocusID		*/	s_playerID,
-			/* Offset		*/	XMFLOAT3(0.0f, METER(3.0f), METER(-5.0f)),
-			/* FollowSpeed	*/	0.1f
-		),
-		RenderComponent(),TransformComponent()	// RenderSystem内から探すため
-	);
-}
-
-
 // ===== GameScene メンバー関数の実装 =====
 
 void GameScene::Init()
@@ -160,7 +57,7 @@ void GameScene::Init()
 	ECS::ECSInitializer::InitECS(m_coordinator);
 
 	// --- 4. デモ用Entityの作成 ---
-	CreateDemoEntities(m_coordinator.get());
+	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
 
 	std::cout << "GameScene::Init() - ECS Initialized and Demo Entities Created." << std::endl;
 }

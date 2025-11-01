@@ -63,4 +63,8 @@ struct CollisionComponent
 	}
 };
 
+// Component‚ÌŽ©“®“o˜^
+#include "ECS/ComponentRegistry.h"
+REGISTER_COMPONENT_TYPE(CollisionComponent)
+
 #endif // !___COLLISION_COMPONENT_H___

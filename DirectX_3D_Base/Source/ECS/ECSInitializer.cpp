@@ -36,15 +36,10 @@ std::unordered_map<std::type_index, std::shared_ptr<ECS::System>> ECS::ECSInitia
  */
 void ECSInitializer::RegisterComponents(Coordinator* coordinator)
 {
-	// --- Componentの登録（GameScene::Init()から移動） ---
-	coordinator->RegisterComponentType<TransformComponent>();
-	coordinator->RegisterComponentType<RenderComponent>();
-	coordinator->RegisterComponentType<RigidBodyComponent>();
-	coordinator->RegisterComponentType<CollisionComponent>();
-	coordinator->RegisterComponentType<PlayerControlComponent>();
-	coordinator->RegisterComponentType<CameraComponent>();
-	coordinator->RegisterComponentType<ModelComponent>();
-	// --- 新しいComponentを追加する際はここへ追記 ---
+    for (const auto& registerFn : GetComponentRegisterers())
+    {
+        registerFn(coordinator);
+    }
 
 	std::cout << "ECSInitializer: All Components registered." << std::endl;
 }

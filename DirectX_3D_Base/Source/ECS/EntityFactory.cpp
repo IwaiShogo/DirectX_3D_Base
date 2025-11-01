@@ -1,0 +1,174 @@
+/*****************************************************************//**
+ * @file	EntityFactory.cpp
+ * @brief	特定のエンティティ（プレイヤー、地面など）の生成ロジックを集約するヘルパークラスの実装。
+ * 
+ * @details	
+ * Componentの具体的な値設定をここに集約し、シーンコードをシンプルにする。
+ * 
+ * ------------------------------------------------------------
+ * @author	Iwai Shogo
+ * ------------------------------------------------------------
+ * 
+ * @date	2025/10/31	初回作成日
+ * 			作業内容：	- 追加：エンティティ生成の静的実装を作成。地面エンティティの生成ロジックを移動。
+ * 
+ * @update	2025/xx/xx	最終更新日
+ * 			作業内容：	- XX：
+ * 
+ * @note	（省略可）
+ *********************************************************************/
+
+ // ===== インクルード =====
+#include "ECS/EntityFactory.h"
+#include "ECS/ECS.h" // すべてのコンポーネントとCoordinatorにアクセスするため
+#include "Main.h" // METERなどの定数にアクセス
+
+using namespace ECS;
+using namespace DirectX;
+
+// 静的メンバ変数の定義 (必要に応じて追加)
+// const static ECS::EntityID EntityFactory::s_playerID = 2; // エンティティIDはCoordinatorが管理するため不要
+
+/**
+ * @brief ゲームワールドの静的な地面エンティティを生成する
+ * @param coordinator - エンティティの生成と登録を行うCoordinator
+ * @param position - 位置
+ * @param scale - スケール
+ * @return EntityID - 生成された地面エンティティID
+ */
+EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& position, const XMFLOAT3& scale)
+{
+	// GameScene::CreateDemoEntities()から地面のロジックを移動
+	ECS::EntityID ground = coordinator->CreateEntity(
+		TransformComponent(
+			/* Position	*/	position,
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	scale
+		),
+		RenderComponent(
+			/* MeshType	*/	MESH_BOX,
+			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
+		),
+		RigidBodyComponent(
+			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass			*/	0.0f, // 静的オブジェクト
+			/* Friction		*/	0.8f,
+			/* Restitution	*/	0.2f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(scale.x / 2.0f, scale.y / 2.0f, scale.z / 2.0f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_STATIC
+		)
+	);
+	return ground;
+}
+
+/**
+ * @brief プレイヤーエンティティを生成する
+ * @param coordinator - エンティティの生成と登録を行うCoordinator
+ * @param position - 初期位置
+ * @return EntityID - 生成されたプレイヤーエンティティID
+ */
+	ECS::EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 & position)
+{
+	// GameScene::CreateDemoEntities()からプレイヤーのロジックを移動
+	ECS::EntityID player = coordinator->CreateEntity(
+		TransformComponent(
+			/* Position	*/	position,
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
+		),
+		RenderComponent(
+			/* MeshType	*/	MESH_BOX,
+			/* Color	*/	XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
+		),
+		RigidBodyComponent(
+			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass			*/	1.0f,
+			/* Friction		*/	0.8f,
+			/* Restitution	*/	0.2f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_DYNAMIC
+		),
+		PlayerControlComponent(
+			/* MoveSpeed	*/	4.0f,
+			/* JumpPower	*/	3.0f
+		)
+	);
+	return player;
+}
+
+/**
+ * @brief カメラエンティティを生成する
+ * @param coordinator - エンティティの生成と登録を行うCoordinator
+ * @param focusID - 追従対象のエンティティID
+ * @return EntityID - 生成されたカメラエンティティID
+ */
+ECS::EntityID EntityFactory::CreateCamera(Coordinator* coordinator, EntityID focusID)
+{
+	// GameScene::CreateDemoEntities()からカメラのロジックを移動
+	ECS::EntityID mainCamera = coordinator->CreateEntity(
+		CameraComponent(
+			/* FocusID		*/	focusID,
+			/* Offset		*/	XMFLOAT3(0.0f, METER(3.0f), METER(-5.0f)),
+			/* FollowSpeed	*/	0.1f
+		),
+		// RenderSystem内から探すためのダミーコンポーネント (RenderComponentとTransformComponentは必須)
+		RenderComponent(), TransformComponent()
+	);
+	return mainCamera;
+}
+
+
+/**
+ * @brief 全てのデモ用エンティティを生成し、ECSに登録する (GameScene::Init()から呼ばれる)
+ * @param coordinator - エンティティの生成と登録を行うCoordinator
+ */
+void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
+{
+	// --- 1. 1つ目の地面（静的オブジェクト） ---
+	CreateGround(coordinator,
+		XMFLOAT3(0.0f, -0.5f, 0.0f),
+		XMFLOAT3(10.0f, 0.2f, 10.0f));
+
+	// --- 2. 2つ目の地面（柱） (ModelComponentを使用) ---
+	// CreateGroundのロジックに似ているが、ModelComponentが必要なため直接記述
+	coordinator->CreateEntity(
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(2.0f, 0.0f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
+		),
+		RenderComponent(
+			/* MeshType	*/	MESH_MODEL,
+			/* Color	*/	XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f)
+		),
+		RigidBodyComponent(
+			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass			*/	0.0f,
+			/* Friction		*/	0.8f,
+			/* Restitution	*/	0.2f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_STATIC
+		),
+		ModelComponent(
+			/* Path		*/	"Assets/Model/Rizu/dousakakuninn11.fbx",
+			/* Scale	*/	0.1f,
+			/* Flip		*/	Model::ZFlip
+		)
+	);
+
+	// --- 3. プレイヤーとカメラの生成 ---
+	ECS::EntityID playerID = CreatePlayer(coordinator, XMFLOAT3(1.0f, 1.5f, 0.0f));
+	CreateCamera(coordinator, playerID);
+}

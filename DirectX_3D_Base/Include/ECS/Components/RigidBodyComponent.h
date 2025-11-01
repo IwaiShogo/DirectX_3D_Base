@@ -50,4 +50,8 @@ struct RigidBodyComponent
 	}
 };
 
+// Component‚ÌŽ©“®“o˜^
+#include "ECS/ComponentRegistry.h"
+REGISTER_COMPONENT_TYPE(RigidBodyComponent)
+
 #endif // !___RIGID_BODY_COMPONENT_H___

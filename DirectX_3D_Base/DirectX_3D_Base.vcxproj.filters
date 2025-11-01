@@ -114,6 +114,9 @@
     <ClCompile Include="Source\ECS\ECSInitializer.cpp">
       <Filter>Source Files\ECS</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\EntityFactory.cpp">
+      <Filter>Source Files\ECS</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Systems\Geometory.h">
@@ -227,5 +230,16 @@
     <ClInclude Include="Include\ECS\ECSInitializer.h">
       <Filter>Header Files\ECS</Filter>
     </ClInclude>
+    <ClInclude Include="Include\ECS\EntityFactory.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\ComponentRegistry.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Filter>Resource</Filter>
+    </None>
   </ItemGroup>
 </Project>

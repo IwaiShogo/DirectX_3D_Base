@@ -47,4 +47,8 @@ struct TransformComponent
 	{}
 };
 
+// Component‚ÌŽ©“®“o˜^
+#include "ECS/ComponentRegistry.h"
+REGISTER_COMPONENT_TYPE(TransformComponent)
+
 #endif // !___TRANSFORM_COMPONENT_H___
