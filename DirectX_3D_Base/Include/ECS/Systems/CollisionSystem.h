@@ -22,15 +22,15 @@
 
 // ===== インクルード =====
 // ECS
-#include "../ECS/Coordinator.h"
-#include "../ECS/SystemManager.h"
+#include "ECS/Coordinator.h"
+#include "ECS/SystemManager.h"
 // Components
-#include "../Components/TransformComponent.h"
-#include "../Components/RigidBodyComponent.h"
-#include "../Components/CollisionComponent.h"
-#include "../Components/PlayerControlComponent.h" // 衝突応答でIsGroundedフラグ更新に使用
+#include "ECS/Components/TransformComponent.h"
+#include "ECS/Components/RigidBodyComponent.h"
+#include "ECS/Components/CollisionComponent.h"
+#include "ECS/Components/PlayerControlComponent.h" // 衝突応答でIsGroundedフラグ更新に使用
 // Scene
-#include "../Scene/GameScene.h" 
+#include "Scene/GameScene.h" 
 
 #include <DirectXMath.h>
 #include <memory>

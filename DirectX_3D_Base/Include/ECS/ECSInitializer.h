@@ -76,4 +76,9 @@ namespace ECS
 
 }
 
+#define REGISTER_SYSTEM_AND_INIT(coordPtr, TSystem, ...) \
+    auto system_##TSystem##_##__LINE__ = (coordPtr)->RegisterSystemWithSignature<TSystem, __VA_ARGS__>(); \
+    (system_##TSystem##_##__LINE__)->Init(coordPtr); \
+    ECSInitializer::s_systems[std::type_index(typeid(TSystem))] = system_##TSystem##_##__LINE__;
+
 #endif // !___ECS_INITIALIZER_H___

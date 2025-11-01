@@ -71,7 +71,7 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
  * @param position - 初期位置
  * @return EntityID - 生成されたプレイヤーエンティティID
  */
-	ECS::EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 & position)
+ECS::EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 & position)
 {
 	// GameScene::CreateDemoEntities()からプレイヤーのロジックを移動
 	ECS::EntityID player = coordinator->CreateEntity(

@@ -37,6 +37,31 @@ namespace ECS
 	 */
 	class Coordinator
 	{
+	private:
+		// 1. ベースケース (終端 - 0個の型パックに対応)
+		void SetSignatureHelper(Signature& signature) {}
+
+		// 2. 終端ケース (最後の1つの要素が残ったときに呼ばれる)
+		template<typename TLast>
+		void SetSignatureHelper(Signature& signature)
+		{
+			signature.set(GetComponentTypeID<TLast>());
+			// テンプレート引数なしで非テンプレートのベースケースを呼び出す
+			SetSignatureHelper(signature);
+		}
+
+		// 3. 標準的な再帰ケース (2つ以上の要素が残っているときに呼ばれる)
+		// ★★★ 修正箇所: TCurrent, TSecond の2つの型を必須とし、曖昧さを回避 ★★★
+		template<typename TCurrent, typename TSecond, typename... TRest>
+		void SetSignatureHelper(Signature& signature)
+		{
+			// TCurrent のビットを設定
+			signature.set(GetComponentTypeID<TCurrent>());
+
+			// TSecond と TRest... を渡して再帰 (この呼び出しは、(2)または(3)に誘導される)
+			SetSignatureHelper<TSecond, TRest...>(signature);
+		}
+
 	public:
 		Coordinator() = default;
 
@@ -204,6 +229,31 @@ namespace ECS
 		void SetSystemSignature(Signature signature)
 		{
 			m_systemManager->SetSignature<T>(signature);
+		}
+
+		/**
+		 * @brief システムを登録し、関連するコンポーネントのシグネチャを同時に設定します。（C++11/14互換の再帰テンプレート版）
+		 *
+		 * @tparam TSystem 登録するシステム型
+		 * @tparam TComponents システムが関心を持つコンポーネント型 (可変引数)
+		 * @return 登録されたシステムへのshared_ptr
+		 */
+		template<typename TSystem, typename... TComponents>
+		std::shared_ptr<TSystem> RegisterSystemWithSignature()
+		{
+			// 1. システムの登録
+			std::shared_ptr<TSystem> system = RegisterSystem<TSystem>();
+
+			// 2. シグネチャの構築と設定
+			Signature signature;
+
+			// ★ 修正箇所: 再帰ヘルパー関数を呼び出し、型パックを展開させる ★
+			SetSignatureHelper<TComponents...>(signature);
+
+			// 3. Coordinatorにシグネチャを適用
+			SetSystemSignature<TSystem>(signature);
+
+			return system;
 		}
 	};
 }

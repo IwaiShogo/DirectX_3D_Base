@@ -36,6 +36,7 @@ std::unordered_map<std::type_index, std::shared_ptr<ECS::System>> ECS::ECSInitia
  */
 void ECSInitializer::RegisterComponents(Coordinator* coordinator)
 {
+    // コンポーネントの登録（自動で登録される）
     for (const auto& registerFn : GetComponentRegisterers())
     {
         registerFn(coordinator);
@@ -48,73 +49,44 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
 {
     Coordinator* coordPtr = coordinator;
 
-    // --- 1. RenderSystem ---
-    {
-        auto system = coordinator->RegisterSystem<RenderSystem>();
+    // ============================================================
+    // システムの登録とシグネチャの設定（ここから下に追加）
+    // ============================================================
 
-        ECS::Signature signature;
-        signature.set(coordinator->GetComponentTypeID<TransformComponent>());
-        signature.set(coordinator->GetComponentTypeID<RenderComponent>());
-        // Coordinatorが要求する型（テンプレート）でシグネチャを設定
-        coordinator->SetSystemSignature<RenderSystem>(signature);
+    // --- RenderSystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  RenderSystem,
+        /* Components   */  RenderComponent, TransformComponent
+    );
 
-        system->Init(coordPtr);
-        ECSInitializer::s_systems[std::type_index(typeid(RenderSystem))] = system;
-    }
+    // --- PhysicsSystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  PhysicsSystem,
+        /* Components   */  RigidBodyComponent, TransformComponent, CollisionComponent
+    );
 
-    // --- 2. PhysicsSystem ---
-    {
-        auto system = coordinator->RegisterSystem<PhysicsSystem>();
+    // --- PlayerControlSystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  PlayerControlSystem,
+        /* Components   */  PlayerControlComponent, RigidBodyComponent
+    );
+    
+    // --- CollisionSystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  CollisionSystem,
+        /* Components   */  CollisionComponent, TransformComponent, RigidBodyComponent
+    );
 
-        ECS::Signature signature;
-        signature.set(coordinator->GetComponentTypeID<TransformComponent>());
-        signature.set(coordinator->GetComponentTypeID<RigidBodyComponent>());
-        signature.set(coordinator->GetComponentTypeID<CollisionComponent>()); // GameSceneから復元
-        // Coordinatorが要求する型（テンプレート）でシグネチャを設定
-        coordinator->SetSystemSignature<PhysicsSystem>(signature);
-
-        system->Init(coordPtr);
-        ECSInitializer::s_systems[std::type_index(typeid(PhysicsSystem))] = system;
-    }
-
-    // --- 3. PlayerControlSystem ---
-    {
-        auto system = coordinator->RegisterSystem<PlayerControlSystem>();
-
-        ECS::Signature signature;
-        signature.set(coordinator->GetComponentTypeID<RigidBodyComponent>());
-        signature.set(coordinator->GetComponentTypeID<PlayerControlComponent>());
-        coordinator->SetSystemSignature<PlayerControlSystem>(signature);
-
-        system->Init(coordPtr);
-        ECSInitializer::s_systems[std::type_index(typeid(PlayerControlSystem))] = system;
-    }
-
-    // --- 4. CollisionSystem ---
-    {
-        auto system = coordinator->RegisterSystem<CollisionSystem>();
-
-        ECS::Signature signature;
-        signature.set(coordinator->GetComponentTypeID<TransformComponent>());
-        signature.set(coordinator->GetComponentTypeID<RigidBodyComponent>());
-        signature.set(coordinator->GetComponentTypeID<CollisionComponent>());
-        coordinator->SetSystemSignature<CollisionSystem>(signature);
-
-        system->Init(coordPtr);
-        ECSInitializer::s_systems[std::type_index(typeid(CollisionSystem))] = system;
-    }
-
-    // --- 5. CameraControlSystem ---
-    {
-        auto system = coordinator->RegisterSystem<CameraControlSystem>();
-
-        ECS::Signature signature;
-        signature.set(coordinator->GetComponentTypeID<CameraComponent>());
-        coordinator->SetSystemSignature<CameraControlSystem>(signature);
-
-        system->Init(coordPtr);
-        ECSInitializer::s_systems[std::type_index(typeid(CameraControlSystem))] = system;
-    }
+    // --- CameraControlSystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  CameraControlSystem,
+        /* Components   */  CameraComponent
+    );
 
     std::cout << "ECSInitializer: All Systems registered and initialized." << std::endl;
 }
