@@ -21,15 +21,50 @@
 <details open>
 <summary>展開/折りたたみ</summary>
 
-### 基本情報
+### 1. 基本情報
 - [プロジェクト概要](#プロジェクト概要)
 - [技術スタック](#技術スタック)
+- [環境構築](#環境構築)
+
+### 2. ECSアーキテクチャについて
+- [ECSを図解](#ecsを図解)
+  - [Entity（エンティティ）](#entityエンティティ)
+  - [Component（コンポーネント）](#componentコンポーネント)
+  - [System（システム）](systemシステム)
+
+### 3. 実装ガイド
+- [コンポーネントの作り方](#コンポーネントの作り方)
+- [システムの作り方](#システムの作り方)
+- [システムの登録とシグネチャの設定方法](#システムの登録とシグネチャの設定方法)
+- [エンティティの作成（詳細）](#エンティティの作成詳細)
+
+### 4. 実践
+- [実践例](#実践例)
+  - [System内のComponentデータへのアクセス](#1-system内のcomponentデータへのアクセス)
+  - [Entityの動的な操作（Componentの追加・削除）](#2-entityの動的な操作componentの追加削除)
+  - [エンティティの削除方法](#3-エンティティの削除方法)
+
+### 5. コーディング規約
+- [命名規約](#命名規約)
+- [ファイル構成](#ファイル構成)
+
+### 6. チーム開発するにあたって
+- [ファイル編集ルール](#ファイル編集ルール)
+- [コアな型定義（参照）](#コアな型定義参照)
+
+### 7. GitHubの使い方
+- [重要な用語](#重要な用語)
+- [使い方（詳細）](#使い方詳細)
+
+### 8. チェックリスト
+- [作業前](#作業前)
+- [作業後](#作業後)
 
 </details>
 
 ## 1. 基本情報
 
-## プロジェクト概要
+### プロジェクト概要
 
 本プロジェクトは、DirectX11を使用した3Dグラフィックスアプリケーションの基盤となるフレームワークです。
 
@@ -41,7 +76,7 @@
 <tr>
 <td>
       
-## 技術スタック
+### 技術スタック
 
 |項目|内容|備考|
 |-|-|-|
@@ -59,7 +94,7 @@
 <tr>
 <td>
 
-## 環境構築
+### 環境構築
 
 |項目|推奨設定|備考|
 |-|-|-|
@@ -79,6 +114,9 @@
 ## 2. ECSアーキテクチャについて
 
 ECSは、ゲームオブジェクトを構成するデータとロジックを厳密に分離するための設計思想です。
+
+
+### ECSを図解
 
 ```mermaid
 graph TB
@@ -124,7 +162,8 @@ graph TB
 
 ## 3. 実装ガイド
 
-**コンポーネントの作り方**
+### コンポーネントの作り方
+
 1. **ヘッダーファイルを作成**：`DirectX_3D_Base/Include/ECS/Components`に`[ComponentName]Component.h`を作成。
 2. **構造体を定義**：データ（メンバ変数）のみを記述します。
 3. **登録マクロを記述**：ファイルの最後に以下のマクロを記述します。
@@ -134,7 +173,8 @@ graph TB
 REGISTER_COMPONENT_TYPE(YourNewComponent)
 ```
 
-**システムの作り方**
+### システムの作り方
+
 1. **ヘッダーファイルを作成**:`DirectX_3D_Base/Include/ECS/Systems/`に`[SystemName]System.h`を作成。
 2. **Systemクラスを定義**:`public ECS::System`を継承します。
 3. `Init`を実装：`Coordinator`へのポインタを必ず保持します。
@@ -156,7 +196,8 @@ private:  /* 内部変数 */
 };
 ```
 
-**システムの登録とシグネチャの設定方法**
+### システムの登録とシグネチャの設定方法
+
 Systemの登録は、シーン初期化関数（`ECSInitializer::RegisterSystemsAndSetSignatures()`）から`ECSInitializer.h`のマクロを用いて実行します。
 
 - **コンポーネントの登録方法**：Componentファイルで`REGISTER_COMPONENT_TYPE`を使用することで、自動的に登録されます。特別手動登録処理は不要です。
@@ -175,7 +216,7 @@ REGISTER_SYSTEM_AND_INIT(
 );
 ```
 
-**エンティティの作成（詳細）**
+### エンティティの作成（詳細）
 Entityの作成には、Componentの初期値を同時に渡す一括追加形式を推奨します。
 1. **エンティティIDの取得**：`Coordinator::CreateEntity()`で新しいIDが割り当てられます。
 2. Componentの初期化と付与：
@@ -199,9 +240,9 @@ ECS::EntityID newEntity = m_coordinator->CreateEntity(
 
 ## 4. 実践
 
-**実践例**
+### 実践例
 
-1. **System内のComponentデータへのアクセス**
+#### 1. System内のComponentデータへのアクセス
 
 Systemのロジック実行時、Coordinatorを経由してComponentの参照を取得し、データを直接書き換えます。
 
@@ -218,7 +259,7 @@ for (auto const& entity : m_entities)
 }
 ```
 
-2. **Entityの動的な操作（Componentの追加・削除）**
+#### 2. Entityの動的な操作（Componentの追加・削除）
 ゲームプレイ中にEntityの振る舞いを変更する場合に使用します。
 - Componentの追加：
 
@@ -234,7 +275,7 @@ m_coordinator->RemoveComponent<NewBehaviorComponent>(entity);
 // このEntityは、NewBehaviorComponentを要求するSystemの処理対象から外れます。
 ```
 
-3. **エンティティの削除方法**
+#### 3. エンティティの削除方法
 不要になったEntityは、必ずCoordinator::DestoryEntityを使って破棄し、リソースとIDを解放します。
 
 ```cpp
@@ -246,6 +287,8 @@ m_coordinator->DestoryEntity(entity);
 
 ## 5. コーディング規約
 
+### 命名規約
+
 |要素|命名規約|例|備考|
 |-|-|-|-|
 |クラス/構造体/列挙型|PascalCase|`Coordinator`, `TransformComponent`, `RenderSystem`||
@@ -254,7 +297,8 @@ m_coordinator->DestoryEntity(entity);
 |メンバ変数|camelCase(m_接頭語)|`m_coordinator`, `m_componentManager`|一貫性のため、`m_`を付けてください。|
 |ローカル変数|camelCase|`entityID`, `deltaTime`||
 
-**ファイル構成**
+### ファイル構成
+
 - `Include/ECS/Components/`：全てのComponentのヘッダーファイル
 - `Include/ECS/Systems/`：全てのSystemのヘッダーファイル
 - `Source/ECS/Systems/`：全てのSystemのソースファイル（ロジック実装）
@@ -264,7 +308,8 @@ m_coordinator->DestoryEntity(entity);
 
 ## 6. チーム開発するにあたって
 
-**ファイル編集ルール**
+### ファイル編集ルール
+
 プロジェクトの安定性を確保するため、ファイルの編集範囲を明確にします。
 
 |分類|ファイル/ディレクトリ|編集ルール|
@@ -277,7 +322,7 @@ m_coordinator->DestoryEntity(entity);
 |⚠️要相談なもの|`Include/Systems/{Input, Model, Camera}.h/cpp`|共通のインフラレイヤーです。変更は他のメンバーに影響が出るため、PRでレビューを要請してください。|
 ||`Include/Scene/{Scene, SceneManager}.h/cpp`|シーンの遷移基盤。|
 
-**コアな型定義（参照）**
+### コアな型定義（参照）
 
 ECSの根幹となる型は`Include/ECS/Types.h`で定義されています。
 - `EntityID`：エンティティの一意なID。
@@ -290,7 +335,7 @@ ECSの根幹となる型は`Include/ECS/Types.h`で定義されています。
 
 GitHubを使用した共同制作の基本的なワークフローです。
 
-**重要な用語**
+### 重要な用語
 ```
 用語                意味
 Repository         プロジェクトのファイルと履歴の保管庫。
@@ -300,7 +345,7 @@ Push               ローカルのコミットをリモートリポジトリに�
 Pull Request (PR)  ブランチをメインラインに統合するためのレビュー依頼機能。
 ```
 
-**使い方（詳細）**
+### 使い方（詳細）
 1. **作業開始前の準備**
    1. **ベースブランチに移動**：`develop`ブランチに移動し、最新状態を取得します。
    ```bash
@@ -352,10 +397,4 @@ Pull Request (PR)  ブランチをメインラインに統合するためのレ�
 - [ ] **Push**：作業ブランチをリモートにプッシュし、最新の状態にしましたか？
 - [ ] **Pull Request**：`develop`へのPRを作成し、レビューを依頼しましたか？
 - [ ] **コアシステム非編集**：触ってはいけないコアシステム（例：`Coordinator.h`）を無断で編集していませんか？
-
-
-
-
-
-
-
+- [ ] **他者への影響**：他のメンバーの作業に影響していませんか？
