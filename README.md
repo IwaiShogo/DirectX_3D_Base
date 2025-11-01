@@ -1,3 +1,359 @@
-unko
-↓この下に名前書いてみて↓
-宇野樹
+<div align="center">
+  
+# DirectX ECSベースプロジェクト チーム開発ガイド
+  
+</div>
+
+---
+
+本ドキュメントは、DirectX 3DベースプロジェクトにおけるEntity-Component-System (ECS)アーキテクチャの概要、実装ガイド、及びチーム開発のガイドラインをまとめたものです。
+
+開発に参加する全てのメンバーは、このドキュメントを熟読し、プロジェクトの規約を遵守してください。
+
+---
+
+<div align="center">
+  
+## 目次
+
+</div>
+
+<details open>
+<summary>展開/折りたたみ</summary>
+
+
+
+</details>
+
+## 1. 基本情報
+
+**プロジェクト概要**
+
+本プロジェクトは、DirectX11を使用した3Dグラフィックスアプリケーションの基盤となるフレームワークです。
+
+ゲームオブジェクトのロジックとデータを分離し、柔軟性とパフォーマンスの向上を目指すために、**ECS（Entity-Component-System）アーキテクチャ**を採用しています。
+
+---
+
+<table>
+<tr>
+<td>
+      
+**技術スタック**
+
+|項目|内容|備考|
+|-|-|-|
+|**名称**|DirectX_3D_Base||
+|**プラットフォーム**|Windows (PC)||
+|**グラフィックスAPI**|DirectX11 (プロジェクト設定依存)|3D描画の基盤です。|
+|**言語**|C++14|最新のC++標準機能（スマートポインタ、テンプレートなど）を積極的に使用します。|
+|**ECSコア**|カスタム実装 (Coordinatorパターン)|ComponentManager, EntityManager, SystemManagerから構成されます。|
+|**外部ライブラリ**|DirectXTex, DirectXMath, Assimp|3D数学演算及びモデルファイル（FBXなど）のローディングに使用します。|
+
+</td>
+</tr>
+</table>
+<table>
+<tr>
+<td>
+
+**環境構築**
+
+|項目|推奨設定|備考|
+|-|-|-|
+|**OS**|Windows 10/11|開発環境の標準OS|
+|**IDE**|Visual Studio 2022|C++開発環境 (C++ Desktop Developmentワークロード必須)|
+|**SDK**|Windows SDK (最新版)||
+|**前提条件**|Git, GitHubアカウント|バージョン管理に必須|
+
+> 環境構築に関する具体的な手順（Visual Studioでのビルド設定や依存ライブラリのパス設定など）については、別途詳細な初期設定ドキュメントを参照してください。
+
+</td>
+</tr>
+</table>
+
+---
+
+## 2. ECSアーキテクチャについて
+
+ECSは、ゲームオブジェクトを構成するデータとロジックを厳密に分離するための設計思想です。
+
+```mermaid
+graph TB
+    A{Entity IDs} -->|保持| B(TransformComponent<br>位置・回転・スケール)
+    A -->|保持| C(RenderComponent<br>描画)
+    A -->|保持| D(RigidBodyComponent<br>物理演算)
+    A -->|保持| E(Tag<br>識別)
+    B --> F[Data<br>Position]
+    B --> G[Data<br>Rotation]
+    B --> H[Data<br>Scale]
+    I[System<br>描画、物理演算...]
+
+    style A fill:green
+    style B fill:blue
+    style C fill:blue
+    style D fill:blue
+    style E fill:red
+    style I fill:yellow
+```
+
+### Entity（エンティティ）
+```
+・定義：ゲームワールドに存在する一意の識別子（ID）のみを持つものです。
+・役割：データのコンテナ（入れ物）として機能し、自身はロジックを持ちません。Entityの振る舞いは、付与されたComponentの組み合わせ（Signature）によって決定されます。
+・実装：ECS::EntityID (uint32_tなど) [cite: DirectX_3D_Base/Include/ECS/Types.h] として実装されています。
+```
+
+### Component（コンポーネント）
+```
+・定義：Entityのデータ（状態）のみを保持する単純な構造体です。
+・役割：Entityの属性（位置、体力、入力状態など）を定義します。メンバー変数のみで構成され、ロジック（複雑なメソッド）は含めません。
+・実践例：TransformComponentが位置、回転、スケールデータを保持します [cite: DirectX_3D_Base/Include/ECS/Components/TransformComponent.h]。
+```
+
+### System（システム）
+```
+・定義：特定のComponentの組み合わせを持つEntity集合（Query）に対してロジック（処理）を実行するクラスです。
+・役割：ゲームのルール、物理演算（PhysicsSystem）、描画（RenderSystem） [cite: DirectX_3D_Base/Include/ECS/Systems/RenderSystem.h]、入力処理など、Entityの状態を変化させる全てのロジックを担当します。
+・実装：ECS::Systemクラスを継承し、Coordinatorを通してComponentデータにアクセスします。
+```
+
+---
+
+## 3. 実装ガイド
+
+**コンポーネントの作り方**
+1. **ヘッダーファイルを作成**：`DirectX_3D_Base/Include/ECS/Components`に`[ComponentName]Component.h`を作成。
+2. **構造体を定義**：データ（メンバ変数）のみを記述します。
+3. **登録マクロを記述**：ファイルの最後に以下のマクロを記述します。
+
+```cpp
+#include "ECS/ComponentRegistry.h"
+REGISTER_COMPONENT_TYPE(YourNewComponent)
+```
+
+**システムの作り方**
+1. **ヘッダーファイルを作成**:`DirectX_3D_Base/Include/ECS/Systems/`に`[SystemName]System.h`を作成。
+2. **Systemクラスを定義**:`public ECS::System`を継承します。
+3. `Init`を実装：`Coordinator`へのポインタを必ず保持します。
+
+```cpp
+class YourNewSystem
+  : ECS::System
+{
+public:  /* 外部関数 */
+  void Init(ECS::Coordinator* coordinator) override
+  {
+    m_coordinator = coordinator;
+  }
+
+  void Update(float deltaTime);  // ロジック実装メソッド
+
+private:  /* 内部変数 */
+  ECS::Coordinator* m_coordinator;
+};
+```
+
+**システムの登録とシグネチャの設定方法**
+Systemの登録は、シーン初期化関数（`ECSInitializer::RegisterSystemsAndSetSignatures()`）から`ECSInitializer.h`のマクロを用いて実行します。
+
+- **コンポーネントの登録方法**：Componentファイルで`REGISTER_COMPONENT_TYPE`を使用することで、自動的に登録されます。特別手動登録処理は不要です。
+- **システムの登録とシグネチャの設定方法**：`REGISTER_SYSTEM_AND_INIT`マクロを使用することで、システム登録とシグネチャ設定、初期化を同時に行います。
+
+```cpp
+// @file  ECSInitializer.cpp
+// ECSInitializer::RegisterSystemsAndSetSignatures()内
+
+// シグネチャ：TransformComponent と RenderComponent を持つEntityを処理対象とする。
+// --- RenderSystem ---
+REGISTER_SYSTEM_AND_INIT(
+  /* Coordinator  */  m_coordinator,
+  /* System       */  RenderSystem,
+  /* Components   */  TransformComponent, RenderComponent
+);
+```
+
+**エンティティの作成（詳細）**
+Entityの作成には、Componentの初期値を同時に渡す一括追加形式を推奨します。
+1. **エンティティIDの取得**：`Coordinator::CreateEntity()`で新しいIDが割り当てられます。
+2. Componentの初期化と付与：
+
+```cpp
+ECS::EntityID newEntity = m_coordinator->CreateEntity(
+  TransformComponent(
+    /* Position  */  XMFLOAT3( 10.0f, 0.0f, 5.0f ),
+    /* Rotation  */  XMFLOAT3( 0.0f, 0.0f, 0.0f),
+    /* Scale     */  XMFLOAT3( 1.0f, 1.0f, 1.0f),
+  ),
+  RenderComponent(
+    /* MeshType  */  MESH_BOX,
+    /* Color     */  XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f)
+  )
+);
+// Componentが付与されると、自動的に該当するSystemに登録されます。
+```
+
+---
+
+## 4. 実践
+
+**実践例**
+
+1. **System内のComponentデータへのアクセス**
+
+Systemのロジック実行時、Coordinatorを経由してComponentの参照を取得し、データを直接書き換えます。
+
+```cpp
+// YourNewSystem::Update(float deltaTime) の内部
+
+for (auto const& entity : m_entities)
+{
+  // Componentの参照を取得（非 const 参照で書き換え可能）
+  TransformComponent& transform = m_coordinator->GetComponent<TransformComponent>(entity);
+
+  // データの更新
+  transform.Position.x += 1.0f * deltaTime;
+}
+```
+
+2. **Entityの動的な操作（Componentの追加・削除）**
+ゲームプレイ中にEntityの振る舞いを変更する場合に使用します。
+- Componentの追加：
+
+```cpp
+m_coordinator->AddComponent<NewBehaviorComponent>(entity, NewBehaviorComponent(/* 初期値 */));
+// このEntityは、NewBehaviorComponentを要求するSystemの処理対象になります。
+```
+
+- Componentの削除：
+
+```cpp
+m_coordinator->RemoveComponent<NewBehaviorComponent>(entity);
+// このEntityは、NewBehaviorComponentを要求するSystemの処理対象から外れます。
+```
+
+3. **エンティティの削除方法**
+不要になったEntityは、必ずCoordinator::DestoryEntityを使って破棄し、リソースとIDを解放します。
+
+```cpp
+m_coordinator->DestoryEntity(entity);
+// この呼び出しにより、Systemからの登録解除、Componentデータの削除、EntityIDの再利用が行われます。
+```
+
+---
+
+## 5. コーディング規約
+
+|要素|命名規約|例|備考|
+|-|-|-|-|
+|クラス/構造体/列挙型|PascalCase|`Coordinator`, `TransformComponent`, `RenderSystem`||
+|関数/メソッド|PascalCase|`Init`, `CreateEntity`, `SetSignature`||
+|マクロ/定数|ALL_CAPS_WITH_UNDERSCORES|`MAX_ENTITIES`, `REGISTER_SYSTEM_AND_INIT`||
+|メンバ変数|camelCase(m_接頭語)|`m_coordinator`, `m_componentManager`|一貫性のため、`m_`を付けてください。|
+|ローカル変数|camelCase|`entityID`, `deltaTime`||
+
+**ファイル構成**
+- `Include/ECS/Components/`：全てのComponentのヘッダーファイル
+- `Include/ECS/Systems/`：全てのSystemのヘッダーファイル
+- `Source/ECS/Systems/`：全てのSystemのソースファイル（ロジック実装）
+- `Source/Scene/**Scene.cpp/`：Entityの生成、Systemの登録（ゲーム固有の初期化）
+
+---
+
+## 6. チーム開発するにあたって
+
+**ファイル編集ルール**
+プロジェクトの安定性を確保するため、ファイルの編集範囲を明確にします。
+
+|分類|ファイル/ディレクトリ|編集ルール|
+|-|-|-|
+|❌触ってはいけないコアシステム|`Include/ECS/*.h` (Manager, Coordinator, Typesなど)|原則として編集禁止。ECSの根幹となる設計です。変更は極めて稀で、リーダーの承認が必要です。|
+||`Include/Systems/DirectX/*.h/cpp`|グラフィックス処理。|
+|✅自由に編集してよいもの|`Include/ECS/Componets/*.h`|新しいComponentの追加、既存Componentのデータ構造の修正。|
+||`Include/ECS/Systems/*.h/cpp`/`Source/ECS/Systems/*.cpp`|新しいSystemの追加、既存Systemのロジック修正。|
+||`Source/Scene/*.h/cpp`|ゲームロジック、Entityの初期配置、Systemの起動・停止処理。|
+|⚠️要相談なもの|`Include/Systems/{Input, Model, Camera}.h/cpp`|共通のインフラレイヤーです。変更は他のメンバーに影響が出るため、PRでレビューを要請してください。|
+||`Include/Scene/{Scene, SceneManager}.h/cpp`|シーンの遷移基盤。|
+
+**コアな型定義（参照）**
+
+ECSの根幹となる型は`Include/ECS/Types.h`で定義されています。
+- `EntityID`：エンティティの一意なID。
+- `ComponentTypeID`：コンポーネントの型を識別するID。
+- `Signature`：エンティティが持つComponentの組み合わせをビットであらわす集合（`std::bitset`）。
+
+---
+
+## 7. GitHubの使い方
+
+GitHubを使用した共同制作の基本的なワークフローです。
+
+**重要な用語**
+```
+用語                意味
+Repository         プロジェクトのファイルと履歴の保管庫。
+Commit             ローカルでの変更履歴の記録。作業の区切りごとに細かく行います。
+Branch             開発ラインから分岐させた個別の作業領域。
+Push               ローカルのコミットをリモートリポジトリにアップロード。
+Pull Request (PR)  ブランチをメインラインに統合するためのレビュー依頼機能。
+```
+
+**使い方（詳細）**
+1. **作業開始前の準備**
+   1. **ベースブランチに移動**：`develop`ブランチに移動し、最新状態を取得します。
+   ```bash
+   git checkout develop
+   git pull
+   ```
+   2. **フィーチャーブランチを作成**：開発内容に応じて新しいブランチを作成します。
+   ```bash
+   git checkout -b feature/collision-response-system
+   
+   ```
+2. **コミットメッセージ規約（Commit Message Convention）**
+
+コミットメッセージは、以下のプレフィックスを必ず使用し、変更の意図を明確にします。
+
+|プレフィックス|意味|備考|
+|-|-|-|
+|feat|新機能の追加、大規模な機能の実装。|`feat: JumpComponentを追加`|
+|fix|バグ修正。実行時エラーやロジックの不具合解消。|`fix: PlayerControlSystemでNull参照が発生する問題を修正`|
+|chore|環境設定、ビルド設定の変更、ドキュメントの更新。|`chore: README.mdを更新`|
+|refactor|リファクタリング（機能は変えずコードを改善）。|`refactor: RenderSystemの描画ループを最適化`|
+|decs|ドキュメントのみの変更。|`docs: 環境構築手順を追記`|
+
+3. **変更のリモートへの反映と統合**
+   1. **Push**：開発ブランチをリモートに反映します。
+   ```bash
+   git push origin feature/collision-response-system
+   ```
+  
+   2. **Pull Requestの作成**：GitHub上でPRを作成します。
+      - **必須情報**：変更の概要、影響範囲、テスト方法。
+   3. **レビュー**：チームメンバーの承認を得てから、`develop`ブランチにマージします。
+
+---
+
+## 8. チェックリスト
+
+### 作業前
+> 開発前に必ず確認すること
+- [ ] **最新のブランチ**：最新のmasterブランチを取得しましたか？
+- [ ] **新規ブランチ**：開発内容に応じた`feature/`または`bugfix/`ブランチを作成しましたか？
+- [ ] **ビルド確認**：ベースブランチでビルドが成功し、正しく実行できることを確認しましたか？
+
+### 作業後
+> プッシュする前に必ず確認すること
+- [ ] **コンパイル・実行確認**：開発したコードが正常にビルド・実行され、意図した動作をすることを確認しましたか？（Debug/Release）
+- [ ] **命名規約の遵守**：メンバ変数に`m_`、クラス名に`PascalCase`など、命名規約を守っていますか？
+- [ ] **コミットメッセージ**：コミットメッセージは規約（`feat:`, `fix:`など）に従い、変更内容を明確に表現していますか？
+- [ ] **Push**：作業ブランチをリモートにプッシュし、最新の状態にしましたか？
+- [ ] **Pull Request**：`develop`へのPRを作成し、レビューを依頼しましたか？
+- [ ] **コアシステム非編集**：触ってはいけないコアシステム（例：`Coordinator.h`）を無断で編集していませんか？
+
+
+
+
+
+
+
