@@ -31,6 +31,7 @@
   - [Entity（エンティティ）](#entityエンティティ)
   - [Component（コンポーネント）](#componentコンポーネント)
   - [System（システム）](systemシステム)
+  - [ECSコアの動作原理（Coordinator）](#ecsコアの動作原理coordinator)
 
 ### 3. 実装ガイド
 - [コンポーネントの作り方](#コンポーネントの作り方)
@@ -158,6 +159,18 @@ graph TB
 ・実装：ECS::Systemクラスを継承し、Coordinatorを通してComponentデータにアクセスします。
 ```
 
+### ECSコアの動作原理（Coordinator）
+
+> ECSの中心である`Coordinator`は、3つのマネージャー（Entity, Component, System）へのアクセスを一元管理するFacade（窓口）です。
+
+|メソッド|処理内容|連携するマネージャー|
+|:-:|:-|:-|
+|`CreateEntity()`|新しいIDを割り当てる。|EntityManager|
+|`AddComponent<T>()`|EntityにComponentデータ領域を確保し、EntityのSignatureを更新。|ComponentManager, EntityManager|
+|`RemoveComponent<T>()`|Componentデータを削除し、EntityのSignatureを更新。|ComponentManager, EntityManager|
+|`GetComponent<T>()`|Componentの参照を返す。|ComponentManager|
+|`EntitySignatureChanged()`|**重要**：EntityのSignatureが更新された際、SystemManagerに通知し、SystemのEntityリストを更新トリガーする。|SystemManager|
+
 ---
 
 ## 3. 実装ガイド
@@ -165,7 +178,32 @@ graph TB
 ### コンポーネントの作り方
 
 1. **ヘッダーファイルを作成**：`DirectX_3D_Base/Include/ECS/Components`に`[ComponentName]Component.h`を作成。
-2. **構造体を定義**：データ（メンバ変数）のみを記述します。
+2. **構造体を定義**：`struct`でデータ構造を定義します。コンストラクタでデフォルト値の設定を推奨します。
+
+```cpp
+/**
+ * @struct  TransformComponent
+ * @brief   Entityの移動・回転・スケール情報（ワールド座標返還データ）
+ */
+struct TransformComponent
+{
+    DirectX::XMFLOAT3 position;  ///< ワールド座標系における位置（X, Y, Z）
+    DirectX::XMFLOAT3 rotation;  ///< オイラー角での回転量（ラジアン）
+    DirectX::XMFLOAT3 scale;     ///< 各軸のスケール（大きさ）
+
+    // コンストラクタ
+    TransformComponent(
+        DirectX::XMFLOAT3 pos = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
+        DirectX::XMFLOAT3 rot = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
+        DirectX::XMFLOAT3 scale = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f)
+    )
+        : position(pos)
+        , rotation(rot)
+        , scale(scale)
+    {}
+};
+```
+
 3. **登録マクロを記述**：ファイルの最後に以下のマクロを記述します。
 
 ```cpp
@@ -219,22 +257,31 @@ REGISTER_SYSTEM_AND_INIT(
 ### エンティティの作成（詳細）
 Entityの作成には、Componentの初期値を同時に渡す一括追加形式を推奨します。
 1. **エンティティIDの取得**：`Coordinator::CreateEntity()`で新しいIDが割り当てられます。
-2. Componentの初期化と付与：
+2. **Componentの初期化と付与**
+   1. 一括生成 + 一括追加：推奨
+   
+    ```cpp
+    ECS::EntityID newEntity = m_coordinator->CreateEntity(
+      TransformComponent(
+        /* Position  */  XMFLOAT3( 10.0f, 0.0f, 5.0f ),
+        /* Rotation  */  XMFLOAT3( 0.0f, 0.0f, 0.0f),
+        /* Scale     */  XMFLOAT3( 1.0f, 1.0f, 1.0f),
+      ),
+      RenderComponent(
+        /* MeshType  */  MESH_BOX,
+        /* Color     */  XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f)
+      )
+    );
+    // Componentが付与されると、自動的に該当するSystemに登録されます。
+    ```
 
-```cpp
-ECS::EntityID newEntity = m_coordinator->CreateEntity(
-  TransformComponent(
-    /* Position  */  XMFLOAT3( 10.0f, 0.0f, 5.0f ),
-    /* Rotation  */  XMFLOAT3( 0.0f, 0.0f, 0.0f),
-    /* Scale     */  XMFLOAT3( 1.0f, 1.0f, 1.0f),
-  ),
-  RenderComponent(
-    /* MeshType  */  MESH_BOX,
-    /* Color     */  XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f)
-  )
-);
-// Componentが付与されると、自動的に該当するSystemに登録されます。
-```
+   2. 個別追加：（動的な追加/削除や、Componentが複雑な初期化を必要とする場合に利用）
+
+
+    ```cpp
+    ECS::EntityId entity = m_coordinator->CreateEntity();
+    m_coordinator->AddComponent<CameraComponent>(entity, CameraComponent(/* 設定値 */));
+    ```
 
 ---
 
