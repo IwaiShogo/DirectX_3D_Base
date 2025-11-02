@@ -121,7 +121,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				// ***************************** //
 				//          ▼ 更新処理          //
 				// ***************************** //
-				Update(0.016666666f);
+				Update(1000.0f / fFPS);
 
 				// ***************************** //
 				//          ▼ 描画処理          //

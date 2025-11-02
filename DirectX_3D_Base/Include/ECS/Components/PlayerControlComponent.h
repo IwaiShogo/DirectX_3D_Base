@@ -30,9 +30,9 @@
  */
 struct PlayerControlComponent
 {
-	float MoveSpeed;	///< 水平方向の移動速度 (METER/秒)
-	float JumpPower;	///< Y軸方向のジャンプ初速 (METER/秒)
-	bool IsGrounded;	///< 地面に接触しているかどうかのフラグ (将来の衝突システムで使用)
+	float moveSpeed;	///< 水平方向の移動速度 (METER/秒)
+	float jumpPower;	///< Y軸方向のジャンプ初速 (METER/秒)
+	bool isGrounded;	///< 地面に接触しているかどうかのフラグ (将来の衝突システムで使用)
 
 	/**
 	 * @brief コンストラクタ
@@ -40,7 +40,7 @@ struct PlayerControlComponent
 	PlayerControlComponent(
 		float moveSpeed = METER(4.0f),
 		float jumpPower = METER(7.0f)
-	) : MoveSpeed(moveSpeed), JumpPower(jumpPower), IsGrounded(false)
+	) : moveSpeed(moveSpeed), jumpPower(jumpPower), isGrounded(false)
 	{}
 };
 

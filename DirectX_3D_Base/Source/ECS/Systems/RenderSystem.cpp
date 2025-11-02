@@ -130,16 +130,16 @@ void RenderSystem::DrawEntities()
         cameraComp = &m_coordinator->GetComponent<CameraComponent>(cameraID);  
 
         // ★★★ 2. Geometoryに行列とカメラ位置を設定 ★★★  
-        Geometory::SetView(cameraComp->ViewMatrix);  
-        Geometory::SetProjection(cameraComp->ProjectionMatrix);  
+        Geometory::SetView(cameraComp->viewMatrix);  
+        Geometory::SetProjection(cameraComp->projectionMatrix);  
     }
 	if (cameraID != ECS::INVALID_ENTITY_ID)
 	{
 		*cameraComp = m_coordinator->GetComponent<CameraComponent>(cameraID);
 
 		// ★★★ 2. Geometoryに行列とカメラ位置を設定 ★★★
-		Geometory::SetView(cameraComp->ViewMatrix);
-		Geometory::SetProjection(cameraComp->ProjectionMatrix);
+		Geometory::SetView(cameraComp->viewMatrix);
+		Geometory::SetProjection(cameraComp->projectionMatrix);
 	}
 
 	// Systemが保持するEntityセットをイテレート
@@ -150,23 +150,23 @@ void RenderSystem::DrawEntities()
 		RenderComponent& render = m_coordinator->GetComponent<RenderComponent>(entity);
 
 		DirectX::XMFLOAT4X4 wvp[3];
-		DirectX::XMMATRIX world, view, proj;
+		DirectX::XMMATRIX world;
 
 		// 1. ワールド行列の計算 (TransformComponent -> XMMATRIX -> XMFLOAT4X4)
 		// ... (スケール、回転、平行移動の計算ロジックは維持) ...
-		XMMATRIX S = XMMatrixScaling(transform.Scale.x, transform.Scale.y, transform.Scale.z);
-		XMMATRIX Rx = XMMatrixRotationX(transform.Rotation.x);
-		XMMATRIX Ry = XMMatrixRotationY(transform.Rotation.y);
-		XMMATRIX Rz = XMMatrixRotationZ(transform.Rotation.z);
+		XMMATRIX S = XMMatrixScaling(transform.scale.x, transform.scale.y, transform.scale.z);
+		XMMATRIX Rx = XMMatrixRotationX(transform.rotation.x);
+		XMMATRIX Ry = XMMatrixRotationY(transform.rotation.y);
+		XMMATRIX Rz = XMMatrixRotationZ(transform.rotation.z);
 		XMMATRIX R = Rz * Rx * Ry;
-		XMMATRIX T = XMMatrixTranslation(transform.Position.x, transform.Position.y, transform.Position.z);
+		XMMATRIX T = XMMatrixTranslation(transform.position.x, transform.position.y, transform.position.z);
 		world = S * R * T;
 
 		// ビュー行列
 
 		XMStoreFloat4x4(&wvp[0], XMMatrixTranspose(world));
-		wvp[1] = cameraComp->ViewMatrix;
-		wvp[2] = cameraComp->ProjectionMatrix;
+		wvp[1] = cameraComp->viewMatrix;
+		wvp[2] = cameraComp->projectionMatrix;
 
 		// シェーダーへの変換行列を設定
 		Geometory::SetWorld(wvp[0]);
@@ -177,7 +177,7 @@ void RenderSystem::DrawEntities()
 		// 2. 描画処理 (RenderComponent)
 
 		// 形状に応じて描画
-		switch (render.Type)
+		switch (render.type)
 		{
 		case MESH_BOX:
 			Geometory::DrawBox();
@@ -196,7 +196,7 @@ void RenderSystem::DrawEntities()
 				model.pModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_WORLD));
 				model.pModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
 
-				for (int i = 0; i < model.pModel->GetMeshNum(); ++i) {
+				for (uint32_t i = 0; i < model.pModel->GetMeshNum(); ++i) {
 					RenderTarget* pRTV = GetDefaultRTV();    // デフォルトのRenderTargetViewを取得
 					DepthStencil* pDSV = GetDefaultDSV();    // デフォルトのDepthStencilViewを取得
 					SetRenderTargets(1, &pRTV, pDSV);    // 第3引数がnullの場合、2D表示となる

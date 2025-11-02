@@ -162,7 +162,7 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 			/* ColliderType	*/	COLLIDER_STATIC
 		),
 		ModelComponent(
-			/* Path		*/	"Assets/Model/Rizu/dousakakuninn11.fbx",
+			/* Path		*/	"Assets/Model/AD/modelkari.fbx",
 			/* Scale	*/	0.1f,
 			/* Flip		*/	Model::ZFlip
 		)

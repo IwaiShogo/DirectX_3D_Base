@@ -45,10 +45,10 @@ enum ColliderType : uint8_t
  */
 struct CollisionComponent
 {
-	DirectX::XMFLOAT3 Size;		///< 当たり判定の半分のサイズ (ハーフエクステント)
-	DirectX::XMFLOAT3 Offset;	///< TransformComponent.Positionからの相対的なオフセット
-	ColliderType Type;			///< 衝突体のタイプ（静的/動的）
-	uint32_t CollisionGroup;	///< 衝突フィルタリング用グループID (ビットマスクを推奨)
+	DirectX::XMFLOAT3 size;		///< 当たり判定の半分のサイズ (ハーフエクステント)
+	DirectX::XMFLOAT3 offset;	///< TransformComponent.Positionからの相対的なオフセット
+	ColliderType type;			///< 衝突体のタイプ（静的/動的）
+	uint32_t collisionGroup;	///< 衝突フィルタリング用グループID (ビットマスクを推奨)
 
 	/**
 	 * @brief コンストラクタ
@@ -58,7 +58,7 @@ struct CollisionComponent
 		DirectX::XMFLOAT3 offset = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
 		ColliderType type = COLLIDER_DYNAMIC,
 		uint32_t group = 1 // デフォルトはGroup 0 (ビット0)
-	) : Size(size), Offset(offset), Type(type), CollisionGroup(group)
+	) : size(size), offset(offset), type(type), collisionGroup(group)
 	{
 	}
 };

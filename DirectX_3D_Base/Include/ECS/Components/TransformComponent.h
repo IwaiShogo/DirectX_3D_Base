@@ -29,9 +29,9 @@
   */
 struct TransformComponent
 {
-	DirectX::XMFLOAT3 Position;		///< ワールド座標系における位置 (X, Y, Z)
-	DirectX::XMFLOAT3 Rotation;		///< オイラー角での回転量（ラジアン）
-	DirectX::XMFLOAT3 Scale;		///< 各軸のスケール（大きさ）
+	DirectX::XMFLOAT3 position;		///< ワールド座標系における位置 (X, Y, Z)
+	DirectX::XMFLOAT3 rotation;		///< オイラー角での回転量（ラジアン）
+	DirectX::XMFLOAT3 scale;		///< 各軸のスケール（大きさ）
 
 	/**
 	 * @brief コンストラクタ
@@ -43,7 +43,7 @@ struct TransformComponent
 		DirectX::XMFLOAT3 pos = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
 		DirectX::XMFLOAT3 rot = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
 		DirectX::XMFLOAT3 scale = DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f)
-	) : Position(pos), Rotation(rot), Scale(scale)
+	) : position(pos), rotation(rot), scale(scale)
 	{}
 };
 

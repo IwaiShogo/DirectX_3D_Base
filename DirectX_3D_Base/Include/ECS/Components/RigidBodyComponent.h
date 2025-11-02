@@ -30,11 +30,11 @@
   */
 struct RigidBodyComponent
 {
-	DirectX::XMFLOAT3 Velocity;		///< 速度 (m/s)
-	DirectX::XMFLOAT3 Acceleration;	///< 加速度 (m/s^2)
-	float Mass;						///< 質量 (kg). 0の場合は無限大（静止オブジェクト）として扱う。
-	float Friction;					///< 摩擦係数 (0.0f～1.0f)
-	float Restitution;				///< 反発係数 (0.0f～1.0f)
+	DirectX::XMFLOAT3 velocity;		///< 速度 (m/s)
+	DirectX::XMFLOAT3 acceleration;	///< 加速度 (m/s^2)
+	float mass;						///< 質量 (kg). 0の場合は無限大（静止オブジェクト）として扱う。
+	float friction;					///< 摩擦係数 (0.0f～1.0f)
+	float restitution;				///< 反発係数 (0.0f～1.0f)
 
 	/**
 	 * @brief コンストラクタ
@@ -45,7 +45,7 @@ struct RigidBodyComponent
 		float mass = 1.0f,
 		float friction = 0.8f,
 		float restitution = 0.2f
-	) : Velocity(vel), Acceleration(acc), Mass(mass), Friction(friction), Restitution(restitution)
+	) : velocity(vel), acceleration(acc), mass(mass), friction(friction), restitution(restitution)
 	{
 	}
 };

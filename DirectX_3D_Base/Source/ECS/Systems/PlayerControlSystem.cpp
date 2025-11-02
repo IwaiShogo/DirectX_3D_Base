@@ -36,7 +36,7 @@ void PlayerControlSystem::Update()
 		PlayerControlComponent& playerControl = m_coordinator->GetComponent<PlayerControlComponent>(entity);
 
 		// 質量が0（静的オブジェクト）の場合は操作をスキップ
-		if (rigidBody.Mass <= 0.0f)
+		if (rigidBody.mass <= 0.0f)
 		{
 			continue;
 		}
@@ -49,27 +49,27 @@ void PlayerControlSystem::Update()
 		// 左移動 (Aキー)
 		if (IsKeyPress('A'))
 		{
-			targetX -= playerControl.MoveSpeed;
+			targetX -= playerControl.moveSpeed;
 		}
 		// 右移動 (Dキー)
 		if (IsKeyPress('D'))
 		{
-			targetX += playerControl.MoveSpeed;
+			targetX += playerControl.moveSpeed;
 		}
 		// 上移動 (Wキー)
 		if (IsKeyPress('W'))
 		{
-			targetZ += playerControl.MoveSpeed;
+			targetZ += playerControl.moveSpeed;
 		}
 		// 下移動 (Sキー)
 		if (IsKeyPress('S'))
 		{
-			targetZ -= playerControl.MoveSpeed;
+			targetZ -= playerControl.moveSpeed;
 		}
 
 		// PhysicsSystemでの摩擦減速と競合しないよう、水平速度を直接設定
-		rigidBody.Velocity.x = targetX;
-		rigidBody.Velocity.z = targetZ;
+		rigidBody.velocity.x = targetX;
+		rigidBody.velocity.z = targetZ;
 
 
 		// --- 2. ジャンプの処理 (Y軸) ---
@@ -80,7 +80,7 @@ void PlayerControlSystem::Update()
 		{
 			// if (playerControl.IsGrounded) // 本来のロジック
 			{
-				rigidBody.Velocity.y = playerControl.JumpPower; // Y軸上向きに初速を与える
+				rigidBody.velocity.y = playerControl.jumpPower; // Y軸上向きに初速を与える
 			}
 		}
 	}

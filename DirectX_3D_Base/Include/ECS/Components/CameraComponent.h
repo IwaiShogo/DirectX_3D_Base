@@ -31,17 +31,17 @@
  */
 struct CameraComponent
 {
-	ECS::EntityID FocusEntityID;	///< 追従するEntityのID
-	DirectX::XMFLOAT3 Offset;		///< 追従対象からの相対位置オフセット
-	float FollowSpeed;				///< 追従の補間速度 (0.0f～1.0f: 値が大きいほど追従が速い)
+	ECS::EntityID focusEntityID;	///< 追従するEntityのID
+	DirectX::XMFLOAT3 offset;		///< 追従対象からの相対位置オフセット
+	float followSpeed;				///< 追従の補間速度 (0.0f～1.0f: 値が大きいほど追従が速い)
 
 	float FOV;						///< 視野角 (ラジアン)
-	float NearClip;					///< 近クリップ平面
-	float FarClip;					///< 遠クリップ平面
+	float nearClip;					///< 近クリップ平面
+	float farClip;					///< 遠クリップ平面
 
-	DirectX::XMFLOAT4X4 ViewMatrix;
-	DirectX::XMFLOAT4X4 ProjectionMatrix;
-	DirectX::XMFLOAT3	WorldPosition;
+	DirectX::XMFLOAT4X4 viewMatrix;
+	DirectX::XMFLOAT4X4 projectionMatrix;
+	DirectX::XMFLOAT3	worldPosition;
 
 	/**
 	 * @brief コンストラクタ
@@ -53,7 +53,16 @@ struct CameraComponent
 		float fovDegrees = 60.0f,
 		float nearClip = 0.1f,
 		float farClip = 1000.0f
-	) : FocusEntityID(focusID), Offset(offset), FollowSpeed(followSpeed), NearClip(nearClip), FarClip(farClip)
+	) 
+		: focusEntityID(focusID)
+		, offset(offset)
+		, followSpeed(followSpeed)
+		, nearClip(nearClip)
+		, farClip(farClip)
+		, viewMatrix(DirectX::XMFLOAT4X4())
+		, projectionMatrix(DirectX::XMFLOAT4X4())
+		, worldPosition(DirectX::XMFLOAT3())
+
 	{
 		// 視野角を度からラジアンに変換
 		FOV = DirectX::XMConvertToRadians(fovDegrees);

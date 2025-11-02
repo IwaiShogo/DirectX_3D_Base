@@ -38,15 +38,15 @@ bool CollisionSystem::CheckCollision(ECS::EntityID entityA, ECS::EntityID entity
 	CollisionComponent& collB = m_coordinator->GetComponent<CollisionComponent>(entityB);
 
 	// AABBの中心座標を計算
-	XMFLOAT3 centerA = transA.Position;
-	centerA.x += collA.Offset.x;
-	centerA.y += collA.Offset.y;
-	centerA.z += collA.Offset.z;
+	XMFLOAT3 centerA = transA.position;
+	centerA.x += collA.offset.x;
+	centerA.y += collA.offset.y;
+	centerA.z += collA.offset.z;
 
-	XMFLOAT3 centerB = transB.Position;
-	centerB.x += collB.Offset.x;
-	centerB.y += collB.Offset.y;
-	centerB.z += collB.Offset.z;
+	XMFLOAT3 centerB = transB.position;
+	centerB.x += collB.offset.x;
+	centerB.y += collB.offset.y;
+	centerB.z += collB.offset.z;
 
 	// 中心間のベクトル (distance)
 	XMFLOAT3 d;
@@ -57,9 +57,9 @@ bool CollisionSystem::CheckCollision(ECS::EntityID entityA, ECS::EntityID entity
 	// 衝突していない軸を探す
 	// 半分の合計サイズ (extent)
 	XMFLOAT3 extent;
-	extent.x = collA.Size.x + collB.Size.x;
-	extent.y = collA.Size.y + collB.Size.y;
-	extent.z = collA.Size.z + collB.Size.z;
+	extent.x = collA.size.x + collB.size.x;
+	extent.y = collA.size.y + collB.size.y;
+	extent.z = collA.size.z + collB.size.z;
 
 	// 軸が分離している場合
 	if (std::abs(d.x) >= extent.x ||
@@ -118,12 +118,12 @@ void CollisionSystem::ResolveCollision(ECS::EntityID entityA, ECS::EntityID enti
 	CollisionComponent& collB = m_coordinator->GetComponent<CollisionComponent>(entityB);
 
 	// 静的なオブジェクト(entityB)にめり込んだ動的なオブジェクト(entityA)を修正する、シンプルな応答
-	if (collA.Type == COLLIDER_DYNAMIC && collB.Type == COLLIDER_STATIC)
+	if (collA.type == COLLIDER_DYNAMIC && collB.type == COLLIDER_STATIC)
 	{
 		// 1. 位置の修正 (めり込み解消)
-		transA.Position.x += mtv.x;
-		transA.Position.y += mtv.y;
-		transA.Position.z += mtv.z;
+		transA.position.x += mtv.x;
+		transA.position.y += mtv.y;
+		transA.position.z += mtv.z;
 
 		// 2. 速度の修正 (反発/停止)
 
@@ -138,29 +138,29 @@ void CollisionSystem::ResolveCollision(ECS::EntityID entityA, ECS::EntityID enti
 		if (normal.y != 0.0f)
 		{
 			// 下向きの速度 (normal.y > 0 はAが上から衝突) を反発させる
-			if (rigidA.Velocity.y * normal.y < 0)
+			if (rigidA.velocity.y * normal.y < 0)
 			{
-				rigidA.Velocity.y *= -rigidA.Restitution; // 減衰を伴う反発
+				rigidA.velocity.y *= -rigidA.restitution; // 減衰を伴う反発
 
 				// IsGroundedフラグの更新 (PlayerControlComponentを持つ場合)
 				if (m_coordinator->m_entityManager->GetSignature(entityA).test(m_coordinator->GetComponentTypeID<PlayerControlComponent>()))
 				{
 					PlayerControlComponent& playerControl = m_coordinator->GetComponent<PlayerControlComponent>(entityA);
-					playerControl.IsGrounded = true;
+					playerControl.isGrounded = true;
 				}
 			}
 
 			// ジャンプ初速が重力に負けないように、速度が非常に小さい場合はゼロにクリッピング
-			if (std::abs(rigidA.Velocity.y) < 0.1f)
+			if (std::abs(rigidA.velocity.y) < 0.1f)
 			{
-				rigidA.Velocity.y = 0.0f;
+				rigidA.velocity.y = 0.0f;
 			}
 		}
 
 		// X軸衝突の場合 (壁)
-		if (normal.x != 0.0f && rigidA.Velocity.x * normal.x < 0)
+		if (normal.x != 0.0f && rigidA.velocity.x * normal.x < 0)
 		{
-			rigidA.Velocity.x *= -rigidA.Restitution;
+			rigidA.velocity.x *= -rigidA.restitution;
 		}
 	}
 
@@ -179,11 +179,11 @@ void CollisionSystem::Update()
 	for (auto const& entity : m_entities)
 	{
 		CollisionComponent& coll = m_coordinator->GetComponent<CollisionComponent>(entity);
-		if (coll.Type == COLLIDER_DYNAMIC)
+		if (coll.type == COLLIDER_DYNAMIC)
 		{
 			dynamicEntities.push_back(entity);
 		}
-		else if (coll.Type == COLLIDER_STATIC)
+		else if (coll.type == COLLIDER_STATIC)
 		{
 			staticEntities.push_back(entity);
 		}
@@ -196,7 +196,7 @@ void CollisionSystem::Update()
 		if (m_coordinator->m_entityManager->GetSignature(dynamicEntity).test(m_coordinator->GetComponentTypeID<PlayerControlComponent>()))
 		{
 			PlayerControlComponent& playerControl = m_coordinator->GetComponent<PlayerControlComponent>(dynamicEntity);
-			playerControl.IsGrounded = false;
+			playerControl.isGrounded = false;
 		}
 
 		for (ECS::EntityID staticEntity : staticEntities)

@@ -31,16 +31,7 @@
   */
 struct ModelComponent
 {
-	// 3DモデルのリソースID (Model::LoadModelなどが返すIDを想定)
-	uint32_t ModelID;
-
 	std::unique_ptr<Model> pModel = std::make_unique<Model>();
-
-	// モデル描画で使用するテクスチャのリソースID
-	uint32_t TextureID;
-
-	// アニメーションを使用する場合のアニメーションID (将来的な拡張用)
-	uint32_t AnimationID;
 
 	/**
 	 * @brief コンストラクタ

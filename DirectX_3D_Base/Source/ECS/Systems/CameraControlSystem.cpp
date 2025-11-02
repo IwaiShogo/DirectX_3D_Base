@@ -49,7 +49,7 @@ void CameraControlSystem::Update()
 	{
 		CameraComponent& cameraComp = m_coordinator->GetComponent<CameraComponent>(entity);
 
-		ECS::EntityID focusID = cameraComp.FocusEntityID;
+		ECS::EntityID focusID = cameraComp.focusEntityID;
 
 		// 追従対象のEntityが存在し、Transformを持っているかチェック
 		if (focusID != ECS::INVALID_ENTITY_ID &&
@@ -61,18 +61,18 @@ void CameraControlSystem::Update()
 			// 1. 目標カメラ位置 (Target Camera Position) の計算
 			// ターゲットの位置 + オフセット
 			XMFLOAT3 targetPos;
-			targetPos.x = focusTrans.Position.x + cameraComp.Offset.x;
-			targetPos.y = focusTrans.Position.y + cameraComp.Offset.y;
-			targetPos.z = focusTrans.Position.z + cameraComp.Offset.z;
+			targetPos.x = focusTrans.position.x + cameraComp.offset.x;
+			targetPos.y = focusTrans.position.y + cameraComp.offset.y;
+			targetPos.z = focusTrans.position.z + cameraComp.offset.z;
 
 			// 2. カメラ位置の補間 (Smooth Following)
 			// 現在位置から目標位置へ向かって緩やかに移動
-			m_currentCameraPos = Lerp(m_currentCameraPos, targetPos, cameraComp.FollowSpeed);
+			m_currentCameraPos = Lerp(m_currentCameraPos, targetPos, cameraComp.followSpeed);
 
 			// 3. 注視点（LookAt）の補間
 			// 追従対象の位置が新しい注視点
-			XMFLOAT3 targetLookAt = focusTrans.Position;
-			m_currentLookAt = Lerp(m_currentLookAt, targetLookAt, cameraComp.FollowSpeed);
+			XMFLOAT3 targetLookAt = focusTrans.position;
+			m_currentLookAt = Lerp(m_currentLookAt, targetLookAt, cameraComp.followSpeed);
 		}
 
 		// 4. ビュー行列の計算と設定 (RenderSystemの役割を肩代わり)
@@ -86,7 +86,7 @@ void CameraControlSystem::Update()
 
 		// Projection行列
 		XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH(
-			cameraComp.FOV, (float)SCREEN_WIDTH / SCREEN_HEIGHT, cameraComp.NearClip, cameraComp.FarClip
+			cameraComp.FOV, (float)SCREEN_WIDTH / SCREEN_HEIGHT, cameraComp.nearClip, cameraComp.farClip
 		);
 
 		// DirectXへ渡すために転置して格納
@@ -97,8 +97,8 @@ void CameraControlSystem::Update()
 		XMStoreFloat4x4(&fMatProjection, XMMatrixTranspose(projectionMatrix));
 
 		// ★ 追加: 計算結果をCameraComponentに格納
-		cameraComp.ViewMatrix = fMatView;
-		cameraComp.ProjectionMatrix = fMatProjection;
-		cameraComp.WorldPosition = m_currentCameraPos; // カメラ位置も格納
+		cameraComp.viewMatrix = fMatView;
+		cameraComp.projectionMatrix = fMatProjection;
+		cameraComp.worldPosition = m_currentCameraPos; // カメラ位置も格納
 	}
 }

@@ -42,8 +42,8 @@ enum MeshType : uint8_t
  */
 struct RenderComponent
 {
-	MeshType Type;				///< 描画するメッシュの形状
-	DirectX::XMFLOAT4 Color;	///< 描画時の色 (R, G, B, A)
+	MeshType type;				///< 描画するメッシュの形状
+	DirectX::XMFLOAT4 color;	///< 描画時の色 (R, G, B, A)
 
 	/**
 	 * @brief コンストラクタ
@@ -54,8 +54,8 @@ struct RenderComponent
 		MeshType type = MESH_BOX,
 		DirectX::XMFLOAT4 color = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
 	)
-		: Type(type)
-		, Color(color)
+		: type(type)
+		, color(color)
 	{}
 };
 
