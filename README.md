@@ -454,7 +454,7 @@ Pull Request (PR)  ブランチをメインラインに統合するためのレ�
 - [ ] AT12A 後藤慧伍
 - [ ] AT12A 西尾真吾
 - [ ] AT12A 福留広明
-- [ ] AT12B 伊藤駿汰
+- [x] AT12B 伊藤駿汰
 - [ ] AT12B 岩井律樹
 
 test - Iwai Shogo
