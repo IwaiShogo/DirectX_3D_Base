@@ -457,5 +457,4 @@ Pull Request (PR)  ブランチをメインラインに統合するためのレ�
 - [ ] AT12B 伊藤駿汰
 - [ ] AT12B 岩井律樹
 
-
-branch test02
+test - Iwai Shogo
