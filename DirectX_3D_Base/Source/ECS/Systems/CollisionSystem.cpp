@@ -146,7 +146,7 @@ void CollisionSystem::ResolveCollision(ECS::EntityID entityA, ECS::EntityID enti
 				if (m_coordinator->m_entityManager->GetSignature(entityA).test(m_coordinator->GetComponentTypeID<PlayerControlComponent>()))
 				{
 					PlayerControlComponent& playerControl = m_coordinator->GetComponent<PlayerControlComponent>(entityA);
-					playerControl.isGrounded = true;
+					//playerControl.isGrounded = true;
 				}
 			}
 
@@ -196,7 +196,7 @@ void CollisionSystem::Update()
 		if (m_coordinator->m_entityManager->GetSignature(dynamicEntity).test(m_coordinator->GetComponentTypeID<PlayerControlComponent>()))
 		{
 			PlayerControlComponent& playerControl = m_coordinator->GetComponent<PlayerControlComponent>(dynamicEntity);
-			playerControl.isGrounded = false;
+			//playerControl.isGrounded = false;
 		}
 
 		for (ECS::EntityID staticEntity : staticEntities)

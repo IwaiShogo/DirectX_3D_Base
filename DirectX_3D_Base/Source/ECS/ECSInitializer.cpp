@@ -71,7 +71,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  PlayerControlSystem,
-        /* Components   */  PlayerControlComponent, RigidBodyComponent
+        /* Components   */  PlayerControlComponent, TransformComponent, RigidBodyComponent
     );
     
     // --- CollisionSystem ---
