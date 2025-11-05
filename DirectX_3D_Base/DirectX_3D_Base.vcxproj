@@ -171,6 +171,7 @@
     <ClInclude Include="Include\ECS\Components\PlayerControlComponent.h" />
     <ClInclude Include="Include\ECS\Components\RenderComponent.h" />
     <ClInclude Include="Include\ECS\Components\RigidBodyComponent.h" />
+    <ClInclude Include="Include\ECS\Components\TagComponent.h" />
     <ClInclude Include="Include\ECS\Components\TransformComponent.h" />
     <ClInclude Include="Include\ECS\Components\UIComponent.h" />
     <ClInclude Include="Include\ECS\Coordinator.h" />

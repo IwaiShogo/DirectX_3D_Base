@@ -45,5 +45,7 @@
 #include "ECS/Components/UIComponent.h"
 // @component	ƒJƒƒ‰Ø‚è‘Ö‚¦
 #include "ECS/Components/GameStateComponent.h"
+// @component	ƒ^ƒO
+#include "ECS/Components/TagComponent.h"
 
 #endif // !___ALL_COMPONENTS_H___
