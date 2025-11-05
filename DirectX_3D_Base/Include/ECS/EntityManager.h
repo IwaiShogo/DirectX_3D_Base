@@ -27,6 +27,7 @@
 #include <array>
 #include <stdexcept>
 #include <string>
+#include <set>
 
 namespace ECS
 {
@@ -45,6 +46,9 @@ namespace ECS
 
 		// 現在までに作成されたEntityの総数
 		EntityID m_livingEntityCount = 0;
+
+		// 現在アクティブなEntityIDのセット
+		std::set<EntityID> m_activeEntities;
 
 	public:
 		EntityManager()
@@ -74,6 +78,9 @@ namespace ECS
 			// 初期状態ではSignatureをクリアしておく
 			m_signatures[id].reset();
 
+			// アクティブなエンティティのセットに追加
+			m_activeEntities.insert(id);
+
 			return id;
 		}
 
@@ -87,12 +94,21 @@ namespace ECS
 				throw std::runtime_error("Error: Invalid entityID for destruction!");
 			}
 
+			// アクティブなエンティティのセットから削除
+			m_activeEntities.erase(entityID);
+
 			// Signatureをクリアする
 			m_signatures[entityID].reset();
 
 			// IDを再利用キューに戻す
 			m_availableEntities.push(entityID);
 			m_livingEntityCount--;
+		}
+		
+		/// @brief	アクティブなエンティティを取得
+		const std::set<EntityID>& GetActiveEntities() const
+		{
+			return m_activeEntities;
 		}
 
 		/// @brief EntityのComponent Signatureを設定する

@@ -143,6 +143,7 @@
     <ClCompile Include="Source\ECS\Systems\PhysicsSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\PlayerControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\RenderSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\StateSwitchSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\UISystem.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Scene\GameScene.cpp" />
@@ -165,6 +166,7 @@
     <ClInclude Include="Include\ECS\ComponentRegistry.h" />
     <ClInclude Include="Include\ECS\Components\CameraComponent.h" />
     <ClInclude Include="Include\ECS\Components\CollisionComponent.h" />
+    <ClInclude Include="Include\ECS\Components\GameStateComponent.h" />
     <ClInclude Include="Include\ECS\Components\ModelComponent.h" />
     <ClInclude Include="Include\ECS\Components\PlayerControlComponent.h" />
     <ClInclude Include="Include\ECS\Components\RenderComponent.h" />
@@ -181,6 +183,7 @@
     <ClInclude Include="Include\ECS\Systems\PhysicsSystem.h" />
     <ClInclude Include="Include\ECS\Systems\PlayerControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\RenderSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\StateSwitchSystem.h" />
     <ClInclude Include="Include\ECS\Systems\UISystem.h" />
     <ClInclude Include="Include\ECS\Types.h" />
     <ClInclude Include="Include\ECS\AllComponents.h" />

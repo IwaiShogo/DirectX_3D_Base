@@ -71,10 +71,10 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
  * @param position - 初期位置
  * @return EntityID - 生成されたプレイヤーエンティティID
  */
-ECS::EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 & position)
+EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 & position)
 {
 	// 1. プレイヤーエンティティを生成
-	ECS::EntityID player = coordinator->CreateEntity(
+	EntityID player = coordinator->CreateEntity(
 		TransformComponent(
 			/* Position	*/	position,
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -108,7 +108,7 @@ ECS::EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLO
 
 	// 2. プレイヤーに追従するカメラエンティティ生成（後続ステップ1-3の準備）
 	// CameraComponentは、追従ロジックをCameraControlSystemに伝える情報を保持すると仮定
-	ECS::EntityID playerCamera = coordinator->CreateEntity(
+	EntityID playerCamera = coordinator->CreateEntity(
 		CameraComponent(
 			/* FocusID		*/	player,
 			/* Offset		*/	XMFLOAT3(0.0f, 2.0f, -5.0f),
@@ -118,9 +118,7 @@ ECS::EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLO
 			/* Position	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
-		),
-		// RenderSystem内から探すためのダミーコンポーネント (RenderComponentとTransformComponentは必須)
-		RenderComponent(), TransformComponent()
+		)
 	);
 
 	// 3. PlayerControlComponentにカメラIDをリンク
@@ -130,24 +128,20 @@ ECS::EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLO
 }
 
 /**
- * @brief カメラエンティティを生成する
- * @param coordinator - エンティティの生成と登録を行うCoordinator
- * @param focusID - 追従対象のエンティティID
- * @return EntityID - 生成されたカメラエンティティID
+ * [EntityID - CreateGameController]
+ * @brief	ゲームの状態（GameMode）を管理するためのEntityを生成する
+ * 
+ * @param	[in] coordinator 
+ * @return	生成されたEntityID
  */
-ECS::EntityID EntityFactory::CreateCamera(Coordinator* coordinator, EntityID focusID)
+EntityID EntityFactory::CreateGameController(Coordinator* coordinator)
 {
-	// GameScene::CreateDemoEntities()からカメラのロジックを移動
-	ECS::EntityID mainCamera = coordinator->CreateEntity(
-		CameraComponent(
-			/* FocusID		*/	focusID,
-			/* Offset		*/	XMFLOAT3(0.0f, METER(3.0f), METER(-5.0f)),
-			/* FollowSpeed	*/	0.1f
-		),
-		// RenderSystem内から探すためのダミーコンポーネント (RenderComponentとTransformComponentは必須)
-		RenderComponent(), TransformComponent()
+	// GameStateComponentのみを持つEntity
+	EntityID controller = coordinator->CreateEntity(
+		GameStateComponent(GameMode::SCOUTING_MODE)	// 初期モードは偵察モード
 	);
-	return mainCamera;
+
+	return controller;
 }
 
 /**
@@ -170,7 +164,7 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_MODEL,
+			/* MeshType	*/	MESH_BOX,
 			/* Color	*/	XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f)
 		),
 		RigidBodyComponent(
@@ -184,14 +178,12 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
 			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* ColliderType	*/	COLLIDER_STATIC
-		),
-		ModelComponent(
-			/* Path		*/	"Assets/Model/AD/modelkari.fbx",
-			/* Scale	*/	0.1f,
-			/* Flip		*/	Model::ZFlip
 		)
 	);
 
 	// --- 3. プレイヤーとカメラの生成 ---
-	ECS::EntityID playerID = CreatePlayer(coordinator, XMFLOAT3(1.0f, 1.5f, 0.0f));
+	CreatePlayer(coordinator, XMFLOAT3(1.0f, 1.5f, 0.0f));
+
+	// ゲームコントローラーエンティティ
+	CreateGameController(coordinator);
 }

@@ -213,6 +213,11 @@ namespace ECS
 			m_entityManager->DestroyEntity(entityID);
 		}
 
+		const std::set<EntityID>& GetActiveEntities() const
+		{
+			return m_entityManager->GetActiveEntities();
+		}
+
 		// =================================
 		//       System ŠÇ—ƒƒ\ƒbƒh
 		// =================================

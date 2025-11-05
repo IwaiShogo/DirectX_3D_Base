@@ -88,6 +88,13 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  CameraComponent
     );
 
+    // --- StateSwitchSystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  StateSwitchSystem,
+        /* Components   */  GameStateComponent
+    );
+
     std::cout << "ECSInitializer: All Systems registered and initialized." << std::endl;
 }
 

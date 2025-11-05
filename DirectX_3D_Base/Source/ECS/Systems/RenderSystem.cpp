@@ -115,7 +115,7 @@ void RenderSystem::DrawEntities()
 	ECS::EntityID cameraID = ECS::INVALID_ENTITY_ID;
 
 	// Coordinator‚Ì‘SEntity‚ð‘–¸ (”ñŒø—¦‚¾‚ªŠmŽÀ)
-	for (auto const& entity : m_entities)
+	for (auto const& entity : m_coordinator->GetActiveEntities())
 	{
 		if (m_coordinator->m_entityManager->GetSignature(entity).test(m_coordinator->GetComponentTypeID<CameraComponent>()))
 		{
