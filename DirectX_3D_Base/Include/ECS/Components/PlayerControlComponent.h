@@ -12,8 +12,8 @@
  * @date	2025/10/27	初回作成日
  * 			作業内容：	- 追加：プレイヤーの移動速度、ジャンプ力などを保持する `PlayerControlComponent` を作成。
  * 
- * @update	2025/xx/xx	最終更新日
- * 			作業内容：	- XX：
+ * @update	2025/11/03	最終更新日
+ * 			作業内容：	- 追加：三人称視点操作に必要なパラメータと状態を追加。
  * 
  * @note	（省略可）
  *********************************************************************/
@@ -22,7 +22,8 @@
 #define ___PLAYER_CONTROL_COMPONENT_H___
 
 // ===== インクルード =====
-#include "Main.h"
+#include <DirectXMath.h>
+#include "ECS/Types.h"
 
 /**
  * @struct PlayerControlComponent
@@ -30,17 +31,22 @@
  */
 struct PlayerControlComponent
 {
-	float moveSpeed;	///< 水平方向の移動速度 (METER/秒)
-	float jumpPower;	///< Y軸方向のジャンプ初速 (METER/秒)
-	bool isGrounded;	///< 地面に接触しているかどうかのフラグ (将来の衝突システムで使用)
+	float moveSpeed = 5.0f;			///< プレイヤーの移動速度
+	//float rotationSpeed = 5.0f;	///< プレイヤーの回転速度
+
+	// カメラ関連
+	ECS::EntityID attachedCameraID = 0;	///< プレイヤーに追従するカメラEntityID
+
+	// アクション関連（Bボタン）
+	bool isItemStealTriggered = false;	///< アイテム窃盗アクションがトリガーされたか
 
 	/**
 	 * @brief コンストラクタ
 	 */
 	PlayerControlComponent(
-		float moveSpeed = METER(4.0f),
-		float jumpPower = METER(7.0f)
-	) : moveSpeed(moveSpeed), jumpPower(jumpPower), isGrounded(false)
+		float speed = 5.0f
+	) 
+		: moveSpeed(speed)
 	{}
 };
 

@@ -73,7 +73,7 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
  */
 ECS::EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 & position)
 {
-	// GameScene::CreateDemoEntities()からプレイヤーのロジックを移動
+	// 1. プレイヤーエンティティを生成
 	ECS::EntityID player = coordinator->CreateEntity(
 		TransformComponent(
 			/* Position	*/	position,
@@ -81,8 +81,13 @@ ECS::EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLO
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
+			/* MeshType	*/	MESH_MODEL,
 			/* Color	*/	XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
+		),
+		ModelComponent(
+			/* Path		*/	"Assets/Model/AD/modelkari.fbx",
+			/* Scale	*/	0.1f,
+			/* Flip		*/	Model::None
 		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -97,10 +102,30 @@ ECS::EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLO
 			/* ColliderType	*/	COLLIDER_DYNAMIC
 		),
 		PlayerControlComponent(
-			/* MoveSpeed	*/	4.0f,
-			/* JumpPower	*/	3.0f
+			/* MoveSpeed	*/	5.0f
 		)
 	);
+
+	// 2. プレイヤーに追従するカメラエンティティ生成（後続ステップ1-3の準備）
+	// CameraComponentは、追従ロジックをCameraControlSystemに伝える情報を保持すると仮定
+	ECS::EntityID playerCamera = coordinator->CreateEntity(
+		CameraComponent(
+			/* FocusID		*/	player,
+			/* Offset		*/	XMFLOAT3(0.0f, 2.0f, -5.0f),
+			/* FollowSpeed	*/	0.1f
+		),
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
+		),
+		// RenderSystem内から探すためのダミーコンポーネント (RenderComponentとTransformComponentは必須)
+		RenderComponent(), TransformComponent()
+	);
+
+	// 3. PlayerControlComponentにカメラIDをリンク
+	coordinator->GetComponent<PlayerControlComponent>(player).attachedCameraID = playerCamera;
+
 	return player;
 }
 
@@ -124,7 +149,6 @@ ECS::EntityID EntityFactory::CreateCamera(Coordinator* coordinator, EntityID foc
 	);
 	return mainCamera;
 }
-
 
 /**
  * @brief 全てのデモ用エンティティを生成し、ECSに登録する (GameScene::Init()から呼ばれる)
@@ -170,5 +194,4 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 
 	// --- 3. プレイヤーとカメラの生成 ---
 	ECS::EntityID playerID = CreatePlayer(coordinator, XMFLOAT3(1.0f, 1.5f, 0.0f));
-	CreateCamera(coordinator, playerID);
 }

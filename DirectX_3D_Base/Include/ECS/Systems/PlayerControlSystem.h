@@ -25,6 +25,7 @@
 #include "ECS/Coordinator.h"
 #include "ECS/SystemManager.h"
 // Components
+#include "ECS/Components/TransformComponent.h"
 #include "ECS/Components/RigidBodyComponent.h"
 #include "ECS/Components/PlayerControlComponent.h"
 #include "Scene/GameScene.h" 
