@@ -40,6 +40,19 @@ enum ColliderType : uint8_t
 };
 
 /**
+ * @enum	CollisionLayer
+ * @brief	衝突判定のレイヤー定義（ビットフラグとして使用）
+ */
+enum class CollisionLayer : uint32_t
+{
+	NONE	= 0,
+	WORLD	= 1 << 0, // 地面、壁など静的な環境
+	PLAYER	= 1 << 1,
+	GUARD	= 1 << 2,
+	ITEM	= 1 << 3,
+};
+
+/**
  * @struct CollisionComponent
  * @brief Entityの当たり判定情報
  */
@@ -49,6 +62,9 @@ struct CollisionComponent
 	DirectX::XMFLOAT3 offset;	///< TransformComponent.Positionからの相対的なオフセット
 	ColliderType type;			///< 衝突体のタイプ（静的/動的）
 	uint32_t collisionGroup;	///< 衝突フィルタリング用グループID (ビットマスクを推奨)
+
+	CollisionLayer layer = CollisionLayer::WORLD;       ///< このEntityが所属するレイヤー
+	uint32_t mask = (uint32_t)CollisionLayer::WORLD;    ///< 衝突を検出する対象レイヤーのマスク（ビットフラグ）
 
 	/**
 	 * @brief コンストラクタ

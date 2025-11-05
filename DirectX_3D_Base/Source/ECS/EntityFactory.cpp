@@ -75,6 +75,9 @@ EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 &
 {
 	// 1. プレイヤーエンティティを生成
 	EntityID player = coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"player"
+		),
 		TransformComponent(
 			/* Position	*/	position,
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
