@@ -5,7 +5,7 @@
  * @details	
  * 
  * ------------------------------------------------------------
- * @author	Iwai Shogo
+ * @author	Iwai Shogo / Oda Kaito
  * ------------------------------------------------------------
  * 
  * @date	2025/10/27	初回作成日
@@ -21,6 +21,7 @@
 #include "ECS/ECSInitializer.h"
 #include "ECS/Systems/PlayerControlSystem.h"
 #include "ECS/Systems/CameraControlSystem.h"
+#include "ECS/ECS.h"
 #include <iostream>
 
 using namespace DirectX;
@@ -39,6 +40,24 @@ void PlayerControlSystem::Update()
 	// m_currentYaw が public/friend であるか、publicなgetterを持つことを前提とします。
 	// プロトタイプのため、ここではアクセス可能と仮定します。
 	float cameraYaw = cameraSystem->m_currentYaw;
+
+	ECS::EntityID gameControllerID = 0;
+	std::set<ECS::EntityID> allEntities = m_coordinator->GetActiveEntities();
+
+	for (auto const& entity : allEntities) // このSystemの対象はCameraComponentだが、ここではCoordinatorに問い合わせる
+	{
+		if (m_coordinator->m_entityManager->GetSignature(entity).test(m_coordinator->GetComponentTypeID<GameStateComponent>()))
+		{
+			gameControllerID = entity; // カメラEntity自身ではないため、このロジックは不正確。
+			if (m_coordinator->GetComponent<GameStateComponent>(gameControllerID).currentMode == GameMode::SCOUTING_MODE)
+			{
+				auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(entity);
+				rigidBody.velocity.x = 0.0f;
+				rigidBody.velocity.y = 0.0f;
+				return;
+			}
+		}
+	}
 
 	// Xboxコントローラーの左スティック入力
 	XMFLOAT2 leftStick = GetLeftStick();

@@ -46,15 +46,12 @@ namespace ECS
 		 */
 		static EntityID CreatePlayer(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
+		static EntityID CreateGameController(Coordinator* coordinator);
+
 		/**
 		 * @brief ゲームワールドの静的な地面エンティティを生成する
 		 */
 		static EntityID CreateGround(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale);
-
-		/**
-		 * @brief カメラエンティティを生成する
-		 */
-		static EntityID CreateCamera(Coordinator* coordinator, EntityID focusID);
 
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止

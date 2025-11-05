@@ -43,5 +43,7 @@
 #include "ECS/Components/TransformComponent.h"
 // @component	UI—v‘f
 #include "ECS/Components/UIComponent.h"
+// @component	ƒJƒƒ‰Ø‚è‘Ö‚¦
+#include "ECS/Components/GameStateComponent.h"
 
 #endif // !___ALL_COMPONENTS_H___

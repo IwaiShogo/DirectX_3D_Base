@@ -35,5 +35,7 @@
 #include "ECS/Systems/RenderSystem.h"
 // @system	UI
 #include "ECS/Systems/UISystem.h"
+// @system	ƒJƒƒ‰Ø‚è‘Ö‚¦
+#include "ECS/Systems/StateSwitchSystem.h"
 
 #endif // !___ALL_SYSTEM_H___

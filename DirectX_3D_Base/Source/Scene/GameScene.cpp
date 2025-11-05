@@ -33,15 +33,6 @@
 // 他のシステムからECSにアクセスするための静的ポインタ
 ECS::Coordinator* GameScene::s_coordinator = nullptr;
 
-// ===== デモ用の変数 (Main.cppから移管) =====
-namespace SceneDemo
-{
-	static float RotationRad = 0.0f;
-	static float Time = 0.0f;
-	const float ROTATION_INCREMENT = 0.01f; // 1フレームあたり0.01ラジアン回転
-	const float TIME_INCREMENT = 0.05f; // 毎フレームの時間の進み具合
-}
-
 using namespace DirectX;
 
 // ===== GameScene メンバー関数の実装 =====
@@ -78,20 +69,14 @@ void GameScene::Uninit()
 
 void GameScene::Update(float deltaTime)
 {
-	// --- 1. デモ用変数の更新ロジック (Main.cppから移管) ---
-	SceneDemo::RotationRad += SceneDemo::ROTATION_INCREMENT;
-	if (SceneDemo::RotationRad > XM_2PI)
+	// --- 2. ECS Systemの更新
+	
+	// 0. 状態切り替え
+	if (auto system = ECS::ECSInitializer::GetSystem<StateSwitchSystem>())
 	{
-		SceneDemo::RotationRad -= XM_2PI;
+		system->Update();
 	}
 
-	SceneDemo::Time += SceneDemo::TIME_INCREMENT;
-	const float CENTER_Y = 1.5f;
-	const float AMPLITUDE = 0.5f;
-	const float FREQUENCY = 2.0f;
-	float newY = CENTER_Y + AMPLITUDE * sin(SceneDemo::Time * FREQUENCY);
-
-	// --- 2. ECS Systemの更新
 	// 1. 入力
 	// if (m_playerControlSystem) // 削除
 	if (auto system = ECS::ECSInitializer::GetSystem<PlayerControlSystem>())
@@ -118,17 +103,6 @@ void GameScene::Update(float deltaTime)
 	if (auto system = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
 	{
 		system->Update();
-	}
-
-	// --- 3. ECS EntityのComponent更新 ---
-	// 3つ目のEntity（ID: 2）は回転する箱と仮定
-	const ECS::EntityID rotatingBoxID = 2;
-
-	if (m_coordinator && m_coordinator->m_entityManager->GetSignature(rotatingBoxID).test(m_coordinator->m_componentManager->GetComponentTypeID<TransformComponent>()))
-	{
-		TransformComponent& transform = m_coordinator->GetComponent<TransformComponent>(rotatingBoxID);
-		//transform.Rotation.y = SceneDemo::RotationRad; // Y軸回転を更新
-		//transform.Position.y = newY; // Y軸位置を更新
 	}
 }
 
