@@ -41,7 +41,15 @@ struct GameStateComponent
 {
 	GameMode currentMode = GameMode::SCOUTING_MODE; ///< 現在のゲームモード
 
-	GameStateComponent(GameMode initialMode = GameMode::SCOUTING_MODE) : currentMode(initialMode) {}
+	// ゲームの終了状態を保持
+	bool isGameOver = false;		// 警備員に追いつかれた
+	bool isCleared = false;			// アイテム全回収後に脱出地点に到達
+	bool requestRestart = false;	// 次のフレームでリトライを要求
+	bool requestNextStage = false;	// 次のフレームで次のステージへ遷移を要求
+
+	// コンストラクタ
+	GameStateComponent(GameMode initialMode = GameMode::SCOUTING_MODE)
+		: currentMode(initialMode) {}
 };
 
 #include "ECS/ComponentRegistry.h"

@@ -140,6 +140,7 @@
     <ClCompile Include="Source\ECS\EntityFactory.cpp" />
     <ClCompile Include="Source\ECS\Systems\CameraControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\CollisionSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\GameFlowSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\PhysicsSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\PlayerControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\RenderSystem.cpp" />
@@ -181,6 +182,7 @@
     <ClInclude Include="Include\ECS\SystemManager.h" />
     <ClInclude Include="Include\ECS\Systems\CameraControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\CollisionSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\GameFlowSystem.h" />
     <ClInclude Include="Include\ECS\Systems\PhysicsSystem.h" />
     <ClInclude Include="Include\ECS\Systems\PlayerControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\RenderSystem.h" />
