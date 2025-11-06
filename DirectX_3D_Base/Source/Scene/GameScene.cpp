@@ -98,7 +98,13 @@ void GameScene::Update(float deltaTime)
 		system->Update();
 	}
 
-	// 4. カメラ制御（ビュー・プロジェクション行列の更新）
+	// 4. ゲームステート
+	if (auto system = ECS::ECSInitializer::GetSystem<GameFlowSystem>())
+	{
+		system->Update();
+	}
+
+	// 5. カメラ制御（ビュー・プロジェクション行列の更新）
 	// if (m_cameraControlSystem) // 削除
 	if (auto system = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
 	{

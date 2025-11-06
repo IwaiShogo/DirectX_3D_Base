@@ -37,5 +37,7 @@
 #include "ECS/Systems/UISystem.h"
 // @system	ƒJƒƒ‰Ø‚è‘Ö‚¦
 #include "ECS/Systems/StateSwitchSystem.h"
+// @system	ƒQ[ƒ€I—¹‚Ìˆ—
+#include "ECS/Systems/GameFlowSystem.h"
 
 #endif // !___ALL_SYSTEM_H___
