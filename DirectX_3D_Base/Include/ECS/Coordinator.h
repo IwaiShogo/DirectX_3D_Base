@@ -261,6 +261,36 @@ namespace ECS
 			return system;
 		}
 	};
+
+	template<typename T>
+	EntityID FindFirstEntityWithComponent(Coordinator* coordinator)
+	{
+		// Coordinatorが有効かチェック
+		if (coordinator == nullptr)
+		{
+			return INVALID_ENTITY_ID;
+		}
+
+		// 1. 検索対象のComponentのTypeIDを取得
+		ComponentTypeID targetTypeID = coordinator->GetComponentTypeID<T>();
+
+		// 2. 全アクティブEntityを走査
+		const auto& allEntities = coordinator->GetActiveEntities();
+
+		for (EntityID entityID : allEntities)
+		{
+			// 3. EntityのSignatureを取得し、対象Componentを持っているかチェック
+			Signature entitySignature = coordinator->m_entityManager->GetSignature(entityID);
+
+			// Signatureのビットフラグをテストし、Componentを持っているか確認
+			if (entitySignature.test(targetTypeID))
+			{
+				// 見つかった最初のEntityIDを返す
+				return entityID;
+			}
+		}
+		return INVALID_ENTITY_ID;	// 見つからなかった
+	}
 }
 
 #endif // !___COORDINATOR_H___

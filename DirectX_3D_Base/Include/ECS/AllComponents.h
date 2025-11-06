@@ -47,5 +47,9 @@
 #include "ECS/Components/GameStateComponent.h"
 // @component	タグ
 #include "ECS/Components/TagComponent.h"
+// @component	回収可能なお宝
+#include "ECS/Components/CollectableComponent.h"
+// @component	ステージ内のアイテム管理
+#include "ECS/Components/ItemTrackerComponent.h"
 
 #endif // !___ALL_COMPONENTS_H___
