@@ -39,5 +39,7 @@
 #include "ECS/Systems/StateSwitchSystem.h"
 // @system	ゲーム終了時の処理
 #include "ECS/Systems/GameFlowSystem.h"
+// @system	システム
+#include "ECS/Systems/CollectionSystem.h"
 
 #endif // !___ALL_SYSTEM_H___
