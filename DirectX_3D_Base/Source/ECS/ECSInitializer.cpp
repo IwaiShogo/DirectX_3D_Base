@@ -95,6 +95,20 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  GameStateComponent
     );
 
+    // --- CollectionSystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  CollectionSystem,
+        /* Components   */  CollectableComponent, TransformComponent
+    );
+
+    // --- GameFlowSystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  GameFlowSystem,
+        /* Components   */  GameStateComponent
+    );
+
     std::cout << "ECSInitializer: All Systems registered and initialized." << std::endl;
 }
 

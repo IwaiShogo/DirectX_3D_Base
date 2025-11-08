@@ -141,10 +141,40 @@ EntityID EntityFactory::CreateGameController(Coordinator* coordinator)
 {
 	// GameStateComponentのみを持つEntity
 	EntityID controller = coordinator->CreateEntity(
-		GameStateComponent(GameMode::SCOUTING_MODE)	// 初期モードは偵察モード
+		GameStateComponent(GameMode::SCOUTING_MODE),	// 初期モードは偵察モード
+		ItemTrackerComponent()
 	);
 
 	return controller;
+}
+
+/**
+ * [EntityID - CreateCollectable]
+ * @brief	回収アイテムEntityを生成
+ * 
+ * @param	[in] coordinator 
+ * @param	[in] position 
+ * @return	生成されたEntityID
+ */
+EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+{
+	ECS::EntityID entity = coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"item"
+		),
+		TransformComponent(
+			/* Position	*/	position,
+			/* Rotation	*/	XMFLOAT3(45.0f, 45.0f, 45.0f),
+			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
+		),
+		RenderComponent(
+			/* MeshType	*/	MESH_BOX,
+			/* Color	*/	XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
+		),
+		CollectableComponent(1.0f)
+	);
+
+	return entity;
 }
 
 /**
@@ -158,35 +188,22 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 		XMFLOAT3(0.0f, -0.5f, 0.0f),
 		XMFLOAT3(10.0f, 0.2f, 10.0f));
 
-	// --- 2. 2つ目の地面（柱） (ModelComponentを使用) ---
-	// CreateGroundのロジックに似ているが、ModelComponentが必要なため直接記述
-	coordinator->CreateEntity(
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(2.0f, 0.0f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
-		),
-		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f)
-		),
-		RigidBodyComponent(
-			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Mass			*/	0.0f,
-			/* Friction		*/	0.8f,
-			/* Restitution	*/	0.2f
-		),
-		CollisionComponent(
-			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
-			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType	*/	COLLIDER_STATIC
-		)
-	);
+	// --- ゲームコントローラーエンティティ ---
+	EntityID gameControllerID = CreateGameController(coordinator);
 
 	// --- 3. プレイヤーとカメラの生成 ---
 	CreatePlayer(coordinator, XMFLOAT3(1.0f, 1.5f, 0.0f));
 
-	// ゲームコントローラーエンティティ
-	CreateGameController(coordinator);
+	// --- アイテムの作成 ---
+	CreateCollectable(
+		/* Coordinator	*/	coordinator,
+		/* Position		*/	XMFLOAT3(2.0f, 0.5f, 0.0f)
+	);
+	CreateCollectable(
+		/* Coordinator	*/	coordinator,
+		/* Position		*/	XMFLOAT3(-2.0f, 0.5f, 0.0f)
+	);
+
+	// アイテムをトラッカーに設定
+	coordinator->GetComponent<ItemTrackerComponent>(gameControllerID).totalItems = 2;
 }

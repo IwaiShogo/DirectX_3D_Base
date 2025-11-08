@@ -48,6 +48,8 @@ namespace ECS
 
 		static EntityID CreateGameController(Coordinator* coordinator);
 
+		static EntityID CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
+
 		/**
 		 * @brief ゲームワールドの静的な地面エンティティを生成する
 		 */

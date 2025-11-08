@@ -139,7 +139,9 @@
     <ClCompile Include="Source\ECS\ECSInitializer.cpp" />
     <ClCompile Include="Source\ECS\EntityFactory.cpp" />
     <ClCompile Include="Source\ECS\Systems\CameraControlSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\CollectionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\CollisionSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\GameFlowSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\PhysicsSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\PlayerControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\RenderSystem.cpp" />
@@ -165,8 +167,10 @@
     <ClInclude Include="Include\ECS\ComponentManager.h" />
     <ClInclude Include="Include\ECS\ComponentRegistry.h" />
     <ClInclude Include="Include\ECS\Components\CameraComponent.h" />
+    <ClInclude Include="Include\ECS\Components\CollectableComponent.h" />
     <ClInclude Include="Include\ECS\Components\CollisionComponent.h" />
     <ClInclude Include="Include\ECS\Components\GameStateComponent.h" />
+    <ClInclude Include="Include\ECS\Components\ItemTrackerComponent.h" />
     <ClInclude Include="Include\ECS\Components\ModelComponent.h" />
     <ClInclude Include="Include\ECS\Components\PlayerControlComponent.h" />
     <ClInclude Include="Include\ECS\Components\RenderComponent.h" />
@@ -180,7 +184,9 @@
     <ClInclude Include="Include\ECS\EntityManager.h" />
     <ClInclude Include="Include\ECS\SystemManager.h" />
     <ClInclude Include="Include\ECS\Systems\CameraControlSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\CollectionSystem.h" />
     <ClInclude Include="Include\ECS\Systems\CollisionSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\GameFlowSystem.h" />
     <ClInclude Include="Include\ECS\Systems\PhysicsSystem.h" />
     <ClInclude Include="Include\ECS\Systems\PlayerControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\RenderSystem.h" />

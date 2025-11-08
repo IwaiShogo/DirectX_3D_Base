@@ -91,6 +91,12 @@ void GameScene::Update(float deltaTime)
 		system->Update();
 	}
 
+	// アイテム回収ロジック
+	if (auto system = ECS::ECSInitializer::GetSystem<CollectionSystem>())
+	{
+		system->Update();
+	}
+
 	// 3. 衝突検出と応答（位置の修正）
 	// if (m_collisionSystem) // 削除
 	if (auto system = ECS::ECSInitializer::GetSystem<CollisionSystem>())
@@ -98,7 +104,13 @@ void GameScene::Update(float deltaTime)
 		system->Update();
 	}
 
-	// 4. カメラ制御（ビュー・プロジェクション行列の更新）
+	// 4. ゲームステート
+	if (auto system = ECS::ECSInitializer::GetSystem<GameFlowSystem>())
+	{
+		system->Update();
+	}
+
+	// 5. カメラ制御（ビュー・プロジェクション行列の更新）
 	// if (m_cameraControlSystem) // 削除
 	if (auto system = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
 	{
