@@ -116,6 +116,12 @@ void GameScene::Update(float deltaTime)
 	{
 		system->Update();
 	}
+	// 6. ÉKÅ[ÉhAI
+	if (auto system = ECS::ECSInitializer::GetSystem<GuardAISystem>())
+	{
+		system->Update();
+	}
+
 }
 
 void GameScene::Draw()

@@ -142,6 +142,7 @@
     <ClCompile Include="Source\ECS\Systems\CollectionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\CollisionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\GameFlowSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\GuardAISystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\PhysicsSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\PlayerControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\RenderSystem.cpp" />
@@ -170,6 +171,7 @@
     <ClInclude Include="Include\ECS\Components\CollectableComponent.h" />
     <ClInclude Include="Include\ECS\Components\CollisionComponent.h" />
     <ClInclude Include="Include\ECS\Components\GameStateComponent.h" />
+    <ClInclude Include="Include\ECS\Components\GuardComponent.h" />
     <ClInclude Include="Include\ECS\Components\ItemTrackerComponent.h" />
     <ClInclude Include="Include\ECS\Components\ModelComponent.h" />
     <ClInclude Include="Include\ECS\Components\PlayerControlComponent.h" />
@@ -187,6 +189,7 @@
     <ClInclude Include="Include\ECS\Systems\CollectionSystem.h" />
     <ClInclude Include="Include\ECS\Systems\CollisionSystem.h" />
     <ClInclude Include="Include\ECS\Systems\GameFlowSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\GuardAISystem.h" />
     <ClInclude Include="Include\ECS\Systems\PhysicsSystem.h" />
     <ClInclude Include="Include\ECS\Systems\PlayerControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\RenderSystem.h" />

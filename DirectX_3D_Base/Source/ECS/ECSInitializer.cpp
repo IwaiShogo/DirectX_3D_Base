@@ -109,6 +109,13 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  GameStateComponent
     );
 
+	// --- GuardAISystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  GuardAISystem,
+        /* Components   */  GuardComponent, TransformComponent, RigidBodyComponent
+	);
+
     std::cout << "ECSInitializer: All Systems registered and initialized." << std::endl;
 }
 
