@@ -22,6 +22,7 @@
 #include "ECS/Systems/PlayerControlSystem.h"
 #include "ECS/Systems/CameraControlSystem.h"
 #include "ECS/ECS.h"
+#include "Scene/ResultScene.h"
 #include <iostream>
 
 using namespace DirectX;
@@ -82,6 +83,11 @@ void PlayerControlSystem::Update()
 		keyInput.x += 1.0f;
 	}
 
+	if (IsKeyPress('N'))
+	{
+		SceneManager::ChangeScene<ResultScene>();
+	}
+	
 	// キーボードとスティックの入力を合成
 	// コントローラーが優先されるように、または単純に加算して正規化
 	// ここでは単純に加算し、正規化後にスティック入力を優先するように調整します

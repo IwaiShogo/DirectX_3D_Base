@@ -150,7 +150,9 @@
     <ClCompile Include="Source\ECS\Systems\UISystem.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Scene\GameScene.cpp" />
+    <ClCompile Include="Source\Scene\ResultScene.cpp" />
     <ClCompile Include="Source\Scene\SceneManager.cpp" />
+    <ClCompile Include="Source\Scene\TitleScene.cpp" />
     <ClCompile Include="Source\Systems\DirectX\DirectX.cpp" />
     <ClCompile Include="Source\Systems\DirectX\MeshBuffer.cpp" />
     <ClCompile Include="Source\Systems\DirectX\Shader.cpp" />
@@ -200,8 +202,10 @@
     <ClInclude Include="Include\ECS\ECS.h" />
     <ClInclude Include="Include\Main.h" />
     <ClInclude Include="Include\Scene\GameScene.h" />
+    <ClInclude Include="Include\Scene\ResultScene.h" />
     <ClInclude Include="Include\Scene\Scene.h" />
     <ClInclude Include="Include\Scene\SceneManager.h" />
+    <ClInclude Include="Include\Scene\TitleScene.h" />
     <ClInclude Include="Include\Systems\Camera.h" />
     <ClInclude Include="Include\Systems\DirectX\DirectX.h" />
     <ClInclude Include="Include\Systems\DirectX\MeshBuffer.h" />
