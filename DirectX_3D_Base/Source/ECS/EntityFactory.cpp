@@ -12,8 +12,8 @@
  * @date	2025/10/31	初回作成日
  * 			作業内容：	- 追加：エンティティ生成の静的実装を作成。地面エンティティの生成ロジックを移動。
  * 
- * @update	2025/xx/xx	最終更新日
- * 			作業内容：	- XX：
+ * @update	2025/11/08	最終更新日
+ * 			作業内容：	- 警備員AIの追加：
  * 
  * @note	（省略可）
  *********************************************************************/
@@ -211,7 +211,7 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* predictionDistance	*/	5.0f,
 			/* isActive			*/	true,
 			/* delayBeforeChase	*/	1.0f,
-			/* chaseSpeed			*/	5.0f
+			/* chaseSpeed			*/	1.0f
 		)
 	);
 
