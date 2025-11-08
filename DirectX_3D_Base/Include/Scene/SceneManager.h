@@ -29,7 +29,8 @@
 
 #include "Scene.h"
 #include "GameScene.h"
-
+#include "TitleScene.h"
+#include "ResultScene.h"
  /**
   * @class SceneManager
   * @brief シーンの登録、切り替え、実行を統括する静的マネージャクラス
