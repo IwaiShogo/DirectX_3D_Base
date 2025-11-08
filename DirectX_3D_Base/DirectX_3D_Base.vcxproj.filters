@@ -49,6 +49,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\ProcGen">
+      <UniqueIdentifier>{99d89164-1e01-4130-a97a-a99212adf8e9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ProcGen">
+      <UniqueIdentifier>{2c747e69-c856-4c10-bcfe-cd4bb9d6b9f3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Main.cpp">
@@ -124,6 +130,15 @@
       <Filter>Source Files\ECS\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\CollectionSystem.cpp">
+      <Filter>Source Files\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\DebugDrawSystem.cpp">
+      <Filter>Source Files\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ProcGen\LevelGenerator.cpp">
+      <Filter>Source Files\ProcGen</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\MapGenerationSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Scene\TitleScene.cpp">
@@ -267,6 +282,29 @@
       <Filter>Header Files\ECS\Systems</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Components\CollectableComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\CollectionSystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\DebugComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\DebugDrawSystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\MapComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\MapGenerationSystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\ItemTrackerComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ProcGen\LevelGenerator.h">
+      <Filter>Header Files\ProcGen</Filter>
+    </ClInclude>
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Components\ItemTrackerComponent.h">

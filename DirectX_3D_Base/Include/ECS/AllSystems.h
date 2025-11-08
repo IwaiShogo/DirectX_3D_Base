@@ -1,47 +1,53 @@
 /*****************************************************************//**
  * @file	AllSystems.h
- * @brief	ƒVƒXƒeƒ€—pW–ñƒwƒbƒ_[ƒtƒ@ƒCƒ‹
+ * @brief	ã‚·ã‚¹ãƒ†ãƒ ç”¨é›†ç´„ãƒ˜ãƒƒãƒ€ãƒ¼ãƒ•ã‚¡ã‚¤ãƒ«
  * 
  * @details	
- * ŠeƒV[ƒ“‚âƒVƒXƒeƒ€‚ÅŒÂ•Ê‚ÌƒVƒXƒeƒ€‚ğƒCƒ“ƒNƒ‹[ƒh‚·‚é‘ã‚í‚è‚ÉA
- * ‚±‚Ìƒtƒ@ƒCƒ‹‚ğƒCƒ“ƒNƒ‹[ƒh‚·‚é‚±‚Æ‚Å‹Lq‚ğŠÈ—ª‰»o—ˆ‚Ü‚·B
+ * å„ã‚·ãƒ¼ãƒ³ã‚„ã‚·ã‚¹ãƒ†ãƒ ã§å€‹åˆ¥ã®ã‚·ã‚¹ãƒ†ãƒ ã‚’ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ã™ã‚‹ä»£ã‚ã‚Šã«ã€
+ * ã“ã®ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ã™ã‚‹ã“ã¨ã§è¨˜è¿°ã‚’ç°¡ç•¥åŒ–å‡ºæ¥ã¾ã™ã€‚
  * 
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  * 
- * @date	2025/10/31	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁFECSƒVƒXƒeƒ€‚Ìƒwƒbƒ_[W–ñƒtƒ@ƒCƒ‹‚ğì¬
+ * @date	2025/10/31	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼šECSã‚·ã‚¹ãƒ†ãƒ ã®ãƒ˜ãƒƒãƒ€ãƒ¼é›†ç´„ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½œæˆ
  * 
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
+ * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- XXï¼š
  * 
- * @note	iÈ—ª‰Âj
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
 #ifndef ___ALL_SYSTEM_H___
 #define ___ALL_SYSTEM_H___
 
-// ===== ƒCƒ“ƒNƒ‹[ƒh =====
-// @system	ƒJƒƒ‰‘€ì
+// ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
+// @system	ã‚«ãƒ¡ãƒ©æ“ä½œ
 #include "ECS/Systems/CameraControlSystem.h"
-// @system	ƒvƒŒƒCƒ„[“ü—Í§Œä
+// @system	ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼å…¥åŠ›åˆ¶å¾¡
 #include "ECS/Systems/PlayerControlSystem.h"
-// @system	Õ“Ë”»’è
+// @system	è¡çªåˆ¤å®š
 #include "ECS/Systems/CollisionSystem.h"
-// @system	•¨—‰‰Z
+// @system	ç‰©ç†æ¼”ç®—
 #include "ECS/Systems/PhysicsSystem.h"
-// @system	•`‰æ
+// @system	æç”»
 #include "ECS/Systems/RenderSystem.h"
 // @system	UI
 #include "ECS/Systems/UISystem.h"
-// @system	ƒJƒƒ‰Ø‚è‘Ö‚¦
+// @system	ã‚«ãƒ¡ãƒ©åˆ‡ã‚Šæ›¿ãˆ
 #include "ECS/Systems/StateSwitchSystem.h"
-// @system	ƒQ[ƒ€I—¹‚Ìˆ—
+// @system	ã‚²ãƒ¼ãƒ çµ‚äº†æ™‚ã®å‡¦ç†
 #include "ECS/Systems/GameFlowSystem.h"
-// @system	ƒVƒXƒeƒ€
+// @system	ã‚·ã‚¹ãƒ†ãƒ 
 #include "ECS/Systems/CollectionSystem.h"
-// @system	Œx”õˆõAI
+// @system	ãƒãƒƒãƒ—ç”Ÿæˆ
+#include "ECS/Systems/MapGenerationSystem.h"
+
+
+// @system	ãƒ‡ãƒãƒƒã‚°
+#include "ECS/Systems/DebugDrawSystem.h"
+// @system	è­¦å‚™å“¡AI
 #include "ECS/Systems/GuardAISystem.h"
 
 #endif // !___ALL_SYSTEM_H___

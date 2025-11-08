@@ -1,79 +1,44 @@
 /*****************************************************************//**
  * @file	EntityFactory.cpp
- * @brief	“Á’è‚ÌƒGƒ“ƒeƒBƒeƒBiƒvƒŒƒCƒ„[A’n–Ê‚È‚Çj‚Ì¶¬ƒƒWƒbƒN‚ğW–ñ‚·‚éƒwƒ‹ƒp[ƒNƒ‰ƒX‚ÌÀ‘•B
+ * @brief	ç‰¹å®šã®ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ï¼ˆãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã€åœ°é¢ãªã©ï¼‰ã®ç”Ÿæˆãƒ­ã‚¸ãƒƒã‚¯ã‚’é›†ç´„ã™ã‚‹ãƒ˜ãƒ«ãƒ‘ãƒ¼ã‚¯ãƒ©ã‚¹ã®å®Ÿè£…ã€‚
  * 
  * @details	
- * Component‚Ì‹ï‘Ì“I‚È’lİ’è‚ğ‚±‚±‚ÉW–ñ‚µAƒV[ƒ“ƒR[ƒh‚ğƒVƒ“ƒvƒ‹‚É‚·‚éB
+ * Componentã®å…·ä½“çš„ãªå€¤è¨­å®šã‚’ã“ã“ã«é›†ç´„ã—ã€ã‚·ãƒ¼ãƒ³ã‚³ãƒ¼ãƒ‰ã‚’ã‚·ãƒ³ãƒ—ãƒ«ã«ã™ã‚‹ã€‚
  * 
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  * 
- * @date	2025/10/31	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁFƒGƒ“ƒeƒBƒeƒB¶¬‚ÌÃ“IÀ‘•‚ğì¬B’n–ÊƒGƒ“ƒeƒBƒeƒB‚Ì¶¬ƒƒWƒbƒN‚ğˆÚ“®B
+ * @date	2025/10/31	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼šã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ç”Ÿæˆã®é™çš„å®Ÿè£…ã‚’ä½œæˆã€‚åœ°é¢ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®ç”Ÿæˆãƒ­ã‚¸ãƒƒã‚¯ã‚’ç§»å‹•ã€‚
  * 
- * @update	2025/11/08	ÅIXV“ú
- * 			ì‹Æ“à—eF	- Œx”õˆõAI‚Ì’Ç‰ÁF
+ * @update	2025/11/08	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è­¦å‚™å“¡AIã®è¿½åŠ ï¼š
  * 
- * @note	iÈ—ª‰Âj
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
- // ===== ƒCƒ“ƒNƒ‹[ƒh =====
+ // ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
 #include "ECS/EntityFactory.h"
-#include "ECS/ECS.h" // ‚·‚×‚Ä‚ÌƒRƒ“ƒ|[ƒlƒ“ƒg‚ÆCoordinator‚ÉƒAƒNƒZƒX‚·‚é‚½‚ß
-#include "Main.h" // METER‚È‚Ç‚Ì’è”‚ÉƒAƒNƒZƒX
+#include "ECS/ECSInitializer.h"
+#include "ECS/ECS.h" // ã™ã¹ã¦ã®ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã¨Coordinatorã«ã‚¢ã‚¯ã‚»ã‚¹ã™ã‚‹ãŸã‚
+#include "Main.h" // METERãªã©ã®å®šæ•°ã«ã‚¢ã‚¯ã‚»ã‚¹
 
 using namespace ECS;
 using namespace DirectX;
 
-// Ã“Iƒƒ“ƒo•Ï”‚Ì’è‹` (•K—v‚É‰‚¶‚Ä’Ç‰Á)
-// const static ECS::EntityID EntityFactory::s_playerID = 2; // ƒGƒ“ƒeƒBƒeƒBID‚ÍCoordinator‚ªŠÇ—‚·‚é‚½‚ß•s—v
+// é™çš„ãƒ¡ãƒ³ãƒå¤‰æ•°ã®å®šç¾© (å¿…è¦ã«å¿œã˜ã¦è¿½åŠ )
+// const static ECS::EntityID EntityFactory::s_playerID = 2; // ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£IDã¯CoordinatorãŒç®¡ç†ã™ã‚‹ãŸã‚ä¸è¦
 
 /**
- * @brief ƒQ[ƒ€ƒ[ƒ‹ƒh‚ÌÃ“I‚È’n–ÊƒGƒ“ƒeƒBƒeƒB‚ğ¶¬‚·‚é
- * @param coordinator - ƒGƒ“ƒeƒBƒeƒB‚Ì¶¬‚Æ“o˜^‚ğs‚¤Coordinator
- * @param position - ˆÊ’u
- * @param scale - ƒXƒP[ƒ‹
- * @return EntityID - ¶¬‚³‚ê‚½’n–ÊƒGƒ“ƒeƒBƒeƒBID
- */
-EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& position, const XMFLOAT3& scale)
-{
-	// GameScene::CreateDemoEntities()‚©‚ç’n–Ê‚ÌƒƒWƒbƒN‚ğˆÚ“®
-	ECS::EntityID ground = coordinator->CreateEntity(
-		TransformComponent(
-			/* Position	*/	position,
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	scale
-		),
-		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
-		),
-		RigidBodyComponent(
-			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Mass			*/	0.0f, // Ã“IƒIƒuƒWƒFƒNƒg
-			/* Friction		*/	0.8f,
-			/* Restitution	*/	0.2f
-		),
-		CollisionComponent(
-			/* Size			*/	XMFLOAT3(scale.x / 2.0f, scale.y / 2.0f, scale.z / 2.0f),
-			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType	*/	COLLIDER_STATIC
-		)
-	);
-	return ground;
-}
-
-/**
- * @brief ƒvƒŒƒCƒ„[ƒGƒ“ƒeƒBƒeƒB‚ğ¶¬‚·‚é
- * @param coordinator - ƒGƒ“ƒeƒBƒeƒB‚Ì¶¬‚Æ“o˜^‚ğs‚¤Coordinator
- * @param position - ‰ŠúˆÊ’u
- * @return EntityID - ¶¬‚³‚ê‚½ƒvƒŒƒCƒ„[ƒGƒ“ƒeƒBƒeƒBID
+ * @brief ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç”Ÿæˆã™ã‚‹
+ * @param coordinator - ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®ç”Ÿæˆã¨ç™»éŒ²ã‚’è¡Œã†Coordinator
+ * @param position - åˆæœŸä½ç½®
+ * @return EntityID - ç”Ÿæˆã•ã‚ŒãŸãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ID
  */
 EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 & position)
 {
-	// 1. ƒvƒŒƒCƒ„[ƒGƒ“ƒeƒBƒeƒB‚ğ¶¬
+	// 1. ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç”Ÿæˆ
 	EntityID player = coordinator->CreateEntity(
 		TagComponent(
 			/* Tag	*/	"player"
@@ -109,8 +74,8 @@ EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 &
 		)
 	);
 
-	// 2. ƒvƒŒƒCƒ„[‚É’Ç]‚·‚éƒJƒƒ‰ƒGƒ“ƒeƒBƒeƒB¶¬iŒã‘±ƒXƒeƒbƒv1-3‚Ì€”õj
-	// CameraComponent‚ÍA’Ç]ƒƒWƒbƒN‚ğCameraControlSystem‚É“`‚¦‚éî•ñ‚ğ•Û‚·‚é‚Æ‰¼’è
+	// 2. ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã«è¿½å¾“ã™ã‚‹ã‚«ãƒ¡ãƒ©ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ç”Ÿæˆï¼ˆå¾Œç¶šã‚¹ãƒ†ãƒƒãƒ—1-3ã®æº–å‚™ï¼‰
+	// CameraComponentã¯ã€è¿½å¾“ãƒ­ã‚¸ãƒƒã‚¯ã‚’CameraControlSystemã«ä¼ãˆã‚‹æƒ…å ±ã‚’ä¿æŒã™ã‚‹ã¨ä»®å®š
 	EntityID playerCamera = coordinator->CreateEntity(
 		CameraComponent(
 			/* FocusID		*/	player,
@@ -124,7 +89,7 @@ EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 &
 		)
 	);
 
-	// 3. PlayerControlComponent‚ÉƒJƒƒ‰ID‚ğƒŠƒ“ƒN
+	// 3. PlayerControlComponentã«ã‚«ãƒ¡ãƒ©IDã‚’ãƒªãƒ³ã‚¯
 	coordinator->GetComponent<PlayerControlComponent>(player).attachedCameraID = playerCamera;
 
 	return player;
@@ -132,16 +97,16 @@ EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 &
 
 /**
  * [EntityID - CreateGameController]
- * @brief	ƒQ[ƒ€‚Ìó‘ÔiGameModej‚ğŠÇ—‚·‚é‚½‚ß‚ÌEntity‚ğ¶¬‚·‚é
+ * @brief	ã‚²ãƒ¼ãƒ ã®çŠ¶æ…‹ï¼ˆGameModeï¼‰ã‚’ç®¡ç†ã™ã‚‹ãŸã‚ã®Entityã‚’ç”Ÿæˆã™ã‚‹
  * 
  * @param	[in] coordinator 
- * @return	¶¬‚³‚ê‚½EntityID
+ * @return	ç”Ÿæˆã•ã‚ŒãŸEntityID
  */
 EntityID EntityFactory::CreateGameController(Coordinator* coordinator)
 {
-	// GameStateComponent‚Ì‚İ‚ğ‚ÂEntity
+	// GameStateComponentã®ã¿ã‚’æŒã¤Entity
 	EntityID controller = coordinator->CreateEntity(
-		GameStateComponent(GameMode::SCOUTING_MODE),	// ‰Šúƒ‚[ƒh‚Í’ã@ƒ‚[ƒh
+		GameStateComponent(GameMode::SCOUTING_MODE),	// åˆæœŸãƒ¢ãƒ¼ãƒ‰ã¯åµå¯Ÿãƒ¢ãƒ¼ãƒ‰
 		ItemTrackerComponent()
 	);
 
@@ -150,11 +115,11 @@ EntityID EntityFactory::CreateGameController(Coordinator* coordinator)
 
 /**
  * [EntityID - CreateCollectable]
- * @brief	‰ñûƒAƒCƒeƒ€Entity‚ğ¶¬
+ * @brief	å›åã‚¢ã‚¤ãƒ†ãƒ Entityã‚’ç”Ÿæˆ
  * 
  * @param	[in] coordinator 
  * @param	[in] position 
- * @return	¶¬‚³‚ê‚½EntityID
+ * @return	ç”Ÿæˆã•ã‚ŒãŸEntityID
  */
 EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
 {
@@ -178,12 +143,30 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 }
 
 /**
+ * @brief ã‚²ãƒ¼ãƒ ãƒ¯ãƒ¼ãƒ«ãƒ‰ã®é™çš„ãªåœ°é¢ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç”Ÿæˆã™ã‚‹
+ * @param coordinator - ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®ç”Ÿæˆã¨ç™»éŒ²ã‚’è¡Œã†Coordinator
+ * @param position - ä½ç½®
+ * @param scale - ã‚¹ã‚±ãƒ¼ãƒ«
+ * @return EntityID - ç”Ÿæˆã•ã‚ŒãŸåœ°é¢ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ID
+ */
+EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& position, const XMFLOAT3& scale)
+{
+	// GameScene::CreateDemoEntities()ã‹ã‚‰åœ°é¢ã®ãƒ­ã‚¸ãƒƒã‚¯ã‚’ç§»å‹•
+	ECS::EntityID ground = coordinator->CreateEntity(
+		TransformComponent(
+			/* Position	*/	position,
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	scale
+		),
+		RenderComponent(
+			/* MeshType	*/	MESH_BOX,
+			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
  * [EntityID - CreateGuard]
- * @brief	Œx”õˆõEntity‚ğ¶¬
+ * @brief	è­¦å‚™å“¡Entityã‚’ç”Ÿæˆ
  *
  * @param	[in] coordinator
  * @param	[in] position
- * @return	¶¬‚³‚ê‚½EntityID
+ * @return	ç”Ÿæˆã•ã‚ŒãŸEntityID
  */
 EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
 {
@@ -203,6 +186,54 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass			*/	0.0f, // é™çš„ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
+			/* Friction		*/	0.8f,
+			/* Restitution	*/	0.2f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(scale.x / 2.0f, scale.y / 2.0f, scale.z / 2.0f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_STATIC
+		)
+	);
+	return ground;
+}
+
+/**
+ * @brief ã‚²ãƒ¼ãƒ ãƒ¯ãƒ¼ãƒ«ãƒ‰ã®é™çš„ãªå£ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç”Ÿæˆã™ã‚‹
+ * 
+ * @param [in] coordinator - ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®ç”Ÿæˆã¨ç™»éŒ²ã‚’è¡Œã†Coordinator
+ * @param [in] position - ä½ç½®
+ * @param [in] scale - ã‚¹ã‚±ãƒ¼ãƒ«
+ * @param [in] color - ãƒœãƒƒã‚¯ã‚¹ã®è‰²ï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§Backroomsã®é»„è‰²ï¼‰
+ * @return EntityID - ç”Ÿæˆã•ã‚ŒãŸå£ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ID
+ */
+EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale)
+{
+	ECS::EntityID entity = coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"wall"
+		),
+		TransformComponent(
+			/* Position	*/	position,
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	scale
+		),
+		RenderComponent(
+			/* MeshType	*/	MESH_BOX, // MESH_BOXã§ä»®æç”»
+			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
+		),
+		RigidBodyComponent(
+			/* Velocity	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Accel	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass		*/	0.0f, // ã€é‡è¦ã€‘è³ªé‡0.0fã§é™çš„ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆï¼ˆå‹•ã‹ãªã„å£ï¼‰ã¨ã—ã¦å®šç¾©
+			/* Friction	*/	0.5f,
+			/* Restit.	*/	0.0f
+		)
+		// CollisionComponent ã‚‚ã“ã“ã§è¿½åŠ ã•ã‚Œã‚‹ã“ã¨ã‚’æƒ³å®š
+	);
+
+	return entity;
 			/* Mass			*/	1.0f,
 			/* Friction		*/	0.8f,
 			/* Restitution	*/	0.2f
@@ -220,25 +251,46 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 
 
 /**
- * @brief ‘S‚Ä‚Ìƒfƒ‚—pƒGƒ“ƒeƒBƒeƒB‚ğ¶¬‚µAECS‚É“o˜^‚·‚é (GameScene::Init()‚©‚çŒÄ‚Î‚ê‚é)
- * @param coordinator - ƒGƒ“ƒeƒBƒeƒB‚Ì¶¬‚Æ“o˜^‚ğs‚¤Coordinator
+ * @brief å…¨ã¦ã®ãƒ‡ãƒ¢ç”¨ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç”Ÿæˆã—ã€ECSã«ç™»éŒ²ã™ã‚‹ (GameScene::Init()ã‹ã‚‰å‘¼ã°ã‚Œã‚‹)
+ * @param coordinator - ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®ç”Ÿæˆã¨ç™»éŒ²ã‚’è¡Œã†Coordinator
  */
 void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 {
-	// --- 1. 1‚Â–Ú‚Ì’n–ÊiÃ“IƒIƒuƒWƒFƒNƒgj ---
+	// 1. Map Entity (Game Controller) ã®ä½œæˆã¨åˆæœŸåŒ–
+	// GameStateComponent, ItemTrackerComponent, DebugComponent ã¯ã“ã®Entityã«ä»˜ä¸
+	ECS::EntityID mapEntityID = coordinator->CreateEntity(
+		TagComponent("game_controller"),
+		MapComponent(50.0f, 50.0f), // 50x50ã®ã‚¨ãƒªã‚¢ã§BSP/MSTã‚’ç”Ÿæˆ
+		GameStateComponent(GameMode::SCOUTING_MODE),
+		ItemTrackerComponent(),
+		DebugComponent() // F1ã‚­ãƒ¼ã«ã‚ˆã‚‹ãƒ‡ãƒãƒƒã‚°æ©Ÿèƒ½ã®ãƒˆã‚°ãƒ«ç”¨
+	);
+	// --- 1. 1ã¤ç›®ã®åœ°é¢ï¼ˆé™çš„ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆï¼‰ ---
 	CreateGround(coordinator,
 		XMFLOAT3(0.0f, -0.5f, 0.0f),
 		XMFLOAT3(20.0f, 0.2f, 20.0f));
 
-	// --- ƒQ[ƒ€ƒRƒ“ƒgƒ[ƒ‰[ƒGƒ“ƒeƒBƒeƒB ---
-	EntityID gameControllerID = CreateGameController(coordinator);
+	// 2. MapGenerationSystemã‚’å‘¼ã³å‡ºã—ã€BSP/MSTã‚’ç”Ÿæˆ
+	auto mapGenSystem = ECSInitializer::GetSystem<MapGenerationSystem>();
+	if (mapGenSystem)
+	{
+		// MapGenerationSystem::GenerateMapãŒBSP/MSTã‚’å®Ÿè¡Œã—ã€MapComponent.layoutã‚’æ›´æ–°ã™ã‚‹
+		mapGenSystem->GenerateMap(mapEntityID);
+	}
+	else
+	{
+		// ãƒãƒƒãƒ—ç”Ÿæˆã‚·ã‚¹ãƒ†ãƒ ãŒè¦‹ã¤ã‹ã‚‰ãªã„å ´åˆã¯å‡¦ç†ã‚’ä¸­æ–­
+		// throw std::runtime_error("MapGenerationSystem is not registered!");
+		return;
+	}
 
-	// --- 3. ƒvƒŒƒCƒ„[‚ÆƒJƒƒ‰‚Ì¶¬ ---
+	// --- 3. ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã¨ã‚«ãƒ¡ãƒ©ã®ç”Ÿæˆ ---
+	//CreatePlayer(coordinator, XMFLOAT3(1.0f, 1.5f, 0.0f));
 	CreatePlayer(coordinator, XMFLOAT3(1.0f, 1.5f, 0.0f));
 	
-	// --- Œx”õˆõ‚Ì¶¬ ---
+	// --- è­¦å‚™å“¡ã®ç”Ÿæˆ ---
 	CreateGuard(coordinator, XMFLOAT3(0.0f, 1.5f, 5.0f));
-	// --- ƒAƒCƒeƒ€‚Ìì¬ ---
+	// --- ã‚¢ã‚¤ãƒ†ãƒ ã®ä½œæˆ ---
 	CreateCollectable(
 		/* Coordinator	*/	coordinator,
 		/* Position		*/	XMFLOAT3(2.0f, 0.5f, 0.0f)
@@ -248,6 +300,6 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 		/* Position		*/	XMFLOAT3(-2.0f, 0.5f, 0.0f)
 	);
 
-	// ƒAƒCƒeƒ€‚ğƒgƒ‰ƒbƒJ[‚Éİ’è
-	coordinator->GetComponent<ItemTrackerComponent>(gameControllerID).totalItems = 2;
+	// 4. ItemTrackerComponentã®ç·ã‚¢ã‚¤ãƒ†ãƒ æ•°ã‚’è¨­å®š
+	//coordinator->GetComponent<ItemTrackerComponent>(mapEntityID).totalItems = totalItems;
 }
