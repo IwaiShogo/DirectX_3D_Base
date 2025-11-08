@@ -51,5 +51,7 @@
 #include "ECS/Components/CollectableComponent.h"
 // @component	ステージ内のアイテム管理
 #include "ECS/Components/ItemTrackerComponent.h"
+// @component	警備員AI
+#include "ECS/Components/GuardComponent.h"
 
 #endif // !___ALL_COMPONENTS_H___

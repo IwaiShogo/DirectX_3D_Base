@@ -41,5 +41,7 @@
 #include "ECS/Systems/GameFlowSystem.h"
 // @system	ƒVƒXƒeƒ€
 #include "ECS/Systems/CollectionSystem.h"
+// @system	Œx”õˆõAI
+#include "ECS/Systems/GuardAISystem.h"
 
 #endif // !___ALL_SYSTEM_H___

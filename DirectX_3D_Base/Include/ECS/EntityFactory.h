@@ -50,11 +50,17 @@ namespace ECS
 
 		static EntityID CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
+		static EntityID CreateGuard(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
+
 		/**
 		 * @brief ゲームワールドの静的な地面エンティティを生成する
 		 */
 		static EntityID CreateGround(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale);
 
+		/**
+		* @brief 追跡エンティティを生成する
+		*/
+		
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止
 		EntityFactory() = delete;

@@ -178,6 +178,48 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 }
 
 /**
+ * [EntityID - CreateGuard]
+ * @brief	警備員Entityを生成
+ *
+ * @param	[in] coordinator
+ * @param	[in] position
+ * @return	生成されたEntityID
+ */
+EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+{
+	EntityID guard = coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"guard"
+		),
+		TransformComponent(
+			/* Position	*/	position,
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(0.5f, 1.0f, 1.0f)
+		),
+		RenderComponent(
+			/* MeshType	*/	MESH_BOX,
+			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f)
+		),
+		RigidBodyComponent(
+			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass			*/	1.0f,
+			/* Friction		*/	0.8f,
+			/* Restitution	*/	0.2f
+		),
+		GuardComponent(
+			/* predictionDistance	*/	5.0f,
+			/* isActive			*/	true,
+			/* delayBeforeChase	*/	1.0f,
+			/* chaseSpeed			*/	5.0f
+		)
+	);
+
+	return guard;
+}
+
+
+/**
  * @brief 全てのデモ用エンティティを生成し、ECSに登録する (GameScene::Init()から呼ばれる)
  * @param coordinator - エンティティの生成と登録を行うCoordinator
  */
@@ -186,14 +228,16 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 	// --- 1. 1つ目の地面（静的オブジェクト） ---
 	CreateGround(coordinator,
 		XMFLOAT3(0.0f, -0.5f, 0.0f),
-		XMFLOAT3(10.0f, 0.2f, 10.0f));
+		XMFLOAT3(20.0f, 0.2f, 20.0f));
 
 	// --- ゲームコントローラーエンティティ ---
 	EntityID gameControllerID = CreateGameController(coordinator);
 
 	// --- 3. プレイヤーとカメラの生成 ---
 	CreatePlayer(coordinator, XMFLOAT3(1.0f, 1.5f, 0.0f));
-
+	
+	// --- 警備員の生成 ---
+	CreateGuard(coordinator, XMFLOAT3(0.0f, 1.5f, 5.0f));
 	// --- アイテムの作成 ---
 	CreateCollectable(
 		/* Coordinator	*/	coordinator,
