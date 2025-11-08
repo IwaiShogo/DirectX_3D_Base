@@ -11,8 +11,8 @@
  * @date	2025/10/31	初回作成日
  * 			作業内容：	- 追加：
  * 
- * @update	2025/xx/xx	最終更新日
- * 			作業内容：	- XX：
+ * @update	2025/11/08	最終更新日
+ * 			作業内容：	- 警備員AIの追加：
  * 
  * @note	（省略可）
  *********************************************************************/
@@ -108,6 +108,13 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* System       */  GameFlowSystem,
         /* Components   */  GameStateComponent
     );
+
+	// --- GuardAISystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  GuardAISystem,
+        /* Components   */  GuardComponent, TransformComponent, RigidBodyComponent
+	);
 
     std::cout << "ECSInitializer: All Systems registered and initialized." << std::endl;
 }

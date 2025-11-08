@@ -1,4 +1,4 @@
-#include "../Systems/Geometory.h"
+#include "Systems/Geometory.h"
 
 void Geometory::MakeBox()
 {

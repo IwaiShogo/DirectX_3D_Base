@@ -12,8 +12,8 @@
  * @date	2025/10/31	初回作成日
  * 			作業内容：	- 追加：エンティティ生成ロジックを分離するためのクラスを作成
  * 
- * @update	2025/xx/xx	最終更新日
- * 			作業内容：	- XX：
+ * @update	2025/11/08	最終更新日
+ * 			作業内容：	- 警備員AIの追加：
  * 
  * @note	（省略可）
  *********************************************************************/
@@ -50,11 +50,17 @@ namespace ECS
 
 		static EntityID CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
+		static EntityID CreateGuard(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
+
 		/**
 		 * @brief ゲームワールドの静的な地面エンティティを生成する
 		 */
 		static EntityID CreateGround(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale);
 
+		/**
+		* @brief 追跡エンティティを生成する
+		*/
+		
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止
 		EntityFactory() = delete;

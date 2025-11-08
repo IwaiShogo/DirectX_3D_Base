@@ -13,7 +13,7 @@
  * 			作業内容：	- 追加：ECSのライフサイクルとデモロジックを管理する `GameScene` クラスの実装。
  * 
  * @update	2025/xx/xx	最終更新日
- * 			作業内容：	- XX：
+ * 			作業内容：	- 警備員AIの追加：
  * 
  * @note	（省略可）
  *********************************************************************/
@@ -116,6 +116,12 @@ void GameScene::Update(float deltaTime)
 	{
 		system->Update();
 	}
+	// 6. 警備員AI
+	if (auto system = ECS::ECSInitializer::GetSystem<GuardAISystem>())
+	{
+		system->Update();
+	}
+
 }
 
 void GameScene::Draw()
