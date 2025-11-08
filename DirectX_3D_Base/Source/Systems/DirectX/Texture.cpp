@@ -1,5 +1,5 @@
 #include "Systems/DirectX/Texture.h"
-#include "../../DirectXTex/TextureLoad.h"
+#include "DirectXTex/TextureLoad.h"
 
 /// <summary>
 /// テクスチャ
