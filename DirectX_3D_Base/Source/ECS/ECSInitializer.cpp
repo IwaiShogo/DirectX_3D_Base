@@ -1,6 +1,6 @@
 /*****************************************************************//**
  * @file	ECSInitializer.cpp
- * @brief	ECSシステム全体の初期化を集約し、シーンのInit()から責務を分離するためのヘルパークラスの実装。
+ * @brief	ECSシステム全体の初期化を集約し、シーンのInit()から責務を分離するためのヘルパークラスの実装
  * 
  * @details	
  * 
@@ -12,7 +12,7 @@
  * 			作業内容：	- 追加：
  * 
  * @update	2025/11/08	最終更新日
- * 			作業内容：	- 警備員AIの追加：
+ * 			作業内容：	- 追加：警備員AIの追加
  * 
  * @note	（省略可）
  *********************************************************************/
@@ -116,15 +116,14 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  MapComponent
     );
 
-
-
     // --- DebugDrawSystem ---
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  DebugDrawSystem,
         /* Components   */  DebugComponent
     );
-	// --- GuardAISystem ---
+
+    // --- GuardAISystem ---
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  GuardAISystem,

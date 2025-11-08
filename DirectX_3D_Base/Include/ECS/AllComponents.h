@@ -54,7 +54,6 @@
 // @component	マップ管理
 #include "ECS/Components/MapComponent.h"
 
-
 // @component	デバッグ
 #include "ECS/Components/DebugComponent.h"
 // @component	警備員AI

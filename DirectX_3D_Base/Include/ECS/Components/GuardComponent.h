@@ -1,28 +1,27 @@
 /*****************************************************************//**
  * @file	GuardComponent.h
- * @brief	 警備員AIのコンポーネント定義。
- *
- * @details
- *
+ * @brief	プレイヤーの位置を追跡する警備員AIのコンポーネント定義
+ * 
+ * @details	
+ * 
  * ------------------------------------------------------------
  * @author	Fukudome Hiroaki
  * ------------------------------------------------------------
- *
- * @date	2025/11/07	初回作成日
+ * 
+ * @date	2025/11/09	初回作成日
  * 			作業内容：	- 追加：
- *
+ * 
  * @update	2025/xx/xx	最終更新日
  * 			作業内容：	- XX：
- *
+ * 
  * @note	（省略可）
  *********************************************************************/
 
- //guardcomponent.h
 #ifndef ___GUARD_COMPONENT_H___
 #define ___GUARD_COMPONENT_H___
 
+// ===== インクルード =====
 #include <DirectXMath.h>
-
 
 struct GuardComponent
 {
@@ -47,8 +46,6 @@ struct GuardComponent
     {
     }
 };
-
-
 
 // Component登録
 #include "ECS/ComponentRegistry.h"

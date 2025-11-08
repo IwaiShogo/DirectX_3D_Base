@@ -1,130 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
-    <Filter Include="Header Files\Systems">
-      <UniqueIdentifier>{95eda308-d39e-41ed-9854-a348f45566e3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Systems\DirectX">
-      <UniqueIdentifier>{a9178381-56f5-48c7-b5a0-04035b0775ee}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\ECS">
-      <UniqueIdentifier>{ffa69c50-bf5e-4662-8dcf-44c036f45fb2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\ECS\Components">
-      <UniqueIdentifier>{f1b12d4f-2365-4976-95b3-59b238056779}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\ECS\Systems">
-      <UniqueIdentifier>{7fdb1c5d-9d9c-4a9e-88eb-682d41740792}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\Scene">
-      <UniqueIdentifier>{f9e0378e-30c0-4d4b-bccd-406304170bdc}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
-    <Filter Include="Source Files\Systems">
-      <UniqueIdentifier>{6ed3f9df-203d-43e4-87de-2717c676cc74}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Systems\DirectX">
-      <UniqueIdentifier>{2c73117d-8eb7-424e-856b-522308715eb7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Works">
-      <UniqueIdentifier>{feecb558-690c-40ac-914f-638a3e5b8f6c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\ECS">
-      <UniqueIdentifier>{ab54a844-6796-48ff-bfe3-5df7a4d741aa}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\ECS\Systems">
-      <UniqueIdentifier>{a67027e4-c59f-4663-83c9-268ac688139f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Scene">
-      <UniqueIdentifier>{04c0e80d-aae4-478f-bc0c-3e45d0ad71c4}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resource">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
-    <Filter Include="Source Files\ProcGen">
-      <UniqueIdentifier>{99d89164-1e01-4130-a97a-a99212adf8e9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\ProcGen">
-      <UniqueIdentifier>{2c747e69-c856-4c10-bcfe-cd4bb9d6b9f3}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Source\Main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Systems\DirectX\DirectX.cpp">
-      <Filter>Source Files\Systems\DirectX</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Systems\Geometory.cpp">
-      <Filter>Source Files\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Systems\DirectX\MeshBuffer.cpp">
-      <Filter>Source Files\Systems\DirectX</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Systems\DirectX\Shader.cpp">
-      <Filter>Source Files\Systems\DirectX</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Systems\DirectX\Texture.cpp">
-      <Filter>Source Files\Systems\DirectX</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Systems\DirectX\ShaderList.cpp">
-      <Filter>Source Files\Systems\DirectX</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Systems\Sprite.cpp">
-      <Filter>Source Files\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Systems\Model.cpp">
-      <Filter>Source Files\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Systems\Input.cpp">
-      <Filter>Source Files\Systems</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Works\_geometory.cpp">
       <Filter>Source Files\Works</Filter>
     </ClCompile>
     <ClCompile Include="Source\Works\_model.cpp">
       <Filter>Source Files\Works</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Scene\GameScene.cpp">
-      <Filter>Source Files\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\RenderSystem.cpp">
-      <Filter>Source Files\ECS\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Scene\SceneManager.cpp">
-      <Filter>Source Files\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\PhysicsSystem.cpp">
-      <Filter>Source Files\ECS\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\PlayerControlSystem.cpp">
-      <Filter>Source Files\ECS\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\CollisionSystem.cpp">
-      <Filter>Source Files\ECS\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\CameraControlSystem.cpp">
-      <Filter>Source Files\ECS\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\ECSInitializer.cpp">
-      <Filter>Source Files\ECS</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\EntityFactory.cpp">
-      <Filter>Source Files\ECS</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\StateSwitchSystem.cpp">
-      <Filter>Source Files\ECS\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\GameFlowSystem.cpp">
-      <Filter>Source Files\ECS\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\UISystem.cpp">
       <Filter>Source Files\ECS\Systems</Filter>
@@ -132,26 +13,218 @@
     <ClCompile Include="Source\ECS\Systems\CollectionSystem.cpp">
       <Filter>Source Files\ECS\Systems</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\CollisionSystem.cpp">
+      <Filter>Source Files\ECS\Systems</Filter>
+    </ClCompile>
     <ClCompile Include="Source\ECS\Systems\DebugDrawSystem.cpp">
       <Filter>Source Files\ECS\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ProcGen\LevelGenerator.cpp">
-      <Filter>Source Files\ProcGen</Filter>
+    <ClCompile Include="Source\ECS\Systems\GameFlowSystem.cpp">
+      <Filter>Source Files\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\GuardAISystem.cpp">
+      <Filter>Source Files\ECS\Systems</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\MapGenerationSystem.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\ECS\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Scene\TitleScene.cpp">
+    <ClCompile Include="Source\ECS\Systems\PhysicsSystem.cpp">
+      <Filter>Source Files\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\PlayerControlSystem.cpp">
+      <Filter>Source Files\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\RenderSystem.cpp">
+      <Filter>Source Files\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\StateSwitchSystem.cpp">
+      <Filter>Source Files\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\CameraControlSystem.cpp">
+      <Filter>Source Files\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\Geometory.cpp">
+      <Filter>Source Files\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\Input.cpp">
+      <Filter>Source Files\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\Model.cpp">
+      <Filter>Source Files\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\Sprite.cpp">
+      <Filter>Source Files\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\DirectX.cpp">
+      <Filter>Source Files\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\MeshBuffer.cpp">
+      <Filter>Source Files\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\Shader.cpp">
+      <Filter>Source Files\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\ShaderList.cpp">
+      <Filter>Source Files\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\Texture.cpp">
+      <Filter>Source Files\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\ECSInitializer.cpp">
+      <Filter>Source Files\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\EntityFactory.cpp">
+      <Filter>Source Files\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\GameScene.cpp">
       <Filter>Source Files\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\Scene\ResultScene.cpp">
       <Filter>Source Files\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\GuardAISystem.cpp">
-      <Filter>Source Files\ECS\Systems</Filter>
+    <ClCompile Include="Source\ProcGen\LevelGenerator.cpp">
+      <Filter>Source Files\ProcGen</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\SceneManager.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\TitleScene.cpp">
+      <Filter>Source Files\Scene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\ECS\AllComponents.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\AllSystems.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\CameraComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\CameraControlSystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\CollectableComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\CollectionSystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\CollisionComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\CollisionSystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\ComponentManager.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\ComponentRegistry.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Coordinator.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\DebugComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\DebugDrawSystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\ECS.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\ECSInitializer.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\EntityManager.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\EntityFactory.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\GameStateComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\GuardComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\ItemTrackerComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\MapComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\ModelComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\RenderComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\RigidBodyComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\TagComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\TransformComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\UIComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\GuardAISystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\PhysicsSystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\MapGenerationSystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\PlayerControlSystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\RenderSystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\StateSwitchSystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\UISystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\GameFlowSystem.h">
+      <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\PlayerControlComponent.h">
+      <Filter>Header Files\ECS\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\GameScene.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\SystemManager.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\SceneManager.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\Scene.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\ResultScene.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\TitleScene.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\Camera.h">
+      <Filter>Header Files\Systems</Filter>
+    </ClInclude>
     <ClInclude Include="Include\Systems\Geometory.h">
       <Filter>Header Files\Systems</Filter>
     </ClInclude>
@@ -179,156 +252,72 @@
     <ClInclude Include="Include\Systems\DirectX\Texture.h">
       <Filter>Header Files\Systems\DirectX</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Main.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\Scene\Scene.h">
-      <Filter>Header Files\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\Scene\GameScene.h">
-      <Filter>Header Files\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\Systems\Camera.h">
-      <Filter>Header Files\Systems</Filter>
-    </ClInclude>
     <ClInclude Include="Include\ECS\Types.h">
       <Filter>Header Files\ECS</Filter>
     </ClInclude>
-    <ClInclude Include="Include\ECS\ComponentManager.h">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\EntityManager.h">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\SystemManager.h">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Coordinator.h">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\Scene\SceneManager.h">
-      <Filter>Header Files\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\RenderComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\TransformComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\RenderSystem.h">
-      <Filter>Header Files\ECS\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\RigidBodyComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\CollisionComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\PhysicsSystem.h">
-      <Filter>Header Files\ECS\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\PlayerControlComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\PlayerControlSystem.h">
-      <Filter>Header Files\ECS\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\CollisionSystem.h">
-      <Filter>Header Files\ECS\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\CameraComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\CameraControlSystem.h">
-      <Filter>Header Files\ECS\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\ModelComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\AllComponents.h">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\AllSystems.h">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\ECS.h">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\ECSInitializer.h">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\EntityFactory.h">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\ComponentRegistry.h">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\GameStateComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\StateSwitchSystem.h">
-      <Filter>Header Files\ECS\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\GameFlowSystem.h">
-      <Filter>Header Files\ECS\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\TagComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\UIComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\UISystem.h">
-      <Filter>Header Files\ECS\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\CollectableComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\CollectionSystem.h">
-      <Filter>Header Files\ECS\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\DebugComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\DebugDrawSystem.h">
-      <Filter>Header Files\ECS\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\MapComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\MapGenerationSystem.h">
-      <Filter>Header Files\ECS\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\ItemTrackerComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
+    <ClInclude Include="Include\Main.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\ProcGen\LevelGenerator.h">
       <Filter>Header Files\ProcGen</Filter>
     </ClInclude>
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\ItemTrackerComponent.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\CollectionSystem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\Scene\TitleScene.h">
-      <Filter>Source Files\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\Scene\ResultScene.h">
-      <Filter>Source Files\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\GuardAISystem.h">
-      <Filter>Header Files\ECS\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\GuardComponent.h">
-      <Filter>Header Files\ECS\Components</Filter>
-    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{16ccbbb3-ccc8-443e-b303-54bb1c0a6853}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{d8ac42c7-3c35-4fd9-8bfa-6285665fb497}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{42a74dba-3165-4635-8be0-d378376688ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS">
+      <UniqueIdentifier>{b3c6721d-7025-4785-b698-01e26b407d71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ProcGen">
+      <UniqueIdentifier>{5e815921-b0d2-432e-ac3f-eb248f02469a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Scene">
+      <UniqueIdentifier>{bfccd14b-c2c8-4f6f-8ef9-638dc5dbd2c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Systems">
+      <UniqueIdentifier>{9ee5ce20-e3fb-412b-960f-d2bc0ef983fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Systems">
+      <UniqueIdentifier>{3c6a471a-fe63-49b9-89d0-dddabf163ac9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Components">
+      <UniqueIdentifier>{3524d64f-d728-4d9b-acfb-3ab994c43bf7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Systems\DirectX">
+      <UniqueIdentifier>{d5c281f9-d961-4258-9eac-5903d1f65ffc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Works">
+      <UniqueIdentifier>{9f513e35-ea51-4668-8c11-16489ac98f41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Systems">
+      <UniqueIdentifier>{92dfeec3-629e-40a3-88d1-6ed38f2b30ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene">
+      <UniqueIdentifier>{7d4dd219-1558-433c-8c70-326541984262}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ProcGen">
+      <UniqueIdentifier>{f0cd0153-2d8d-4458-a457-830f8e07ee06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ECS">
+      <UniqueIdentifier>{e792c94f-247c-452f-a846-58cffbcaa654}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ECS\Systems">
+      <UniqueIdentifier>{96ed9615-c337-412e-a6e5-6e0f49d2da7d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Systems\DirectX">
+      <UniqueIdentifier>{6750fbb7-ac09-43c2-9fff-00dce06557a3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md">
-      <Filter>Resource</Filter>
+      <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
 </Project>

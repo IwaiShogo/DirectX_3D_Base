@@ -191,7 +191,7 @@ void InstantiateRoom(
     if (playerSpawnID == ECS::INVALID_ENTITY_ID)
     {
         playerSpawnID = EntityFactory::CreatePlayer(coordinator, { pos_center.x, map.wallHeight / 2.0f, pos_center.z });
-        //guardSpawnID = EntityFactory::CreateGuard(coordinator, { pos_center.x + 5.0f, map.wallHeight / 2.0f, pos_center.z + 5.0f }, playerSpawnID);
+        guardSpawnID = EntityFactory::CreateGuard(coordinator, { pos_center.x + 5.0f, map.wallHeight / 2.0f, pos_center.z + 5.0f });
     }
 }
 

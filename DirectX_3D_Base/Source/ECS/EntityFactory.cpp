@@ -1,6 +1,6 @@
 /*****************************************************************//**
  * @file	EntityFactory.cpp
- * @brief	特定のエンティティ（プレイヤー、地面など）の生成ロジックを集約するヘルパークラスの実装。
+ * @brief	特定のエンティティ（プレイヤー、地面など）の生成ロジックを集約するヘルパークラスの実装
  * 
  * @details	
  * Componentの具体的な値設定をここに集約し、シーンコードをシンプルにする。
@@ -9,11 +9,11 @@
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  * 
- * @date	2025/10/31	初回作成日
- * 			作業内容：	- 追加：エンティティ生成の静的実装を作成。地面エンティティの生成ロジックを移動。
+ * @date	2025/11/09	初回作成日
+ * 			作業内容：	- 追加：エンティティ生成の静的実装を作成。
  * 
  * @update	2025/11/08	最終更新日
- * 			作業内容：	- 警備員AIの追加：
+ * 			作業内容：	- 追加：警備員AIの追加
  * 
  * @note	（省略可）
  *********************************************************************/
@@ -161,6 +161,24 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
 		RenderComponent(
 			/* MeshType	*/	MESH_BOX,
 			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
+		),
+		RigidBodyComponent(
+			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass			*/	0.0f, // 静的オブジェクト
+			/* Friction		*/	0.8f,
+			/* Restitution	*/	0.2f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(scale.x / 2.0f, scale.y / 2.0f, scale.z / 2.0f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_STATIC
+		)
+	);
+	return ground;
+}
+
+/*
  * [EntityID - CreateGuard]
  * @brief	警備員Entityを生成
  *
@@ -180,8 +198,13 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* Scale	*/	XMFLOAT3(0.5f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f)
+			/* MeshType	*/	MESH_MODEL,
+			/* Color	*/	XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)
+		),
+		ModelComponent(
+			/* Path		*/	"Assets/Model/AD/modelkari.fbx",
+			/* Scale	*/	0.1f,
+			/* Flip		*/	Model::None
 		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -190,13 +213,15 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* Friction		*/	0.8f,
 			/* Restitution	*/	0.2f
 		),
-		CollisionComponent(
-			/* Size			*/	XMFLOAT3(scale.x / 2.0f, scale.y / 2.0f, scale.z / 2.0f),
-			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType	*/	COLLIDER_STATIC
+		GuardComponent(
+			/* predictionDistance	*/	5.0f,
+			/* isActive				*/	true,
+			/* delayBeforeChase		*/	1.0f,
+			/* chaseSpeed			*/	1.0f
 		)
 	);
-	return ground;
+
+	return guard;
 }
 
 /**
@@ -234,19 +259,6 @@ EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX:
 	);
 
 	return entity;
-			/* Mass			*/	1.0f,
-			/* Friction		*/	0.8f,
-			/* Restitution	*/	0.2f
-		),
-		GuardComponent(
-			/* predictionDistance	*/	5.0f,
-			/* isActive			*/	true,
-			/* delayBeforeChase	*/	1.0f,
-			/* chaseSpeed			*/	1.0f
-		)
-	);
-
-	return guard;
 }
 
 
@@ -265,10 +277,6 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 		ItemTrackerComponent(),
 		DebugComponent() // F1キーによるデバッグ機能のトグル用
 	);
-	// --- 1. 1つ目の地面（静的オブジェクト） ---
-	CreateGround(coordinator,
-		XMFLOAT3(0.0f, -0.5f, 0.0f),
-		XMFLOAT3(20.0f, 0.2f, 20.0f));
 
 	// 2. MapGenerationSystemを呼び出し、BSP/MSTを生成
 	auto mapGenSystem = ECSInitializer::GetSystem<MapGenerationSystem>();
@@ -283,23 +291,4 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 		// throw std::runtime_error("MapGenerationSystem is not registered!");
 		return;
 	}
-
-	// --- 3. プレイヤーとカメラの生成 ---
-	//CreatePlayer(coordinator, XMFLOAT3(1.0f, 1.5f, 0.0f));
-	CreatePlayer(coordinator, XMFLOAT3(1.0f, 1.5f, 0.0f));
-	
-	// --- 警備員の生成 ---
-	CreateGuard(coordinator, XMFLOAT3(0.0f, 1.5f, 5.0f));
-	// --- アイテムの作成 ---
-	CreateCollectable(
-		/* Coordinator	*/	coordinator,
-		/* Position		*/	XMFLOAT3(2.0f, 0.5f, 0.0f)
-	);
-	CreateCollectable(
-		/* Coordinator	*/	coordinator,
-		/* Position		*/	XMFLOAT3(-2.0f, 0.5f, 0.0f)
-	);
-
-	// 4. ItemTrackerComponentの総アイテム数を設定
-	//coordinator->GetComponent<ItemTrackerComponent>(mapEntityID).totalItems = totalItems;
 }

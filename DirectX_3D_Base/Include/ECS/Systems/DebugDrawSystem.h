@@ -31,7 +31,7 @@ class DebugDrawSystem
 	: public ECS::System
 {
 private:
-	ECS::Coordinator* m_coordinator;
+	ECS::Coordinator* m_coordinator = nullptr;
 	void DrawMapStructure(ECS::EntityID mapEntityID); // “à•”ƒwƒ‹ƒp[ŠÖ”
 
 public:

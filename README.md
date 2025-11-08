@@ -234,7 +234,7 @@ public:  /* 外部関数 */
   void Update(float deltaTime);  // ロジック実装メソッド
 
 private:  /* 内部変数 */
-  ECS::Coordinator* m_coordinator;
+  ECS::Coordinator* m_coordinator = nullptr;
 };
 ```
 
