@@ -41,5 +41,11 @@
 #include "ECS/Systems/GameFlowSystem.h"
 // @system	システム
 #include "ECS/Systems/CollectionSystem.h"
+// @system	マップ生成
+#include "ECS/Systems/MapGenerationSystem.h"
+
+
+// @system	デバッグ
+#include "ECS/Systems/DebugDrawSystem.h"
 
 #endif // !___ALL_SYSTEM_H___

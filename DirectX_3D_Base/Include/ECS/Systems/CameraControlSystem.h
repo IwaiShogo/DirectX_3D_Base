@@ -27,6 +27,7 @@
 // Components
 #include "ECS/Components/TransformComponent.h"
 #include "ECS/Components/CameraComponent.h"
+#include "ECS/Components/DebugComponent.h"
 // Scene
 #include "Scene/GameScene.h" 
 #include "Main.h" // 画面サイズ定数にアクセス

@@ -55,6 +55,8 @@ namespace ECS
 		 */
 		static EntityID CreateGround(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale);
 
+		static EntityID CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale);
+
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止
 		EntityFactory() = delete;

@@ -69,6 +69,12 @@ void GameScene::Uninit()
 
 void GameScene::Update(float deltaTime)
 {
+
+	if (IsKeyTrigger('Q'))
+	{
+		SceneManager::ChangeScene<GameScene>();
+	}
+
 	// --- 2. ECS Systemの更新
 	
 	// 0. 状態切り替え
@@ -116,6 +122,14 @@ void GameScene::Update(float deltaTime)
 	{
 		system->Update();
 	}
+
+#ifdef _DEBUG
+	// デバッグ描画システム
+	if (auto system = ECS::ECSInitializer::GetSystem<DebugDrawSystem>())
+	{
+		system->Update();
+	}
+#endif // _DEBUG
 }
 
 void GameScene::Draw()
@@ -129,4 +143,6 @@ void GameScene::Draw()
 		// 2. ECS Entityの描画
 		system->DrawEntities();
 	}
+
+	Geometory::DrawLines();
 }

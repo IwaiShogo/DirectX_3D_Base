@@ -109,6 +109,22 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  GameStateComponent
     );
 
+    // --- MapGenerationSystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  MapGenerationSystem,
+        /* Components   */  MapComponent
+    );
+
+
+
+    // --- DebugDrawSystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  DebugDrawSystem,
+        /* Components   */  DebugComponent
+    );
+
     std::cout << "ECSInitializer: All Systems registered and initialized." << std::endl;
 }
 

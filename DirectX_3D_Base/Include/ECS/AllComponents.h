@@ -51,5 +51,11 @@
 #include "ECS/Components/CollectableComponent.h"
 // @component	ステージ内のアイテム管理
 #include "ECS/Components/ItemTrackerComponent.h"
+// @component	マップ管理
+#include "ECS/Components/MapComponent.h"
+
+
+// @component	デバッグ
+#include "ECS/Components/DebugComponent.h"
 
 #endif // !___ALL_COMPONENTS_H___

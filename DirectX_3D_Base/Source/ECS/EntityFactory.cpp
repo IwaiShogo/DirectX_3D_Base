@@ -20,6 +20,7 @@
 
  // ===== インクルード =====
 #include "ECS/EntityFactory.h"
+#include "ECS/ECSInitializer.h"
 #include "ECS/ECS.h" // すべてのコンポーネントとCoordinatorにアクセスするため
 #include "Main.h" // METERなどの定数にアクセス
 
@@ -28,42 +29,6 @@ using namespace DirectX;
 
 // 静的メンバ変数の定義 (必要に応じて追加)
 // const static ECS::EntityID EntityFactory::s_playerID = 2; // エンティティIDはCoordinatorが管理するため不要
-
-/**
- * @brief ゲームワールドの静的な地面エンティティを生成する
- * @param coordinator - エンティティの生成と登録を行うCoordinator
- * @param position - 位置
- * @param scale - スケール
- * @return EntityID - 生成された地面エンティティID
- */
-EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& position, const XMFLOAT3& scale)
-{
-	// GameScene::CreateDemoEntities()から地面のロジックを移動
-	ECS::EntityID ground = coordinator->CreateEntity(
-		TransformComponent(
-			/* Position	*/	position,
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	scale
-		),
-		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
-		),
-		RigidBodyComponent(
-			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Mass			*/	0.0f, // 静的オブジェクト
-			/* Friction		*/	0.8f,
-			/* Restitution	*/	0.2f
-		),
-		CollisionComponent(
-			/* Size			*/	XMFLOAT3(scale.x / 2.0f, scale.y / 2.0f, scale.z / 2.0f),
-			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType	*/	COLLIDER_STATIC
-		)
-	);
-	return ground;
-}
 
 /**
  * @brief プレイヤーエンティティを生成する
@@ -178,32 +143,112 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 }
 
 /**
+ * @brief ゲームワールドの静的な地面エンティティを生成する
+ * @param coordinator - エンティティの生成と登録を行うCoordinator
+ * @param position - 位置
+ * @param scale - スケール
+ * @return EntityID - 生成された地面エンティティID
+ */
+EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& position, const XMFLOAT3& scale)
+{
+	// GameScene::CreateDemoEntities()から地面のロジックを移動
+	ECS::EntityID ground = coordinator->CreateEntity(
+		TransformComponent(
+			/* Position	*/	position,
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	scale
+		),
+		RenderComponent(
+			/* MeshType	*/	MESH_BOX,
+			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
+		),
+		RigidBodyComponent(
+			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass			*/	0.0f, // 静的オブジェクト
+			/* Friction		*/	0.8f,
+			/* Restitution	*/	0.2f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(scale.x / 2.0f, scale.y / 2.0f, scale.z / 2.0f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_STATIC
+		)
+	);
+	return ground;
+}
+
+/**
+ * @brief ゲームワールドの静的な壁エンティティを生成する
+ * 
+ * @param [in] coordinator - エンティティの生成と登録を行うCoordinator
+ * @param [in] position - 位置
+ * @param [in] scale - スケール
+ * @param [in] color - ボックスの色（デフォルトでBackroomsの黄色）
+ * @return EntityID - 生成された壁エンティティID
+ */
+EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale)
+{
+	ECS::EntityID entity = coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"wall"
+		),
+		TransformComponent(
+			/* Position	*/	position,
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	scale
+		),
+		RenderComponent(
+			/* MeshType	*/	MESH_BOX, // MESH_BOXで仮描画
+			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
+		),
+		RigidBodyComponent(
+			/* Velocity	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Accel	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass		*/	0.0f, // 【重要】質量0.0fで静的オブジェクト（動かない壁）として定義
+			/* Friction	*/	0.5f,
+			/* Restit.	*/	0.0f
+		)
+		// CollisionComponent もここで追加されることを想定
+	);
+
+	return entity;
+}
+
+
+/**
  * @brief 全てのデモ用エンティティを生成し、ECSに登録する (GameScene::Init()から呼ばれる)
  * @param coordinator - エンティティの生成と登録を行うCoordinator
  */
 void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 {
-	// --- 1. 1つ目の地面（静的オブジェクト） ---
-	CreateGround(coordinator,
-		XMFLOAT3(0.0f, -0.5f, 0.0f),
-		XMFLOAT3(10.0f, 0.2f, 10.0f));
+	// 1. Map Entity (Game Controller) の作成と初期化
+	// GameStateComponent, ItemTrackerComponent, DebugComponent はこのEntityに付与
+	ECS::EntityID mapEntityID = coordinator->CreateEntity(
+		TagComponent("game_controller"),
+		MapComponent(50.0f, 50.0f), // 50x50のエリアでBSP/MSTを生成
+		GameStateComponent(GameMode::SCOUTING_MODE),
+		ItemTrackerComponent(),
+		DebugComponent() // F1キーによるデバッグ機能のトグル用
+	);
 
-	// --- ゲームコントローラーエンティティ ---
-	EntityID gameControllerID = CreateGameController(coordinator);
+	// 2. MapGenerationSystemを呼び出し、BSP/MSTを生成
+	auto mapGenSystem = ECSInitializer::GetSystem<MapGenerationSystem>();
+	if (mapGenSystem)
+	{
+		// MapGenerationSystem::GenerateMapがBSP/MSTを実行し、MapComponent.layoutを更新する
+		mapGenSystem->GenerateMap(mapEntityID);
+	}
+	else
+	{
+		// マップ生成システムが見つからない場合は処理を中断
+		// throw std::runtime_error("MapGenerationSystem is not registered!");
+		return;
+	}
 
 	// --- 3. プレイヤーとカメラの生成 ---
-	CreatePlayer(coordinator, XMFLOAT3(1.0f, 1.5f, 0.0f));
+	//CreatePlayer(coordinator, XMFLOAT3(1.0f, 1.5f, 0.0f));
 
-	// --- アイテムの作成 ---
-	CreateCollectable(
-		/* Coordinator	*/	coordinator,
-		/* Position		*/	XMFLOAT3(2.0f, 0.5f, 0.0f)
-	);
-	CreateCollectable(
-		/* Coordinator	*/	coordinator,
-		/* Position		*/	XMFLOAT3(-2.0f, 0.5f, 0.0f)
-	);
-
-	// アイテムをトラッカーに設定
-	coordinator->GetComponent<ItemTrackerComponent>(gameControllerID).totalItems = 2;
+	// 4. ItemTrackerComponentの総アイテム数を設定
+	//coordinator->GetComponent<ItemTrackerComponent>(mapEntityID).totalItems = totalItems;
 }
