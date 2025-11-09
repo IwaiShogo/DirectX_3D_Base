@@ -69,7 +69,6 @@ void GameScene::Uninit()
 
 void GameScene::Update(float deltaTime)
 {
-
 	if (IsKeyTrigger('Q'))
 	{
 		SceneManager::ChangeScene<GameScene>();
@@ -122,6 +121,8 @@ void GameScene::Update(float deltaTime)
 	{
 		system->Update();
 	}
+
+	float actualDeltaTime = deltaTime;
 
 #ifdef _DEBUG
 	// デバッグ描画システム

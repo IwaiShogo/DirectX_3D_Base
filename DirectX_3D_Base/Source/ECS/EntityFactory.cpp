@@ -53,7 +53,7 @@ EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 &
 			/* Color	*/	XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
 		),
 		ModelComponent(
-			/* Path		*/	"Assets/Model/AD/modelkari.fbx",
+			/* Path		*/	"Assets/Model/Item/daiya.fbx",
 			/* Scale	*/	0.1f,
 			/* Flip		*/	Model::None
 		),
@@ -79,7 +79,7 @@ EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 &
 	EntityID playerCamera = coordinator->CreateEntity(
 		CameraComponent(
 			/* FocusID		*/	player,
-			/* Offset		*/	XMFLOAT3(0.0f, 2.0f, -5.0f),
+			/* Offset		*/	XMFLOAT3(0.0f, 3.0f, -5.0f),
 			/* FollowSpeed	*/	0.1f
 		),
 		TransformComponent(
@@ -195,7 +195,7 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 		TransformComponent(
 			/* Position	*/	position,
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(0.5f, 1.0f, 1.0f)
+			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
 			/* MeshType	*/	MESH_MODEL,
