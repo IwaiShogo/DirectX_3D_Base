@@ -59,10 +59,10 @@ namespace ProcGen {
 
     // --- パラメータ構造体 ---
     struct BSPParams {
-        float  minLeafW = 3.0f;     // 最小部屋サイズ
-        float  minLeafH = 3.0f;
+        float  minLeafW = 2.0f;     // 最小部屋サイズ
+        float  minLeafH = 2.0f;
         float  maxAspect = 1.8f;    // 分割の偏りを決定するアスペクト比
-        int    maxDepth = 10;        // 分割の回数（推奨：）
+        int    maxDepth = 5;        // 分割の回数（推奨：）
         float  roomInset = 1.5f;    // 部屋の壁からの余白
     };
     struct DelaunayParams {};

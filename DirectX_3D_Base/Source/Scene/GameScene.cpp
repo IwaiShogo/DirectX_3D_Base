@@ -69,7 +69,6 @@ void GameScene::Uninit()
 
 void GameScene::Update(float deltaTime)
 {
-
 	if (IsKeyTrigger('Q'))
 	{
 		SceneManager::ChangeScene<GameScene>();

@@ -32,7 +32,7 @@ void DebugDrawSystem::Update()
 
     DebugComponent& debug = m_coordinator->GetComponent<DebugComponent>(controllerID);
 
-    // 2. 【3-2: トグル機能】F1キーでデバッグモードON/OFFを切り替え
+    // 2. F1キーでデバッグモードON/OFFを切り替え
     if (IsKeyTrigger(VK_F1))
     {
         debug.isDebugModeActive = !debug.isDebugModeActive;
@@ -40,7 +40,32 @@ void DebugDrawSystem::Update()
 
     if (!debug.isDebugModeActive) return; // デバッグモードOFFなら描画処理をスキップ
 
-    // 3. 【3-3: コア描画】マップ構造のライン描画
+    // 3. 【デバッグ機能トグル】キーバインド
+    if (IsKeyTrigger(VK_F2)) debug.isDrawLinesEnabled = !debug.isDrawLinesEnabled;
+    if (IsKeyTrigger(VK_F3)) debug.isCollisionDrawEnabled = !debug.isCollisionDrawEnabled;
+    if (IsKeyTrigger(VK_F4)) debug.isAIShown = !debug.isAIShown;
+    if (IsKeyTrigger(VK_F5))
+    {
+        // F5でテレポート実行
+        ECS::EntityID playerID = ECS::FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+        if (playerID != ECS::INVALID_ENTITY_ID)
+        {
+            m_coordinator->GetComponent<TransformComponent>(playerID).position = debug.teleportTarget;
+        }
+    }
+
+    // 4. 【詳細ステータス表示】
+    // (DisplayStatus関数はSprite::DrawStringのようなAPIに依存し、テキストで座標、速度、FPSを表示します)
+    // DisplayStatus(playerID, y_offset);
+
+    // 5. 【AIの挙動の可視化】
+    if (debug.isAIShown)
+    {
+        // GuardComponentを持つエンティティを走査し、現在のGuardComponent::Stateを表示
+        // GuardAISystemが公開するGetterを通じて、敵の追跡経路などをライン描画することも可能
+    }
+
+    // 6. 【3-3: コア描画】マップ構造のライン描画
     if (debug.isDrawLinesEnabled)
     {
         // MapComponentを持つEntityを探す

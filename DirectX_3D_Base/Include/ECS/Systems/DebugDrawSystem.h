@@ -22,11 +22,11 @@
 
 #include "ECS/ECS.h"
 
- /**
-  * @class DebugDrawSystem
-  * @brief F1キーでのデバッグモードトグルと、ライン描画によるマップ可視化を担当
-  * 処理対象: DebugComponent を持つ Entity
-  */
+/**
+ * @class DebugDrawSystem
+ * @brief F1キーでのデバッグモードトグルと、ライン描画によるマップ可視化を担当
+ * 処理対象: DebugComponent を持つ Entity
+ */
 class DebugDrawSystem
 	: public ECS::System
 {

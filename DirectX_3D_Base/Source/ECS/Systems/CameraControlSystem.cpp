@@ -114,6 +114,9 @@ void CameraControlSystem::Update()
         // ※ ここでビュー行列とプロジェクション行列を計算し、RenderSystemのAPIに設定します。
         // ... (View/Projection行列の計算ロジックはACTION_MODEのステップ4を再利用) ...
 
+
+
+
         return; // 通常のカメラロジックは実行しない
     }
 
