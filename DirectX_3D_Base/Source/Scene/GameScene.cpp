@@ -122,8 +122,6 @@ void GameScene::Update(float deltaTime)
 		system->Update();
 	}
 
-	float actualDeltaTime = deltaTime;
-
 #ifdef _DEBUG
 	// デバッグ描画システム
 	if (auto system = ECS::ECSInitializer::GetSystem<DebugDrawSystem>())

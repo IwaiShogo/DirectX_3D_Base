@@ -18,7 +18,7 @@
  *********************************************************************/
 
 // ===== インクルード =====
-#include "ECS/Systems/CollisionSystem.h"
+#include "ECS/ECS.h"
 #include <algorithm>
 #include <cmath>
 
@@ -178,7 +178,8 @@ void CollisionSystem::Update()
 
 	for (auto const& entity : m_entities)
 	{
-		CollisionComponent& coll = m_coordinator->GetComponent<CollisionComponent>(entity);
+		auto& coll = m_coordinator->GetComponent<CollisionComponent>(entity);
+
 		if (coll.type == COLLIDER_DYNAMIC)
 		{
 			dynamicEntities.push_back(entity);
@@ -209,4 +210,22 @@ void CollisionSystem::Update()
 			}
 		}
 	}
+
+#ifdef _DEBUG
+	auto debugEntityID = ECS::FindFirstEntityWithComponent<DebugComponent>(m_coordinator);
+	if (debugEntityID != ECS::INVALID_ENTITY_ID)
+	{
+		auto& debug = m_coordinator->GetComponent<DebugComponent>(debugEntityID);
+
+		// 当たり判定の可視化
+		if (!debug.isCollisionDrawEnabled) return;
+
+		// TransformComponentとCollisionComponentを持つEntityを走査
+		for (const auto& entity : m_entities)
+		{
+			// CollisionComponentの形状に基づき
+			// Geometory::AddLine() を使用してヒットボックスの外枠を描画
+		}
+	}
+#endif // _DEBUG
 }
