@@ -11,8 +11,8 @@
  * @date	2025/11/06	初回作成日
  * 			作業内容：	- 追加：
  * 
- * @update	2025/xx/xx	最終更新日
- * 			作業内容：	- XX：
+ * @update	2025/11/10	最終更新日
+ * 			作業内容：	- 追加：BSPParamsに aspectRatioThreshold を追加し、BSP分割の偏り制御をパラメータ化。
  * 
  * @note	（省略可）
  *********************************************************************/
@@ -30,7 +30,6 @@
 namespace ProcGen {
 
     // --- データ構造 ---
-
     struct RectF {
         float x, y, w, h; // 左上(x,y)、幅w、高さh（右手系XZに対応）
     };
@@ -41,9 +40,18 @@ namespace ProcGen {
         float width = 2.0f; // 通路の幅
     };
 
+    struct ConnectionInfo {
+        float start = 0.0f; // 辺に沿った開口部の開始位置（0.0～1.0）
+        float end = 0.0f;   // 辺に沿った開口部の終了位置（0.0～1.0）
+        bool isConnected = false;
+    };
+
     struct Room {
         RectF rect;                 // 実際に部屋として使う矩形
         DirectX::XMFLOAT2 center;   // 中心（Delaunay用）
+
+        // 接続情報（0:南(-Z), 1:北(+Z), 2:西(-X), 3:東(+X)）
+        ConnectionInfo connections[4];
     };
 
     struct MuseumLayout {
@@ -64,6 +72,7 @@ namespace ProcGen {
         float  maxAspect = 1.8f;    // 分割の偏りを決定するアスペクト比
         int    maxDepth = 5;        // 分割の回数（推奨：）
         float  roomInset = 1.5f;    // 部屋の壁からの余白
+        float  aspectRatioThreshold = 1.3f;
     };
     struct DelaunayParams {};
     struct MSTParams { float extraEdgeRatio = 0.15f; }; // 回遊性

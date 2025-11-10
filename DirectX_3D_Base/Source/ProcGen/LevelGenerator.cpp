@@ -316,13 +316,15 @@ void ProcGen::LevelGenerator::SplitBSP(float W, float H, const BSPParams& p)
         bool split_horizontal;
         float aspect_w = parent.rc.w / parent.rc.h;
         float aspect_h = parent.rc.h / parent.rc.w;
-        const float ASPECT_THRES = 1.3f; // 閾値を少し緩める
+
+        // ハードコードされた閾値 1.3f をパラメータ p.aspectRatioThreshold に置き換え
+        const float ASPECT_THRES = p.aspectRatioThreshold;
 
         if (aspect_w > ASPECT_THRES && parent.rc.w > parent.rc.h) {
-            split_horizontal = false; // 垂直分割 (Y軸に沿って)
+            split_horizontal = false; // 垂直分割 (X軸に沿って分割 = 幅Wを分割)
         }
         else if (aspect_h > ASPECT_THRES && parent.rc.h > parent.rc.w) {
-            split_horizontal = true; // 水平分割 (X軸に沿って)
+            split_horizontal = true; // 水平分割 (Y軸に沿って分割 = 高さHを分割)
         }
         else {
             split_horizontal = (Rand01(m_rng) < 0.5f);
