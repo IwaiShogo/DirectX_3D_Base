@@ -26,9 +26,9 @@
 
 // ===== 定数・マクロ定義 =====
 // マップのグリッドサイズ（10 x 10セル = 50m x 50m）
-constexpr int MAP_GRID_SIZE = 50;
+constexpr int MAP_GRID_SIZE = 20;
 // 1セルあたりのワールドサイズ（5m）
-constexpr float TILE_SIZE = 1.0f;
+constexpr float TILE_SIZE = 2.0f;
 // 壁の高さ（モジュールアセットに合わせる想定で仮に5mとしておく）
 constexpr float WALL_HEIGHT = 5.0f;
 

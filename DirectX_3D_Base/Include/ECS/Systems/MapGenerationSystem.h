@@ -57,6 +57,8 @@ public:
 	void InitMap();
 
 	void Update() {}
+
+	void DrawDebugLines();
 private:
 	void SpawnMapEntities(MapComponent& mapComp);
 	DirectX::XMFLOAT3 GetWorldPosition(int x, int y);

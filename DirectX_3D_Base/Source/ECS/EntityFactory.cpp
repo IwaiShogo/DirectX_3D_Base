@@ -160,7 +160,7 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
 		),
 		RenderComponent(
 			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
+			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 1.0f, 1.0f)
 		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
