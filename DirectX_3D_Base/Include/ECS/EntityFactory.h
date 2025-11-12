@@ -54,9 +54,10 @@ namespace ECS
 		 * @brief ゲームワールドの静的な地面エンティティを生成する
 		 */
 		static EntityID CreateGround(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale);
-		static EntityID CreateCorridor(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY);
 
 		static EntityID CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY);
+
+		static EntityID CreateGoal(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
 		/**
 		* @brief 追跡エンティティを生成する

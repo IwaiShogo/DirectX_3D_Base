@@ -1,17 +1,15 @@
 /*****************************************************************//**
- * @file	GameScene.h
- * @brief	ゲームのメインロジックを含むシーンクラス。
+ * @file	StageSelectScene.h
+ * @brief	ステージセレクトのメインロジックを含むシーンクラス
  * 
  * @details	
- * ECSの初期化、管理、Systemの実行をこのシーンクラス内で完結させる。
  * 
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  * 
- * @date   2025/10/21	初回作成日
- * 			作業内容：	- 追加：ECS::CoordinatorのインスタンスとRenderSystemへのポインタをメンバーに追加。
- *						- 追加：他のシステムからCoordinatorにアクセスするための静的アクセサ関数を定義。
+ * @date	2025/11/13	初回作成日
+ * 			作業内容：	- 追加：
  * 
  * @update	2025/xx/xx	最終更新日
  * 			作業内容：	- XX：
@@ -19,20 +17,20 @@
  * @note	（省略可）
  *********************************************************************/
 
-#ifndef ___GAME_SCENE_H___
-#define ___GAME_SCENE_H___
+#ifndef ___STAGE_SELECT_SCENE_H___
+#define ___STAGE_SELECT_SCENE_H___
 
 // ===== インクルード =====
-#include "Scene.h"
+#include "Scene/Scene.h"
 #include "ECS/Coordinator.h"
 
 #include <memory>
 
 /**
- * @class GameScene
- * @brief 実際のゲームロジックとECSを管理するシーン
+ * @class	StageSelectScene
+ * @brief	ステージセレクトロジックとECSを管理するシーン
  */
-class GameScene
+class StageSelectScene
 	: public Scene
 {
 private:
@@ -44,10 +42,11 @@ private:
 
 public:
 	// コンストラクタとデストラクタ（Sceneを継承しているため仮想デストラクタはScene側で定義済みと仮定）
-	GameScene()
+	StageSelectScene()
 		: m_coordinator(nullptr)
-	{}
-	~GameScene() override {} // 仮想デストラクタを実装
+	{
+	}
+	~StageSelectScene() override {} // 仮想デストラクタを実装
 
 	// Sceneインターフェースの実装
 	void Init() override;
@@ -62,4 +61,4 @@ public:
 	static ECS::Coordinator* GetCoordinator() { return s_coordinator; }
 };
 
-#endif // !___GAME_SCENE_H___
+#endif // !___STAGE_SELECT_SCENE_H___

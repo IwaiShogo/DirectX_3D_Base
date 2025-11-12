@@ -750,13 +750,13 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp)
                 cellCenter.z += TILE_SIZE / 2.0f;
 
                 // 特殊オブジェクトのY座標を床の表面に合わせる (0.5f = プレイヤー/アイテムの中心)
-                cellCenter.y = TILE_SIZE / 2.0f;
+                cellCenter.y = TILE_SIZE;
 
                 if (cell.type == CellType::Start) {
                     EntityFactory::CreatePlayer(m_coordinator, cellCenter);
                 }
                 else if (cell.type == CellType::Goal) {
-                    // EntityFactory::CreateGate(coordinator, cellCenter);
+                    EntityFactory::CreateGoal(m_coordinator, cellCenter);
                 }
                 else if (cell.type == CellType::Item) {
                     EntityFactory::CreateCollectable(m_coordinator, cellCenter);

@@ -155,6 +155,7 @@
     <ClCompile Include="Source\Scene\GameScene.cpp" />
     <ClCompile Include="Source\Scene\ResultScene.cpp" />
     <ClCompile Include="Source\Scene\SceneManager.cpp" />
+    <ClCompile Include="Source\Scene\StageSelectScene.cpp" />
     <ClCompile Include="Source\Scene\TitleScene.cpp" />
     <ClCompile Include="Source\Systems\DirectX\DirectX.cpp" />
     <ClCompile Include="Source\Systems\DirectX\MeshBuffer.cpp" />
@@ -213,6 +214,7 @@
     <ClInclude Include="Include\Scene\ResultScene.h" />
     <ClInclude Include="Include\Scene\Scene.h" />
     <ClInclude Include="Include\Scene\SceneManager.h" />
+    <ClInclude Include="Include\Scene\StageSelectScene.h" />
     <ClInclude Include="Include\Scene\TitleScene.h" />
     <ClInclude Include="Include\Systems\Camera.h" />
     <ClInclude Include="Include\Systems\DirectX\DirectX.h" />
