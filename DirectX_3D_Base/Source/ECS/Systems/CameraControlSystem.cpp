@@ -35,7 +35,7 @@ const float CAMERA_SENSITIVITY_Y = 0.03f; // PITCH感度 (上下は控えめに)
 const float PITCH_MAX = -XM_PIDIV2 - 0.2f; // 約78度
 const float PITCH_MIN = XM_PIDIV2 * 0.3f; // 約-27度 (水平より少し下まで)
 // トップビューカメラの高さ定数
-const float TOP_VIEW_HEIGHT = 50.0f;
+const float TOP_VIEW_HEIGHT = 60.0f;
 
 /**
  * @brief 2つの位置を線形補間する (Lerp)
@@ -231,9 +231,28 @@ void CameraControlSystem::Update()
             XMMATRIX viewMatrix = XMMatrixLookAtLH(newCamPosV, newLookAtV, up);
 
             // Projection行列
-            XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH(
-                cameraComp.FOV, (float)SCREEN_WIDTH / SCREEN_HEIGHT, cameraComp.nearClip, cameraComp.farClip
-            );
+            XMMATRIX projectionMatrix;
+            if (currentMode == GameMode::SCOUTING_MODE)
+            {
+                // 平行投影のパラメータ
+                // 画面サイズ (SCREEN_WIDTH/HEIGHT) とカメラの視野の大きさを元に計算
+                // 例: カメラコンポーネントのFOVを、平行投影のビューポートの高さとして利用する
+                float viewHeight = cameraComp.FOV * TOP_VIEW_HEIGHT; // FOVを基準に平行投影の視野高さを決定 (調整が必要)
+                float viewWidth = viewHeight * ((float)SCREEN_WIDTH / SCREEN_HEIGHT);
+
+                projectionMatrix = XMMatrixOrthographicLH(
+                    viewWidth,
+                    viewHeight,
+                    cameraComp.nearClip,
+                    cameraComp.farClip
+                );
+            }
+            else
+            {
+                projectionMatrix = XMMatrixPerspectiveFovLH(
+                    cameraComp.FOV, (float)SCREEN_WIDTH / SCREEN_HEIGHT, cameraComp.nearClip, cameraComp.farClip
+                );
+            }
 
             // DirectXへ渡すために転置して格納
             XMFLOAT4X4 fMatView;

@@ -85,14 +85,5 @@ void DebugDrawSystem::Update()
  */
 void DebugDrawSystem::DrawMapStructure(ECS::EntityID mapEntityID)
 {
-    // MapComponentを持つEntityを探す
-    ECS::EntityID mapID = ECS::FindFirstEntityWithComponent<MapComponent>(m_coordinator);
-    if (mapID == ECS::INVALID_ENTITY_ID) return;
 
-    MapComponent& map = m_coordinator->GetComponent<MapComponent>(mapID);
-
-    // LevelGeneratorのインスタンスを作成し、DebugDrawを呼び出す
-    ProcGen::LevelGenerator generator; // Generatorはステートレスなので、ここで作成してOK
-
-    generator.DebugDraw(map.layout, map.mapping);
 }

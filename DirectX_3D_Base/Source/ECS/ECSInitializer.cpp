@@ -147,8 +147,6 @@ void ECSInitializer::InitECS(std::shared_ptr<Coordinator>& coordinator)
 	// 1. Coordinator自体の初期化 (ECSコア内部のデータ構造の初期化)
 	rawCoordinator->Init();
 
-	// GameScene::s_coordinator への設定は、次のステップでGameScene::Init()に移動します。
-
 	// 2. コンポーネントの登録
 	RegisterComponents(rawCoordinator);
 

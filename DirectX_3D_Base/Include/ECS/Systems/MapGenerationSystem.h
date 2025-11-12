@@ -1,6 +1,6 @@
 /*****************************************************************//**
  * @file	MapGenerationSystem.h
- * @brief	マップのグリッドデータにランダムなパターンを書き込むシステム
+ * @brief	MapComponentの迷路データを生成し、対応する3Dエンティティを生成・配置するシステム。
  * 
  * @details	
  * 
@@ -9,7 +9,7 @@
  * ------------------------------------------------------------
  * 
  * @date	2025/11/06	初回作成日
- * 			作業内容：	- 追加：
+ * 			作業内容：	- 追加：MapGenerationSystemの定義。迷路生成とEntity配置の役割を持つ。
  * 
  * @update	2025/xx/xx	最終更新日
  * 			作業内容：	- XX：
@@ -22,27 +22,31 @@
 
 // ===== インクルード =====
 #include "ECS/ECS.h"
-#include "ProcGen/LevelGenerator.h"	// BSPの構造体定義に依存
+#include <random>
+#include <stack>
 
-// ===== プロトタイプ宣言 =====
-void InstantiateRoom(
-	ECS::Coordinator* coordinator,
-	const ProcGen::Room& room,
-	const ProcGen::GridMapping& map,
-	uint32_t& totalItems,
-	ECS::EntityID& playerSpawnID,
-	ECS::EntityID& guardSpawnID);
+class MazeGenerator final
+{
+public:
+	// C++11/14で標準的な乱数生成機
+	static std::mt19937 s_generator;
 
-void InstantiateCorridor(
-	ECS::Coordinator* coordinator,
-	const ProcGen::Segment& seg,
-	const ProcGen::GridMapping& map);
+	/**
+	 * @brief 迷路生成ロジックの本体。MapComponentのgridを書き換える。
+	 * @param mapComp - 迷路データを書き込むMapComponentへの参照
+	 */
+	static void Generate(MapComponent& mapComp);
+private:
+	// 再帰的バックトラッカーのヘルパー関数
+	static void RecursiveBacktracker(MapComponent& mapComp, int x, int y);
+};
 
- /**
-  * @class MapGenerationSystem
-  * @brief MapComponentに基づき、ランダムなグリッド構造を生成する
-  */
-class MapGenerationSystem : public ECS::System
+/**
+ * @class MapGenerationSystem
+ * @brief MapComponentに基づき、ランダムなグリッド構造を生成する
+ */
+class MapGenerationSystem
+	: public ECS::System
 {
 private:
 	ECS::Coordinator* m_coordinator = nullptr;
@@ -50,10 +54,14 @@ private:
 public:
 	void Init(ECS::Coordinator* coordinator) override { m_coordinator = coordinator; }
 
-	/**
-	 * @brief マップ生成ロジックを実行する（Updateループではなく、SceneInit時に一度だけ呼ばれる）
-	 */
-	void GenerateMap(ECS::EntityID mapEntityID);
+	void InitMap();
+
+	void Update() {}
+
+	void DrawDebugLines();
+private:
+	void SpawnMapEntities(MapComponent& mapComp);
+	DirectX::XMFLOAT3 GetWorldPosition(int x, int y);
 };
 
 #endif // !___MAP_GENERATION_SYSTEM_H___

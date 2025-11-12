@@ -160,7 +160,7 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
 		),
 		RenderComponent(
 			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
+			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 1.0f, 1.0f)
 		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -176,6 +176,34 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
 		)
 	);
 	return ground;
+}
+
+EntityID ECS::EntityFactory::CreateCorridor(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY)
+{
+	ECS::EntityID corridor = coordinator->CreateEntity(
+		TransformComponent(
+			/* Position	*/	position,
+			/* Rotation	*/	XMFLOAT3(0.0f, rotationY, 0.0f),
+			/* Scale	*/	scale
+		),
+		RenderComponent(
+			/* MeshType	*/	MESH_BOX,
+			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
+		),
+		RigidBodyComponent(
+			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass			*/	0.0f, // 静的オブジェクト
+			/* Friction		*/	0.8f,
+			/* Restitution	*/	0.2f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(scale.x / 2.0f, scale.y / 2.0f, scale.z / 2.0f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_STATIC
+		)
+	);
+	return corridor;
 }
 
 /*
@@ -233,7 +261,7 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
  * @param [in] color - ボックスの色（デフォルトでBackroomsの黄色）
  * @return EntityID - 生成された壁エンティティID
  */
-EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale)
+EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY)
 {
 	ECS::EntityID entity = coordinator->CreateEntity(
 		TagComponent(
@@ -241,7 +269,7 @@ EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX:
 		),
 		TransformComponent(
 			/* Position	*/	position,
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, rotationY, 0.0f),
 			/* Scale	*/	scale
 		),
 		RenderComponent(
@@ -254,8 +282,12 @@ EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX:
 			/* Mass		*/	0.0f, // 【重要】質量0.0fで静的オブジェクト（動かない壁）として定義
 			/* Friction	*/	0.5f,
 			/* Restit.	*/	0.0f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(scale.x / 2.0f, scale.y / 2.0f, scale.z / 2.0f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_STATIC
 		)
-		// CollisionComponent もここで追加されることを想定
 	);
 
 	return entity;
@@ -272,7 +304,7 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 	// GameStateComponent, ItemTrackerComponent, DebugComponent はこのEntityに付与
 	ECS::EntityID mapEntityID = coordinator->CreateEntity(
 		TagComponent("game_controller"),
-		MapComponent(50.0f, 50.0f), // 50x50のエリアでBSP/MSTを生成
+		MapComponent(), // 50x50のエリアでBSP/MSTを生成
 		GameStateComponent(GameMode::SCOUTING_MODE),
 		ItemTrackerComponent(),
 		DebugComponent() // F1キーによるデバッグ機能のトグル用
@@ -283,7 +315,7 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 	if (mapGenSystem)
 	{
 		// MapGenerationSystem::GenerateMapがBSP/MSTを実行し、MapComponent.layoutを更新する
-		mapGenSystem->GenerateMap(mapEntityID);
+		mapGenSystem->InitMap();
 	}
 	else
 	{

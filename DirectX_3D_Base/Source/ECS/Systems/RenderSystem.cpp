@@ -17,9 +17,8 @@
  * @note	（省略可）
  *********************************************************************/
 
-#include "ECS/Systems/RenderSystem.h"
-#include "ECS/Components/ModelComponent.h"
-#include "ECS/Components/CameraComponent.h"
+#include "ECS/ECS.h"
+#include "ECS/ECSInitializer.h"
 #include "Main.h"
 #include "Systems/DirectX/DirectX.h"
 #include "Systems/Geometory.h"
@@ -65,6 +64,12 @@ void RenderSystem::DrawSetup()
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, size), XMFLOAT4(0, 0, 1, 1));
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(-size, 0, 0), XMFLOAT4(0, 0, 0, 1));
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, -size), XMFLOAT4(0, 0, 0, 1));
+
+	auto mapGenSystem = ECS::ECSInitializer::GetSystem<MapGenerationSystem>();
+	if (mapGenSystem)
+	{
+		mapGenSystem->DrawDebugLines();
+	}
 
 	Geometory::DrawLines();
 
@@ -112,35 +117,13 @@ void RenderSystem::DrawSetup()
 void RenderSystem::DrawEntities()
 {
 	// 1. CameraComponentを持つEntityを検索し、カメラ座標と行列を取得
-	ECS::EntityID cameraID = ECS::INVALID_ENTITY_ID;
+	ECS::EntityID cameraID = ECS::FindFirstEntityWithComponent<CameraComponent>(m_coordinator);
 
-	// Coordinatorの全Entityを走査 (非効率だが確実)
-	for (auto const& entity : m_coordinator->GetActiveEntities())
-	{
-		if (m_coordinator->m_entityManager->GetSignature(entity).test(m_coordinator->GetComponentTypeID<CameraComponent>()))
-		{
-			cameraID = entity;
-			break;
-		}
-	}
-
-    CameraComponent* cameraComp = nullptr;  
-    if (cameraID != ECS::INVALID_ENTITY_ID)  
+    if (cameraID == ECS::INVALID_ENTITY_ID)  
     {  
-        cameraComp = &m_coordinator->GetComponent<CameraComponent>(cameraID);  
-
-        // ★★★ 2. Geometoryに行列とカメラ位置を設定 ★★★  
-        Geometory::SetView(cameraComp->viewMatrix);  
-        Geometory::SetProjection(cameraComp->projectionMatrix);  
+		return;
     }
-	if (cameraID != ECS::INVALID_ENTITY_ID)
-	{
-		*cameraComp = m_coordinator->GetComponent<CameraComponent>(cameraID);
-
-		// ★★★ 2. Geometoryに行列とカメラ位置を設定 ★★★
-		Geometory::SetView(cameraComp->viewMatrix);
-		Geometory::SetProjection(cameraComp->projectionMatrix);
-	}
+	auto& cameraComp = m_coordinator->GetComponent<CameraComponent>(cameraID);
 
 	// Systemが保持するEntityセットをイテレート
 	for (auto const& entity : m_entities)
@@ -165,8 +148,8 @@ void RenderSystem::DrawEntities()
 		// ビュー行列
 
 		XMStoreFloat4x4(&wvp[0], XMMatrixTranspose(world));
-		wvp[1] = cameraComp->viewMatrix;
-		wvp[2] = cameraComp->projectionMatrix;
+		wvp[1] = cameraComp.viewMatrix;
+		wvp[2] = cameraComp.projectionMatrix;
 
 		// シェーダーへの変換行列を設定
 		Geometory::SetWorld(wvp[0]);
@@ -175,7 +158,7 @@ void RenderSystem::DrawEntities()
 
 		ShaderList::SetWVP(wvp);
 		// 2. 描画処理 (RenderComponent)
-
+		
 		// 形状に応じて描画
 		switch (render.type)
 		{
