@@ -1,481 +1,355 @@
-/*****************************************************************//**
+ï»¿/*****************************************************************//**
  * @file	MapGenerationSystem.cpp
- * @brief	BSP/MST‚É‚æ‚éŠÙ“àƒŒƒCƒAƒEƒg¶¬ƒAƒ‹ƒSƒŠƒYƒ€‚ÌÀ‘•B
+ * @brief	ãƒ©ãƒ³ãƒ€ãƒ è¿·è·¯ã®ãƒ‡ãƒ¼ã‚¿ç”Ÿæˆãƒ­ã‚¸ãƒƒã‚¯ã¨ã€ãã®ãƒ‡ãƒ¼ã‚¿ã«åŸºã¥ã„ãŸEntityç”Ÿæˆãƒ­ã‚¸ãƒƒã‚¯ã®å®Ÿè£…ã€‚
  * 
- * @details	BSP‚Å•”‰®‚ğ”z’u‚µADelaunay/MST‚ÅÚ‘±«‚ğ•ÛØ‚µ‚½’Ê˜H‚ğ¶¬‚·‚éB
+ * @details	
  * 
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  * 
- * @date	2025/11/06	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁFBSP/MST‚ÌœŠiÀ‘•
+ * @date	2025/11/06	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼šMapGenerationSystem.cppã‚’ä½œæˆã€‚è¿·è·¯ç”Ÿæˆã‚¢ãƒ«ã‚´ãƒªã‚ºãƒ  (å†å¸°çš„ãƒãƒƒã‚¯ãƒˆãƒ©ãƒƒã‚«ãƒ¼) ã‚’å®Ÿè£…ã€‚
  * 
- * @update	2025/11/10	ÅIXV“ú
- * 			ì‹Æ“à—eF	- C³FInstantiateRoom/Corridor‚ÉŠJŒû•”‚Æ”z’uƒƒWƒbƒN‚ğÀ‘•B
+ * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- xxï¼š
  * 
- * @note	iÈ—ª‰Âj
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
- // ===== ƒCƒ“ƒNƒ‹[ƒh =====
-#include "ECS/Systems/MapGenerationSystem.h"
+ // ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
 #include "ECS/EntityFactory.h" 
 #include "ECS/ECS.h"
-#include "ProcGen/LevelGenerator.h" // BSP/MSTƒWƒFƒlƒŒ[ƒ^[
+
 #include <algorithm>
 #include <random>
 #include <cmath>
 
 using namespace DirectX;
-using namespace ProcGen;
 using namespace ECS;
 
-//--------------------------------------
-// •â•’è”
-//--------------------------------------
-const float WALL_THICKNESS = 0.2f;
-const float ITEM_HEIGHT = 0.5f;
-const float CORRIDOR_TOLERANCE = WALL_THICKNESS + 0.1f; // ’Ê˜H‚ÌŠJŒû•””»’è‚Ég‚¤‹–—eŒë·
+// ===================================================================
+// MazeGenerator å®Ÿè£…
+// ===================================================================
 
-//--------------------------------------
-// ƒwƒ‹ƒp[ŠÖ”F’Ê˜H‚ÌEntity¶¬iInstantiateCorridorj
-//--------------------------------------
-void InstantiateCorridor(Coordinator* coordinator, const Segment& seg, const GridMapping& map)
+// é™çš„ãƒ¡ãƒ³ãƒå¤‰æ•°ã®åˆæœŸåŒ–
+std::mt19937 MazeGenerator::s_generator(std::random_device{}());
+
+/**
+ * @brief è¿·è·¯ç”Ÿæˆãƒ­ã‚¸ãƒƒã‚¯ã®æœ¬ä½“ã€‚MapComponentã®gridã‚’æ›¸ãæ›ãˆã‚‹ã€‚
+ * @param mapComp - è¿·è·¯ãƒ‡ãƒ¼ã‚¿ã‚’æ›¸ãè¾¼ã‚€MapComponentã¸ã®å‚ç…§
+ */
+void MazeGenerator::Generate(MapComponent& mapComp)
 {
-    const float WALL_H = map.wallHeight; // 2.5f
-    const float WIDTH = seg.width * map.scaleXZ; // ’Ê˜H‚Ì• (—á: 2.0f * 1.0f = 2.0f)
-    const float HALF_WIDTH = WIDTH / 2.0f;
-    const float HALF_THICKNESS = WALL_THICKNESS / 2.0f;
-
-    // 1. ƒZƒOƒƒ“ƒg‚Ì’·‚³A’†SAŒü‚«‚ğŒvZ
-
-    // ƒxƒNƒgƒ‹ AB (ƒ[ƒ‹ƒhÀ•W)
-    float dx = seg.b.x - seg.a.x;
-    float dz = seg.b.z - seg.a.z;
-    float original_length = std::sqrt(dx * dx + dz * dz);
-    
-    // ’Ê˜H‚Ì’·‚³‚ğ—¼’[‚Ì•”‰®‚Ì•Ç‚ÌŒú‚İ•ª‚¾‚¯’Z‚­‚·‚é
-    // ’Ê˜H‚Í•”‰®‚Ì’†S‚©‚çn‚Ü‚èA•”‰®‚Ì’†S‚ÅI‚í‚é‚½‚ßA—¼’[‚Å•Ç‚ÌŒú‚İ•ª’Zk‚ª•K—v
-    const float TOTAL_WALL_SKIP = WALL_THICKNESS * map.scaleXZ; // ’Ê˜H‚ğ•”‰®‚Ì•Ç‚ÌŒú‚İ•ª“à‘¤‚©‚çŠJn/I—¹
-    float length = original_length - 2.0f * TOTAL_WALL_SKIP;
-
-    // ’Ê˜H’·‚ª WALL_THICKNESS ˆÈ‰º‚Ìê‡‚Í–³‹i‚Ù‚Ú“_‚Å‚ ‚é‚½‚ßj
-    if (length < 1e-3f) return;
-
-    // ’Zk‚³‚ê‚½ƒZƒOƒƒ“ƒg‚Ì’†SÀ•W (’†“_)
-    XMFLOAT3 centerPos;
-
-    // ’Ê˜H‚Ì•ûŒüƒxƒNƒgƒ‹‚ğ³‹K‰»
-    float inv_original_length = 1.0f / original_length;
-    float dir_x = dx * inv_original_length; // X•ûŒü’PˆÊƒxƒNƒgƒ‹
-    float dir_z = dz * inv_original_length; // Z•ûŒü’PˆÊƒxƒNƒgƒ‹
-
-    // NH•ª‚¾‚¯’†S‚ğƒVƒtƒg‚³‚¹‚é
-    // n“_(seg.a)‚©‚ç (‘S’· / 2) - (NH•ª) ‚¾‚¯—£‚ê‚½ˆÊ’u
-    float half_len_original = original_length / 2.0f;
-    float shift_amount = half_len_original - (length / 2.0f);
-
-    // ’†S“_ = seg.a + (•ûŒüƒxƒNƒgƒ‹ * ‹——£)
-    float original_center_x = seg.a.x + dir_x * half_len_original;
-    float original_center_z = seg.a.z + dir_z * half_len_original;
-
-    centerPos.x = original_center_x;
-    centerPos.z = original_center_z;
-    centerPos.y = map.yFloor; // YÀ•W‚Íˆê’U°‚Ì‚‚³‚Éİ’è
-
-    // Œ³‚Ì’†S“_‚ğg‚¢AƒXƒP[ƒ‹‚Æ‰ñ“]‚Å’Zk‚ğ•\Œ»‚·‚é‚Ì‚ªƒVƒ“ƒvƒ‹‚Å‚·B
-    float rotationY = 0.0f;
-
-    // 2. ’Ê˜H‚Ì° Entity ‚Ì¶¬
+    // å…¨ã¦ã®ã‚»ãƒ«ã‚’æœªè¨ªå•(Unvisited)ã«ãƒªã‚»ãƒƒãƒˆ
+    for (int y = 0; y < MAP_GRID_SIZE; ++y)
     {
-        XMFLOAT3 floorScale;
-
-        if (std::abs(dx) > std::abs(dz)) // å‚ÉX²•ûŒü‚ÌƒZƒOƒƒ“ƒg
+        for (int x = 0; x < MAP_GRID_SIZE; ++x)
         {
-            // X:’ZkŒã‚Ì’·‚³(length), Y:Œú(T), Z:•(WIDTH)
-            floorScale = { length, WALL_THICKNESS, WIDTH }; // length ‚ğg—p
-            rotationY = 0.0f;
+            mapComp.grid[y][x].visited = false;
+            mapComp.grid[y][x].type = CellType::Wall; // åˆæœŸçŠ¶æ…‹ã¯ã™ã¹ã¦å£
+            mapComp.grid[y][x].hasWallNorth = true;
+            mapComp.grid[y][x].hasWallSouth = true;
+            mapComp.grid[y][x].hasWallEast = true;
+            mapComp.grid[y][x].hasWallWest = true;
         }
-        else // å‚ÉZ²•ûŒü‚ÌƒZƒOƒƒ“ƒg
+    }
+
+    // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ã‚¹ã‚¿ãƒ¼ãƒˆä½ç½®ã‚’æ±ºå®š (å·¦ä¸Š)
+    mapComp.startPos = { 0, 0 };
+    // ã‚´ãƒ¼ãƒ«ä½ç½®ã‚’æ±ºå®š (å³ä¸‹)
+    mapComp.goalPos = { MAP_GRID_SIZE - 1, MAP_GRID_SIZE - 1 };
+
+    // å†å¸°çš„ãƒãƒƒã‚¯ãƒˆãƒ©ãƒƒã‚«ãƒ¼ã‚’é–‹å§‹
+    RecursiveBacktracker(mapComp, mapComp.startPos.x, mapComp.startPos.y);
+
+    // ã‚¹ã‚¿ãƒ¼ãƒˆã¨ã‚´ãƒ¼ãƒ«ã‚’Pathã¨ã—ã¦ãƒãƒ¼ã‚¯ã—ã€ã‚²ãƒ¼ãƒ è¦ç´ ã¨ã—ã¦æŒ‡å®š
+    mapComp.grid[mapComp.startPos.y][mapComp.startPos.x].type = CellType::Start;
+    mapComp.grid[mapComp.goalPos.y][mapComp.goalPos.x].type = CellType::Goal;
+
+    // --------------------------------------------------------------------------------
+    // ã€ã‚¹ãƒ†ãƒƒãƒ—2-3: ã‚¢ã‚¤ãƒ†ãƒ ã¨è­¦å‚™å“¡ã®é…ç½®ãƒ­ã‚¸ãƒƒã‚¯ã€‘
+    // --------------------------------------------------------------------------------
+
+    // é…ç½®å¯èƒ½ãªãƒ‘ã‚¹åº§æ¨™ã®ãƒªã‚¹ãƒˆã‚’åé›†
+    std::vector<XMINT2> availablePathPositions;
+    for (int y = 0; y < MAP_GRID_SIZE; ++y)
+    {
+        for (int x = 0; x < MAP_GRID_SIZE; ++x)
         {
-            // X:•(WIDTH), Y:Œú(T), Z:’ZkŒã‚Ì’·‚³(length)
-            floorScale = { WIDTH, WALL_THICKNESS, length }; // length ‚ğg—p
-            rotationY = 0.0f;
-        }
-
-        // YÀ•W‚ğ°Entity‚Ì’†S‚É’²®
-        centerPos.y = map.yFloor - HALF_THICKNESS; // Y²ˆÊ’u‚ğŒ³‚É–ß‚·
-
-        // EntityFactory::CreateCorridor ‚Í‰ñ“]Y‚É‘Î‰‚µ‚½Ground/Wallƒtƒ@ƒNƒgƒŠ‚ğg—p
-        EntityFactory::CreateCorridor(coordinator, centerPos, floorScale, rotationY);
-    }
-
-    // 3. ’Ê˜H‚Ì•Ç Entity ‚Ì¶¬
-
-    // YÀ•W‚Í°‚©‚ç•Ç‚Ì”¼•ª‚Ì‚‚³‚É‚¿ã‚°‚é
-    float wallY = map.yFloor + WALL_H / 2.0f;
-
-    // •Ç‚Ì’†SÀ•W‚ğÄŒvZ
-    XMFLOAT3 wallCenter = centerPos;
-    wallCenter.y = wallY;
-
-    // å²•ûŒü‚ğÄ”»’è
-    if (std::abs(dx) > std::abs(dz)) // X²ƒZƒOƒƒ“ƒg (RotationY = 0)
-    {
-        // X:’ZkŒã‚Ì’·‚³(length), Y:‚(H), Z:Œú(T)
-        XMFLOAT3 wallScale = { length, WALL_H, WALL_THICKNESS };
-
-        // •Ç 1: Z² + ‘¤ (‰E)
-        XMFLOAT3 pos1 = wallCenter;
-        pos1.z += (HALF_WIDTH + HALF_THICKNESS); // Z²+•ûŒü‚ÖA”¼• + ”¼Œú‚İ•ªƒVƒtƒg
-        EntityFactory::CreateWall(coordinator, pos1, wallScale);
-
-        // •Ç 2: Z² - ‘¤ (¶)
-        XMFLOAT3 pos2 = wallCenter;
-        pos2.z -= (HALF_WIDTH + HALF_THICKNESS); // Z²-•ûŒü‚ÖA”¼• + ”¼Œú‚İ•ªƒVƒtƒg
-        EntityFactory::CreateWall(coordinator, pos2, wallScale);
-    }
-    else // Z²ƒZƒOƒƒ“ƒg (RotationY = 90“x)
-    {
-        // X:Œú(T), Y:‚(H), Z:’ZkŒã‚Ì’·‚³(length)
-        XMFLOAT3 wallScale = { WALL_THICKNESS, WALL_H, length };
-
-        // •Ç 1: X² + ‘¤ (‰E)
-        XMFLOAT3 pos1 = wallCenter;
-        // yC³z: ‰ñ“]‚µ‚Ä‚¢‚é‚½‚ßAX²•ûŒü‚É••ªƒVƒtƒg‚·‚éi’Ê˜H‚ªZ²‚É‰ˆ‚Á‚Ä‚¢‚é‚½‚ßj
-        //           RotationY=90“x‚Ìê‡AX²ƒXƒP[ƒ‹‚ªŒú‚İAZ²ƒXƒP[ƒ‹‚ª’·‚³‚É‚È‚é‚æ‚¤‚É’è‹`‚³‚ê‚Ä‚¢‚éB
-        //           •Ç‚ÌˆÊ’u‚ÍA’Ê˜H‚ÌZ²‚É‚’¼‚ÈX²•ûŒü‚ÉˆÚ“®‚³‚¹‚éB
-        pos1.x += (HALF_WIDTH + HALF_THICKNESS);
-        EntityFactory::CreateWall(coordinator, pos1, wallScale);
-
-        // •Ç 2: X² - ‘¤ (¶)
-        XMFLOAT3 pos2 = wallCenter;
-        pos2.x -= (HALF_WIDTH + HALF_THICKNESS);
-        EntityFactory::CreateWall(coordinator, pos2, wallScale);
-    }
-}
-
-//--------------------------------------
-// ƒwƒ‹ƒp[ŠÖ”FBSP‚ÌŒ‹‰Ê‚ÉŠî‚Ã‚«A•”‰®‚ÌEntity‚ğ¶¬
-//--------------------------------------
-void InstantiateRoom(
-    Coordinator* coordinator,
-    const Room& room,
-    const GridMapping& map,
-    uint32_t& totalItems,
-    ECS::EntityID& playerSpawnID,
-    ECS::EntityID& guardSpawnID)
-{
-    // À•WŒn‚Ìİ’è
-    // BSP/MST‚ÍXZ•½–Ê‚Å“®ì‚·‚é‚½‚ßAYÀ•W‚Í°‚‚³ map.yFloor ‚ğg—p‚µ‚Ü‚·B
-    const float WALL_H = map.wallHeight;
-    const float SCALE = map.scaleXZ;
-    const float HALF_THICKNESS = WALL_THICKNESS / 2.0f;
-    const float MIN_WALL_SEGMENT = 0.1f; // •Ç‚ÌÅ¬’·
-    const float CORRIDOR_W = 2.0f * SCALE; // ’Ê˜H‚Ì•W€•iLevelGenerator.h‚ÌSegment::width=2.0f‚ÉˆË‘¶j
-    const float INSET_X = CORRIDOR_W / 2.0f; // Ú‘±‚³‚ê‚é’Ê˜H‚Ì’†SˆÊ’u‚ğ“Á’è‚·‚é‚½‚ß‚ÌƒCƒ“ƒZƒbƒg
-
-    const RectF& rc = room.rect;
-
-    // 1. ° Entity ‚Ì¶¬
-    {
-        // °‚ÌƒTƒCƒYirc.w, rc.h ‚ğ‚»‚Ì‚Ü‚Üg—pj
-        XMFLOAT3 floorScale = { rc.w * SCALE, WALL_THICKNESS, rc.h * SCALE };
-
-        // °‚Ì’†SˆÊ’u
-        float centerX = (rc.x + rc.w / 2.0f) * SCALE;
-        float centerZ = (rc.y + rc.h / 2.0f) * SCALE;
-
-        // YÀ•W‚Í map.yFloor ‚É WALL_THICKNESS ‚Ì”¼•ª‚ğ‰Á‚¦‚ÄA°Entity‚Ì’†SˆÊ’u‚Æ‚·‚é
-        XMFLOAT3 floorPos = { centerX, map.yFloor - HALF_THICKNESS, centerZ };
-
-        // EntityFactory::CreateGround ‚ğg—p‚µ‚Ä°‚ğ¶¬
-        EntityFactory::CreateGround(coordinator, floorPos, floorScale);
-    }
-
-    // 2. 4‚Â‚Ì•Ç Entity ‚Ì¶¬ (ŠJŒû•”ˆ—‚ğ“±“ü)
-
-    // •Ç‚Ì’·‚³‚ÌƒXƒP[ƒ‹’è‹` (Step 4‚ÅC³Ï‚İ)
-    // X•ûŒü‚ÉL‚ª‚é•Ç (‰œ‚Æè‘O): {’·‚³, ‚‚³, Œú‚İ} -> {rc.w, WALL_H, WALL_THICKNESS}
-    XMFLOAT3 wallScaleX_Base = { rc.w * SCALE, WALL_H, WALL_THICKNESS * SCALE };
-    // Z•ûŒü‚ÉL‚ª‚é•Ç (‰E‚Æ¶): {Œú‚İ, ‚‚³, ’·‚³} -> {WALL_THICKNESS, WALL_H, rc.h}
-    XMFLOAT3 wallScaleZ_Base = { WALL_THICKNESS * SCALE, WALL_H, rc.h * SCALE };
-
-    float wallY = map.yFloor + WALL_H / 2.0f;
-
-    // ŠJŒû•”‚ğl—¶‚µ‚½•Ç¶¬‚Ìƒwƒ‹ƒp[
-    auto create_split_walls_x = [&](int side, float posZ) {
-        // side 0:“ì(-Z), 1:–k(+Z)
-
-        if (room.connections[side].isConnected) {
-            const ConnectionInfo& conn = room.connections[side];
-
-            float full_len = rc.w * SCALE;
-            float wall_start_x = rc.x * SCALE;
-            float center_of_room_X = (rc.x + rc.w / 2.0f) * SCALE;
-
-            // 1. ¶‘¤‚Ì•Ç (X² -)
-            float len1 = full_len * conn.start; // conn.start ‚ª 0.0 ˆÈ‰º‚É‚È‚é‚Æ len1 ‚Í•‰‚É‚È‚é
-            if (len1 > MIN_WALL_SEGMENT) {
-                XMFLOAT3 scale1 = { len1, WALL_H, WALL_THICKNESS * SCALE };
-                float posX1 = wall_start_x + len1 / 2.0f;
-                EntityFactory::CreateWall(coordinator, { posX1, wallY, posZ }, scale1);
-            }
-
-            // 2. ‰E‘¤‚Ì•Ç (X² +)
-            float len2 = full_len * (1.0f - conn.end); // conn.end ‚ª 1.0 ˆÈã‚É‚È‚é‚Æ len2 ‚Í•‰‚É‚È‚é
-            if (len2 > MIN_WALL_SEGMENT) {
-                XMFLOAT3 scale2 = { len2, WALL_H, WALL_THICKNESS * SCALE };
-                float posX2 = wall_start_x + full_len - len2 / 2.0f; // full_len - (len2 / 2.0f)
-                EntityFactory::CreateWall(coordinator, { posX2, wallY, posZ }, scale2);
-            }
-            // ŠJŒû•” (conn.end - conn.start) ‚Í‹ó‚¢‚½‚Ü‚Ü‚É‚È‚é
-        }
-        else {
-            // Ú‘±‚ª‚È‚¢ê‡A’Êí‚Ì•Ç‚ğ¶¬
-            float posX = (rc.x + rc.w / 2.0f) * SCALE;
-            EntityFactory::CreateWall(coordinator, { posX, wallY, posZ }, wallScaleX_Base);
-        }
-        };
-
-    // Z•ûŒü‚ÉL‚ª‚é•Ç (‰E‚Æ¶) ‚Ì•ªŠ„¶¬ƒwƒ‹ƒp[
-    auto create_split_walls_z = [&](int side, float posX) {
-        // side 2:¼(-X), 3:“Œ(+X)
-
-        if (room.connections[side].isConnected) {
-            const ConnectionInfo& conn = room.connections[side];
-
-            float full_len = rc.h * SCALE;
-            float wall_start_z = rc.y * SCALE;
-
-            // 1. ‰º‘¤‚Ì•Ç (Z² -)
-            float len1 = full_len * conn.start;
-            if (len1 > MIN_WALL_SEGMENT) {
-                XMFLOAT3 scale1 = { WALL_THICKNESS * SCALE, WALL_H, len1 };
-                float posZ1 = wall_start_z + len1 / 2.0f;
-                EntityFactory::CreateWall(coordinator, { posX, wallY, posZ1 }, scale1);
-            }
-
-            // 2. ã‘¤‚Ì•Ç (Z² +)
-            float len2 = full_len * (1.0f - conn.end);
-            if (len2 > MIN_WALL_SEGMENT) {
-                XMFLOAT3 scale2 = { WALL_THICKNESS * SCALE, WALL_H, len2 };
-                float posZ2 = wall_start_z + full_len - len2 / 2.0f;
-                EntityFactory::CreateWall(coordinator, { posX, wallY, posZ2 }, scale2);
-            }
-            // ŠJŒû•” (conn.end - conn.start) ‚Í‹ó‚¢‚½‚Ü‚Ü‚É‚È‚é
-        }
-        else {
-            // Ú‘±‚ª‚È‚¢ê‡A’Êí‚Ì•Ç‚ğ¶¬
-            float posZ = (rc.y + rc.h / 2.0f) * SCALE;
-            EntityFactory::CreateWall(coordinator, { posX, wallY, posZ }, wallScaleZ_Base);
-        }
-        };
-
-    // --- •Ç 1: “ì‚Ì•Ç (Z² - •ûŒü) --- (side=0)
-    float posZ_south = rc.y * SCALE - HALF_THICKNESS;
-    create_split_walls_x(0, posZ_south);
-
-    // --- •Ç 2: –k‚Ì•Ç (Z² + •ûŒü) --- (side=1)
-    float posZ_north = (rc.y + rc.h) * SCALE + HALF_THICKNESS;
-    create_split_walls_x(1, posZ_north);
-
-    // --- •Ç 3: ¼‚Ì•Ç (X² - •ûŒü) --- (side=2)
-    float posX_west = rc.x * SCALE - HALF_THICKNESS;
-    create_split_walls_z(2, posX_west);
-
-    // --- •Ç 4: “Œ‚Ì•Ç (X² + •ûŒü) --- (side=3)
-    float posX_east = (rc.x + rc.w) * SCALE + HALF_THICKNESS;
-    create_split_walls_z(3, posX_east);
-
-    // --- 3. ƒvƒŒƒCƒ„[AŒx”õˆõAƒAƒCƒeƒ€‚Ì”z’u ---
-
-    // Œ»İ‚Ì•”‰®‚Ì’†SÀ•WiƒXƒ|[ƒ“ˆÊ’u‚Æ‚µ‚Äg—pj
-    XMFLOAT3 roomCenter = { room.center.x * SCALE, ITEM_HEIGHT, room.center.y * SCALE };
-
-    // 3-1. ƒvƒŒƒCƒ„[‚Ì”z’u (Å‰‚Ì•”‰®‚É‚Ì‚İ”z’u)
-    if (playerSpawnID == ECS::INVALID_ENTITY_ID)
-    {
-        playerSpawnID = EntityFactory::CreatePlayer(coordinator, roomCenter);
-    }
-
-    // 3-2. Œx”õˆõ‚Ì”z’u (ƒ‰ƒ“ƒ_ƒ€‚ÈŠm—¦‚Å”z’u)
-    // Œx”õˆõ‚Íƒ}ƒbƒv‘S‘Ì‚Å1‘Ì‚Ì‚İ‚Æ‚µAƒ‰ƒ“ƒ_ƒ€‚É‘I‚Î‚ê‚½•”‰®‚É”z’u‚·‚éƒƒWƒbƒN‚ğƒVƒ~ƒ…ƒŒ[ƒg
-    // ‚½‚¾‚µA‚±‚ÌInstantiateRoom‚ÌŒÄ‚Ño‚µ‡‚ª•”‰®‚Ì¶¬‡‚ÉˆË‘¶‚·‚é‚½‚ßA
-    // ‚±‚±‚Å‚ÍuÅ‰‚Ì•”‰®‚É‚Í”z’u‚µ‚È‚¢v+u‚Ü‚¾”z’u‚³‚ê‚Ä‚¢‚È‚¯‚ê‚Î5%‚ÌŠm—¦‚Å”z’uv‚Æ‚µ‚Ü‚·B
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    std::uniform_real_distribution<float> dis(0.0f, 1.0f);
-
-    if (playerSpawnID != ECS::INVALID_ENTITY_ID && // Å‰‚Ì•”‰®‚Å‚Í‚È‚¢
-        guardSpawnID == ECS::INVALID_ENTITY_ID && // ‚Ü‚¾Œx”õˆõ‚ª”z’u‚³‚ê‚Ä‚¢‚È‚¢
-        dis(gen) < 0.05f) // 5% ‚ÌŠm—¦‚Å”z’u
-    {
-        guardSpawnID = EntityFactory::CreateGuard(coordinator, roomCenter);
-    }
-
-    // 3-3. ƒAƒCƒeƒ€‚Ì”z’u (Še•”‰®‚Éƒ‰ƒ“ƒ_ƒ€‚ÈŠm—¦‚Å”z’u)
-    if (dis(gen) < 0.7f) // 70%‚ÌŠm—¦‚ÅƒAƒCƒeƒ€‚ğ”z’u
-    {
-        EntityFactory::CreateCollectable(coordinator, roomCenter);
-        totalItems++;
-    }
-}
-
-
-//--------------------------------------
-// ƒƒCƒ“Fƒ}ƒbƒv¶¬ˆ—
-//--------------------------------------
-void MapGenerationSystem::GenerateMap(ECS::EntityID mapEntityID)
-{
-    if (!m_coordinator) return;
-
-    // yd—vzmap‚Í”ñconstQÆ‚Åæ“¾ (Ú‘±î•ñ‚ğ‘‚«‚Ş‚½‚ß)
-    MapComponent& map = m_coordinator->GetComponent<MapComponent>(mapEntityID);
-
-    // 1. LevelGenerator‚ÌÀs
-    LevelGenerator generator;
-    map.layout = generator.GenerateMuseum(map.areaW, map.areaH, {}, {}, {});
-
-    // --- 2.5. •”‰®‚Æ’Ê˜H‚ÌÚ‘±“_‚ğŒvZ‚µARoom::connections‚ğXV ---
-    // yC³“_z: ‚±‚ÌƒuƒƒbƒN‚ğ Entity¶¬ƒ‹[ƒv‚Ì‘O‚ÉˆÚ“®‚³‚¹‚Ü‚·B
-
-    // Ú‘±”»’è‚Ì‹–—eŒë·
-    const float EPSILON = 0.5f;
-    const float CORRIDOR_W = 2.0f; // ’Ê˜H‚Ì•
-
-    // ‘S‚Ä‚Ì•”‰®‚É‚Â‚¢‚ÄAÚ‘±‚·‚é’Ê˜H‚ğ’T‚· (map.layout.rooms‚ğXV)
-    for (auto& room : map.layout.rooms)
-    {
-        // •”‰®‚Ì‹«ŠEÀ•W (BSPƒ[ƒJƒ‹À•WŒn)
-        const RectF& rc = room.rect;
-        float x_min = rc.x;
-        float x_max = rc.x + rc.w;
-        float z_min = rc.y;
-        float z_max = rc.y + rc.h;
-
-        // •”‰®‚Ì•Ó‚Ì’·‚³ (BSPƒ[ƒJƒ‹À•WŒn)
-        float len_x = rc.w;
-        float len_z = rc.h;
-
-        for (const auto& seg : map.layout.corridors)
-        {
-            // Ú‘±“_‚ÌŒó•â‚ÍA’Ê˜H‚Ì’[“_ (seg.a ‚Ü‚½‚Í seg.b)
-            XMFLOAT3 candidates[2] = { seg.a, seg.b };
-
-            for (const auto& candidate : candidates)
+            // é€šè·¯ã§ã‚ã‚Šã€ã‹ã¤ã‚¹ã‚¿ãƒ¼ãƒˆãƒ»ã‚´ãƒ¼ãƒ«ã§ã¯ãªã„ä½ç½®ã‚’å€™è£œã¨ã™ã‚‹
+            if (mapComp.grid[y][x].type == CellType::Path)
             {
-                // yC³‰ÓŠz: Ú‘±“_‚ÌÀ•W‚ğBSPƒ[ƒJƒ‹À•WŒn‚É•ÏŠ·
-                float conn_x = candidate.x / map.mapping.scaleXZ;
-                float conn_z = candidate.z / map.mapping.scaleXZ;
-
-                // ----------------------------------------------------------------------
-                // ’Ê˜H‚Ì’[“_‚ªA•”‰®‚Ì‹«ŠEüã‚É‘¶İ‚·‚é‚©‚ğ”»’è (BSPƒ[ƒJƒ‹À•WŒn‚Å”»’è)
-                // ----------------------------------------------------------------------
-
-                int side = -1; // 0:“ì(-Z), 1:–k(+Z), 2:¼(-X), 3:“Œ(+X)
-
-                // 1. X²‚É‰ˆ‚Á‚½•Ói“ì/–kj‚Æ‚ÌÚ‘±”»’è
-                // XÀ•W‚ª•”‰®‚Ì•“à‚Éû‚Ü‚Á‚Ä‚¢‚é (BSPÀ•WŒn‚Å”»’è)
-                if (conn_x > x_min - EPSILON && conn_x < x_max + EPSILON)
-                {
-                    if (std::abs(conn_z - z_min) < EPSILON) {
-                        side = 0; // “ì(-Z)‚Ì•Ó
-                    }
-                    else if (std::abs(conn_z - z_max) < EPSILON) {
-                        side = 1; // –k(+Z)‚Ì•Ó
-                    }
-                }
-
-                // 2. Z²‚É‰ˆ‚Á‚½•Ói¼/“Œj‚Æ‚ÌÚ‘±”»’è
-                // ZÀ•W‚ª•”‰®‚Ì‚‚³“à‚Éû‚Ü‚Á‚Ä‚¢‚é (BSPÀ•WŒn‚Å”»’è)
-                if (side == -1 && conn_z > z_min - EPSILON && conn_z < z_max + EPSILON)
-                {
-                    if (std::abs(conn_x - x_min) < EPSILON) {
-                        side = 2; // ¼(-X)‚Ì•Ó
-                    }
-                    else if (std::abs(conn_x - x_max) < EPSILON) {
-                        side = 3; // “Œ(+X)‚Ì•Ó
-                    }
-                }
-
-                if (side == -1) continue; // ‚±‚Ì’[“_‚ÍŒ»İ‚Ì•”‰®‚Ì‹«ŠEü‚ÉÚ‘±‚µ‚Ä‚¢‚È‚¢
-
-                // ----------------------------------------------------------------------
-                // ŠJŒû•”ƒpƒ‰ƒ[ƒ^‚ÌŒvZ (‚·‚×‚ÄBSPƒ[ƒJƒ‹À•WŒn‚ÅŠ®Œ‹)
-                // ----------------------------------------------------------------------
-
-                float wall_len;
-                float wall_start;
-                float relative_pos;
-
-                if (side == 0 || side == 1) // “ì(-Z) ‚Ü‚½‚Í –k(+Z)
-                {
-                    wall_len = len_x;
-                    wall_start = x_min;
-                    relative_pos = (conn_x - wall_start) / wall_len; // •Ó‚É‰ˆ‚Á‚½‘Š‘ÎˆÊ’u (0.0 - 1.0)
-                }
-                else // ¼(-X) ‚Ü‚½‚Í “Œ(+X)
-                {
-                    wall_len = len_z;
-                    wall_start = z_min;
-                    relative_pos = (conn_z - wall_start) / wall_len; // •Ó‚É‰ˆ‚Á‚½‘Š‘ÎˆÊ’u (0.0 - 1.0)
-                }
-
-                room.connections[side].isConnected = true;
-
-                // ŠJŒû•”‚ÌŠJnˆÊ’u‚ÆI—¹ˆÊ’u‚ğŒvZ (CORRIDOR_W‚àƒXƒP[ƒ‹–¢“K—p)
-                float start_pos = relative_pos - (CORRIDOR_W / 2.0f / wall_len);
-                float end_pos = relative_pos + (CORRIDOR_W / 2.0f / wall_len);
-
-                // ŠJn/I—¹ˆÊ’u‚ğ [0.0, 1.0] ‚ÉƒNƒ‰ƒ“ƒv‚·‚é
-                room.connections[side].start = std::max(0.0f, start_pos);
-                room.connections[side].end = std::min(1.0f, end_pos);
+                availablePathPositions.push_back({ x, y });
             }
         }
     }
-    // -------------------------------------------------------------------
 
+    // ãƒ©ãƒ³ãƒ€ãƒ ãªä½ç½®ã‚’é¸æŠã§ãã‚‹ã‚ˆã†ã«ã‚·ãƒ£ãƒƒãƒ•ãƒ«
+    std::shuffle(availablePathPositions.begin(), availablePathPositions.end(), s_generator);
 
-    // 2. Entity‚ÌƒCƒ“ƒXƒ^ƒ“ƒX‰»‚É•K—v‚È€”õ
-    uint32_t totalItems = 0;
-    ECS::EntityID playerID = ECS::INVALID_ENTITY_ID;
-    ECS::EntityID guardID = ECS::INVALID_ENTITY_ID;
-    ECS::EntityID gameControllerID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
+    // 1. ã‚¢ã‚¤ãƒ†ãƒ  (3ã€œ5å€‹) ã®é…ç½®
+    constexpr int MIN_ITEMS = 3;
+    constexpr int MAX_ITEMS = 5;
+    // ä¹±æ•°ã§ã‚¢ã‚¤ãƒ†ãƒ æ•°ã‚’æ±ºå®š (std::uniform_int_distributionã‚’ä½¿ç”¨)
+    std::uniform_int_distribution<int> itemDist(MIN_ITEMS, MAX_ITEMS);
+    int itemsToPlace = itemDist(s_generator);
 
+    // é…ç½®å¯èƒ½ãªæ•°ãŒè¶³ã‚Šãªã„å ´åˆã¯ã€ãƒªã‚¹ãƒˆã®ã‚µã‚¤ã‚ºã‚’ä¸Šé™ã¨ã™ã‚‹
+    itemsToPlace = std::min((int)availablePathPositions.size(), itemsToPlace);
 
-    // •”‰® Entity‚Ì¶¬
-    // Room::connections‚ªXV‚³‚ê‚½Œã‚Ì map.layout.rooms ‚©‚çæ“¾
-    for (const auto& room : map.layout.rooms)
+    for (int i = 0; i < itemsToPlace; ++i)
     {
-        // InstantiateRoom “à‚Å room.connections ‚ªQÆ‚³‚ê‚é
-        InstantiateRoom(m_coordinator, room, map.mapping, totalItems, playerID, guardID);
+        XMINT2 pos = availablePathPositions.back();
+        availablePathPositions.pop_back(); // ä½¿ç”¨ã—ãŸåº§æ¨™ã¯ãƒªã‚¹ãƒˆã‹ã‚‰å‰Šé™¤
+
+        mapComp.grid[pos.y][pos.x].type = CellType::Item;
+        mapComp.itemPositions.push_back(pos); // ItemComponentã§ç®¡ç†ã™ã‚‹ãŸã‚ã«ä½ç½®æƒ…å ±ã‚’ä¿å­˜
     }
 
-    // ’Ê˜H Entity‚Ì¶¬ 
-    for (const auto& segment : map.layout.corridors)
-    {
-        InstantiateCorridor(m_coordinator, segment, map.mapping);
-    }
+    // 2. è­¦å‚™å“¡ï¼ˆæ•µï¼‰ã®é…ç½® (ã“ã“ã§ã¯1ä½“ã¨ã™ã‚‹)
+    constexpr int GUARDS_TO_PLACE = 1;
 
-    // 3. ItemTrackerComponent‚Ì‘ƒAƒCƒeƒ€”‚ğİ’è
-    if (gameControllerID != ECS::INVALID_ENTITY_ID)
+    if (availablePathPositions.size() >= GUARDS_TO_PLACE)
     {
-        if (m_coordinator->m_entityManager->GetSignature(gameControllerID).test(m_coordinator->GetComponentTypeID<ItemTrackerComponent>()))
+        XMINT2 pos = availablePathPositions.back();
+        availablePathPositions.pop_back();
+
+        mapComp.grid[pos.y][pos.x].type = CellType::Guard;
+        // è­¦å‚™å“¡ã®ä½ç½®ã¯MapComponentã«å°‚ç”¨ã®å¤‰æ•°ã‚’ç”¨æ„ã™ã‚‹ã“ã¨ã‚‚ã§ãã‚‹ãŒã€ã“ã“ã§ã¯ã‚°ãƒªãƒƒãƒ‰ã«ç›´æ¥ãƒãƒ¼ã‚¯ã™ã‚‹
+    }
+}
+
+/**
+ * @brief å†å¸°çš„ãƒãƒƒã‚¯ãƒˆãƒ©ãƒƒã‚«ãƒ¼ã®ä¸»è¦ãƒ­ã‚¸ãƒƒã‚¯
+ * @param mapComp - ãƒãƒƒãƒ—ãƒ‡ãƒ¼ã‚¿
+ * @param x - ç¾åœ¨ã®ã‚»ãƒ«ã®Xåº§æ¨™
+ * @param y - ç¾åœ¨ã®ã‚»ãƒ«ã®Yåº§æ¨™
+ */
+void MazeGenerator::RecursiveBacktracker(MapComponent& mapComp, int x, int y)
+{
+    // ç¾åœ¨ã®ã‚»ãƒ«ã‚’è¨ªå•æ¸ˆã¿ã¨ã—ã¦ãƒãƒ¼ã‚¯
+    mapComp.grid[y][x].visited = true;
+    mapComp.grid[y][x].type = CellType::Path; // é€šè·¯ã‚’æ˜ã‚‹
+
+    // é€²è¡Œæ–¹å‘ã®å€™è£œ (dx, dy) ã‚’å®šç¾© (åŒ—, æ±, å—, è¥¿)
+    // è¿·è·¯ã®ã‚»ãƒ«ã¯2x2ã®å£ã¨å£ã®é–“ã«1ãƒã‚¹ã®é€šè·¯ãŒæ˜ã‚‰ã‚Œã‚‹ã‚¤ãƒ¡ãƒ¼ã‚¸
+    std::vector<std::pair<int, int>> directions = {
+        { 0, -2 },	// åŒ— (-2ã‚¹ãƒ†ãƒƒãƒ—)
+        { 2, 0 },	// æ± (+2ã‚¹ãƒ†ãƒƒãƒ—)
+        { 0, 2 },	// å— (+2ã‚¹ãƒ†ãƒƒãƒ—)
+        { -2, 0 }	// è¥¿ (-2ã‚¹ãƒ†ãƒƒãƒ—)
+    };
+
+    // é€²è¡Œæ–¹å‘ã‚’ã‚·ãƒ£ãƒƒãƒ•ãƒ«
+    std::shuffle(directions.begin(), directions.end(), s_generator);
+
+    for (const auto& dir : directions)
+    {
+        int dx = dir.first;
+        int dy = dir.second;
+
+        // æ¬¡ã®ã‚»ãƒ«åº§æ¨™
+        int nx = x + dx;
+        int ny = y + dy;
+
+        // é–“ã®å£ã®ã‚»ãƒ«åº§æ¨™
+        int wallX = x + dx / 2;
+        int wallY = y + dy / 2;
+
+        // å¢ƒç•Œãƒã‚§ãƒƒã‚¯ (nx, ny ãŒã‚°ãƒªãƒƒãƒ‰å†…ã‹)
+        if (nx >= 0 && nx < MAP_GRID_SIZE && ny >= 0 && ny < MAP_GRID_SIZE)
         {
-            m_coordinator->GetComponent<ItemTrackerComponent>(gameControllerID).totalItems = totalItems;
+            if (!mapComp.grid[ny][nx].visited)
+            {
+                // â˜… ä¿®æ­£ç‚¹ï¼šé–“ã®å£ã‚»ãƒ«ã‚’é€šè·¯ã«ã™ã‚‹ â˜…
+                mapComp.grid[wallY][wallX].type = CellType::Path; // é–“ã®ã‚»ãƒ«ã‚’é€šè·¯ã¨ã—ã¦æ˜ã‚‹
+
+                // æ¬¡ã®ã‚»ãƒ«ã¸é€²ã‚€
+                RecursiveBacktracker(mapComp, nx, ny);
+            }
         }
     }
+}
 
-    // 4. ’Eo’n“_‚Ì”z’u (ÅŒã‚Ì•”‰®‚Ì’†S‚É”z’u‚·‚é)
-    // ¦ ÅŒã‚Ì•”‰®‚É”z’u‚·‚é‚Ì‚Å‚Í‚È‚­A**Œx”õˆõ‚ª”z’u‚³‚ê‚Ä‚¢‚È‚¢•”‰®**‚Ì’†‚©‚çƒ‰ƒ“ƒ_ƒ€‚É‘I‚Ô•û‚ª—Ç‚¢‚Å‚·‚ªA
-    // Šù‘¶ƒR[ƒh‚ÌƒƒWƒbƒNiÅŒã‚Ì•”‰®j‚ğ‘¸d‚µ‚Â‚ÂAEntityFactory::CreateExitPoint‚ÌƒRƒƒ“ƒgƒAƒEƒg‚ğŠO‚µ‚Ü‚·B
-    if (!map.layout.rooms.empty())
+// ===================================================================
+// MapGenerationSystem å®Ÿè£…
+// ===================================================================
+
+/**
+ * @brief ãƒãƒƒãƒ—ç”Ÿæˆã‚·ã‚¹ãƒ†ãƒ ã‚’åˆæœŸåŒ–ã—ã€è¿·è·¯ã‚’ç”Ÿæˆã™ã‚‹ã€‚
+ */
+void MapGenerationSystem::InitMap()
+{
+    // MapComponentã‚’æŒã¤ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã¯ä¸€ã¤ã ã‘ã¨ã™ã‚‹ (ã‚²ãƒ¼ãƒ å…¨ä½“ã‚’å¸ã‚‹Controller Entity)
+    EntityID mapEntity = FindFirstEntityWithComponent<MapComponent>(m_coordinator);
+
+    // è¦‹ã¤ã‹ã‚‰ãªã‹ã£ãŸå ´åˆã¯ã€å°‚ç”¨ã®Entityã‚’ç”Ÿæˆã—ã¦ã‚¢ã‚¿ãƒƒãƒ
+    if (mapEntity == INVALID_ENTITY_ID)
     {
-        // ‚±‚±‚ÅAƒ}ƒbƒv‘S‘Ì‚ÅƒvƒŒƒCƒ„[‚ÆŒx”õˆõ‚ª”z’u‚³‚ê‚½•”‰®‚ğœŠO‚µ‚Äƒ‰ƒ“ƒ_ƒ€‚É‘I‚Ô‚Ì‚ª—‘z‚Å‚·‚ªA
-        // •¡G‚É‚È‚é‚½‚ßA‚±‚±‚Å‚ÍuÅŒã‚Ì•”‰®v‚É‰¼”z’u‚·‚éŠù‘¶ƒƒWƒbƒN‚ğ‚»‚Ì‚Ü‚ÜÌ—p‚µ‚Ü‚·B
-        const auto& lastRoom = map.layout.rooms.back();
-        XMFLOAT3 exitPos = { lastRoom.center.x * map.mapping.scaleXZ, ITEM_HEIGHT, lastRoom.center.y * map.mapping.scaleXZ };
-        //EntityFactory::CreateExitPoint(m_coordinator, exitPos); // TODO: CreateExitPoint‚Í–¢À‘•‚Ì‰¼ƒR[ƒh
+        //mapEntity = m_coordinator->CreateEntity();
+        //m_coordinator->AddComponent(mapEntity, MapComponent{});
+        // MapComponentãŒEntityFactoryã§ç”Ÿæˆã•ã‚ŒãŸGameControllerã«ã‚¢ã‚¿ãƒƒãƒã•ã‚Œã‚‹å¯èƒ½æ€§ã‚‚ã‚ã‚‹ãŸã‚ã€
+        // å¿…ãšã—ã‚‚ã“ã“ã§Transformãªã©ã‚’æŒãŸã›ã‚‹å¿…è¦ã¯ãªã„ã€‚ã“ã“ã§ã¯ãƒ‡ãƒ¼ã‚¿ã®ã¿ã¨ã™ã‚‹ã€‚
+        return;
+    }
+
+    // MapComponentã‚’å–å¾—ã—ã¦è¿·è·¯ã‚’ç”Ÿæˆ
+    MapComponent& mapComp = m_coordinator->GetComponent<MapComponent>(mapEntity);
+
+    // 1. è¿·è·¯ãƒ‡ãƒ¼ã‚¿ã®ç”Ÿæˆ
+    MazeGenerator::Generate(mapComp);
+
+    // 2. 3Dç©ºé–“ã¸ã®Entityé…ç½®
+    SpawnMapEntities(mapComp);
+}
+
+/**
+ * @brief ã‚°ãƒªãƒƒãƒ‰åº§æ¨™ã‚’ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ã«å¤‰æ›ã™ã‚‹ãƒ˜ãƒ«ãƒ‘ãƒ¼é–¢æ•°
+ */
+XMFLOAT3 MapGenerationSystem::GetWorldPosition(int x, int y)
+{
+    // ãƒãƒƒãƒ—ã®ä¸­å¿ƒã‚’ãƒ¯ãƒ¼ãƒ«ãƒ‰åŸç‚¹(0, 0, 0)ã¨ã™ã‚‹ãŸã‚ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆè¨ˆç®—
+    // 10x10ã‚°ãƒªãƒƒãƒ‰ã®å ´åˆã€ä¸­å¿ƒã¯ (5, 5) ã®ã‚»ãƒ«ã¨ã‚»ãƒ«ã®é–“
+    constexpr float MAP_CENTER_OFFSET = (MAP_GRID_SIZE / 2.0f) * TILE_SIZE;
+
+    XMFLOAT3 pos;
+    // Xåº§æ¨™: (ã‚°ãƒªãƒƒãƒ‰X * ã‚¿ã‚¤ãƒ«ã‚µã‚¤ã‚º) - ã‚ªãƒ•ã‚»ãƒƒãƒˆ + (ã‚¿ã‚¤ãƒ«åŠåˆ†ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆ)
+    pos.x = (float)x * TILE_SIZE - MAP_CENTER_OFFSET + (TILE_SIZE / 2.0f);
+    // Yåº§æ¨™: åœ°é¢ãªã®ã§0 (é«˜ã•ã®æ¦‚å¿µã¯å¾Œã§å°å…¥å¯èƒ½)
+    pos.y = 0.0f;
+    // Zåº§æ¨™: (ã‚°ãƒªãƒƒãƒ‰Y * ã‚¿ã‚¤ãƒ«ã‚µã‚¤ã‚º) - ã‚ªãƒ•ã‚»ãƒƒãƒˆ + (ã‚¿ã‚¤ãƒ«åŠåˆ†ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆ)
+    // DirectXã®Zè»¸ã¯Unity/Unrealã¨ã¯ç•°ãªã‚Šã€Œå¥¥ãŒãƒã‚¤ãƒŠã‚¹ã€ã®ã“ã¨ãŒå¤šã„ãŒã€ã“ã“ã§ã¯ã€Œã‚°ãƒªãƒƒãƒ‰Y=0ãŒæ‰‹å‰ã€ã§é€²ã‚ã‚‹
+    pos.z = (float)y * TILE_SIZE - MAP_CENTER_OFFSET + (TILE_SIZE / 2.0f);
+
+    return pos;
+}
+
+
+/**
+ * @brief ç”Ÿæˆã•ã‚ŒãŸãƒãƒƒãƒ—ãƒ‡ãƒ¼ã‚¿ã«åŸºã¥ãã€3Dç©ºé–“ã«å£ã€åºŠã€ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’é…ç½®ã™ã‚‹
+ */
+void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp)
+{
+    // **æ³¨æ„**: ã“ã®ã‚·ã‚¹ãƒ†ãƒ ã§EntityFactoryã‚’ç›´æ¥å‘¼ã³å‡ºã™ã“ã¨ã§ã€
+    // Entityã®ä½œæˆã¨ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã®ä»˜ä¸ã‚’å…±é€šåŒ–ã—ã¾ã™ã€‚
+
+    // å„ã‚»ãƒ«ã‚’èµ°æŸ»ã—ã¦å£ã‚’é…ç½®ã™ã‚‹
+    for (int y = 0; y < MAP_GRID_SIZE; ++y)
+    {
+        for (int x = 0; x < MAP_GRID_SIZE; ++x)
+        {
+            Cell& cell = mapComp.grid[y][x];
+            XMFLOAT3 cellCenter = GetWorldPosition(x, y);
+
+            // 1. åºŠ Entityã®é…ç½®ã¨ã‚³ãƒªã‚¸ãƒ§ãƒ³ä»˜ä¸
+            // é€šè·¯ã€ã‚¹ã‚¿ãƒ¼ãƒˆã€ã‚´ãƒ¼ãƒ«ã€ã‚¢ã‚¤ãƒ†ãƒ ã€è­¦å‚™å“¡ã®ã‚»ãƒ«ã«ã¯å¿…ãšåºŠã‚’ç½®ã
+            if (cell.type != CellType::Wall && cell.type != CellType::Unvisited)
+            {
+                // ã‚°ãƒªãƒƒãƒ‰ä¸€ã¤åˆ†ã®åºŠ Entityã‚’ç”Ÿæˆ
+                // TILE_SIZE (5.0f) ã¨åŒã˜å¤§ãã•ã®åºŠã‚¿ã‚¤ãƒ«ã‚’ã€ã‚»ãƒ«ã®ä¸­å¿ƒä½ç½®ã«é…ç½®
+                //EntityFactory::CreateGround(
+                //    m_coordinator,
+                //    cellCenter,
+                //    XMFLOAT3(5.0f, 0.1f, 5.0f) // 1.0fã¯EntityFactoryå†…ã§5mã‚¹ã‚±ãƒ¼ãƒ«ã«å¤‰æ›ã•ã‚Œã‚‹å‰æ
+                //);
+
+                // ã€æ³¨æ„ã€‘EntityFactory::CreateGround ã®ã‚·ã‚°ãƒãƒãƒ£ãŒä¸æ˜ç¢ºãªãŸã‚ã€
+                // ä»¥å‰ã®CreateGround (position, scale) ã®ä»£ã‚ã‚Šã«ã€
+                // ãƒãƒƒãƒ—ã‚¿ã‚¤ãƒ«ã¨ã—ã¦ä½¿ã† EntityFactory::CreateCorridor/CreateTile ãªã©ãŒã‚ã‚‹ã¨æƒ³å®šã—ã€
+                // CreateGroundã‚’ä¿®æ­£ã—ã¦åˆ©ç”¨ã—ã¾ã™ã€‚
+
+                // è£œè¶³: EntityFactory::CreateGroundãŒã‚³ãƒªã‚¸ãƒ§ãƒ³ã‚’æŒã£ã¦ã„ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ã€‚
+                // EntityFactory::CreateGroundã®å®Ÿè£…ã‚’ç¢ºèªãƒ»ä¿®æ­£ã—ã¾ã™ã€‚
+            }
+
+            // ã‚»ãƒ«ãŒé€šè·¯ï¼ˆPathã¾ãŸã¯Start/Goalï¼‰ã®å ´åˆã®ã¿ã€å‘¨å›²ã®å£ã‚’ãƒã‚§ãƒƒã‚¯ã—ã¦é…ç½®ã™ã‚‹
+            if (cell.type != CellType::Wall)
+            {
+                // 1-3. æ—¢å­˜ã‚¢ã‚»ãƒƒãƒˆï¼ˆå£ãƒ»åºŠãƒ¢ãƒ‡ãƒ«ï¼‰ã®é¸å®š
+                // ã‚¢ã‚»ãƒƒãƒˆãƒªã‚¹ãƒˆã‹ã‚‰ `barrierMedium.fbx` ã‚’ä»®ã®å£ãƒ¢ãƒ‡ãƒ«ã¨ã—ã¦é¸æŠã—ã¾ã™ã€‚
+
+                // åŒ—ã®å£ (Zè»¸ - æ–¹å‘)
+                if (cell.hasWallNorth)
+                {
+                    XMFLOAT3 wallPos = cellCenter;
+                    wallPos.z -= TILE_SIZE / 2.0f; // ã‚»ãƒ«ã®å¢ƒç•Œã«ç§»å‹•
+                    // CreateWallã®ã‚·ã‚°ãƒãƒãƒ£ã«åˆã‚ã›ã¦Entityã‚’ç”Ÿæˆ
+                    EntityFactory::CreateWall(
+                        m_coordinator,
+                        wallPos,
+                        XMFLOAT3(TILE_SIZE, WALL_HEIGHT, 0.5f), // X: 5må¹…, Y: 5mé«˜ã•, Z: è–„ã•
+                        0.0f); // å›è»¢ãªã— (0åº¦)
+                }
+
+                // å—ã®å£ (Zè»¸ + æ–¹å‘)
+                if (cell.hasWallSouth)
+                {
+                    XMFLOAT3 wallPos = cellCenter;
+                    wallPos.z += TILE_SIZE / 2.0f;
+                    EntityFactory::CreateWall(
+                        m_coordinator,
+                        wallPos,
+                        XMFLOAT3(TILE_SIZE, WALL_HEIGHT, 0.5f),
+                        0.0f);
+                }
+
+                // æ±ã®å£ (Xè»¸ + æ–¹å‘)
+                if (cell.hasWallEast)
+                {
+                    XMFLOAT3 wallPos = cellCenter;
+                    wallPos.x += TILE_SIZE / 2.0f; // ã‚»ãƒ«ã®å¢ƒç•Œã«ç§»å‹•
+                    // 90åº¦Yè»¸å›è»¢ã§Xè»¸æ–¹å‘ã«å£ã‚’é…ç½®
+                    EntityFactory::CreateWall(
+                        m_coordinator,
+                        wallPos,
+                        XMFLOAT3(TILE_SIZE, WALL_HEIGHT, 0.5f),
+                        XM_PIDIV2); // 90åº¦ (Ï€/2)
+                }
+
+                // è¥¿ã®å£ (Xè»¸ - æ–¹å‘)
+                if (cell.hasWallWest)
+                {
+                    XMFLOAT3 wallPos = cellCenter;
+                    wallPos.x -= TILE_SIZE / 2.0f;
+                    // 90åº¦Yè»¸å›è»¢
+                    EntityFactory::CreateWall(
+                        m_coordinator,
+                        wallPos,
+                        XMFLOAT3(TILE_SIZE, WALL_HEIGHT, 0.5f),
+                        XM_PIDIV2);
+                }
+            }
+
+            // --------------------------------------------------------------------------------
+            // ã€ç‰¹æ®Šã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆï¼ˆã‚¹ã‚¿ãƒ¼ãƒˆ/ã‚´ãƒ¼ãƒ«/ã‚¢ã‚¤ãƒ†ãƒ /è­¦å‚™å“¡ï¼‰ã®é…ç½®ã€‘
+            // --------------------------------------------------------------------------------
+            switch (cell.type)
+            {
+            case CellType::Start:
+                // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚’ã‚¹ã‚¿ãƒ¼ãƒˆä½ç½®ã«é…ç½®
+                cellCenter.y += 3.0f;
+                EntityFactory::CreatePlayer(m_coordinator, cellCenter);
+                break;
+            case CellType::Goal:
+                // ã‚´ãƒ¼ãƒ«ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’é…ç½®
+                // KayKitã‚¢ã‚»ãƒƒãƒˆã‹ã‚‰ã€ã“ã“ã§ã¯ `gateLarge_teamRed.fbx` ã‚’ä»®ã®ã‚´ãƒ¼ãƒ«ãƒ¢ãƒ‡ãƒ«ã¨ã—ã¦é¸æŠ
+                //EntityFactory::CreateGate(m_coordinator, cellCenter);
+                break;
+            case CellType::Item:
+                // ã‚¢ã‚¤ãƒ†ãƒ ã‚’é…ç½®
+                // KayKitã‚¢ã‚»ãƒƒãƒˆã‹ã‚‰ã€ã“ã“ã§ã¯ `diamond_teamYellow.fbx` ã‚’ä»®ã®ã‚¢ã‚¤ãƒ†ãƒ ãƒ¢ãƒ‡ãƒ«ã¨ã—ã¦é¸æŠ
+                EntityFactory::CreateCollectable(m_coordinator, cellCenter);
+                break;
+            case CellType::Guard:
+                // è­¦å‚™å“¡ï¼ˆæ•µï¼‰ã‚’é…ç½®
+                // KayKitã‚¢ã‚»ãƒƒãƒˆã‹ã‚‰ã€ã“ã“ã§ã¯ `character_dog.fbx` ã‚’ä»®ã®è­¦å‚™å“¡ãƒ¢ãƒ‡ãƒ«ã¨ã—ã¦é¸æŠ
+                EntityFactory::CreateGuard(m_coordinator, cellCenter);
+                break;
+            default:
+                // Path (é€šè·¯) ã‚„ Wall ã¯ã“ã“ã§ã¯ä½•ã‚‚ã—ãªã„
+                break;
+            }
+        }
     }
 }

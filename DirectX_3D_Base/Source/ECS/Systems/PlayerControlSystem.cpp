@@ -42,21 +42,16 @@ void PlayerControlSystem::Update()
 	// プロトタイプのため、ここではアクセス可能と仮定します。
 	float cameraYaw = cameraSystem->m_currentYaw;
 
-	ECS::EntityID gameControllerID = 0;
-	std::set<ECS::EntityID> allEntities = m_coordinator->GetActiveEntities();
-
-	for (auto const& entity : allEntities) // このSystemの対象はCameraComponentだが、ここではCoordinatorに問い合わせる
+	ECS::EntityID gameControllerID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
+	
+	if (gameControllerID != ECS::INVALID_ENTITY_ID)
 	{
-		if (m_coordinator->m_entityManager->GetSignature(entity).test(m_coordinator->GetComponentTypeID<GameStateComponent>()))
+		if (m_coordinator->GetComponent<GameStateComponent>(gameControllerID).currentMode == GameMode::SCOUTING_MODE)
 		{
-			gameControllerID = entity; // カメラEntity自身ではないため、このロジックは不正確。
-			if (m_coordinator->GetComponent<GameStateComponent>(gameControllerID).currentMode == GameMode::SCOUTING_MODE)
-			{
-				auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(entity);
-				rigidBody.velocity.x = 0.0f;
-				rigidBody.velocity.y = 0.0f;
-				return;
-			}
+			auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(gameControllerID);
+			rigidBody.velocity.x = 0.0f;
+			rigidBody.velocity.y = 0.0f;
+			return;
 		}
 	}
 

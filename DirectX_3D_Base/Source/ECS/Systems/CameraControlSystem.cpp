@@ -231,9 +231,28 @@ void CameraControlSystem::Update()
             XMMATRIX viewMatrix = XMMatrixLookAtLH(newCamPosV, newLookAtV, up);
 
             // Projection行列
-            XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH(
-                cameraComp.FOV, (float)SCREEN_WIDTH / SCREEN_HEIGHT, cameraComp.nearClip, cameraComp.farClip
-            );
+            XMMATRIX projectionMatrix;
+            if (currentMode == GameMode::SCOUTING_MODE)
+            {
+                // 平行投影のパラメータ
+                // 画面サイズ (SCREEN_WIDTH/HEIGHT) とカメラの視野の大きさを元に計算
+                // 例: カメラコンポーネントのFOVを、平行投影のビューポートの高さとして利用する
+                float viewHeight = cameraComp.FOV * 50.0f; // FOVを基準に平行投影の視野高さを決定 (調整が必要)
+                float viewWidth = viewHeight * ((float)SCREEN_WIDTH / SCREEN_HEIGHT);
+
+                projectionMatrix = XMMatrixOrthographicLH(
+                    viewWidth,
+                    viewHeight,
+                    cameraComp.nearClip,
+                    cameraComp.farClip
+                );
+            }
+            else
+            {
+                projectionMatrix = XMMatrixPerspectiveFovLH(
+                    cameraComp.FOV, (float)SCREEN_WIDTH / SCREEN_HEIGHT, cameraComp.nearClip, cameraComp.farClip
+                );
+            }
 
             // DirectXへ渡すために転置して格納
             XMFLOAT4X4 fMatView;

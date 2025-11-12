@@ -148,6 +148,4 @@ void GameScene::Draw()
 		// 2. ECS Entityの描画
 		system->DrawEntities();
 	}
-
-	Geometory::DrawLines();
 }

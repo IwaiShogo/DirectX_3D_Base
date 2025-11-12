@@ -112,17 +112,7 @@ void RenderSystem::DrawSetup()
 void RenderSystem::DrawEntities()
 {
 	// 1. CameraComponentを持つEntityを検索し、カメラ座標と行列を取得
-	ECS::EntityID cameraID = ECS::INVALID_ENTITY_ID;
-
-	// Coordinatorの全Entityを走査 (非効率だが確実)
-	for (auto const& entity : m_coordinator->GetActiveEntities())
-	{
-		if (m_coordinator->m_entityManager->GetSignature(entity).test(m_coordinator->GetComponentTypeID<CameraComponent>()))
-		{
-			cameraID = entity;
-			break;
-		}
-	}
+	ECS::EntityID cameraID = ECS::FindFirstEntityWithComponent<CameraComponent>(m_coordinator);
 
     CameraComponent* cameraComp = nullptr;  
     if (cameraID != ECS::INVALID_ENTITY_ID)  
