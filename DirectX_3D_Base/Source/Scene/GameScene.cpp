@@ -1,24 +1,24 @@
 /*****************************************************************//**
  * @file	GameScene.cpp
- * @brief	ã‚²ãƒ¼ãƒ ã®ãƒ¡ã‚¤ãƒ³ãƒ­ã‚¸ãƒƒã‚¯ã‚’å«ã‚€ã‚·ãƒ¼ãƒ³ã‚¯ãƒ©ã‚¹ã®å®Ÿè£…ã€‚
+ * @brief	ƒQ[ƒ€‚ÌƒƒCƒ“ƒƒWƒbƒN‚ğŠÜ‚ŞƒV[ƒ“ƒNƒ‰ƒX‚ÌÀ‘•B
  * 
  * @details	
- * ECSã®åˆæœŸåŒ–ã¨å®Ÿè¡Œã€ãƒ‡ãƒ¢Entityã®ä½œæˆãƒ­ã‚¸ãƒƒã‚¯ã‚’å†…åŒ…ã™ã‚‹ã€‚
+ * ECS‚Ì‰Šú‰»‚ÆÀsAƒfƒ‚Entity‚Ìì¬ƒƒWƒbƒN‚ğ“à•ï‚·‚éB
  * 
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  * 
- * @date	2025/10/27	åˆå›ä½œæˆæ—¥
- * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼šECSã®ãƒ©ã‚¤ãƒ•ã‚µã‚¤ã‚¯ãƒ«ã¨ãƒ‡ãƒ¢ãƒ­ã‚¸ãƒƒã‚¯ã‚’ç®¡ç†ã™ã‚‹ `GameScene` ã‚¯ãƒ©ã‚¹ã®å®Ÿè£…ã€‚
+ * @date	2025/10/27	‰‰ñì¬“ú
+ * 			ì‹Æ“à—eF	- ’Ç‰ÁFECS‚Ìƒ‰ƒCƒtƒTƒCƒNƒ‹‚Æƒfƒ‚ƒƒWƒbƒN‚ğŠÇ—‚·‚é `GameScene` ƒNƒ‰ƒX‚ÌÀ‘•B
  * 
- * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
- * 			ä½œæ¥­å†…å®¹ï¼š	- è­¦å‚™å“¡AIã®è¿½åŠ ï¼š
+ * @update	2025/xx/xx	ÅIXV“ú
+ * 			ì‹Æ“à—eF	- Œx”õˆõAI‚Ì’Ç‰ÁF
  * 
- * @note	ï¼ˆçœç•¥å¯ï¼‰
+ * @note	iÈ—ª‰Âj
  *********************************************************************/
 
-// ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
+// ===== ƒCƒ“ƒNƒ‹[ƒh =====
 #include "Scene/GameScene.h"
 
 #include "ECS/ECS.h"
@@ -27,27 +27,27 @@
 
 #include <DirectXMath.h>
 #include <iostream>
-#include <typeindex> // SystemManagerã‹ã‚‰ã®RenderSystemå–å¾—ã«ä½¿ç”¨
+#include <typeindex> // SystemManager‚©‚ç‚ÌRenderSystemæ“¾‚Ég—p
  
-// ===== é™çš„ãƒ¡ãƒ³ãƒãƒ¼å¤‰æ•°ã®å®šç¾© =====u
-// ä»–ã®ã‚·ã‚¹ãƒ†ãƒ ã‹ã‚‰ECSã«ã‚¢ã‚¯ã‚»ã‚¹ã™ã‚‹ãŸã‚ã®é™çš„ãƒã‚¤ãƒ³ã‚¿
+// ===== Ã“Iƒƒ“ƒo[•Ï”‚Ì’è‹` =====u
+// ‘¼‚ÌƒVƒXƒeƒ€‚©‚çECS‚ÉƒAƒNƒZƒX‚·‚é‚½‚ß‚ÌÃ“Iƒ|ƒCƒ“ƒ^
 ECS::Coordinator* GameScene::s_coordinator = nullptr;
 
 using namespace DirectX;
 
-// ===== GameScene ãƒ¡ãƒ³ãƒãƒ¼é–¢æ•°ã®å®Ÿè£… =====
+// ===== GameScene ƒƒ“ƒo[ŠÖ”‚ÌÀ‘• =====
 
 void GameScene::Init()
 {
-	// --- 1. ECS Coordinatorã®åˆæœŸåŒ– ---
+	// --- 1. ECS Coordinator‚Ì‰Šú‰» ---
 	m_coordinator = std::make_unique<ECS::Coordinator>();
 
-	// é™çš„ãƒã‚¤ãƒ³ã‚¿ã«ç¾åœ¨ã®Coordinatorã‚’è¨­å®š
+	// Ã“Iƒ|ƒCƒ“ƒ^‚ÉŒ»İ‚ÌCoordinator‚ğİ’è
 	s_coordinator = m_coordinator.get();
 
 	ECS::ECSInitializer::InitECS(m_coordinator);
 
-	// --- 4. ãƒ‡ãƒ¢ç”¨Entityã®ä½œæˆ ---
+	// --- 4. ƒfƒ‚—pEntity‚Ìì¬ ---
 	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
 
 	std::cout << "GameScene::Init() - ECS Initialized and Demo Entities Created." << std::endl;
@@ -55,13 +55,13 @@ void GameScene::Init()
 
 void GameScene::Uninit()
 {
-	// 1. ECS Systemã®é™çš„ãƒªã‚½ãƒ¼ã‚¹ã‚’è§£æ”¾
+	// 1. ECS System‚ÌÃ“IƒŠƒ\[ƒX‚ğ‰ğ•ú
 	ECS::ECSInitializer::UninitECS();
 
-	// Coordinatorã®ç ´æ£„ï¼ˆunique_ptrãŒè‡ªå‹•çš„ã«deleteã‚’å®Ÿè¡Œï¼‰
+	// Coordinator‚Ì”jŠüiunique_ptr‚ª©“®“I‚Édelete‚ğÀsj
 	m_coordinator.reset();
 
-	// é™çš„ãƒã‚¤ãƒ³ã‚¿ã‚’ã‚¯ãƒªã‚¢
+	// Ã“Iƒ|ƒCƒ“ƒ^‚ğƒNƒŠƒA
 	s_coordinator = nullptr;
 
 	std::cout << "GameScene::Uninit() - ECS Destroyed." << std::endl;
@@ -74,62 +74,62 @@ void GameScene::Update(float deltaTime)
 		SceneManager::ChangeScene<GameScene>();
 	}
 
-	// --- 2. ECS Systemã®æ›´æ–°
+	// --- 2. ECS System‚ÌXV
 	
-	// 0. çŠ¶æ…‹åˆ‡ã‚Šæ›¿ãˆ
+	// 0. ó‘ÔØ‚è‘Ö‚¦
 	if (auto system = ECS::ECSInitializer::GetSystem<StateSwitchSystem>())
 	{
 		system->Update();
 	}
 
-	// 1. å…¥åŠ›
-	// if (m_playerControlSystem) // å‰Šé™¤
+	// 1. “ü—Í
+	// if (m_playerControlSystem) // íœ
 	if (auto system = ECS::ECSInitializer::GetSystem<PlayerControlSystem>())
 	{
 		system->Update();
 	}
 
-	// 2. ç‰©ç†è¨ˆç®—ï¼ˆä½ç½®ã®æ›´æ–°ï¼‰
-	// if (m_physicsSystem) // å‰Šé™¤
+	// 2. •¨—ŒvZiˆÊ’u‚ÌXVj
+	// if (m_physicsSystem) // íœ
 	if (auto system = ECS::ECSInitializer::GetSystem<PhysicsSystem>())
 	{
 		system->Update();
 	}
 
-	// ã‚¢ã‚¤ãƒ†ãƒ å›åãƒ­ã‚¸ãƒƒã‚¯
+	// ƒAƒCƒeƒ€‰ñûƒƒWƒbƒN
 	if (auto system = ECS::ECSInitializer::GetSystem<CollectionSystem>())
 	{
 		system->Update();
 	}
 
-	// 3. è¡çªæ¤œå‡ºã¨å¿œç­”ï¼ˆä½ç½®ã®ä¿®æ­£ï¼‰
-	// if (m_collisionSystem) // å‰Šé™¤
+	// 3. Õ“ËŒŸo‚Æ‰“šiˆÊ’u‚ÌC³j
+	// if (m_collisionSystem) // íœ
 	if (auto system = ECS::ECSInitializer::GetSystem<CollisionSystem>())
 	{
 		system->Update();
 	}
 
-	// 4. ã‚²ãƒ¼ãƒ ã‚¹ãƒ†ãƒ¼ãƒˆ
+	// 4. ƒQ[ƒ€ƒXƒe[ƒg
 	if (auto system = ECS::ECSInitializer::GetSystem<GameFlowSystem>())
 	{
 		system->Update();
 	}
 
-	// 5. ã‚«ãƒ¡ãƒ©åˆ¶å¾¡ï¼ˆãƒ“ãƒ¥ãƒ¼ãƒ»ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ã‚·ãƒ§ãƒ³è¡Œåˆ—ã®æ›´æ–°ï¼‰
-	// if (m_cameraControlSystem) // å‰Šé™¤
+	// 5. ƒJƒƒ‰§Œäiƒrƒ…[EƒvƒƒWƒFƒNƒVƒ‡ƒ“s—ñ‚ÌXVj
+	// if (m_cameraControlSystem) // íœ
 	if (auto system = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
 	{
 		system->Update();
 	}
 
 #ifdef _DEBUG
-	// ãƒ‡ãƒãƒƒã‚°æç”»ã‚·ã‚¹ãƒ†ãƒ 
+	// ƒfƒoƒbƒO•`‰æƒVƒXƒeƒ€
 	if (auto system = ECS::ECSInitializer::GetSystem<DebugDrawSystem>())
 	{
 		system->Update();
 	}
 #endif // _DEBUG
-	// 6. è­¦å‚™å“¡AI
+	// 6. Œx”õˆõAI
 	if (auto system = ECS::ECSInitializer::GetSystem<GuardAISystem>())
 	{
 		system->Update();
@@ -139,13 +139,13 @@ void GameScene::Update(float deltaTime)
 
 void GameScene::Draw()
 {
-	// RenderSystemã¯å¸¸ã«å­˜åœ¨ã™ã‚‹ã¨ä»®å®š
+	// RenderSystem‚Íí‚É‘¶İ‚·‚é‚Æ‰¼’è
 	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
 	{
-		// 1. ã‚«ãƒ¡ãƒ©è¨­å®šã‚„ãƒ‡ãƒãƒƒã‚°ã‚°ãƒªãƒƒãƒ‰æç”»
+		// 1. ƒJƒƒ‰İ’è‚âƒfƒoƒbƒOƒOƒŠƒbƒh•`‰æ
 		system->DrawSetup();
 
-		// 2. ECS Entityã®æç”»
+		// 2. ECS Entity‚Ì•`‰æ
 		system->DrawEntities();
 	}
 }
