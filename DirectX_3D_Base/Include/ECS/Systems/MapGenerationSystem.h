@@ -35,7 +35,7 @@ public:
 	 * @brief 迷路生成ロジックの本体。MapComponentのgridを書き換える。
 	 * @param mapComp - 迷路データを書き込むMapComponentへの参照
 	 */
-	static void Generate(MapComponent& mapComp);
+	static void Generate(MapComponent& mapComp, ItemTrackerComponent& trackerComp);
 private:
 	// 再帰的バックトラッカーのヘルパー関数
 	static void RecursiveBacktracker(MapComponent& mapComp, int x, int y);

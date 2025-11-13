@@ -111,7 +111,7 @@ bool CollisionSystem::CheckCollision(ECS::EntityID entityA, ECS::EntityID entity
 		float totalRadius = radiusA + radiusB;
 
 		// 分離軸定理チェック
-		if (centerProjection >= totalRadius)
+		if (centerProjection > totalRadius)
 		{
 			isCollision = false; // 分離軸が見つかった
 			break;
@@ -215,6 +215,21 @@ void CollisionSystem::ResolveCollision(ECS::EntityID entityA, ECS::EntityID enti
  */
 void CollisionSystem::Update()
 {
+	// --- 0. 初期化とゲーム状態の取得 ---
+	ECS::EntityID controllerID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
+	if (controllerID == ECS::INVALID_ENTITY_ID) return;
+
+	GameStateComponent& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+
+	// ゲームが既に終了していたら、衝突チェックをスキップ
+	if (state.isGameOver || state.isCleared) return;
+
+	// Deferred destruction list (アイテム回収による破壊の遅延)
+	std::vector<ECS::EntityID> entitiesToDestroy;
+
+	ECS::EntityID playerID = ECS::FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+	if (playerID == ECS::INVALID_ENTITY_ID) return;
+
 	// StaticなEntityとDynamicなEntityのリストを作成
 	std::vector<ECS::EntityID> dynamicEntities;
 	std::vector<ECS::EntityID> staticEntities;
@@ -250,6 +265,40 @@ void CollisionSystem::Update()
 			if (CheckCollision(dynamicEntity, staticEntity, mtv))
 			{
 				ResolveCollision(dynamicEntity, staticEntity, mtv);
+			}
+		}
+	}
+
+	// ここでは、Playerと他のすべての衝突可能なエンティティ間の衝突をチェックします
+	for (ECS::EntityID entityB : m_entities)
+	{
+		if (entityB == playerID) continue;
+
+		XMFLOAT3 mtv_dummy = { 0.0f, 0.0f, 0.0f };
+
+		// CheckCollisionは、PhysicsSystemの衝突解決とは別に、ゲームロジックのトリガーとして使用
+		if (CheckCollision(playerID, entityB, mtv_dummy))
+		{
+			// 衝突相手のコンポーネントシグネチャ（タグ）を取得
+			auto& tagB = m_coordinator->GetComponent<TagComponent>(entityB);
+
+			// --- 1. GAME OVER TRIGGER (Player vs Guard) ---
+			if (tagB.tag == "guard")
+			{
+				state.isGameOver = true;
+				// ゲームオーバー時は、すぐにリターンし、他の処理（アイテム回収など）を停止
+				return;
+			}
+
+			// 2. ITEM COLLECTION TRIGGER (Player vs Collectable)
+			if (tagB.tag == "goal")
+			{
+				ItemTrackerComponent& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(controllerID);
+
+				if (tracker.totalItems > 0 && tracker.collectedItems == tracker.totalItems)
+				{
+					state.isCleared = true;
+				}
 			}
 		}
 	}

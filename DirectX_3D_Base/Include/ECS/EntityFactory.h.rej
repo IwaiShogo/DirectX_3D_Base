@@ -1,0 +1,9 @@
+diff a/DirectX_3D_Base/Include/ECS/EntityFactory.h b/DirectX_3D_Base/Include/ECS/EntityFactory.h	(rejected hunks)
+@@ -58,6 +58,7 @@
+  		static EntityID CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY);
+  
+  		static EntityID CreateGoal(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
+++<<<<<<< HEAD
+ +
+ +=======
+ +>>>>>>> bfbb513 (feat: クリア判定とゲームオーバー判定の作成)

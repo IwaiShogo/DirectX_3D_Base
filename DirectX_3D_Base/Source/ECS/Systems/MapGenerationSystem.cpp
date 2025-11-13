@@ -51,7 +51,7 @@ std::mt19937 MazeGenerator::s_generator(std::random_device{}());
  * @brief 迷路生成ロジックの本体。MapComponentのgridを書き換える。
  * @param mapComp - 迷路データを書き込むMapComponentへの参照
  */
-void MazeGenerator::Generate(MapComponent& mapComp)
+void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& trackerComp)
 {
     // 全てのセルを未訪問(Unvisited)にリセット
     for (int y = 0; y < MAP_GRID_SIZE; ++y)
@@ -341,6 +341,7 @@ void MazeGenerator::Generate(MapComponent& mapComp)
     // 乱数でアイテム数を決定 (std::uniform_int_distributionを使用)
     std::uniform_int_distribution<int> itemDist(MIN_ITEMS, MAX_ITEMS);
     int itemsToPlace = itemDist(s_generator);
+    trackerComp.totalItems = itemsToPlace;
 
     // 配置可能な数が足りない場合は、リストのサイズを上限とする
     itemsToPlace = std::min((int)availablePathPositions.size(), itemsToPlace);
@@ -443,6 +444,7 @@ void MapGenerationSystem::InitMap()
 
     // MapComponentを取得して迷路を生成
     MapComponent& mapComp = m_coordinator->GetComponent<MapComponent>(mapEntity);
+    ItemTrackerComponent& trackerComp = m_coordinator->GetComponent<ItemTrackerComponent>(mapEntity);
 
     // 1. 迷路データの生成
     // ★ 修正点：50x50グリッドの奇数座標から開始 (1, 1)
@@ -450,7 +452,7 @@ void MapGenerationSystem::InitMap()
     // ゴール位置を決定 (右下に近い奇数座標)
     mapComp.goalPos = { MAP_GRID_SIZE - 2, MAP_GRID_SIZE - 2 }; // (48, 48)
 
-    MazeGenerator::Generate(mapComp);
+    MazeGenerator::Generate(mapComp, trackerComp);
 
     // 2. 3D空間へのEntity配置
     SpawnMapEntities(mapComp);

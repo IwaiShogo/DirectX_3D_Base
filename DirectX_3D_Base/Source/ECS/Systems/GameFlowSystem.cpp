@@ -32,15 +32,21 @@ void GameFlowSystem::Update()
     // ƒV[ƒ“‘JˆÚ‚ðˆê“x—v‹‚µ‚½‚çAƒƒWƒbƒN‚ð’âŽ~
     if (state.requestRestart || state.requestNextStage) return;
 
+    if (state.requestRestart || state.requestNextStage) return;
+
     // 1. ƒQ[ƒ€ƒI[ƒo[Žž‚Ìˆ—
     if (state.isGameOver)
     {
         // yƒQ[ƒ€ƒI[ƒo[Žž‚Ìˆ—z
         // ƒ†[ƒU[—vŒ: Œx”õˆõ‚É’Ç‚¢‚Â‚©‚ê‚é‚ÆƒQ[ƒ€ƒI[ƒo[A‚»‚ÌŒã‚ÍŽ©“®‚ÅƒXƒe[ƒWƒŠƒgƒ‰ƒCB
+<<<<<<< HEAD
         state.requestRestart = true;
  
         SceneManager::Uninit();
         SceneManager::Init();
+=======
+
+>>>>>>> bfbb513 (feat: ã‚¯ãƒªã‚¢åˆ¤å®šã¨ã‚²ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼åˆ¤å®šã®ä½œæˆ)
         SceneManager::ChangeScene<GameScene>();
     }
 
@@ -50,10 +56,13 @@ void GameFlowSystem::Update()
         // yƒNƒŠƒAŽž‚Ìˆ—z
         // ƒ†[ƒU[—vŒ: ƒXƒe[ƒWƒZƒŒƒNƒg‰æ–Ê‚É–ß‚èAŽŸ‚ÌƒXƒe[ƒW‚ªŠJ•ú‚³‚ê‚éB
 
+<<<<<<< HEAD
         state.requestNextStage = true;
 
         SceneManager::Uninit();
         SceneManager::Init();
+=======
+>>>>>>> bfbb513 (feat: ã‚¯ãƒªã‚¢åˆ¤å®šã¨ã‚²ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼åˆ¤å®šã®ä½œæˆ)
         SceneManager::ChangeScene<GameScene>();
     }
 

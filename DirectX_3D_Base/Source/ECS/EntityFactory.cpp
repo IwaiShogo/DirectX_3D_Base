@@ -218,6 +218,11 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* isActive				*/	true,
 			/* delayBeforeChase		*/	1.0f,
 			/* chaseSpeed			*/	1.0f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_DYNAMIC
 		)
 	);
 
@@ -265,6 +270,7 @@ EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX:
 	return entity;
 }
 
+<<<<<<< HEAD
 /**
  * [EntityID - CreateGoal]
  * @brief	ゴールエンティティの生成
@@ -277,6 +283,11 @@ EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX:
 EntityID ECS::EntityFactory::CreateGoal(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
 {
 	EntityID goal = coordinator->CreateEntity(
+=======
+EntityID ECS::EntityFactory::CreateGoal(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+{
+	ECS::EntityID goal = coordinator->CreateEntity(
+>>>>>>> bfbb513 (feat: クリア判定とゲームオーバー判定の作成)
 		TagComponent(
 			/* Tag	*/	"goal"
 		),
@@ -286,8 +297,13 @@ EntityID ECS::EntityFactory::CreateGoal(Coordinator* coordinator, const DirectX:
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
+<<<<<<< HEAD
 			/* MeshType	*/	MESH_MODEL,
 			/* Color	*/	XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)
+=======
+			/* MeshType	*/	MESH_MODEL, // MESH_BOXで仮描画
+			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
+>>>>>>> bfbb513 (feat: クリア判定とゲームオーバー判定の作成)
 		),
 		ModelComponent(
 			/* Path		*/	"Assets/Model/Item/yubiwa.fbx",
@@ -295,11 +311,19 @@ EntityID ECS::EntityFactory::CreateGoal(Coordinator* coordinator, const DirectX:
 			/* Flip		*/	Model::None
 		),
 		RigidBodyComponent(
+<<<<<<< HEAD
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Mass			*/	0.0f, // 静的オブジェクト
 			/* Friction		*/	0.8f,
 			/* Restitution	*/	0.2f
+=======
+			/* Velocity	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Accel	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass		*/	0.0f, // 【重要】質量0.0fで静的オブジェクト（動かない壁）として定義
+			/* Friction	*/	0.5f,
+			/* Restit.	*/	0.0f
+>>>>>>> bfbb513 (feat: クリア判定とゲームオーバー判定の作成)
 		),
 		CollisionComponent(
 			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
@@ -307,6 +331,10 @@ EntityID ECS::EntityFactory::CreateGoal(Coordinator* coordinator, const DirectX:
 			/* ColliderType	*/	COLLIDER_STATIC
 		)
 	);
+<<<<<<< HEAD
+=======
+
+>>>>>>> bfbb513 (feat: クリア判定とゲームオーバー判定の作成)
 	return goal;
 }
 

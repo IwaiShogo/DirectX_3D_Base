@@ -10,7 +10,7 @@ Shader* Geometory::m_pLineShader[2];
 DirectX::XMFLOAT4X4 Geometory::m_WVP[3];
 void* Geometory::m_pLineVtx;
 int Geometory::m_lineCnt = 0;
-DirectX::XMFLOAT4 Geometory::m_color;
+DirectX::XMFLOAT4 Geometory::m_color(1.0f, 1.0f, 1.0f, 1.0f);
 
 void Geometory::Init()
 {
@@ -74,6 +74,7 @@ void Geometory::DrawBox()
 {
 	if (m_pBox == nullptr)
 		return;
+	m_pPS->WriteBuffer(0, &m_color);
 	m_pVS->WriteBuffer(0, m_WVP);
 	m_pVS->Bind();
 	m_pPS->Bind();
@@ -96,6 +97,11 @@ void Geometory::DrawSphere()
 	m_pVS->Bind();
 	m_pPS->Bind();
 	m_pSphere->Draw();
+}
+
+void Geometory::SetColor(DirectX::XMFLOAT4 color)
+{
+	m_color = color;
 }
 
 void Geometory::MakeVS()

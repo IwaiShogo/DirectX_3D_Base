@@ -58,7 +58,10 @@ namespace ECS
 		static EntityID CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY);
 
 		static EntityID CreateGoal(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
+<<<<<<< HEAD
 
+=======
+>>>>>>> bfbb513 (feat: クリア判定とゲームオーバー判定の作成)
 		/**
 		* @brief 追跡エンティティを生成する
 		*/

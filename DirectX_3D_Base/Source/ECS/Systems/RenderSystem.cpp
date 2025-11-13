@@ -159,6 +159,8 @@ void RenderSystem::DrawEntities()
 		ShaderList::SetWVP(wvp);
 		// 2. •`‰æˆ— (RenderComponent)
 		
+		Geometory::SetColor(render.color);
+
 		// Œ`ó‚É‰‚¶‚Ä•`‰æ
 		switch (render.type)
 		{

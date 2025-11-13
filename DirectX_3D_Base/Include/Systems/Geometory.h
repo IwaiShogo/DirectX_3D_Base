@@ -32,6 +32,7 @@ public:
 	static void DrawBox();
 	static void DrawCylinder();
 	static void DrawSphere();
+	static void SetColor(DirectX::XMFLOAT4 color);
 
 private:
 	static void MakeVS();
