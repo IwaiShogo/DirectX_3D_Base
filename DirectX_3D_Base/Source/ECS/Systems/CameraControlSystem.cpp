@@ -35,7 +35,7 @@ const float CAMERA_SENSITIVITY_Y = 0.03f; // PITCH感度 (上下は控えめに)
 const float PITCH_MAX = -XM_PIDIV2 - 0.2f; // 約78度
 const float PITCH_MIN = XM_PIDIV2 * 0.3f; // 約-27度 (水平より少し下まで)
 // トップビューカメラの高さ定数
-const float TOP_VIEW_HEIGHT = 60.0f;
+const float TOP_VIEW_HEIGHT = 15.0f;
 
 /**
  * @brief 2つの位置を線形補間する (Lerp)
@@ -59,65 +59,22 @@ static XMFLOAT3 Lerp(const XMFLOAT3& start, const XMFLOAT3& end, float t)
  */
 void CameraControlSystem::Update()
 {
-    // 1. ゲームステートとデバッグ状態の取得
-    ECS::EntityID controllerID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
+    // 1. ゲームステートの取得 (GameController Entityは1つのみと想定)
     GameMode currentMode = GameMode::ACTION_MODE;
-    bool isDebugMode = false;
 
-    if (controllerID != ECS::INVALID_ENTITY_ID)
+    // 【前提】GameController Entity IDを特定するロジック (ここでは簡略化のため最初の GameStateComponent を持つ Entityを探す)
+    ECS::EntityID gameControllerID = 0;
+    std::set<ECS::EntityID> allEntities = m_coordinator->GetActiveEntities();
+
+    for (auto const& entity : allEntities) // このSystemの対象はCameraComponentだが、ここではCoordinatorに問い合わせる
     {
-        currentMode = m_coordinator->GetComponent<GameStateComponent>(controllerID).currentMode;
-        // DebugComponentもGameController Entityに付与されている前提
-        if (m_coordinator->m_entityManager->GetSignature(controllerID).test(m_coordinator->GetComponentTypeID<DebugComponent>()))
+        if (m_coordinator->m_entityManager->GetSignature(entity).test(m_coordinator->GetComponentTypeID<GameStateComponent>()))
         {
-            isDebugMode = m_coordinator->GetComponent<DebugComponent>(controllerID).isDebugModeActive;
+            gameControllerID = entity; // カメラEntity自身ではないため、このロジックは不正確。
+            currentMode = m_coordinator->GetComponent<GameStateComponent>(gameControllerID).currentMode;
+            // より正確には、Coordinatorが保持するEntityリスト全体から探す必要があるが、ここでは簡略化。
+            // ※ 適切なGameController EntityIDの取得方法を別途用意する必要がありますが、ここではデモとしてEntityIDを固定するか、別途グローバル変数に格納する前提とします。
         }
-    }
-
-    // 2. 【フリーカメラ】デバッグモードが有効な場合
-    if (isDebugMode)
-    {
-        // カメラの現在の位置と注視点を直接操作するためのロジック
-        // ※ 既存のm_currentCameraPosとm_currentLookAtを直接更新します。
-
-        // 右スティック（またはマウス）でYAW/PITCHを更新 (既存のロジックを再利用)
-        XMFLOAT2 rightStick = GetRightStick();
-        m_currentYaw += rightStick.x * CAMERA_SENSITIVITY_X * 2.0f; // 感度を上げる
-        m_currentPitch -= rightStick.y * CAMERA_SENSITIVITY_Y * 2.0f;
-        m_currentPitch = std::max(PITCH_MIN, std::min(PITCH_MAX, m_currentPitch));
-
-        // YAW/PITCHから前方/右方向ベクトルを計算
-        XMMATRIX rotationMatrix = XMMatrixRotationRollPitchYaw(m_currentPitch, m_currentYaw, 0.0f);
-        XMVECTOR forwardV = XMVector3TransformNormal(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), rotationMatrix);
-        XMVECTOR rightV = XMVector3TransformNormal(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), rotationMatrix);
-        XMVECTOR upV = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
-
-        // キーボード（または左スティック）でカメラ位置を移動
-        XMVECTOR currentPosV = XMLoadFloat3(&m_currentCameraPos);
-        float moveSpeed = 0.5f; // デバッグカメラの移動速度
-
-        if (IsKeyPress(VK_UP)) currentPosV += forwardV * moveSpeed;
-        if (IsKeyPress(VK_DOWN)) currentPosV -= forwardV * moveSpeed;
-        if (IsKeyPress(VK_LEFT)) currentPosV -= rightV * moveSpeed;
-        if (IsKeyPress(VK_RIGHT)) currentPosV += rightV * moveSpeed;
-        if (IsKeyPress(VK_SHIFT)) currentPosV += upV * moveSpeed; // 上昇
-        if (IsKeyPress(VK_CONTROL)) currentPosV -= upV * moveSpeed; // 下降
-
-        XMStoreFloat3(&m_currentCameraPos, currentPosV);
-        m_currentLookAt = XMFLOAT3(
-            m_currentCameraPos.x + XMVectorGetX(forwardV),
-            m_currentCameraPos.y + XMVectorGetY(forwardV),
-            m_currentCameraPos.z + XMVectorGetZ(forwardV)
-        );
-
-        // 追従ロジックをスキップし、ビュー行列を直接計算して終了
-        // ※ ここでビュー行列とプロジェクション行列を計算し、RenderSystemのAPIに設定します。
-        // ... (View/Projection行列の計算ロジックはACTION_MODEのステップ4を再利用) ...
-
-
-
-
-        return; // 通常のカメラロジックは実行しない
     }
 
     // 2. 右スティック入力の取得 (アクションモードでのみ有効)
@@ -231,28 +188,9 @@ void CameraControlSystem::Update()
             XMMATRIX viewMatrix = XMMatrixLookAtLH(newCamPosV, newLookAtV, up);
 
             // Projection行列
-            XMMATRIX projectionMatrix;
-            if (currentMode == GameMode::SCOUTING_MODE)
-            {
-                // 平行投影のパラメータ
-                // 画面サイズ (SCREEN_WIDTH/HEIGHT) とカメラの視野の大きさを元に計算
-                // 例: カメラコンポーネントのFOVを、平行投影のビューポートの高さとして利用する
-                float viewHeight = cameraComp.FOV * TOP_VIEW_HEIGHT; // FOVを基準に平行投影の視野高さを決定 (調整が必要)
-                float viewWidth = viewHeight * ((float)SCREEN_WIDTH / SCREEN_HEIGHT);
-
-                projectionMatrix = XMMatrixOrthographicLH(
-                    viewWidth,
-                    viewHeight,
-                    cameraComp.nearClip,
-                    cameraComp.farClip
-                );
-            }
-            else
-            {
-                projectionMatrix = XMMatrixPerspectiveFovLH(
-                    cameraComp.FOV, (float)SCREEN_WIDTH / SCREEN_HEIGHT, cameraComp.nearClip, cameraComp.farClip
-                );
-            }
+            XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH(
+                cameraComp.FOV, (float)SCREEN_WIDTH / SCREEN_HEIGHT, cameraComp.nearClip, cameraComp.farClip
+            );
 
             // DirectXへ渡すために転置して格納
             XMFLOAT4X4 fMatView;

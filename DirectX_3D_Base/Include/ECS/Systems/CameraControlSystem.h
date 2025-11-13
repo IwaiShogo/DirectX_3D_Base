@@ -27,7 +27,6 @@
 // Components
 #include "ECS/Components/TransformComponent.h"
 #include "ECS/Components/CameraComponent.h"
-#include "ECS/Components/DebugComponent.h"
 // Scene
 #include "Scene/GameScene.h" 
 #include "Main.h" // 画面サイズ定数にアクセス
@@ -44,7 +43,7 @@ class CameraControlSystem : public ECS::System
 	friend class PlayerControlSystem;
 
 private:
-	ECS::Coordinator* m_coordinator = nullptr;
+	ECS::Coordinator* m_coordinator;
 
 	// 現在のカメラの位置と注視点（前フレームの結果を保持し、補間に使用）
 	DirectX::XMFLOAT3 m_currentCameraPos;

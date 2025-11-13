@@ -44,7 +44,7 @@
 class CollisionSystem : public ECS::System
 {
 private:
-	ECS::Coordinator* m_coordinator = nullptr;
+	ECS::Coordinator* m_coordinator;
 
 	/**
 	 * @brief AABB間の衝突検出と最小移動ベクトル(MTV)を計算する。

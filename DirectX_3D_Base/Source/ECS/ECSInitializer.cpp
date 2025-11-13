@@ -1,6 +1,6 @@
 /*****************************************************************//**
  * @file	ECSInitializer.cpp
- * @brief	ECSã‚·ã‚¹ãƒ†ãƒ å…¨ä½“ã®åˆæœŸåŒ–ã‚’é›†ç´„ã—ã€ã‚·ãƒ¼ãƒ³ã®Init()ã‹ã‚‰è²¬å‹™ã‚’åˆ†é›¢ã™ã‚‹ãŸã‚ã®ãƒ˜ãƒ«ãƒ‘ãƒ¼ã‚¯ãƒ©ã‚¹ã®å®Ÿè£…
+ * @brief	ECSƒVƒXƒeƒ€‘S‘Ì‚Ì‰Šú‰»‚ğW–ñ‚µAƒV[ƒ“‚ÌInit()‚©‚çÓ–±‚ğ•ª—£‚·‚é‚½‚ß‚Ìƒwƒ‹ƒp[ƒNƒ‰ƒX‚ÌÀ‘•B
  * 
  * @details	
  * 
@@ -8,16 +8,16 @@
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  * 
- * @date	2025/10/31	åˆå›ä½œæˆæ—¥
- * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼š
+ * @date	2025/10/31	‰‰ñì¬“ú
+ * 			ì‹Æ“à—eF	- ’Ç‰ÁF
  * 
- * @update	2025/11/08	æœ€çµ‚æ›´æ–°æ—¥
- * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼šè­¦å‚™å“¡AIã®è¿½åŠ 
+ * @update	2025/xx/xx	ÅIXV“ú
+ * 			ì‹Æ“à—eF	- XXF
  * 
- * @note	ï¼ˆçœç•¥å¯ï¼‰
+ * @note	iÈ—ª‰Âj
  *********************************************************************/
 
-// ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
+// ===== ƒCƒ“ƒNƒ‹[ƒh =====
 #include "ECS/ECSInitializer.h"
 #include "ECS/AllComponents.h"
 #include "ECS/AllSystems.h"
@@ -25,18 +25,18 @@
 
 using namespace ECS;
 
-// é™çš„ãƒ¡ãƒ³ãƒãƒ¼å¤‰æ•° s_systems ã®å®Ÿä½“ã‚’å®šç¾©ã—ã€ãƒ¡ãƒ¢ãƒªã‚’ç¢ºä¿ã™ã‚‹
+// Ã“Iƒƒ“ƒo[•Ï” s_systems ‚ÌÀ‘Ì‚ğ’è‹`‚µAƒƒ‚ƒŠ‚ğŠm•Û‚·‚é
 std::unordered_map<std::type_index, std::shared_ptr<ECS::System>> ECS::ECSInitializer::s_systems;
 
 /**
  * [void - RegisterComponents]
- * @brief	å…¨ã¦ã®ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã‚’Coordinatorã«ç™»éŒ²ã™ã‚‹ã€‚
+ * @brief	‘S‚Ä‚ÌƒRƒ“ƒ|[ƒlƒ“ƒg‚ğCoordinator‚É“o˜^‚·‚éB
  * 
  * @param	[in] coordinator 
  */
 void ECSInitializer::RegisterComponents(Coordinator* coordinator)
 {
-    // ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã®ç™»éŒ²ï¼ˆè‡ªå‹•ã§ç™»éŒ²ã•ã‚Œã‚‹ï¼‰
+    // ƒRƒ“ƒ|[ƒlƒ“ƒg‚Ì“o˜^i©“®‚Å“o˜^‚³‚ê‚éj
     for (const auto& registerFn : GetComponentRegisterers())
     {
         registerFn(coordinator);
@@ -50,7 +50,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     Coordinator* coordPtr = coordinator;
 
     // ============================================================
-    // ã‚·ã‚¹ãƒ†ãƒ ã®ç™»éŒ²ã¨ã‚·ã‚°ãƒãƒãƒ£ã®è¨­å®šï¼ˆã“ã“ã‹ã‚‰ä¸‹ã«è¿½åŠ ï¼‰
+    // ƒVƒXƒeƒ€‚Ì“o˜^‚ÆƒVƒOƒlƒ`ƒƒ‚Ìİ’èi‚±‚±‚©‚ç‰º‚É’Ç‰Áj
     // ============================================================
 
     // --- RenderSystem ---
@@ -109,55 +109,36 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  GameStateComponent
     );
 
-    // --- MapGenerationSystem ---
-    REGISTER_SYSTEM_AND_INIT(
-        /* Coordinator  */  coordinator,
-        /* System       */  MapGenerationSystem,
-        /* Components   */  MapComponent
-    );
-
-    // --- DebugDrawSystem ---
-    REGISTER_SYSTEM_AND_INIT(
-        /* Coordinator  */  coordinator,
-        /* System       */  DebugDrawSystem,
-        /* Components   */  DebugComponent
-    );
-
-    // --- GuardAISystem ---
-    REGISTER_SYSTEM_AND_INIT(
-        /* Coordinator  */  coordinator,
-        /* System       */  GuardAISystem,
-        /* Components   */  GuardComponent, TransformComponent, RigidBodyComponent
-	);
-
     std::cout << "ECSInitializer: All Systems registered and initialized." << std::endl;
 }
 
 /**
  * [void - InitECS]
- * @brief	Coordinatorã¨Systemã‚’é–¢é€£ä»˜ã‘ã‚‹ã‚¨ãƒ³ãƒˆãƒªãƒã‚¤ãƒ³ãƒˆã€‚
+ * @brief	Coordinator‚ÆSystem‚ğŠÖ˜A•t‚¯‚éƒGƒ“ƒgƒŠƒ|ƒCƒ“ƒgB
  * 
  * @param	[in] coordinator 
  */
 void ECSInitializer::InitECS(std::shared_ptr<Coordinator>& coordinator)
 {
-	// Coordinatorã®ç”Ÿãƒã‚¤ãƒ³ã‚¿ã‚’å–å¾—
+	// Coordinator‚Ì¶ƒ|ƒCƒ“ƒ^‚ğæ“¾
 	Coordinator* rawCoordinator = coordinator.get();
 
-	// 1. Coordinatorè‡ªä½“ã®åˆæœŸåŒ– (ECSã‚³ã‚¢å†…éƒ¨ã®ãƒ‡ãƒ¼ã‚¿æ§‹é€ ã®åˆæœŸåŒ–)
+	// 1. Coordinator©‘Ì‚Ì‰Šú‰» (ECSƒRƒA“à•”‚Ìƒf[ƒ^\‘¢‚Ì‰Šú‰»)
 	rawCoordinator->Init();
 
-	// 2. ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã®ç™»éŒ²
+	// GameScene::s_coordinator ‚Ö‚Ìİ’è‚ÍAŸ‚ÌƒXƒeƒbƒv‚ÅGameScene::Init()‚ÉˆÚ“®‚µ‚Ü‚·B
+
+	// 2. ƒRƒ“ƒ|[ƒlƒ“ƒg‚Ì“o˜^
 	RegisterComponents(rawCoordinator);
 
-	// 3. ã‚·ã‚¹ãƒ†ãƒ ã®ç™»éŒ²ã¨ã‚·ã‚°ãƒãƒãƒ£ã®è¨­å®š (é™çš„ãƒãƒƒãƒ—ã«æ ¼ç´ã•ã‚Œã‚‹)
+	// 3. ƒVƒXƒeƒ€‚Ì“o˜^‚ÆƒVƒOƒlƒ`ƒƒ‚Ìİ’è (Ã“Iƒ}ƒbƒv‚ÉŠi”[‚³‚ê‚é)
 	RegisterSystemsAndSetSignatures(rawCoordinator);
 }
 
 /**
- * @brief ECSã«é–¢é€£ã™ã‚‹å…¨ã¦ã®é™çš„ãƒªã‚½ãƒ¼ã‚¹ã‚’ã‚¯ãƒªãƒ¼ãƒ³ã‚¢ãƒƒãƒ—ã™ã‚‹ã€‚
+ * @brief ECS‚ÉŠÖ˜A‚·‚é‘S‚Ä‚ÌÃ“IƒŠƒ\[ƒX‚ğƒNƒŠ[ƒ“ƒAƒbƒv‚·‚éB
  */
 void ECSInitializer::UninitECS()
 {
-	s_systems.clear(); // å…¨ã¦ã®ã‚·ã‚¹ãƒ†ãƒ SharedPtrã‚’è§£æ”¾
+	s_systems.clear(); // ‘S‚Ä‚ÌƒVƒXƒeƒ€SharedPtr‚ğ‰ğ•ú
 }

@@ -34,7 +34,7 @@
 class UISystem : public ECS::System
 {
 private:
-	ECS::Coordinator* m_coordinator = nullptr;
+	ECS::Coordinator* m_coordinator;
 
 public:
 	void Init()

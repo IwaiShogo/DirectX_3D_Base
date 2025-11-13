@@ -58,7 +58,6 @@ private:
 	static DirectX::XMFLOAT4X4 m_WVP[3];
 	static void* m_pLineVtx;
 	static int m_lineCnt;
-	static DirectX::XMFLOAT4 m_color;
 };
 
 #endif // __GEOMETORY_H__

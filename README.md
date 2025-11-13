@@ -31,7 +31,7 @@
   - [Entity（エンティティ）](#entityエンティティ)
   - [Component（コンポーネント）](#componentコンポーネント)
   - [System（システム）](systemシステム)
-  - [ECSコアの動作原理（Coordinator）](#ecsコアの動作原理m_coordinator)
+  - [ECSコアの動作原理（Coordinator）](#ecsコアの動作原理coordinator)
 
 ### 3. 実装ガイド
 - [コンポーネントの作り方](#コンポーネントの作り方)
@@ -226,15 +226,15 @@ class YourNewSystem
   : ECS::System
 {
 public:  /* 外部関数 */
-  void Init(ECS::Coordinator* m_coordinator) override
+  void Init(ECS::Coordinator* coordinator) override
   {
-    m_coordinator = m_coordinator;
+    m_coordinator = coordinator;
   }
 
   void Update(float deltaTime);  // ロジック実装メソッド
 
 private:  /* 内部変数 */
-  ECS::Coordinator* m_coordinator = nullptr;
+  ECS::Coordinator* m_coordinator;
 };
 ```
 

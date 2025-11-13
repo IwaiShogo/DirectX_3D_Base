@@ -28,6 +28,13 @@
 
 #include <memory>
 
+// ===== 前方宣言 =====
+class RenderSystem;
+class PhysicsSystem;
+class PlayerControlSystem;
+class CollisionSystem;
+class CameraControlSystem;
+
  /**
   * @class GameScene
   * @brief 実際のゲームロジックとECSを管理するシーン

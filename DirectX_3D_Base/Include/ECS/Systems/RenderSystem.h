@@ -48,7 +48,7 @@ class RenderSystem
 {
 private:
 	// ComponentManagerへのアクセス簡略化のため、Coordinatorを保持
-	ECS::Coordinator* m_coordinator = nullptr;
+	ECS::Coordinator* m_coordinator;
 
 public:
 	// Systemの初期化

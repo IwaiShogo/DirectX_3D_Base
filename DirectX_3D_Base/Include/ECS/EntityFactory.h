@@ -1,48 +1,48 @@
 /*****************************************************************//**
  * @file	EntityFactory.h
- * @brief	ç‰¹å®šã®ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ï¼ˆãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã€åœ°é¢ãªã©ï¼‰ã®ç”Ÿæˆãƒ­ã‚¸ãƒƒã‚¯ã‚’é›†ç´„ã™ã‚‹ãƒ˜ãƒ«ãƒ‘ãƒ¼ã‚¯ãƒ©ã‚¹ã€‚
+ * @brief	“Á’è‚ÌƒGƒ“ƒeƒBƒeƒBiƒvƒŒƒCƒ„[A’n–Ê‚È‚Çj‚Ì¶¬ƒƒWƒbƒN‚ğW–ñ‚·‚éƒwƒ‹ƒp[ƒNƒ‰ƒXB
  * 
  * @details	
- * Scene::Init()ã®ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ç”Ÿæˆã‚³ãƒ¼ãƒ‰ã‚’åˆ†é›¢ã—ã€ã‚·ãƒ¼ãƒ³ã®è²¬å‹™ã‚’è»½æ¸›ã™ã‚‹ã€‚
+ * Scene::Init()‚ÌƒGƒ“ƒeƒBƒeƒB¶¬ƒR[ƒh‚ğ•ª—£‚µAƒV[ƒ“‚ÌÓ–±‚ğŒyŒ¸‚·‚éB
  * 
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  * 
- * @date	2025/10/31	åˆå›ä½œæˆæ—¥
- * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼šã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ç”Ÿæˆãƒ­ã‚¸ãƒƒã‚¯ã‚’åˆ†é›¢ã™ã‚‹ãŸã‚ã®ã‚¯ãƒ©ã‚¹ã‚’ä½œæˆ
+ * @date	2025/10/31	‰‰ñì¬“ú
+ * 			ì‹Æ“à—eF	- ’Ç‰ÁFƒGƒ“ƒeƒBƒeƒB¶¬ƒƒWƒbƒN‚ğ•ª—£‚·‚é‚½‚ß‚ÌƒNƒ‰ƒX‚ğì¬
  * 
- * @update	2025/11/08	æœ€çµ‚æ›´æ–°æ—¥
- * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼šè­¦å‚™å“¡AIã®è¿½åŠ 
+ * @update	2025/xx/xx	ÅIXV“ú
+ * 			ì‹Æ“à—eF	- XXF
  * 
- * @note	ï¼ˆçœç•¥å¯ï¼‰
+ * @note	iÈ—ª‰Âj
  *********************************************************************/
 
 #ifndef ___ENTITY_FACTORY_H___
 #define ___ENTITY_FACTORY_H___
 
-// ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
+// ===== ƒCƒ“ƒNƒ‹[ƒh =====
 #include "Coordinator.h"
 #include "Types.h"
-#include <DirectXMath.h> // ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã®åˆæœŸå€¤è¨­å®šã«å¿…è¦
+#include <DirectXMath.h> // ƒRƒ“ƒ|[ƒlƒ“ƒg‚Ì‰Šú’lİ’è‚É•K—v
 
 namespace ECS
 {
 	/**
 	 * @class EntityFactory
-	 * @brief Coordinatorã‚’å—ã‘å–ã‚Šã€å®šç¾©æ¸ˆã¿ã®ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ï¼ˆãƒ—ãƒªã‚»ãƒƒãƒˆï¼‰ã‚’ç”Ÿæˆã™ã‚‹é™çš„ãƒ˜ãƒ«ãƒ‘ãƒ¼
+	 * @brief Coordinator‚ğó‚¯æ‚èA’è‹`Ï‚İ‚ÌƒGƒ“ƒeƒBƒeƒBiƒvƒŠƒZƒbƒgj‚ğ¶¬‚·‚éÃ“Iƒwƒ‹ƒp[
 	 */
 	class EntityFactory final
 	{
 	public:
 		/**
-		 * @brief å…¨ã¦ã®ãƒ‡ãƒ¢ç”¨ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç”Ÿæˆã—ã€ECSã«ç™»éŒ²ã™ã‚‹
-		 * @param coordinator - ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®ç”Ÿæˆã¨ç™»éŒ²ã‚’è¡Œã†Coordinator
+		 * @brief ‘S‚Ä‚Ìƒfƒ‚—pƒGƒ“ƒeƒBƒeƒB‚ğ¶¬‚µAECS‚É“o˜^‚·‚é
+		 * @param coordinator - ƒGƒ“ƒeƒBƒeƒB‚Ì¶¬‚Æ“o˜^‚ğs‚¤Coordinator
 		 */
 		static void CreateAllDemoEntities(Coordinator* coordinator);
 
 		/**
-		 * @brief ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç”Ÿæˆã™ã‚‹
+		 * @brief ƒvƒŒƒCƒ„[ƒGƒ“ƒeƒBƒeƒB‚ğ¶¬‚·‚é
 		 */
 		static EntityID CreatePlayer(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
@@ -51,20 +51,12 @@ namespace ECS
 		static EntityID CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
 		/**
-		 * @brief ã‚²ãƒ¼ãƒ ãƒ¯ãƒ¼ãƒ«ãƒ‰ã®é™çš„ãªåœ°é¢ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç”Ÿæˆã™ã‚‹
+		 * @brief ƒQ[ƒ€ƒ[ƒ‹ƒh‚ÌÃ“I‚È’n–ÊƒGƒ“ƒeƒBƒeƒB‚ğ¶¬‚·‚é
 		 */
 		static EntityID CreateGround(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale);
-		static EntityID CreateCorridor(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY);
 
-		static EntityID CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY);
-
-		/**
-		* @brief è¿½è·¡ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç”Ÿæˆã™ã‚‹
-		*/
-		static EntityID CreateGuard(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
-		
 	private:
-		// é™çš„ã‚¯ãƒ©ã‚¹ã®ãŸã‚ã€ãƒ—ãƒ©ã‚¤ãƒ™ãƒ¼ãƒˆã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã§ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹åŒ–ã‚’ç¦æ­¢
+		// Ã“IƒNƒ‰ƒX‚Ì‚½‚ßAƒvƒ‰ƒCƒx[ƒgƒRƒ“ƒXƒgƒ‰ƒNƒ^‚ÅƒCƒ“ƒXƒ^ƒ“ƒX‰»‚ğ‹Ö~
 		EntityFactory() = delete;
 	};
 }

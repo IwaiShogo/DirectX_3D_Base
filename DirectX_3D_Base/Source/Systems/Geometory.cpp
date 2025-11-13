@@ -10,7 +10,6 @@ Shader* Geometory::m_pLineShader[2];
 DirectX::XMFLOAT4X4 Geometory::m_WVP[3];
 void* Geometory::m_pLineVtx;
 int Geometory::m_lineCnt = 0;
-DirectX::XMFLOAT4 Geometory::m_color;
 
 void Geometory::Init()
 {
@@ -137,7 +136,7 @@ struct PS_IN {
 	float2 uv : TEXCOORD0;
 };
 float4 main(PS_IN pin) : SV_TARGET0 {
-	float4 color = float4(1.0f, 1.0f , 1.0f, 0.5f);
+	float4 color = float4(1,1,1,1);
 	float2 halfGrid = floor(abs(pin.uv) * 2.0f);
 	float2 quatGrid = floor(abs(pin.uv) * 8.0f);
 
