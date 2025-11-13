@@ -1,20 +1,20 @@
 /*****************************************************************//**
  * @file	EntityFactory.cpp
  * @brief	特定のエンティティ（プレイヤー、地面など）の生成ロジックを集約するヘルパークラスの実装
- * 
- * @details	
+ *
+ * @details
  * Componentの具体的な値設定をここに集約し、シーンコードをシンプルにする。
- * 
+ *
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
- * 
+ *
  * @date	2025/11/09	初回作成日
  * 			作業内容：	- 追加：エンティティ生成の静的実装を作成。
- * 
+ *
  * @update	2025/11/08	最終更新日
  * 			作業内容：	- 追加：警備員AIの追加
- * 
+ *
  * @note	（省略可）
  *********************************************************************/
 
@@ -36,7 +36,7 @@ using namespace DirectX;
  * @param position - 初期位置
  * @return EntityID - 生成されたプレイヤーエンティティID
  */
-EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 & position)
+EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& position)
 {
 	// 1. プレイヤーエンティティを生成
 	EntityID player = coordinator->CreateEntity(
@@ -98,8 +98,8 @@ EntityID EntityFactory::CreatePlayer(Coordinator * coordinator, const XMFLOAT3 &
 /**
  * [EntityID - CreateGameController]
  * @brief	ゲームの状態（GameMode）を管理するためのEntityを生成する
- * 
- * @param	[in] coordinator 
+ *
+ * @param	[in] coordinator
  * @return	生成されたEntityID
  */
 EntityID EntityFactory::CreateGameController(Coordinator* coordinator)
@@ -116,9 +116,9 @@ EntityID EntityFactory::CreateGameController(Coordinator* coordinator)
 /**
  * [EntityID - CreateCollectable]
  * @brief	回収アイテムEntityを生成
- * 
- * @param	[in] coordinator 
- * @param	[in] position 
+ *
+ * @param	[in] coordinator
+ * @param	[in] position
  * @return	生成されたEntityID
  */
 EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
@@ -178,34 +178,6 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
 	return ground;
 }
 
-EntityID ECS::EntityFactory::CreateCorridor(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY)
-{
-	ECS::EntityID corridor = coordinator->CreateEntity(
-		TransformComponent(
-			/* Position	*/	position,
-			/* Rotation	*/	XMFLOAT3(0.0f, rotationY, 0.0f),
-			/* Scale	*/	scale
-		),
-		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f)
-		),
-		RigidBodyComponent(
-			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Mass			*/	0.0f, // 静的オブジェクト
-			/* Friction		*/	0.8f,
-			/* Restitution	*/	0.2f
-		),
-		CollisionComponent(
-			/* Size			*/	XMFLOAT3(scale.x / 2.0f, scale.y / 2.0f, scale.z / 2.0f),
-			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType	*/	COLLIDER_STATIC
-		)
-	);
-	return corridor;
-}
-
 /*
  * [EntityID - CreateGuard]
  * @brief	警備員Entityを生成
@@ -246,6 +218,11 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* isActive				*/	true,
 			/* delayBeforeChase		*/	1.0f,
 			/* chaseSpeed			*/	1.0f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_DYNAMIC
 		)
 	);
 
@@ -254,7 +231,7 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 
 /**
  * @brief ゲームワールドの静的な壁エンティティを生成する
- * 
+ *
  * @param [in] coordinator - エンティティの生成と登録を行うCoordinator
  * @param [in] position - 位置
  * @param [in] scale - スケール
@@ -291,6 +268,52 @@ EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX:
 	);
 
 	return entity;
+}
+
+/**
+ * [EntityID - CreateGoal]
+ * @brief	ゴールエンティティの生成
+ *
+ * @param	[in] coordinator
+ * @param	[in] position
+ * @param	[in] scale
+ * @return	生成されたエンティティ
+ */
+EntityID ECS::EntityFactory::CreateGoal(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+{
+	EntityID goal = coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"goal"
+		),
+		TransformComponent(
+			/* Position	*/	position,
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
+		),
+		RenderComponent(
+			/* MeshType	*/	MESH_MODEL, // MESH_BOXで仮描画
+			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
+		),
+		ModelComponent(
+			/* Path		*/	"Assets/Model/Item/yubiwa.fbx",
+			/* Scale	*/	0.1f,
+			/* Flip		*/	Model::None
+		),
+		RigidBodyComponent(
+			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass			*/	0.0f, // 静的オブジェクト
+			/* Friction		*/	0.8f,
+			/* Restitution	*/	0.2f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_STATIC
+		)
+	);
+
+	return goal;
 }
 
 

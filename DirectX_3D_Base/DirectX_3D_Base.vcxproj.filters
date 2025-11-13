@@ -79,23 +79,23 @@
     <ClCompile Include="Source\Scene\GameScene.cpp">
       <Filter>Source Files\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Scene\ResultScene.cpp">
-      <Filter>Source Files\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ProcGen\LevelGenerator.cpp">
-      <Filter>Source Files\ProcGen</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Scene\SceneManager.cpp">
       <Filter>Source Files\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\AudioSystem.cpp">
+      <Filter>Source Files\ECS\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\ResultScene.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Scene\TitleScene.cpp">
       <Filter>Source Files\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\AudioSystem.cpp">
-      <Filter>Source Files\ECS\Systems</Filter>
+    <ClCompile Include="Source\Scene\StageSelectScene.cpp">
+      <Filter>Source Files\Scene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -219,12 +219,6 @@
     <ClInclude Include="Include\Scene\Scene.h">
       <Filter>Header Files\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Scene\ResultScene.h">
-      <Filter>Header Files\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\Scene\TitleScene.h">
-      <Filter>Header Files\Scene</Filter>
-    </ClInclude>
     <ClInclude Include="Include\Systems\Camera.h">
       <Filter>Header Files\Systems</Filter>
     </ClInclude>
@@ -261,14 +255,20 @@
     <ClInclude Include="Include\Main.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Include\ProcGen\LevelGenerator.h">
-      <Filter>Header Files\ProcGen</Filter>
-    </ClInclude>
     <ClInclude Include="Include\ECS\Components\SoundComponent.h">
       <Filter>Header Files\ECS\Components</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Systems\AudioSystem.h">
       <Filter>Header Files\ECS\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\TitleScene.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\ResultScene.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\StageSelectScene.h">
+      <Filter>Header Files\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -283,9 +283,6 @@
     </Filter>
     <Filter Include="Header Files\ECS">
       <UniqueIdentifier>{b3c6721d-7025-4785-b698-01e26b407d71}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\ProcGen">
-      <UniqueIdentifier>{5e815921-b0d2-432e-ac3f-eb248f02469a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Scene">
       <UniqueIdentifier>{bfccd14b-c2c8-4f6f-8ef9-638dc5dbd2c6}</UniqueIdentifier>
@@ -310,9 +307,6 @@
     </Filter>
     <Filter Include="Source Files\Scene">
       <UniqueIdentifier>{7d4dd219-1558-433c-8c70-326541984262}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\ProcGen">
-      <UniqueIdentifier>{f0cd0153-2d8d-4458-a457-830f8e07ee06}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\ECS">
       <UniqueIdentifier>{e792c94f-247c-452f-a846-58cffbcaa654}</UniqueIdentifier>

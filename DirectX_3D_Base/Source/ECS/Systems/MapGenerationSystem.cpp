@@ -1,23 +1,23 @@
 ﻿/*****************************************************************//**
  * @file	MapGenerationSystem.cpp
  * @brief	ランダム迷路のデータ生成ロジックと、そのデータに基づいたEntity生成ロジックの実装。
- * 
- * @details	
- * 
+ *
+ * @details
+ *
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
- * 
+ *
  * @date	2025/11/06	初回作成日
  * 			作業内容：	- 追加：MapGenerationSystem.cppを作成。迷路生成アルゴリズム (再帰的バックトラッカー) を実装。
- * 
+ *
  * @update	2025/xx/xx	最終更新日
  * 			作業内容：	- xx：
- * 
+ *
  * @note	（省略可）
  *********************************************************************/
 
- // ===== インクルード =====
+// ===== インクルード =====
 #include "ECS/EntityFactory.h" 
 #include "ECS/ECS.h"
 #include "Systems/Geometory.h"
@@ -51,7 +51,7 @@ std::mt19937 MazeGenerator::s_generator(std::random_device{}());
  * @brief 迷路生成ロジックの本体。MapComponentのgridを書き換える。
  * @param mapComp - 迷路データを書き込むMapComponentへの参照
  */
-void MazeGenerator::Generate(MapComponent& mapComp)
+void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& trackerComp)
 {
     // 全てのセルを未訪問(Unvisited)にリセット
     for (int y = 0; y < MAP_GRID_SIZE; ++y)
@@ -254,10 +254,10 @@ void MazeGenerator::Generate(MapComponent& mapComp)
     // --------------------------------------------------------------------------------
     // 【ステップ4-1/3: スタート/ゴール位置の決定とランダム化】
     // --------------------------------------------------------------------------------
-    
+
     std::vector<XMINT2> spawnablePositions;     // 全ての有効な通路セル (内側 1 to MAX-2)
     std::vector<XMINT2> perimeterSpawnPositions;// 外周より一つ内側の境界セル (スポーン優先)
-    
+
     // 最外周の壁より一つ内側の領域 (1 to MAX_INDEX - 1) の Pathセルを収集する
     for (int y = 1; y < MAX_INDEX; ++y)
     {
@@ -265,7 +265,7 @@ void MazeGenerator::Generate(MapComponent& mapComp)
         {
             // WallでもUnvisitedでもない (Path/Room) セルを候補とする
             if (mapComp.grid[y][x].type != CellType::Wall && mapComp.grid[y][x].type != CellType::Unvisited) {
-                
+
                 // 全ての有効なセルを候補に追加
                 spawnablePositions.push_back({ x, y });
 
@@ -278,7 +278,7 @@ void MazeGenerator::Generate(MapComponent& mapComp)
     }
 
     // プレイヤーとゴールの位置をランダムに決定
-    if (spawnablePositions.size() >= 2) 
+    if (spawnablePositions.size() >= 2)
     {
         // 1. スタート位置の決定
         if (!perimeterSpawnPositions.empty()) {
@@ -287,7 +287,8 @@ void MazeGenerator::Generate(MapComponent& mapComp)
             mapComp.startPos = perimeterSpawnPositions.back();
             // 選択されたセルを全体リストから削除し、ゴールと重複しないようにする
             spawnablePositions.erase(std::remove(spawnablePositions.begin(), spawnablePositions.end(), mapComp.startPos), spawnablePositions.end());
-        } else {
+        }
+        else {
             // 内側境界パスがない場合のフォールバック: 全体からランダムに選択
             std::shuffle(spawnablePositions.begin(), spawnablePositions.end(), s_generator);
             mapComp.startPos = spawnablePositions.back();
@@ -300,11 +301,13 @@ void MazeGenerator::Generate(MapComponent& mapComp)
             std::shuffle(spawnablePositions.begin(), spawnablePositions.end(), s_generator);
             mapComp.goalPos = spawnablePositions.back();
             spawnablePositions.pop_back();
-        } else {
+        }
+        else {
             // ゴールを配置する場所がない場合は、スタート位置をPathに戻すなどのエラー処理が必要だが、ここではログのみ
         }
 
-    } else {
+    }
+    else {
         // パスセルが足りない場合のデバッグ処理
         mapComp.startPos = { 1, 1 };
         mapComp.goalPos = { MAX_INDEX - 1, MAX_INDEX - 1 };
@@ -341,6 +344,7 @@ void MazeGenerator::Generate(MapComponent& mapComp)
     // 乱数でアイテム数を決定 (std::uniform_int_distributionを使用)
     std::uniform_int_distribution<int> itemDist(MIN_ITEMS, MAX_ITEMS);
     int itemsToPlace = itemDist(s_generator);
+    trackerComp.totalItems = itemsToPlace;
 
     // 配置可能な数が足りない場合は、リストのサイズを上限とする
     itemsToPlace = std::min((int)availablePathPositions.size(), itemsToPlace);
@@ -443,6 +447,7 @@ void MapGenerationSystem::InitMap()
 
     // MapComponentを取得して迷路を生成
     MapComponent& mapComp = m_coordinator->GetComponent<MapComponent>(mapEntity);
+    ItemTrackerComponent& trackerComp = m_coordinator->GetComponent<ItemTrackerComponent>(mapEntity);
 
     // 1. 迷路データの生成
     // ★ 修正点：50x50グリッドの奇数座標から開始 (1, 1)
@@ -450,7 +455,7 @@ void MapGenerationSystem::InitMap()
     // ゴール位置を決定 (右下に近い奇数座標)
     mapComp.goalPos = { MAP_GRID_SIZE - 2, MAP_GRID_SIZE - 2 }; // (48, 48)
 
-    MazeGenerator::Generate(mapComp);
+    MazeGenerator::Generate(mapComp, trackerComp);
 
     // 2. 3D空間へのEntity配置
     SpawnMapEntities(mapComp);
@@ -750,13 +755,13 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp)
                 cellCenter.z += TILE_SIZE / 2.0f;
 
                 // 特殊オブジェクトのY座標を床の表面に合わせる (0.5f = プレイヤー/アイテムの中心)
-                cellCenter.y = TILE_SIZE / 2.0f;
+                cellCenter.y = TILE_SIZE;
 
                 if (cell.type == CellType::Start) {
                     EntityFactory::CreatePlayer(m_coordinator, cellCenter);
                 }
                 else if (cell.type == CellType::Goal) {
-                    // EntityFactory::CreateGate(coordinator, cellCenter);
+                    EntityFactory::CreateGoal(m_coordinator, cellCenter);
                 }
                 else if (cell.type == CellType::Item) {
                     EntityFactory::CreateCollectable(m_coordinator, cellCenter);
@@ -765,7 +770,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp)
                     EntityFactory::CreateGuard(m_coordinator, cellCenter);
                 }
             }
-                break;
+            break;
             default:
                 break;
             }

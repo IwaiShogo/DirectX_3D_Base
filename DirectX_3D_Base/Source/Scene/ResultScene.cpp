@@ -17,33 +17,26 @@
  * @note	（省略可）
  *********************************************************************/
 
- // ===== インクルード =====
+ // ===== インクルード  =====
 #include "Scene/ResultScene.h"
-#include "ECS/ECSInitializer.h" // RenderSystem取得用
+#include "ECS/ECSInitializer.h"
 #include <iostream>
 
-
-// 仮の入力チェック関数
+//仮の入力チェック関数
 bool IsInputTitle() { return false; }
 
-
-// ===== ResultScene メンバー関数の実装 =====
+//===== ResultScene メンバー関数の実装 =====
 
 void ResultScene::Init()
 {
-	
-	// 2. スコア表示用のエンティティを作成
-	// ECS::EntityFactory::CreateResultUIEntities(ECS::ECSInitializer::GetCoordinator());
-
+	//ECS::EntityFactory::CreateResultUIEntities(ECS::ECSInitializer::GetCoordinator());
 	std::cout << "ResultScene::Init() - ResultUISystem Ready." << std::endl;
 }
 
 void ResultScene::Uninit()
 {
-	
-	// 2. このシーンで作成したエンティティを破棄
-	// ECS::ECSInitializer::GetCoordinator()->DestroyEntities(m_sceneEntities);
-
+	//このシーンで作成したエンティティを破棄
+	//ECS::ECSInitializer::GetCoordinator()->DestoryEntities(m_sceneEntities);
 	std::cout << "ResultScene::Uninit() - Result Scene Systems Destroyed." << std::endl;
 }
 
@@ -57,7 +50,7 @@ void ResultScene::Update(float deltaTime)
 
 void ResultScene::Draw()
 {
-	// Draw処理は共有する
+	//Draw処理は共有する
 	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
 	{
 		system->DrawSetup();

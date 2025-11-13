@@ -10,7 +10,7 @@ Shader* Geometory::m_pLineShader[2];
 DirectX::XMFLOAT4X4 Geometory::m_WVP[3];
 void* Geometory::m_pLineVtx;
 int Geometory::m_lineCnt = 0;
-DirectX::XMFLOAT4 Geometory::m_color;
+DirectX::XMFLOAT4 Geometory::m_color(1.0f, 1.0f, 1.0f, 1.0f);
 
 void Geometory::Init()
 {
@@ -55,7 +55,7 @@ void Geometory::AddLine(DirectX::XMFLOAT3 start, DirectX::XMFLOAT3 end, DirectX:
 	if (m_lineCnt < MAX_LINE_NUM)
 	{
 		LineVertex* pVtx = reinterpret_cast<LineVertex*>(m_pLineVtx);
-		pVtx[m_lineCnt * 2 + 0] = { start.x, start.y, start.z, color.x, color.y, color.z, color.w};
+		pVtx[m_lineCnt * 2 + 0] = { start.x, start.y, start.z, color.x, color.y, color.z, color.w };
 		pVtx[m_lineCnt * 2 + 1] = { end.x, end.y, end.z, color.x, color.y, color.z, color.w };
 		++m_lineCnt;
 	}
@@ -74,6 +74,7 @@ void Geometory::DrawBox()
 {
 	if (m_pBox == nullptr)
 		return;
+	m_pPS->WriteBuffer(0, &m_color);
 	m_pVS->WriteBuffer(0, m_WVP);
 	m_pVS->Bind();
 	m_pPS->Bind();
@@ -98,9 +99,14 @@ void Geometory::DrawSphere()
 	m_pSphere->Draw();
 }
 
+void Geometory::SetColor(DirectX::XMFLOAT4 color)
+{
+	m_color = color;
+}
+
 void Geometory::MakeVS()
 {
-const char* VSCode = R"EOT(
+	const char* VSCode = R"EOT(
 struct VS_IN {
 	float3 pos : POSITION0;
 	float2 uv : TEXCOORD0;

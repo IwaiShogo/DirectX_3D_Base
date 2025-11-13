@@ -1,26 +1,26 @@
 /*****************************************************************//**
  * @file	MapGenerationSystem.h
  * @brief	MapComponentの迷路データを生成し、対応する3Dエンティティを生成・配置するシステム。
- * 
- * @details	
- * 
+ *
+ * @details
+ *
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
- * 
+ *
  * @date	2025/11/06	初回作成日
  * 			作業内容：	- 追加：MapGenerationSystemの定義。迷路生成とEntity配置の役割を持つ。
- * 
+ *
  * @update	2025/xx/xx	最終更新日
  * 			作業内容：	- XX：
- * 
+ *
  * @note	（省略可）
  *********************************************************************/
 
 #ifndef ___MAP_GENERATION_SYSTEM_H___
 #define ___MAP_GENERATION_SYSTEM_H___
 
-// ===== インクルード =====
+ // ===== インクルード =====
 #include "ECS/ECS.h"
 #include <random>
 #include <stack>
@@ -35,7 +35,7 @@ public:
 	 * @brief 迷路生成ロジックの本体。MapComponentのgridを書き換える。
 	 * @param mapComp - 迷路データを書き込むMapComponentへの参照
 	 */
-	static void Generate(MapComponent& mapComp);
+	static void Generate(MapComponent& mapComp, ItemTrackerComponent& trackerComp);
 private:
 	// 再帰的バックトラッカーのヘルパー関数
 	static void RecursiveBacktracker(MapComponent& mapComp, int x, int y);
