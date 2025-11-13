@@ -1,55 +1,62 @@
 /*****************************************************************//**
  * @file	AllComponents.h
- * @brief	ƒRƒ“ƒ|[ƒlƒ“ƒg—pW–ñƒwƒbƒ_[ƒtƒ@ƒCƒ‹
+ * @brief	ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆç”¨é›†ç´„ãƒ˜ãƒƒãƒ€ãƒ¼ãƒ•ã‚¡ã‚¤ãƒ«
  * 
  * @details	
- * ŠeƒV[ƒ“‚âƒVƒXƒeƒ€‚ÅŒÂ•Ê‚ÌƒRƒ“ƒ|[ƒlƒ“ƒg‚ğƒCƒ“ƒNƒ‹[ƒh‚·‚é‘ã‚í‚è‚ÉA
- * ‚±‚Ìƒtƒ@ƒCƒ‹‚ğƒCƒ“ƒNƒ‹[ƒh‚·‚é‚±‚Æ‚Å‹Lq‚ğŠÈ—ª‰»o—ˆ‚Ü‚·B
+ * å„ã‚·ãƒ¼ãƒ³ã‚„ã‚·ã‚¹ãƒ†ãƒ ã§å€‹åˆ¥ã®ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã‚’ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ã™ã‚‹ä»£ã‚ã‚Šã«ã€
+ * ã“ã®ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ã™ã‚‹ã“ã¨ã§è¨˜è¿°ã‚’ç°¡ç•¥åŒ–å‡ºæ¥ã¾ã™ã€‚
  * 
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  * 
- * @date	2025/10/31	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁFECSƒRƒ“ƒ|[ƒlƒ“ƒg‚Ìƒwƒbƒ_[W–ñƒtƒ@ƒCƒ‹‚ğì¬
+ * @date	2025/10/31	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼šECSã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã®ãƒ˜ãƒƒãƒ€ãƒ¼é›†ç´„ãƒ•ã‚¡ã‚¤ãƒ«ã‚’ä½œæˆ
  * 
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
+ * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- XXï¼š
  * 
- * @note	iÈ—ª‰Âj
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
 #ifndef ___ALL_COMPONENTS_H___
 #define ___ALL_COMPONENTS_H___
 
-// ===== ƒCƒ“ƒNƒ‹[ƒh =====
-// @brief	•K—v‚ÈECS‚Ì‹¤’ÊŒ^’è‹`
+// ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
+// @brief	å¿…è¦ãªECSã®å…±é€šå‹å®šç¾©
 #include "ECS/Types.h"
 
-// --- ‘S‚Ä‚ÌƒRƒ“ƒ|[ƒlƒ“ƒgƒwƒbƒ_[‚ğW–ñ ---
-// @component	ƒJƒƒ‰
+// --- å…¨ã¦ã®ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆãƒ˜ãƒƒãƒ€ãƒ¼ã‚’é›†ç´„ ---
+// @component	ã‚«ãƒ¡ãƒ©
 #include "ECS/Components/CameraComponent.h"
-// @component	Õ“Ë”»’è
+// @component	è¡çªåˆ¤å®š
 #include "ECS/Components/CollisionComponent.h"
-// @component	ƒ‚ƒfƒ‹•`‰æ
+// @component	ãƒ¢ãƒ‡ãƒ«æç”»
 #include "ECS/Components/ModelComponent.h"
-// @component	ƒvƒŒƒCƒ„[“ü—Í§Œä
+// @component	ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼å…¥åŠ›åˆ¶å¾¡
 #include "ECS/Components/PlayerControlComponent.h"
-// @component	•`‰æ
+// @component	æç”»
 #include "ECS/Components/RenderComponent.h"
-// @component	„‘Ì / •¨—‰‰Z
+// @component	å‰›ä½“ / ç‰©ç†æ¼”ç®—
 #include "ECS/Components/RigidBodyComponent.h"
-// @component	ˆÊ’uE‰ñ“]EƒXƒP[ƒ‹
+// @component	ä½ç½®ãƒ»å›è»¢ãƒ»ã‚¹ã‚±ãƒ¼ãƒ«
 #include "ECS/Components/TransformComponent.h"
-// @component	UI—v‘f
+// @component	UIè¦ç´ 
 #include "ECS/Components/UIComponent.h"
-// @component	ƒJƒƒ‰Ø‚è‘Ö‚¦
+// @component	ã‚«ãƒ¡ãƒ©åˆ‡ã‚Šæ›¿ãˆ
 #include "ECS/Components/GameStateComponent.h"
-// @component	ƒ^ƒO
+// @component	ã‚¿ã‚°
 #include "ECS/Components/TagComponent.h"
-// @component	‰ñû‰Â”\‚È‚¨•ó
+// @component	å›åå¯èƒ½ãªãŠå®
 #include "ECS/Components/CollectableComponent.h"
-// @component	ƒXƒe[ƒW“à‚ÌƒAƒCƒeƒ€ŠÇ—
+// @component	ã‚¹ãƒ†ãƒ¼ã‚¸å†…ã®ã‚¢ã‚¤ãƒ†ãƒ ç®¡ç†
 #include "ECS/Components/ItemTrackerComponent.h"
+// @component	ãƒãƒƒãƒ—ç®¡ç†
+#include "ECS/Components/MapComponent.h"
+
+// @component	ãƒ‡ãƒãƒƒã‚°
+#include "ECS/Components/DebugComponent.h"
+// @component	è­¦å‚™å“¡AI
+#include "ECS/Components/GuardComponent.h"
 
 #endif // !___ALL_COMPONENTS_H___

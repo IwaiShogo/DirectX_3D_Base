@@ -18,11 +18,21 @@
  *********************************************************************/
 
 // ===== インクルード =====
-#include "ECS/Systems/CollisionSystem.h"
+#include "ECS/ECS.h"
 #include <algorithm>
 #include <cmath>
 
 using namespace DirectX;
+
+// ヘルパー関数の定義 (DirectXMathの機能拡張を想定)
+namespace MathHelper
+{
+	// XMVector3Dotで内積を計算
+	inline float Dot(DirectX::XMVECTOR v1, DirectX::XMVECTOR v2)
+	{
+		return DirectX::XMVectorGetX(DirectX::XMVector3Dot(v1, v2));
+	}
+}
 
 /**
  * @brief AABB間の衝突検出と最小移動ベクトル(MTV)を計算する。
@@ -32,74 +42,107 @@ using namespace DirectX;
  */
 bool CollisionSystem::CheckCollision(ECS::EntityID entityA, ECS::EntityID entityB, XMFLOAT3& mtv)
 {
+	// A: Dynamic Entity (プレイヤー: AABBを想定)
 	TransformComponent& transA = m_coordinator->GetComponent<TransformComponent>(entityA);
 	CollisionComponent& collA = m_coordinator->GetComponent<CollisionComponent>(entityA);
+	// B: Static Entity (壁: OBBを想定)
 	TransformComponent& transB = m_coordinator->GetComponent<TransformComponent>(entityB);
 	CollisionComponent& collB = m_coordinator->GetComponent<CollisionComponent>(entityB);
 
-	// AABBの中心座標を計算
-	XMFLOAT3 centerA = transA.position;
-	centerA.x += collA.offset.x;
-	centerA.y += collA.offset.y;
-	centerA.z += collA.offset.z;
+	// AABBの中心座標を計算 (オフセットを考慮)
+	XMVECTOR posA = XMLoadFloat3(&transA.position) + XMLoadFloat3(&collA.offset);
+	// OBBの中心座標を計算 (オフセットを考慮)
+	XMVECTOR posB = XMLoadFloat3(&transB.position) + XMLoadFloat3(&collB.offset);
 
-	XMFLOAT3 centerB = transB.position;
-	centerB.x += collB.offset.x;
-	centerB.y += collB.offset.y;
-	centerB.z += collB.offset.z;
+	// A, B間の中心距離ベクトル
+	XMVECTOR separation = posB - posA;
 
-	// 中心間のベクトル (distance)
-	XMFLOAT3 d;
-	d.x = centerA.x - centerB.x;
-	d.y = centerA.y - centerB.y;
-	d.z = centerA.z - centerB.z;
+	// A, Bのハーフエクステント (サイズ)
+	XMFLOAT3 extentsA = collA.size;
+	XMFLOAT3 extentsB = collB.size;
 
-	// 衝突していない軸を探す
-	// 半分の合計サイズ (extent)
-	XMFLOAT3 extent;
-	extent.x = collA.size.x + collB.size.x;
-	extent.y = collA.size.y + collB.size.y;
-	extent.z = collA.size.z + collB.size.z;
+	// =========================================================================
+	// OBB (entityB) の軸情報取得
+	// TransformComponentのY軸回転 (ラジアン) から回転行列を構築する
+	// =========================================================================
+	// Y軸回転成分のみを取得
+	float rotationY_B = transB.rotation.y;
 
-	// 軸が分離している場合
-	if (std::abs(d.x) >= extent.x ||
-		std::abs(d.y) >= extent.y ||
-		std::abs(d.z) >= extent.z)
+	// 回転行列を構築 (Y軸回転のみ)
+	XMMATRIX rotMatB = XMMatrixRotationY(rotationY_B);
+
+	// OBBのローカル軸（X, Y, Z）を抽出する (DirectXMathでは行ベクトル)
+	XMVECTOR axisBX = rotMatB.r[0]; // BのローカルX軸
+	XMVECTOR axisBY = rotMatB.r[1]; // BのローカルY軸
+	XMVECTOR axisBZ = rotMatB.r[2]; // BのローカルZ軸
+
+	// 衝突判定に使用する軸（ワールド軸 3本 + OBBのローカル軸 3本 = 計6本）
+	XMVECTOR axes[] = {
+		XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), // World X (AABB軸)
+		XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), // World Y (AABB軸)
+		XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), // World Z (AABB軸)
+		axisBX, // OBB Local X
+		axisBY, // OBB Local Y
+		axisBZ  // OBB Local Z
+	};
+
+	float minOverlap = std::numeric_limits<float>::max();
+	XMVECTOR minAxis = XMVectorZero();
+	bool isCollision = true;
+
+	for (int i = 0; i < 6; ++i)
 	{
-		return false; // 衝突なし
+		XMVECTOR axis = XMVector3Normalize(axes[i]);
+
+		// 軸上の中心間の距離 (|P_A - P_B| ・ N)
+		float centerProjection = std::abs(MathHelper::Dot(separation, axis));
+
+		// Aの投影半径 (AABBを軸Nに投影: |e_A・N_x| + |e_A・N_y| + |e_A・N_z|)
+		// AABBはワールド軸に整列しているため、Projection Radiusは簡単に計算できる
+		float radiusA = std::abs(extentsA.x * MathHelper::Dot(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), axis))
+			+ std::abs(extentsA.y * MathHelper::Dot(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), axis))
+			+ std::abs(extentsA.z * MathHelper::Dot(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), axis));
+
+		// Bの投影半径 (OBBを軸Nに投影: Bのローカル軸とNの内積を使用)
+		float radiusB = std::abs(extentsB.x * MathHelper::Dot(axisBX, axis))
+			+ std::abs(extentsB.y * MathHelper::Dot(axisBY, axis))
+			+ std::abs(extentsB.z * MathHelper::Dot(axisBZ, axis));
+
+		float totalRadius = radiusA + radiusB;
+
+		// 分離軸定理チェック
+		if (centerProjection >= totalRadius)
+		{
+			isCollision = false; // 分離軸が見つかった
+			break;
+		}
+
+		// 重なりを計算し、最小重なり軸を更新
+		float overlap = totalRadius - centerProjection;
+		if (overlap < minOverlap)
+		{
+			minOverlap = overlap;
+			minAxis = axis;
+		}
 	}
 
-	// 衝突している場合: 最小移動ベクトル(MTV)を計算
+	if (isCollision)
+	{
+		// MTVの方向を Separationベクトル（B-A）とは逆、すなわちAからBを押し出す方向に設定
+		// d = centerA - centerB なので、separation = centerB - centerA = -d
+		// minAxisが分離ベクトル(B-A)と同じ方向を向いていれば、反転させる必要がある
+		XMVECTOR dV = posA - posB; // 衝突検出のMTV符号決定に使用
+		if (MathHelper::Dot(minAxis, dV) < 0.0f)
+		{
+			minAxis = -minAxis;
+		}
 
-	// めり込み量 (penetration)
-	float pX = extent.x - std::abs(d.x);
-	float pY = extent.y - std::abs(d.y);
-	float pZ = extent.z - std::abs(d.z);
-
-	// 最もめり込み量が少ない軸を見つける
-	if (pX < pY&& pX < pZ)
-	{
-		// X軸がMTV
-		mtv.x = d.x > 0 ? pX : -pX; // めり込み量 pX を符号付きで設定
-		mtv.y = 0.0f;
-		mtv.z = 0.0f;
-	}
-	else if (pY < pZ)
-	{
-		// Y軸がMTV
-		mtv.x = 0.0f;
-		mtv.y = d.y > 0 ? pY : -pY; // めり込み量 pY を符号付きで設定
-		mtv.z = 0.0f;
-	}
-	else
-	{
-		// Z軸がMTV
-		mtv.x = 0.0f;
-		mtv.y = 0.0f;
-		mtv.z = d.z > 0 ? pZ : -pZ; // めり込み量 pZ を符号付きで設定
+		XMVECTOR mtvV = minAxis * minOverlap;
+		XMStoreFloat3(&mtv, mtvV);
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 /**
@@ -178,7 +221,8 @@ void CollisionSystem::Update()
 
 	for (auto const& entity : m_entities)
 	{
-		CollisionComponent& coll = m_coordinator->GetComponent<CollisionComponent>(entity);
+		auto& coll = m_coordinator->GetComponent<CollisionComponent>(entity);
+
 		if (coll.type == COLLIDER_DYNAMIC)
 		{
 			dynamicEntities.push_back(entity);
@@ -209,4 +253,22 @@ void CollisionSystem::Update()
 			}
 		}
 	}
+
+#ifdef _DEBUG
+	auto debugEntityID = ECS::FindFirstEntityWithComponent<DebugComponent>(m_coordinator);
+	if (debugEntityID != ECS::INVALID_ENTITY_ID)
+	{
+		auto& debug = m_coordinator->GetComponent<DebugComponent>(debugEntityID);
+
+		// 当たり判定の可視化
+		if (!debug.isCollisionDrawEnabled) return;
+
+		// TransformComponentとCollisionComponentを持つEntityを走査
+		for (const auto& entity : m_entities)
+		{
+			// CollisionComponentの形状に基づき
+			// Geometory::AddLine() を使用してヒットボックスの外枠を描画
+		}
+	}
+#endif // _DEBUG
 }

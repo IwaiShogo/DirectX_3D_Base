@@ -39,7 +39,7 @@
 class PlayerControlSystem : public ECS::System
 {
 private:
-	ECS::Coordinator* m_coordinator;
+	ECS::Coordinator* m_coordinator = nullptr;
 
 public:
 	void Init(ECS::Coordinator* coordinator) override
