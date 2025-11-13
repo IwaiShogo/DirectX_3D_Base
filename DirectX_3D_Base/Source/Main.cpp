@@ -208,6 +208,7 @@ int Init(HINSTANCE hInstance, int nCmdShow)
 	SceneManager::RegisterScene<ResultScene>();
 	SceneManager::ChangeScene<TitleScene>();
 
+
 	return 0;
 }
 

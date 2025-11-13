@@ -138,6 +138,7 @@
   <ItemGroup>
     <ClCompile Include="Source\ECS\ECSInitializer.cpp" />
     <ClCompile Include="Source\ECS\EntityFactory.cpp" />
+    <ClCompile Include="Source\ECS\Systems\AudioSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\CameraControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\CollectionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\CollisionSystem.cpp" />
@@ -184,6 +185,7 @@
     <ClInclude Include="Include\ECS\Components\PlayerControlComponent.h" />
     <ClInclude Include="Include\ECS\Components\RenderComponent.h" />
     <ClInclude Include="Include\ECS\Components\RigidBodyComponent.h" />
+    <ClInclude Include="Include\ECS\Components\SoundComponent.h" />
     <ClInclude Include="Include\ECS\Components\TagComponent.h" />
     <ClInclude Include="Include\ECS\Components\TransformComponent.h" />
     <ClInclude Include="Include\ECS\Components\UIComponent.h" />
@@ -192,6 +194,7 @@
     <ClInclude Include="Include\ECS\EntityFactory.h" />
     <ClInclude Include="Include\ECS\EntityManager.h" />
     <ClInclude Include="Include\ECS\SystemManager.h" />
+    <ClInclude Include="Include\ECS\Systems\AudioSystem.h" />
     <ClInclude Include="Include\ECS\Systems\CameraControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\CollectionSystem.h" />
     <ClInclude Include="Include\ECS\Systems\CollisionSystem.h" />
