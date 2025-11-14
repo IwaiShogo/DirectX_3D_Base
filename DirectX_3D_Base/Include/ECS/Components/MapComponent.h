@@ -32,6 +32,10 @@ constexpr float TILE_SIZE = 2.0f;
 // 壁の高さ（モジュールアセットに合わせる想定で仮に5mとしておく）
 constexpr float WALL_HEIGHT = 5.0f;
 
+constexpr float MAP_CENTER_OFFSET = (MAP_GRID_SIZE / 2.0f) * TILE_SIZE; // 20.0f
+constexpr float X_ADJUSTMENT = 0.5f * TILE_SIZE; // 1.0f
+constexpr float Z_ADJUSTMENT = 1.0f * TILE_SIZE; // 2.0f
+
 /**
  * @enum    CellType
  * @brief   マップ要素の列挙体

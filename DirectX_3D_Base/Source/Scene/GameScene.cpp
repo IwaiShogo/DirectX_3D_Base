@@ -129,6 +129,7 @@ void GameScene::Update(float deltaTime)
 		system->Update();
 	}
 #endif // _DEBUG
+
 	// 6. Œx”õˆõAI
 	if (auto system = ECS::ECSInitializer::GetSystem<GuardAISystem>())
 	{
