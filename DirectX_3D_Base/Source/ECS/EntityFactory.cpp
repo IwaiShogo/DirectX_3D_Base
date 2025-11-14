@@ -49,8 +49,8 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_MODEL,
-			/* Color	*/	XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
+			/* MeshType	*/	MESH_BOX,
+			/* Color	*/	XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f)
 		),
 		ModelComponent(
 			/* Path		*/	"Assets/Model/Player/hadakakaihi.fbx",
@@ -70,7 +70,7 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 			/* ColliderType	*/	COLLIDER_DYNAMIC
 		),
 		PlayerControlComponent(
-			/* MoveSpeed	*/	5.0f
+			/* MoveSpeed	*/	10.0f
 		)
 	);
 
@@ -209,15 +209,15 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Mass			*/	0.0f, // 静的オブジェクト
+			/* Mass			*/	1.0f,
 			/* Friction		*/	0.8f,
 			/* Restitution	*/	0.2f
 		),
 		GuardComponent(
-			/* predictionDistance	*/	5.0f,
+			/* predictionDistance	*/	999.0f,
 			/* isActive				*/	true,
 			/* delayBeforeChase		*/	1.0f,
-			/* chaseSpeed			*/	1.0f
+			/* chaseSpeed			*/	4.0f
 		),
 		CollisionComponent(
 			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
@@ -309,7 +309,7 @@ EntityID ECS::EntityFactory::CreateGoal(Coordinator* coordinator, const DirectX:
 		CollisionComponent(
 			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
 			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType	*/	COLLIDER_STATIC
+			/* ColliderType	*/	COLLIDER_TRIGGER
 		)
 	);
 

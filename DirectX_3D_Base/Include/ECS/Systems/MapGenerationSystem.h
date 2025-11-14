@@ -59,9 +59,9 @@ public:
 	void Update() {}
 
 	void DrawDebugLines();
+	DirectX::XMFLOAT3 GetWorldPosition(int x, int y);
 private:
 	void SpawnMapEntities(MapComponent& mapComp);
-	DirectX::XMFLOAT3 GetWorldPosition(int x, int y);
 };
 
 #endif // !___MAP_GENERATION_SYSTEM_H___
