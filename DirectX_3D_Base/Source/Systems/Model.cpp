@@ -134,6 +134,8 @@ Model::Model()
 	m_pVS = m_pDefVS;
 	m_pPS = m_pDefPS;
 	++m_shaderRef;
+
+	
 }
 
 /*

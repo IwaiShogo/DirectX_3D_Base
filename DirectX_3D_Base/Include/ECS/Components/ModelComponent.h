@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <memory>
 #include "Systems/Model.h"
+#include "Systems/DirectX/ShaderList.h"
 
  /**
   * @struct ModelComponent
@@ -45,6 +46,15 @@ struct ModelComponent
 		{
 			MessageBox(NULL, "モデルのロードに失敗", "Error", MB_OK);
 		}
+
+		VertexShader* pVS = ShaderList::GetVS(ShaderList::VS_WORLD);
+		PixelShader* pPS = ShaderList::GetPS(ShaderList::PS_LAMBERT);
+
+		ShaderList::SetLight(DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), DirectX::XMFLOAT3(-1.0f, -1.0f, -1.0f));
+
+		// モデルに設定
+		pModel->SetVertexShader(pVS);
+		pModel->SetPixelShader(pPS);
 	}
 
 	ModelComponent(const ModelComponent&) = delete;

@@ -53,7 +53,7 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 			/* Color	*/	XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
 		),
 		ModelComponent(
-			/* Path		*/	"Assets/Model/Item/daiya.fbx",
+			/* Path		*/	"Assets/Model/Player/hadakakaihi.fbx",
 			/* Scale	*/	0.1f,
 			/* Flip		*/	Model::None
 		),
@@ -134,7 +134,7 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 		),
 		RenderComponent(
 			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
+			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f)
 		),
 		CollectableComponent(1.0f)
 	);
@@ -160,7 +160,7 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
 		),
 		RenderComponent(
 			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(0.5f, 0.5f, 1.0f, 1.0f)
+			/* Color	*/	XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f)
 		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -251,7 +251,7 @@ EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX:
 		),
 		RenderComponent(
 			/* MeshType	*/	MESH_BOX, // MESH_BOX‚Å‰¼•`‰æ
-			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
+			/* Color	*/	XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f)
 		),
 		RigidBodyComponent(
 			/* Velocity	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -295,7 +295,7 @@ EntityID ECS::EntityFactory::CreateGoal(Coordinator* coordinator, const DirectX:
 			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
 		),
 		ModelComponent(
-			/* Path		*/	"Assets/Model/Item/yubiwa.fbx",
+			/* Path		*/	"Assets/Model/Item/yubiwakana.fbx",
 			/* Scale	*/	0.1f,
 			/* Flip		*/	Model::None
 		),

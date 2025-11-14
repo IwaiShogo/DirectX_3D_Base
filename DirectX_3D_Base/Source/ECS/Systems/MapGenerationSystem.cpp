@@ -500,7 +500,7 @@ void MapGenerationSystem::DrawDebugLines()
 
     MapComponent& mapComp = m_coordinator->GetComponent<MapComponent>(mapEntity);
 
-    XMFLOAT4 wallColor = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f); // 赤色
+    XMFLOAT4 wallColor = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f); // 赤色
 
     // グリッド全体を走査し、壁と通路の境界線を描画
     for (int y = 0; y < MAP_GRID_SIZE; ++y)
@@ -523,7 +523,7 @@ void MapGenerationSystem::DrawDebugLines()
             // GetWorldPositionはセルの中心ではなく、グリッドセルの角（または左下隅）の座標を返す想定
 
             // 描画の高さを床の上(Y=0.1f)に設定して、Zファイティングを避ける
-            constexpr float LINE_HEIGHT = 0.1f;
+            constexpr float LINE_HEIGHT = 5.0f;
 
             // 1. 北側の境界線 (y-1)
             if (y > 0)
