@@ -130,6 +130,14 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  GuardComponent, TransformComponent, RigidBodyComponent
 	);
 
+    // --- UISystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  UISystem,
+        /* Components   */  UIComponent
+
+    );
+
     std::cout << "ECSInitializer: All Systems registered and initialized." << std::endl;
 }
 

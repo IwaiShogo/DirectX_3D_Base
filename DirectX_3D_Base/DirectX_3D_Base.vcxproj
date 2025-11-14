@@ -136,6 +136,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Include\ECS\ResourceManager.cpp" />
     <ClCompile Include="Source\ECS\ECSInitializer.cpp" />
     <ClCompile Include="Source\ECS\EntityFactory.cpp" />
     <ClCompile Include="Source\ECS\Systems\AudioSystem.cpp" />
@@ -193,6 +194,7 @@
     <ClInclude Include="Include\ECS\ECSInitializer.h" />
     <ClInclude Include="Include\ECS\EntityFactory.h" />
     <ClInclude Include="Include\ECS\EntityManager.h" />
+    <ClInclude Include="Include\ECS\ResourceManager.h" />
     <ClInclude Include="Include\ECS\SystemManager.h" />
     <ClInclude Include="Include\ECS\Systems\AudioSystem.h" />
     <ClInclude Include="Include\ECS\Systems\CameraControlSystem.h" />

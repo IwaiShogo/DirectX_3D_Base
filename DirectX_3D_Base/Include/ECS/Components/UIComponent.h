@@ -51,4 +51,8 @@ struct UIComponent
 	}
 };
 
+// Component‚Ì“o˜^
+#include "ECS/ComponentRegistry.h"
+REGISTER_COMPONENT_TYPE(UIComponent)
+
 #endif // !___UI_COMPONENT_H___

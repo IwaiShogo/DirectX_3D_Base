@@ -48,9 +48,7 @@ void GameScene::Init()
 	ECS::ECSInitializer::InitECS(m_coordinator);
 
 	// --- 4. ÉfÉÇópEntityÇÃçÏê¨ ---
-	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
-
-	std::cout << "GameScene::Init() - ECS Initialized and Demo Entities Created." << std::endl;
+	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());	
 }
 
 void GameScene::Uninit()
@@ -147,5 +145,11 @@ void GameScene::Draw()
 
 		// 2. ECS EntityÇÃï`âÊ
 		system->DrawEntities();
+	}
+
+	// UISystem
+	if (auto system = ECS::ECSInitializer::GetSystem<UISystem>())
+	{
+		system->Draw();
 	}
 }
