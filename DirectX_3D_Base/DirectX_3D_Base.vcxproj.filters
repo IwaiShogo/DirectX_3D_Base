@@ -97,6 +97,9 @@
     <ClCompile Include="Source\Scene\StageSelectScene.cpp">
       <Filter>Source Files\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Include\ECS\ResourceManager.cpp">
+      <Filter>Source Files\ECS</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\ECS\AllComponents.h">
@@ -269,6 +272,9 @@
     </ClInclude>
     <ClInclude Include="Include\Scene\StageSelectScene.h">
       <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\ResourceManager.h">
+      <Filter>Header Files\ECS</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

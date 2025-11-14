@@ -23,6 +23,7 @@
 #include "ECS/ECSInitializer.h"
 #include "ECS/ECS.h" // すべてのコンポーネントとCoordinatorにアクセスするため
 #include "Main.h" // METERなどの定数にアクセス
+#include "ECS/ResourceManager.h"
 
 using namespace ECS;
 using namespace DirectX;
@@ -91,6 +92,7 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 
 	// 3. PlayerControlComponentにカメラIDをリンク
 	coordinator->GetComponent<PlayerControlComponent>(player).attachedCameraID = playerCamera;
+
 
 	return player;
 }
@@ -325,6 +327,10 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 {
 	// 1. Map Entity (Game Controller) の作成と初期化
 	// GameStateComponent, ItemTrackerComponent, DebugComponent はこのEntityに付与
+	
+
+
+
 	ECS::EntityID mapEntityID = coordinator->CreateEntity(
 		TagComponent("game_controller"),
 		MapComponent(), // 50x50のエリアでBSP/MSTを生成
@@ -346,4 +352,52 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 		// throw std::runtime_error("MapGenerationSystem is not registered!");
 		return;
 	}
+
+	CreateLuffyUI(coordinator, XMFLOAT2(0.8f, 0.5f));
+
+	//作成
+	bool luffyLoad = ResourceManager::LoadTexture(100, "Assets/Texture/1.png");
+
+	if (!luffyLoad)
+	{
+		MessageBox(nullptr, "るふぃのUIテクスチャのロードに失敗しました", "エラー", MB_OK);
+	}
+	std::cout << "GameScene::Init() - ECS Initialized and Demo Entities Created." << std::endl;
+	
+}
+
+EntityID EntityFactory::CreateDemoUI(Coordinator* coordinator)
+{
+	uint32_t demoTextureID = 1;
+
+	ECS::EntityID uiElement = coordinator->CreateEntity(
+		TagComponent("demo_ui"),//オプション
+		UIComponent(
+			/*TextureID*/demoTextureID,
+			/*Position*/DirectX::XMFLOAT2(150.0f, 100.0f),
+			/*Size    */DirectX::XMFLOAT2(200.0f, 100.0f),
+			/*Color   */DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
+			/*Depth   */0.5f
+		)
+	);
+
+	return uiElement;
+}
+
+EntityID ECS::EntityFactory::CreateLuffyUI(Coordinator* coordinator, const DirectX::XMFLOAT2& position)
+{
+	uint32_t luffyTextureID = 100;
+
+	DirectX::XMFLOAT2 luffySize = DirectX::XMFLOAT2(0.5f, 0.5f);
+	ECS::EntityID luffyElement = coordinator->CreateEntity(
+		TagComponent("luffy_ui"),//タグをつける
+		UIComponent(
+			/*TextureID*/luffyTextureID,
+			/*Position*/position,
+			/*Size    */luffySize,
+			/*Color   */DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),//白
+			/*Depth   */0.1f
+		)
+	);
+	return EntityID();
 }

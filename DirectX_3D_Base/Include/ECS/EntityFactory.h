@@ -59,6 +59,10 @@ namespace ECS
 
 		static EntityID CreateGoal(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
+		static EntityID CreateDemoUI(Coordinator* coordinator);
+
+		static EntityID CreateLuffyUI(Coordinator* coordinator, const DirectX::XMFLOAT2& position);
+
 		/**
 		* @brief 追跡エンティティを生成する
 		*/
