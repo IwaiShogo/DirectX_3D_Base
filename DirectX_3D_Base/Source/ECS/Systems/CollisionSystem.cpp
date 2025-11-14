@@ -285,6 +285,10 @@ void CollisionSystem::Update()
 			// --- 1. GAME OVER TRIGGER (Player vs Guard) ---
 			if (tagB.tag == "guard")
 			{
+				auto& guard = m_coordinator->GetComponent<GuardComponent>(entityB);
+
+				if (!guard.isActive) continue;
+
 				state.isGameOver = true;
 				// ゲームオーバー時は、すぐにリターンし、他の処理（アイテム回収など）を停止
 				return;

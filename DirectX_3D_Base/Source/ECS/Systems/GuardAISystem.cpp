@@ -192,13 +192,6 @@ XMINT2 GuardAISystem::FindNextTargetGridPos(
  */
 XMINT2 GuardAISystem::GetGridPosition(const XMFLOAT3& worldPos)
 {
-    // MapComponent.hから定数を再利用
-    constexpr int MAP_GRID_SIZE = 20;
-    constexpr float TILE_SIZE = 2.0f;
-    constexpr float MAP_CENTER_OFFSET = (MAP_GRID_SIZE / 2.0f) * TILE_SIZE; // 20.0f
-    constexpr float X_ADJUSTMENT = 0.5f * TILE_SIZE; // 1.0f
-    constexpr float Z_ADJUSTMENT = 1.0f * TILE_SIZE; // 2.0f
-
     // MapGenerationSystem.cpp の GetWorldPositionの逆算
     // pos.x = (float)x * TILE_SIZE - MAP_CENTER_OFFSET + X_ADJUSTMENT;
     // (pos.x - X_ADJUSTMENT + MAP_CENTER_OFFSET) / TILE_SIZE = (float)x
@@ -223,6 +216,8 @@ XMINT2 GuardAISystem::GetGridPosition(const XMFLOAT3& worldPos)
 
 void GuardAISystem::Update()
 {
+    float deltaTime = 1.0f / fFPS;
+
     // プレイヤーエンティティの検索 (追跡目標)
     EntityID playerEntity = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
     if (playerEntity == INVALID_ENTITY_ID) return;
@@ -236,6 +231,7 @@ void GuardAISystem::Update()
     if (mapEntity == INVALID_ENTITY_ID) return;
 
     const MapComponent& mapComp = m_coordinator->GetComponent<MapComponent>(mapEntity);
+    const GameStateComponent& gameStateComp = m_coordinator->GetComponent<GameStateComponent>(mapEntity);
 
     // 警備員エンティティ全体を反復処理
     for (auto const& entity : m_entities)
@@ -244,7 +240,47 @@ void GuardAISystem::Update()
         TransformComponent& guardTransform = m_coordinator->GetComponent<TransformComponent>(entity);
         RigidBodyComponent& guardRigidBody = m_coordinator->GetComponent<RigidBodyComponent>(entity);
 
-        if (!guardComp.isActive) continue;
+        // 1. トップビューモードでの初期化
+        if (gameStateComp.currentMode == GameMode::SCOUTING_MODE)
+        {
+            // 警備員を非アクティブ化し、速度をゼロにする (スポーン位置は後で上書きされるため、初期位置は問わない)
+            guardComp.isActive = false;
+            guardComp.elapsedTime = 0.0f; // タイマーリセット
+            guardRigidBody.velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+            // NOTE: ここでプレイヤーと同じ位置に警備員を配置する初期スポーン処理は不要。
+            // なぜなら、ACTION_MODEへの移行時に正確な位置に配置するため。
+            continue; // トップビュー時は以降のAIロジックをスキップ
+        }
+
+        // 2. アクションモード (TPS) 移行後の遅延スポーン
+        else if (gameStateComp.currentMode == GameMode::ACTION_MODE)
+        {
+            //// 追跡開始遅延時間を設定（例: 3秒）
+            //guardComp.delayBeforeChase = 3.0f;
+
+            // 警備員がまだアクティブでない場合のみ初期配置とタイマー処理を行う
+            if (!guardComp.isActive)
+            {
+                // Y座標は床の高さに合わせる (MapGenerationSystem.cppのロジックを再現)
+                guardTransform.position.y = TILE_SIZE / 2.0f;
+
+                guardComp.elapsedTime += deltaTime; // デルタタイムでタイマーを進める
+
+                if (guardComp.elapsedTime >= guardComp.delayBeforeChase)
+                {
+                    // 遅延時間経過後、AI追跡を有効化
+                    guardComp.isActive = true;
+                    // 以降、AI追跡ロジックに移行
+                }
+                else
+                {
+                    // 遅延中は動かない
+                    guardRigidBody.velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
+                    continue; // 遅延中はAIロジックをスキップ
+                }
+            }
+        }
 
         XMINT2 guardGridPos = GetGridPosition(guardTransform.position);
 
