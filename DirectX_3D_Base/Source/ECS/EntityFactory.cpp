@@ -51,7 +51,7 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 		),
 		RenderComponent(
 			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(1.0f, 0.5f, 0.5f, 1.0f)
+			/* Color	*/	XMFLOAT4(0.3f, 0.3f, 1.0f, 1.0f)
 		),
 		ModelComponent(
 			/* Path		*/	"Assets/Model/Player/hadakakaihi.fbx",
@@ -216,9 +216,9 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* Restitution	*/	0.2f
 		),
 		GuardComponent(
-			/* predictionDistance	*/	999.0f,
-			/* isActive				*/	true,
-			/* delayBeforeChase		*/	1.0f,
+			/* predictionDistance	*/	1.0f,
+			/* isActive				*/	false,
+			/* delayBeforeChase		*/	5.0f,
 			/* chaseSpeed			*/	4.0f
 		),
 		CollisionComponent(
@@ -293,8 +293,8 @@ EntityID ECS::EntityFactory::CreateGoal(Coordinator* coordinator, const DirectX:
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_MODEL, // MESH_BOX‚Å‰¼•`‰æ
-			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
+			/* MeshType	*/	MESH_BOX, // MESH_BOX‚Å‰¼•`‰æ
+			/* Color	*/	XMFLOAT4(0.3f, 1.0f, 0.3f, 1.0f)
 		),
 		ModelComponent(
 			/* Path		*/	"Assets/Model/Item/yubiwakana.fbx",

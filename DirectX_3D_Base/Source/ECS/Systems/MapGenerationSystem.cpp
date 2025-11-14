@@ -523,7 +523,7 @@ void MapGenerationSystem::DrawDebugLines()
             // GetWorldPositionはセルの中心ではなく、グリッドセルの角（または左下隅）の座標を返す想定
 
             // 描画の高さを床の上(Y=0.1f)に設定して、Zファイティングを避ける
-            constexpr float LINE_HEIGHT = 5.0f;
+            constexpr float LINE_HEIGHT = WALL_HEIGHT + 1.0f;
 
             // 1. 北側の境界線 (y-1)
             if (y > 0)
@@ -755,19 +755,21 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp)
                 cellCenter.z += TILE_SIZE / 2.0f;
 
                 // 特殊オブジェクトのY座標を床の表面に合わせる (0.5f = プレイヤー/アイテムの中心)
-                cellCenter.y = TILE_SIZE;
+                cellCenter.y = TILE_SIZE / 2.0f;
 
                 if (cell.type == CellType::Start) {
                     EntityFactory::CreatePlayer(m_coordinator, cellCenter);
+                    EntityFactory::CreateGoal(m_coordinator, cellCenter);
+                    EntityFactory::CreateGuard(m_coordinator, cellCenter);
                 }
                 else if (cell.type == CellType::Goal) {
-                    EntityFactory::CreateGoal(m_coordinator, cellCenter);
+                    //EntityFactory::CreateGoal(m_coordinator, cellCenter);
                 }
                 else if (cell.type == CellType::Item) {
                     EntityFactory::CreateCollectable(m_coordinator, cellCenter);
                 }
                 else if (cell.type == CellType::Guard) {
-                    EntityFactory::CreateGuard(m_coordinator, cellCenter);
+                    //EntityFactory::CreateGuard(m_coordinator, cellCenter);
                 }
             }
             break;

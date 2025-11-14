@@ -28,12 +28,12 @@ using namespace DirectX;
 // ===== 定数・マクロ定義 =====
 // 右スティックの感度
 const float CAMERA_SENSITIVITY_X = 0.04f; // YAW感度
-const float CAMERA_SENSITIVITY_Y = 0.03f; // PITCH感度 (上下は控えめに)
+const float CAMERA_SENSITIVITY_Y = 0.02f; // PITCH感度 (上下は控えめに)
 // PITCHのクランプ値 (上下の限界)
-const float PITCH_MAX = -XM_PIDIV2 - 0.2f; // 約78度
-const float PITCH_MIN = XM_PIDIV2 * 0.3f; // 約-27度 (水平より少し下まで)
+const float PITCH_MAX = XM_PIDIV2 - 0.2f; // 約78度
+const float PITCH_MIN = XM_PIDIV2 * 0.0f; // 約-27度 (水平より少し下まで)
 // トップビューカメラの高さ定数
-const float TOP_VIEW_HEIGHT = 60.0f;
+const float TOP_VIEW_HEIGHT = 100.0f;
 
 /**
  * @brief 2つの位置を線形補間する (Lerp)
@@ -85,80 +85,129 @@ static bool RaycastToWall(
     XMFLOAT3& hitPoint
 )
 {
+    constexpr float CAMERA_SAFETY_OFFSET = TILE_SIZE * 0.25f;
+
     // 距離が近すぎる場合は衝突チェックをスキップ
     XMVECTOR startV = XMLoadFloat3(&start);
     XMVECTOR endV = XMLoadFloat3(&end);
-    if (XMVectorGetX(XMVector3LengthSq(startV - endV)) < 0.1f * 0.1f)
+
+    // プレイヤーと目標カメラ位置の距離ベクトルと高さ
+    XMVECTOR directionV = endV - startV;
+    float distance = XMVectorGetX(XMVector3Length(directionV));
+
+    if (distance < CAMERA_SAFETY_OFFSET)
     {
         hitPoint = end;
         return false;
     }
 
-    // 1. DDAアルゴリズムの初期化 (XZ平面のみをチェック)
-    XMINT2 startGrid = GetGridPosition(start);
-    XMINT2 endGrid = GetGridPosition(end);
+    // 方向ベクトルを正規化
+    XMVECTOR dirNormalized = XMVector3Normalize(directionV);
 
-    // X, Y (Z軸) 方向のデルタ
-    float deltaX = end.x - start.x;
-    float deltaY = end.z - start.z; // Z軸をYとして扱う
+    // Y軸（高さ）は無視し、XZ平面のみで考える (Z軸はY軸として計算)
+    float dx = XMVectorGetX(dirNormalized);
+    float dy = XMVectorGetZ(dirNormalized);
 
-    // ステップ方向とグリッド上の現在位置
-    int stepX = (deltaX > 0) ? 1 : -1;
-    int stepY = (deltaY > 0) ? 1 : -1;
-    int currentX = startGrid.x;
-    int currentY = startGrid.y;
+    // 距離パラメータ t (t=0がstart, t=distanceがend)
+    float t = 0.0f;
 
-    // 2. グリッドトラバーサル
-    // 衝突点から最も近い壁セルの中心までを衝突と見なす
-    while (currentX != endGrid.x || currentY != endGrid.y)
+    XMINT2 currentGrid = GetGridPosition(start);
+
+    // 衝突判定ループ (t が total distance を超えるまで)
+    while (t < distance)
     {
-        // 境界チェック
-        if (currentX < 0 || currentX >= MAP_GRID_SIZE || currentY < 0 || currentY >= MAP_GRID_SIZE)
+        // 1. 次にレイが交差するグリッド境界までの距離を計算 (t_x, t_y)
+        float t_x = std::numeric_limits<float>::max();
+        float t_y = std::numeric_limits<float>::max();
+
+        // グリッド線がワールド座標のどこにあるか
+        float nextGridBoundaryX = 0.0f;
+        float nextGridBoundaryY = 0.0f;
+
+        // X軸方向の次のグリッド境界線を計算
+        if (std::abs(dx) > 1e-6)
         {
-            break;
-        }
-
-        // 壁チェック: 現在のセルが壁なら衝突
-        if (mapComp.grid[currentY][currentX].type == CellType::Wall)
-        {
-            // 衝突点までの距離を計算 (プレイヤー位置から現在の壁セルまでの距離を利用)
-
-            // 壁の中心座標を計算（カメラを壁の中心から少し手前に引き戻すための基準点）
-            float wallCenterWorldX = (float)currentX * TILE_SIZE - MAP_CENTER_OFFSET + X_ADJUSTMENT + TILE_SIZE / 2.0f;
-            float wallCenterWorldZ = (float)currentY * TILE_SIZE - MAP_CENTER_OFFSET + Z_ADJUSTMENT + TILE_SIZE / 2.0f;
-
-            XMVECTOR wallCenterV = XMVectorSet(wallCenterWorldX, start.y, wallCenterWorldZ, 1.0f);
-
-            // プレイヤーから壁の中心への方向ベクトル
-            XMVECTOR dirToWall = wallCenterV - startV;
-
-            // 壁の手前に引き戻す距離（例：セルの半分 1.0f、またはそれ以上）
-            float safetyOffset = TILE_SIZE * 0.75f;
-
-            // プレイヤーから目標カメラ位置への方向ベクトルを正規化
-            XMVECTOR dirNormalized = XMVector3Normalize(endV - startV);
-
-            // 衝突点: プレイヤー位置 + (壁までの距離 - 安全オフセット) * 方向ベクトル
-            float t = XMVectorGetX(XMVector3Length(wallCenterV - startV)) - safetyOffset;
-
-            // カメラを壁の手前、かつプレイヤーとの距離が最小距離以上になるように調整
-            float minDistance = TILE_SIZE * 1.5f; // プレイヤーの体積やオフセットを考慮した最小距離
-
-            if (t < minDistance) {
-                t = minDistance; // 最小距離を確保
+            if (dx > 0) // 正方向 (右)
+            {
+                // 現在のセルの右側の境界線
+                nextGridBoundaryX = ((float)currentGrid.x + 1.0f) * TILE_SIZE - MAP_CENTER_OFFSET + X_ADJUSTMENT;
+            }
+            else // 負方向 (左)
+            {
+                // 現在のセルの左側の境界線
+                nextGridBoundaryX = (float)currentGrid.x * TILE_SIZE - MAP_CENTER_OFFSET + X_ADJUSTMENT;
             }
 
-            XMVECTOR adjustedPos = startV + dirNormalized * t;
-
-            XMStoreFloat3(&hitPoint, adjustedPos);
-
-            return true; // 衝突検出
+            // 始点から境界線までの距離 (t)
+            t_x = (nextGridBoundaryX - start.x) / dx;
         }
 
-        // 次のグリッドセルへ移動 (単純化のため、毎回1セルずつ移動)
-        // Y軸がZ方向に対応していることに注意
-        currentX += stepX;
-        currentY += stepY;
+        // Z軸（Yグリッド）方向の次のグリッド境界線を計算
+        if (std::abs(dy) > 1e-6)
+        {
+            if (dy > 0) // 正方向 (奥)
+            {
+                // 現在のセルの奥側の境界線
+                nextGridBoundaryY = ((float)currentGrid.y + 1.0f) * TILE_SIZE - MAP_CENTER_OFFSET + Z_ADJUSTMENT;
+            }
+            else // 負方向 (手前)
+            {
+                // 現在のセルの手前側の境界線
+                nextGridBoundaryY = (float)currentGrid.y * TILE_SIZE - MAP_CENTER_OFFSET + Z_ADJUSTMENT;
+            }
+
+            // 始点から境界線までの距離 (t)
+            t_y = (nextGridBoundaryY - start.z) / dy;
+        }
+
+        // 2. t_x と t_y のうち小さい方を選択 (次の交差点)
+        float t_next = std::min(t_x, t_y);
+
+        // ループの終点チェック (レイが終点を通り過ぎた場合)
+        if (t_next >= distance)
+        {
+            // 終点まで壁がなかった
+            hitPoint = end;
+            return false;
+        }
+
+        // 3. 次のセルへ移動
+        if (t_x < t_y) // X方向へ移動
+        {
+            if (dx > 0) currentGrid.x++;
+            else currentGrid.x--;
+        }
+        else // Y(Z)方向へ移動 (t_x == t_y の場合は斜め移動)
+        {
+            if (dy > 0) currentGrid.y++;
+            else currentGrid.y--;
+        }
+
+        // パラメータ t を更新
+        t = t_next;
+
+        // 4. 新しいセルが壁かどうかチェック
+        if (currentGrid.x >= 0 && currentGrid.x < MAP_GRID_SIZE &&
+            currentGrid.y >= 0 && currentGrid.y < MAP_GRID_SIZE)
+        {
+            // 移動先のセルが壁 (Wall) かどうか
+            if (mapComp.grid[currentGrid.y][currentGrid.x].type == CellType::Wall)
+            {
+                // 衝突検出: 衝突した境界の手前 CAMERA_SAFETY_OFFSET 分の位置を計算
+                float t_adjust = t - CAMERA_SAFETY_OFFSET;
+
+                // カメラがプレイヤーに埋まらないように最小距離を確保
+                float t_min = TILE_SIZE * 0.5f; // プレイヤーのサイズを考慮した最小距離
+                t_adjust = std::max(t_adjust, t_min);
+
+                // 衝突点のワールド座標を計算
+                XMVECTOR collisionPointV = startV + dirNormalized * t_adjust;
+
+                XMStoreFloat3(&hitPoint, collisionPointV);
+
+                return true; // 衝突検出
+            }
+        }
     }
 
     hitPoint = end; // 衝突なし
@@ -279,7 +328,7 @@ void CameraControlSystem::Update()
 
                 // YAW/PITCHを右スティックで更新
                 m_currentYaw += rightStick.x * CAMERA_SENSITIVITY_X;
-                m_currentPitch += rightStick.y * CAMERA_SENSITIVITY_Y;
+                m_currentPitch -= rightStick.y * CAMERA_SENSITIVITY_Y;
 
                 // PITCH角のクランプ（BUG-03修正）
                 m_currentPitch = std::max(PITCH_MIN, std::min(PITCH_MAX, m_currentPitch));
