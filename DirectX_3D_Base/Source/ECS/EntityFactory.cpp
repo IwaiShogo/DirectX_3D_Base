@@ -29,8 +29,9 @@ using namespace ECS;
 using namespace DirectX;
 
 // 静的メンバ変数の定義 (必要に応じて追加)
-// const static ECS::EntityID EntityFactory::s_playerID = 2; // エンティティIDはCoordinatorが管理するため不要
-
+// const static ECS::EntityID EntityFactory::s_playerID = 2; 
+// // エンティティIDはCoordinatorが管理するため不要
+ECS::EntityID EntityFactory::s_itemGetUI_ID = ECS::INVALID_ENTITY_ID;
 /**
  * @brief プレイヤーエンティティを生成する
  * @param coordinator - エンティティの生成と登録を行うCoordinator
@@ -362,6 +363,15 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 	{
 		MessageBox(nullptr, "るふぃのUIテクスチャのロードに失敗しました", "エラー", MB_OK);
 	}
+
+	    //アイテム取得UI（非表示で生成）
+		CreateItemGetUI(coordinator);
+		//アイテム取得UI用のテクスチャをロード（ID: 101 と仮定）
+		bool itemGetUILoad = ResourceManager::LoadTexture(101, "Assets/Texture/2.png"); // このパスは仮です
+		if (!itemGetUILoad)
+		{
+			MessageBox(nullptr, "アイテム取得UIのテクスチャ(ID:101)のロードに失敗しました", "エラー", MB_OK);
+		}
 	std::cout << "GameScene::Init() - ECS Initialized and Demo Entities Created." << std::endl;
 	
 }
@@ -400,4 +410,34 @@ EntityID ECS::EntityFactory::CreateLuffyUI(Coordinator* coordinator, const Direc
 		)
 	);
 	return EntityID();
+}
+
+/**
+ * @brief アイテム取得UIエンティティを生成する (初期状態: 非表示)
+ * @param coordinator
+ * @return EntityID
+ */
+EntityID EntityFactory::CreateItemGetUI(Coordinator* coordinator)
+{
+	uint32_t itemGetTextureID = 101; // アイテム取得UI用のテクスチャID（ResourceManagerでロードする必要あり）
+
+	// 画面中央に配置（仮）
+	// ※ Main.hなどに画面サイズの定数があればそれを使用してください
+	DirectX::XMFLOAT2 screenCenter = DirectX::XMFLOAT2(0.8f, 0.1f); // 仮に 1280x720 の中央
+	DirectX::XMFLOAT2 uiSize = DirectX::XMFLOAT2(0.2f, 0.2f); // 仮のサイズ
+
+	ECS::EntityID uiElement = coordinator->CreateEntity(
+		TagComponent("item_get_ui"), // 識別用のタグ
+		UIComponent(
+			/*TextureID*/ itemGetTextureID,
+			/*Position*/  screenCenter,
+			/*Size    */  uiSize,
+			/*Color   */  DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), // 白
+			/*Depth   */  0.2f, // 描画深度
+			/*IsVisible*/ false // 最初は非表示
+		)
+	);
+	//生成したIDを静的メンバーにキャッシュ
+		s_itemGetUI_ID = uiElement;
+	return uiElement;
 }

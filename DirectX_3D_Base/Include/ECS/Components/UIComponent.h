@@ -35,7 +35,8 @@ struct UIComponent
 	DirectX::XMFLOAT2 Position;			///< 画面上の中心座標 (ピクセル単位、例: 0, 0が左上)
 	DirectX::XMFLOAT2 Size;				///< 描画サイズ (ピクセル単位)
 	DirectX::XMFLOAT4 Color;			///< 描画時の色/乗算カラー (RGBA)
-	float Depth;						///< 描画深度 (0.0f～1.0f)
+	float Depth;		///< 描画深度 (0.0f～1.0f)
+	bool IsVisible;
 
 	/**
 	 * @brief コンストラクタ
@@ -45,8 +46,14 @@ struct UIComponent
 		DirectX::XMFLOAT2 position = DirectX::XMFLOAT2(0.0f, 0.0f),
 		DirectX::XMFLOAT2 size = DirectX::XMFLOAT2(100.0f, 100.0f),
 		DirectX::XMFLOAT4 color = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
-		float depth = 0.5f
-	) : TextureID(textureId), Position(position), Size(size), Color(color), Depth(depth)
+		float depth = 0.5f,
+		bool isVisible = true
+	) : TextureID(textureId), 
+		Position(position),
+		Size(size),
+		Color(color),
+		Depth(depth),
+		IsVisible(isVisible)
 	{
 	}
 };

@@ -39,6 +39,12 @@ void UISystem::Draw()
 	{
 		UIComponent& uiComp = m_coordinator->GetComponent<UIComponent>(entity);
 
+		//IsVisible‚ªfalse‚È‚çA‚±‚ÌUI‚ğ•`‰æ‚µ‚È‚¢
+			if (!uiComp.IsVisible)
+			{
+				continue;
+			}
+
 		Texture* pTexture = ResourceManager::GetTexture(uiComp.TextureID);
 		if (!pTexture)
 		{

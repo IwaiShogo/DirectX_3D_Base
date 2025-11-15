@@ -64,13 +64,21 @@ namespace ECS
 		static EntityID CreateLuffyUI(Coordinator* coordinator, const DirectX::XMFLOAT2& position);
 
 		/**
+		 * @brief アイテム取得UIエンティティを生成する (初期状態: 非表示)
+		 */
+		static EntityID CreateItemGetUI(Coordinator* coordinator);
+		/**
 		* @brief 追跡エンティティを生成する
 		*/
 		static EntityID CreateGuard(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
+		static EntityID GetItemGetUI_ID() { return s_itemGetUI_ID; }
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止
 		EntityFactory() = delete;
+
+		/// @brief 生成したアイテム取得UIのIDをキャッシュする
+		static EntityID s_itemGetUI_ID;
 	};
 }
 
