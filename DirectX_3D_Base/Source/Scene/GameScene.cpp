@@ -57,6 +57,8 @@ void GameScene::Init()
 	if (collectionSystem)
 	{
 		collectionSystem->SetItemGetUI_ID(ECS::EntityFactory::GetItemGetUI_ID());
+
+		collectionSystem->SetInventoryItemUI_ID(ECS::EntityFactory::GetInventoryItemUI_ID());
 	}
 }
 

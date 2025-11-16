@@ -114,6 +114,21 @@ void CollectionSystem::Update(float deltaTime)
 						// エラーログを出力するなど
 					}
 				}
+
+				// 3-d. インベントリUI（中身）の表示
+				if (m_inventoryItemUI_ID != ECS::INVALID_ENTITY_ID)
+				{
+					try
+					{
+						// キャッシュしておいたIDを使い、インベントリの中身を表示する
+						auto& uiComp = m_coordinator->GetComponent<UIComponent>(m_inventoryItemUI_ID);
+						uiComp.IsVisible = true;
+					}
+					catch (...)
+					{
+						// GetComponent<UIComponent> が失敗した場合
+					}
+				}
 		}
 	}
 

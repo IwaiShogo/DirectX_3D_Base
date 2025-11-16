@@ -30,6 +30,8 @@ private:
 	ECS::Coordinator* m_coordinator = nullptr;
 	ECS::EntityID m_itemGetUI_ID = ECS::INVALID_ENTITY_ID;
 
+	ECS::EntityID m_inventoryItemUI_ID = ECS::INVALID_ENTITY_ID;
+
 	//  UI表示タイマー
 	float m_uiTimer = 0.0f;
 	//  UI表示時間（3秒）
@@ -39,6 +41,7 @@ public:
 	{
 		m_coordinator = coordinator;
 		m_itemGetUI_ID = ECS::INVALID_ENTITY_ID;
+		m_inventoryItemUI_ID = ECS::INVALID_ENTITY_ID;
 		m_uiTimer = 0.0f; // 初期化
 	}
 
@@ -49,6 +52,8 @@ public:
 	 * @param id
 	 */
 	void SetItemGetUI_ID(ECS::EntityID id) { m_itemGetUI_ID = id; }
+
+	void SetInventoryItemUI_ID(ECS::EntityID id) { m_inventoryItemUI_ID = id; }
 };
 
 #endif // !___COLLECTION_SYSTEM_H___
