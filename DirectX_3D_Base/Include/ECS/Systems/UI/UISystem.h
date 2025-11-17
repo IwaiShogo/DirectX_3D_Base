@@ -20,9 +20,7 @@
 #ifndef ___UI_SYSTEM_H___
 #define ___UI_SYSTEM_H___
 
-#include "ECS/Coordinator.h"
-#include "ECS/SystemManager.h"
-#include "ECS/Components/UIComponent.h"
+#include "ECS/ECS.h"
 #include "Scene/GameScene.h" 
 #include "Systems/Sprite.h" // Sprite::Draw‚È‚Ç‚ðŽg—p
 

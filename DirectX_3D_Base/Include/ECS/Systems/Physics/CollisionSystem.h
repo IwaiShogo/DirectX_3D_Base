@@ -21,14 +21,7 @@
 #define ___COLLISION_SYSTEM_H___
 
 // ===== インクルード =====
-// ECS
-#include "ECS/Coordinator.h"
-#include "ECS/SystemManager.h"
-// Components
-#include "ECS/Components/TransformComponent.h"
-#include "ECS/Components/RigidBodyComponent.h"
-#include "ECS/Components/CollisionComponent.h"
-#include "ECS/Components/PlayerControlComponent.h" // 衝突応答でIsGroundedフラグ更新に使用
+#include "ECS/ECS.h"
 // Scene
 #include "Scene/GameScene.h" 
 

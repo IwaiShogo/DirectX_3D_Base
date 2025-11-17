@@ -18,7 +18,7 @@
  *********************************************************************/
 
  // ===== インクルード =====
-#include "ECS/Systems/GameFlowSystem.h"
+#include "ECS/Systems/Core/GameFlowSystem.h"
 #include "Scene/SceneManager.h"
 
 void GameFlowSystem::Update()

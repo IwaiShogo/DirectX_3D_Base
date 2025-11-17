@@ -24,7 +24,7 @@
 #include "ECS/ECS.h"
 #include "ECS/ECSInitializer.h"
 #include "ECS/EntityFactory.h"
-#include "ECS/Systems/CollectionSystem.h"
+#include "ECS/Systems/Gameplay/CollectionSystem.h"
 
 #include <DirectXMath.h>
 #include <iostream>

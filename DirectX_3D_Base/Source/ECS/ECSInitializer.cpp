@@ -22,9 +22,6 @@
 #include "ECS/AllComponents.h"
 #include "ECS/AllSystems.h"
 
-#include "ECS/Systems/UITimerSystem.h"
-#include "ECS/Components/TemporaryUIComponent.h"
-
 #include <iostream>
 
 using namespace ECS;

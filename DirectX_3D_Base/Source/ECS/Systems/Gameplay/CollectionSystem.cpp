@@ -18,7 +18,7 @@
  *********************************************************************/
 
 // ===== インクルード =====
-#include "ECS/Systems/CollectionSystem.h"
+#include "ECS/Systems/Gameplay/CollectionSystem.h"
 #include <DirectXMath.h>
 #include <vector>
 

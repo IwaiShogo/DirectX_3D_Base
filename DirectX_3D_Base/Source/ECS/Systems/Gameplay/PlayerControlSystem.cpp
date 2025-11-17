@@ -19,8 +19,7 @@
 
 // ===== インクルード =====
 #include "ECS/ECSInitializer.h"
-#include "ECS/Systems/PlayerControlSystem.h"
-#include "ECS/Systems/CameraControlSystem.h"
+#include "ECS/Systems/Gameplay/PlayerControlSystem.h"
 #include "ECS/ECS.h"
 #include "Scene/ResultScene.h"
 #include <iostream>

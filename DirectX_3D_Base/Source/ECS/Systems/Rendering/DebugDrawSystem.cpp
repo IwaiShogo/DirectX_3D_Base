@@ -17,7 +17,7 @@
  * @note	Åiè»ó™â¬Åj
  *********************************************************************/
 
-#include "ECS/Systems/DebugDrawSystem.h"
+#include "ECS/Systems/Rendering/DebugDrawSystem.h"
 #include "Systems/Input.h"		// IsKeyTrigger
 #include "Systems/Geometory.h"	// Geometory::AddLine
 #include <DirectXMath.h>

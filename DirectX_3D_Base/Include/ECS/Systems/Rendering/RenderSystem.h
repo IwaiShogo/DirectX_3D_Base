@@ -23,13 +23,7 @@
 #define ___RENDER_SYSTEM_H___
 
 // ===== インクルード =====
-// ECS
-#include "ECS/Coordinator.h"
-#include "ECS/SystemManager.h"
-// Components
-#include "ECS/Components/TransformComponent.h"
-#include "ECS/Components/RenderComponent.h"
-#include "ECS/Components/ModelComponent.h"
+#include "ECS/ECS.h"
 // Scene
 #include "Scene/GameScene.h"
 

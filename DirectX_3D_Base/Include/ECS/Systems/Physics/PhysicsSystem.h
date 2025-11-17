@@ -22,12 +22,7 @@
 #define ___PHYSICS_SYSTEM_H___
 
 // ===== インクルード =====
-#include "ECS/Coordinator.h"
-#include "ECS/SystemManager.h"
-// Components
-#include "ECS/Components/TransformComponent.h"
-#include "ECS/Components/RigidBodyComponent.h"
-#include "ECS/Components/CollisionComponent.h" // 将来的な衝突処理に備えてインクルード
+#include "ECS/ECS.h"
 
 // Scene
 #include "Scene/GameScene.h" 

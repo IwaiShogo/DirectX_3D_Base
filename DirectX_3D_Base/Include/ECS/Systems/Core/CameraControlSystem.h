@@ -21,13 +21,7 @@
 #define ___CAMERA_CONTROL_SYSTEM_H___
 
 // ===== インクルード =====
-// ECS
-#include "ECS/Coordinator.h"
-#include "ECS/SystemManager.h"
-// Components
-#include "ECS/Components/TransformComponent.h"
-#include "ECS/Components/CameraComponent.h"
-#include "ECS/Components/DebugComponent.h"
+#include "ECS/ECS.h"
 // Scene
 #include "Scene/GameScene.h" 
 #include "Main.h" // 画面サイズ定数にアクセス

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ECS/Components/SoundComponent.h"
+#include "ECS/ECS.h"
 #include <vector>
 #include <xaudio2.h>
 #include <string>
