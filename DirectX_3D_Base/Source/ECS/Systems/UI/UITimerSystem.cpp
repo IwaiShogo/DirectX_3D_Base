@@ -11,11 +11,9 @@
  * * @note	（省略可）
  *********************************************************************/
 
-#include "ECS/Systems/UITimerSystem.h"
+#include "ECS/Systems/UI/UITimerSystem.h"
 
  // Update() から TemporaryUIComponent と UIComponent にアクセスするため
-#include "ECS/Components/TemporaryUIComponent.h"
-#include "ECS/Components/UIComponent.h"
 
 /**
  * @brief 更新処理 (毎フレーム)

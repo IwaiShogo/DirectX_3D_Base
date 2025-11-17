@@ -21,13 +21,7 @@
 #define ___PLAYER_CONTROL_SYSTEM_H___
 
 // ===== インクルード =====
-// ECS
-#include "ECS/Coordinator.h"
-#include "ECS/SystemManager.h"
-// Components
-#include "ECS/Components/TransformComponent.h"
-#include "ECS/Components/RigidBodyComponent.h"
-#include "ECS/Components/PlayerControlComponent.h"
+#include "ECS/ECS.h"
 #include "Scene/GameScene.h" 
 #include "Systems/Input.h" // IsKeyHold, IsKeyTrigger を使用
 

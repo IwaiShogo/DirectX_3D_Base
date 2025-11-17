@@ -1,6 +1,5 @@
-#include"Systems/RenderSystem.h"
-#include<iostream>
-#include "ResourceManager.h"
+#include "ECS/ECS.h"
+#include "ECS/ResourceManager.h"
 #include <iostream>
 
 using namespace std;
@@ -28,10 +27,10 @@ bool ResourceManager::LoadTexture(uint32_t id, const std::string& filePath)
 
 	auto pTexture = std::make_unique<Texture>();
 
-	if (!FAILED(pTexture->Create(filePath.c_str())))
+	if (FAILED(pTexture->Create(filePath.c_str())))
 	{
 		std::cerr << "Error: Failed to load texture: " << filePath << std::endl;
-		return;//ƒ[ƒhŽ¸”s
+		return false;//ƒ[ƒhŽ¸”s
 	}
 
 	m_textures[id] = std::move(pTexture);

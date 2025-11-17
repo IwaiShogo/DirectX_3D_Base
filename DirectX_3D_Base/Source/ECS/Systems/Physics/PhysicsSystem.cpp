@@ -18,7 +18,7 @@
  *********************************************************************/
 
 // ===== インクルード =====
-#include "ECS/Systems/PhysicsSystem.h"
+#include "ECS/Systems/Physics/PhysicsSystem.h"
 #include <iostream>
 
 using namespace DirectX;

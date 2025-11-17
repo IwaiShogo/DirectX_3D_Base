@@ -17,10 +17,9 @@
  * @note	（省略可）
  *********************************************************************/
 
-#include "ECS/Systems/UISystem.h"
+#include "ECS/Systems/UI/UISystem.h"
 #include "Systems/DirectX/DirectX.h" // SetDepthTest関数を使用
 #include "Systems/DirectX/Texture.h"
-#include "ECS/Components/RenderComponent.h"
 #include "ECS/ResourceManager.h"
 
 using namespace DirectX;

@@ -18,8 +18,7 @@
  *********************************************************************/
 
 // ===== インクルード =====
-#include "ECS/Systems/StateSwitchSystem.h"
-#include "ECS/Systems/AudioSystem.h"
+#include "ECS/Systems/Core/StateSwitchSystem.h"
 
 //サウンド用
 AudioSystem gAudio;
