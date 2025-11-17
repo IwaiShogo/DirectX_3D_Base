@@ -52,11 +52,11 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
+			/* MeshType	*/	MESH_MODEL,
 			/* Color	*/	XMFLOAT4(0.3f, 0.3f, 1.0f, 1.0f)
 		),
 		ModelComponent(
-			/* Path		*/	"Assets/Model/Player/hadakakaihi.fbx",
+			/* Path		*/	"P_PLAYER",
 			/* Scale	*/	0.1f,
 			/* Flip		*/	Model::None
 		),
@@ -203,14 +203,14 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_MODEL,
+			/* MeshType	*/	MESH_BOX,
 			/* Color	*/	XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)
 		),
-		ModelComponent(
-			/* Path		*/	"Assets/Model/AD/modelkari.fbx",
-			/* Scale	*/	0.1f,
-			/* Flip		*/	Model::None
-		),
+		//ModelComponent(
+		//	/* Path		*/	"Assets/Model/AD/modelkari.fbx",
+		//	/* Scale	*/	0.1f,
+		//	/* Flip		*/	Model::None
+		//),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -299,11 +299,11 @@ EntityID ECS::EntityFactory::CreateGoal(Coordinator* coordinator, const DirectX:
 			/* MeshType	*/	MESH_BOX, // MESH_BOX‚Å‰¼•`‰æ
 			/* Color	*/	XMFLOAT4(0.3f, 1.0f, 0.3f, 1.0f)
 		),
-		ModelComponent(
-			/* Path		*/	"Assets/Model/Item/yubiwakana.fbx",
-			/* Scale	*/	0.1f,
-			/* Flip		*/	Model::None
-		),
+		//ModelComponent(
+		//	/* Path		*/	"Assets/Model/Item/yubiwakana.fbx",
+		//	/* Scale	*/	0.1f,
+		//	/* Flip		*/	Model::None
+		//),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),

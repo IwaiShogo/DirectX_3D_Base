@@ -29,6 +29,7 @@
 #include "Systems/Geometory.h"
 #include "Systems/Sprite.h"
 #include "Systems/Input.h"
+#include "Systems/AssetManager.h"
 
 // Scene
 #include "Scene/SceneManager.h"
@@ -195,6 +196,16 @@ int Init(HINSTANCE hInstance, int nCmdShow)
 		return 0;
 	}
 
+	/* AssetManager */
+	Asset::AssetManager& assetManager = Asset::AssetManager::GetInstance();
+	// CSVファイルを読み込む
+	if (!assetManager.LoadModelList("Assets/CSV/ModelList.csv"))
+	{
+		// 読み込み失敗時はログを出力し、初期化を中断
+		MessageBox(hWnd, "アセットリストのロードに失敗しました。ファイルパスを確認してください。", "エラー", MB_OK);
+		return 0;
+	}
+
 	/* 多機能初期化 */
 	Geometory::Init();	// Geometory
 	Sprite::Init();		// Sprite
@@ -222,6 +233,10 @@ void Uninit()
 	Sprite::Uninit();
 	Geometory::Uninit();
 	UninitDirectX();
+
+	/* AssetManager */
+	Asset::AssetManager::GetInstance().UnloadAll();
+	Asset::AssetManager::ReleaseInstance();
 }
 
 void Update(float deltaTime)
