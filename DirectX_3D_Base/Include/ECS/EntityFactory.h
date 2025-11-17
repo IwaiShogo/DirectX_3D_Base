@@ -61,16 +61,43 @@ namespace ECS
 
 		static EntityID CreateDemoUI(Coordinator* coordinator);
 
+
 		static EntityID CreateLuffyUI(Coordinator* coordinator, const DirectX::XMFLOAT2& position);
 
+		/**
+		 * @brief アイテム取得UIエンティティを生成する (初期状態: 非表示)
+		 */
+		static EntityID CreateItemGetUI(Coordinator* coordinator);
+		
+		static EntityID CreateInventoryFrameUI(Coordinator* coordinator, const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size);
+
+		/**
+		 * @brief ★追加：インベントリの「枠」UIを生成する (常に表示)
+		 * @param coordinator
+		 * @param position - 画面右上の座標など
+		 * @return EntityID
+		 */
+		static EntityID CreateInventoryItemUI(Coordinator* coordinator, const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size); // ★関数ごと追加
 		/**
 		* @brief 追跡エンティティを生成する
 		*/
 		static EntityID CreateGuard(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
+		static EntityID GetItemGetUI_ID() { return s_itemGetUI_ID; }
+
+		/**
+		 * @brief ★追加：生成済みの「インベントリの中身UI」エンティティIDを取得する
+		 */
+		static EntityID GetInventoryItemUI_ID() { return s_inventoryItemUI_ID; }
+
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止
 		EntityFactory() = delete;
+
+		/// @brief 生成したアイテム取得UIのIDをキャッシュする
+		static EntityID s_itemGetUI_ID;
+
+		static EntityID s_inventoryItemUI_ID;
 	};
 }
 

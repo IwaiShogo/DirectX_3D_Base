@@ -29,8 +29,10 @@ using namespace ECS;
 using namespace DirectX;
 
 // 静的メンバ変数の定義 (必要に応じて追加)
-// const static ECS::EntityID EntityFactory::s_playerID = 2; // エンティティIDはCoordinatorが管理するため不要
-
+// const static ECS::EntityID EntityFactory::s_playerID = 2; 
+// // エンティティIDはCoordinatorが管理するため不要
+ECS::EntityID EntityFactory::s_itemGetUI_ID = ECS::INVALID_ENTITY_ID;
+ECS::EntityID EntityFactory::s_inventoryItemUI_ID = ECS::INVALID_ENTITY_ID;
 /**
  * @brief プレイヤーエンティティを生成する
  * @param coordinator - エンティティの生成と登録を行うCoordinator
@@ -188,6 +190,7 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
  * @param	[in] position
  * @return	生成されたEntityID
  */
+
 EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
 {
 	EntityID guard = coordinator->CreateEntity(
@@ -362,6 +365,42 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 	{
 		MessageBox(nullptr, "るふぃのUIテクスチャのロードに失敗しました", "エラー", MB_OK);
 	}
+
+	    //アイテム取得UI（非表示で生成）
+		//CreateItemGetUI(coordinator);
+		//アイテム取得UI用のテクスチャをロード（ID: 101 と仮定）
+		bool itemGetUILoad = ResourceManager::LoadTexture(101, "Assets/Texture/2.png"); // このパスは仮です
+		if (!itemGetUILoad)
+		{
+			MessageBox(nullptr, "アイテム取得UIのテクスチャ(ID:101)のロードに失敗しました", "エラー", MB_OK);
+		}
+
+		// 1. インベントリUIの位置を定義（仮に画面右上に設定）
+	// ※ 座標系（ピクセル or 0-1）は既存のUIに合わせてください
+		DirectX::XMFLOAT2 inventoryPos = DirectX::XMFLOAT2(0.9f, 0.1f); // 仮の座標 (右上)
+		DirectX::XMFLOAT2 inventorySize = DirectX::XMFLOAT2(0.1f, 0.1f); // 仮のサイズ
+
+		// 2. インベントリの「枠」を生成 (常に表示)
+		CreateInventoryFrameUI(coordinator, inventoryPos, inventorySize);
+
+		// 3. インベントリの「中身」を生成 (最初は非表示)
+		CreateInventoryItemUI(coordinator, inventoryPos, inventorySize);
+
+		// 4. インベントリUI用のテクスチャをロード
+		// (ID: 102 を「枠」と仮定)
+		bool frameLoad = ResourceManager::LoadTexture(102, "Assets/Texture/3.png"); // 仮パス
+		if (!frameLoad)
+		{
+			MessageBox(nullptr, "インベントリ枠のテクスチャ(ID:102)のロードに失敗", "エラー", MB_OK);
+		}
+
+		// (ID: 103 を「中身」と仮定)
+		bool itemLoad = ResourceManager::LoadTexture(103, "Assets/Texture/2.png"); // 仮パス
+		if (!itemLoad)
+		{
+			MessageBox(nullptr, "インベントリ中身のテクスチャ(ID:103)のロードに失敗", "エラー", MB_OK);
+		}
+
 	std::cout << "GameScene::Init() - ECS Initialized and Demo Entities Created." << std::endl;
 	
 }
@@ -400,4 +439,88 @@ EntityID ECS::EntityFactory::CreateLuffyUI(Coordinator* coordinator, const Direc
 		)
 	);
 	return EntityID();
+}
+
+/**
+ * @brief アイテム取得UIエンティティを生成する (初期状態: 非表示)
+ * @param coordinator
+ * @return EntityID
+ */
+EntityID EntityFactory::CreateItemGetUI(Coordinator* coordinator)
+{
+	uint32_t itemGetTextureID = 101; // アイテム取得UI用のテクスチャID（ResourceManagerでロードする必要あり）
+
+	// 画面中央に配置（仮）
+	// ※ Main.hなどに画面サイズの定数があればそれを使用してください
+	DirectX::XMFLOAT2 screenCenter = DirectX::XMFLOAT2(0.8f, 0.1f); // 仮に 1280x720 の中央
+	DirectX::XMFLOAT2 uiSize = DirectX::XMFLOAT2(0.2f, 0.2f); // 仮のサイズ
+
+	ECS::EntityID uiElement = coordinator->CreateEntity(
+		TagComponent("item_get_ui"), // 識別用のタグ
+		UIComponent(
+			/*TextureID*/ itemGetTextureID,
+			/*Position*/  screenCenter,
+			/*Size    */  uiSize,
+			/*Color   */  DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), // 白
+			/*Depth   */  0.2f, // 描画深度
+			/*IsVisible*/ false // 最初は非表示
+		)
+	);
+	//生成したIDを静的メンバーにキャッシュ
+		s_itemGetUI_ID = uiElement;
+	return uiElement;
+}
+
+/**
+ * @brief インベントリの「枠」UIを生成する (常に表示)
+ * @param coordinator
+ * @param position - 画面右上の座標など
+ * @param size - UIのサイズ
+ * @return EntityID
+ */
+EntityID EntityFactory::CreateInventoryFrameUI(Coordinator* coordinator, const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size)
+{
+	uint32_t frameTextureID = 102; // 「枠」用のテクスチャID (仮)
+
+	ECS::EntityID uiElement = coordinator->CreateEntity(
+		TagComponent("inventory_frame_ui"),
+		UIComponent(
+			/*TextureID*/ frameTextureID,
+			/*Position*/  position,
+			/*Size    */  size,
+			/*Color   */  DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), // 白
+			/*Depth   */  0.8f, // 描画深度 (奥)
+			/*IsVisible*/ true  // ★常に表示
+		)
+	);
+	return uiElement;
+}
+
+/**
+ * @brief インベントリの「中身」UIを生成する (初期状態: 非表示)
+ * @param coordinator
+ * @param position - 枠と同じ座標
+ * @param size - 枠と同じサイズ
+ * @return EntityID
+ */
+EntityID EntityFactory::CreateInventoryItemUI(Coordinator* coordinator, const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size)
+{
+	uint32_t itemTextureID = 103; // 「中身」用のテクスチャID (仮)
+
+	ECS::EntityID uiElement = coordinator->CreateEntity(
+		TagComponent("inventory_item_ui"),
+		UIComponent(
+			/*TextureID*/ itemTextureID,
+			/*Position*/  position,
+			/*Size    */  size,
+			/*Color   */  DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), // 白
+			/*Depth   */  0.7f, // 描画深度 (枠より少し手前)
+			/*IsVisible*/ false // ★最初は非表示
+		)
+	);
+
+	// 生成したIDを静的メンバーにキャッシュ
+	s_inventoryItemUI_ID = uiElement;
+
+	return uiElement;
 }

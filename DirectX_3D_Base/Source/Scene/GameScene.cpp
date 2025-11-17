@@ -24,6 +24,7 @@
 #include "ECS/ECS.h"
 #include "ECS/ECSInitializer.h"
 #include "ECS/EntityFactory.h"
+#include "ECS/Systems/CollectionSystem.h"
 
 #include <DirectXMath.h>
 #include <iostream>
@@ -40,7 +41,7 @@ using namespace DirectX;
 void GameScene::Init()
 {
 	// --- 1. ECS Coordinatorの初期化 ---
-	m_coordinator = std::make_unique<ECS::Coordinator>();
+	m_coordinator = std::make_shared<ECS::Coordinator>();
 
 	// 静的ポインタに現在のCoordinatorを設定
 	s_coordinator = m_coordinator.get();
@@ -49,6 +50,16 @@ void GameScene::Init()
 
 	// --- 4. デモ用Entityの作成 ---
 	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());	
+
+	// --- 5. システム間の連携設定-- -
+		// CollectionSystem に、表示すべきUIのIDを渡す
+		auto collectionSystem = ECS::ECSInitializer::GetSystem<CollectionSystem>();
+	if (collectionSystem)
+	{
+		collectionSystem->SetItemGetUI_ID(ECS::EntityFactory::GetItemGetUI_ID());
+
+		collectionSystem->SetInventoryItemUI_ID(ECS::EntityFactory::GetInventoryItemUI_ID());
+	}
 }
 
 void GameScene::Uninit()
@@ -97,7 +108,7 @@ void GameScene::Update(float deltaTime)
 	// アイテム回収ロジック
 	if (auto system = ECS::ECSInitializer::GetSystem<CollectionSystem>())
 	{
-		system->Update();
+		system->Update(deltaTime);
 	}
 
 	// 3. 衝突検出と応答（位置の修正）
