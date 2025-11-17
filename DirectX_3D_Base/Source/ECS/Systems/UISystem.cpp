@@ -19,6 +19,9 @@
 
 #include "ECS/Systems/UISystem.h"
 #include "Systems/DirectX/DirectX.h" // SetDepthTest関数を使用
+#include "Systems/DirectX/Texture.h"
+#include "ECS/Components/RenderComponent.h"
+#include "ECS/ResourceManager.h"
 
 using namespace DirectX;
 
@@ -36,18 +39,33 @@ void UISystem::Draw()
 	{
 		UIComponent& uiComp = m_coordinator->GetComponent<UIComponent>(entity);
 
+		//IsVisibleがfalseなら、このUIを描画しない
+			if (!uiComp.IsVisible)
+			{
+				continue;
+			}
+
+		Texture* pTexture = ResourceManager::GetTexture(uiComp.TextureID);
+		if (!pTexture)
+		{
+			continue;
+		}
+
+		Sprite::SetTexture(pTexture);
+
+		Sprite::SetOffset(uiComp.Position);
+		Sprite::SetSize(uiComp.Size);
+		Sprite::SetColor(uiComp.Color);
+
+		Sprite::Draw();
 		// Sprite APIを使用して描画
 		// Sprite::Draw(テクスチャID, 画面位置, サイズ, 描画カラー, 深度)
 		/*Sprite::Draw(
 			uiComp.TextureID,
-			uiComp.Position.x,
-			uiComp.Position.y,
-			uiComp.Size.x,
-			uiComp.Size.y,
-			uiComp.Color.x,
-			uiComp.Color.y,
-			uiComp.Color.z,
-			uiComp.Color.w);*/
+			uiComp.Position,
+			uiComp.Size,
+			uiComp.Color*/
+		//);
 
 		// ※ Sprite::DrawのAPIシグネチャはプロジェクトのSprite.hに依存します。
 		// ここでは、一般的な引数（TextureID, x, y, width, height, r, g, b, a）を想定しています。

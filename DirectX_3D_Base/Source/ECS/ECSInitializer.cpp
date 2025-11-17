@@ -21,6 +21,10 @@
 #include "ECS/ECSInitializer.h"
 #include "ECS/AllComponents.h"
 #include "ECS/AllSystems.h"
+
+#include "ECS/Systems/UITimerSystem.h"
+#include "ECS/Components/TemporaryUIComponent.h"
+
 #include <iostream>
 
 using namespace ECS;
@@ -129,6 +133,22 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* System       */  GuardAISystem,
         /* Components   */  GuardComponent, TransformComponent, RigidBodyComponent
 	);
+
+    // --- UISystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  UISystem,
+        /* Components   */  UIComponent
+
+    );
+
+    // --- UITimerSystem-- -
+        // TemporaryUIComponent Ç∆ UIComponent ÇÃóºï˚ÇéùÇ¬EntityÇäƒéãëŒè€Ç∆Ç∑ÇÈ
+        REGISTER_SYSTEM_AND_INIT(
+            /* Coordinator  */  coordinator,
+            /* System       */  UITimerSystem,
+            /* Components   */  UIComponent, TemporaryUIComponent
+        );
 
     std::cout << "ECSInitializer: All Systems registered and initialized." << std::endl;
 }

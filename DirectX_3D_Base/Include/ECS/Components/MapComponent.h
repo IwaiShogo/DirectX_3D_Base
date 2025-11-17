@@ -23,14 +23,18 @@
 // ===== インクルード =====
 #include <DirectXMath.h>
 #include <vector>
-
+    
 // ===== 定数・マクロ定義 =====
 // マップのグリッドサイズ（10 x 10セル = 50m x 50m）
 constexpr int MAP_GRID_SIZE = 20;
 // 1セルあたりのワールドサイズ（5m）
-constexpr float TILE_SIZE = 2.0f;
+constexpr float TILE_SIZE = 5.0f;
 // 壁の高さ（モジュールアセットに合わせる想定で仮に5mとしておく）
-constexpr float WALL_HEIGHT = 5.0f;
+constexpr float WALL_HEIGHT = 20.0f;
+
+constexpr float MAP_CENTER_OFFSET = (MAP_GRID_SIZE / 2.0f) * TILE_SIZE; // 20.0f
+constexpr float X_ADJUSTMENT = 0.5f * TILE_SIZE; // 1.0f
+constexpr float Z_ADJUSTMENT = 1.0f * TILE_SIZE; // 2.0f
 
 /**
  * @enum    CellType

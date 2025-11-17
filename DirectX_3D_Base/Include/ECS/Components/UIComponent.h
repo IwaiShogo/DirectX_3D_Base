@@ -35,7 +35,8 @@ struct UIComponent
 	DirectX::XMFLOAT2 Position;			///< ‰æ–Êã‚Ì’†SÀ•W (ƒsƒNƒZƒ‹’PˆÊA—á: 0, 0‚ª¶ã)
 	DirectX::XMFLOAT2 Size;				///< •`‰æƒTƒCƒY (ƒsƒNƒZƒ‹’PˆÊ)
 	DirectX::XMFLOAT4 Color;			///< •`‰æŽž‚ÌF/æŽZƒJƒ‰[ (RGBA)
-	float Depth;						///< •`‰æ[“x (0.0f`1.0f)
+	float Depth;		///< •`‰æ[“x (0.0f`1.0f)
+	bool IsVisible;
 
 	/**
 	 * @brief ƒRƒ“ƒXƒgƒ‰ƒNƒ^
@@ -45,10 +46,20 @@ struct UIComponent
 		DirectX::XMFLOAT2 position = DirectX::XMFLOAT2(0.0f, 0.0f),
 		DirectX::XMFLOAT2 size = DirectX::XMFLOAT2(100.0f, 100.0f),
 		DirectX::XMFLOAT4 color = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
-		float depth = 0.5f
-	) : TextureID(textureId), Position(position), Size(size), Color(color), Depth(depth)
+		float depth = 0.5f,
+		bool isVisible = true
+	) : TextureID(textureId), 
+		Position(position),
+		Size(size),
+		Color(color),
+		Depth(depth),
+		IsVisible(isVisible)
 	{
 	}
 };
+
+// Component‚Ì“o˜^
+#include "ECS/ComponentRegistry.h"
+REGISTER_COMPONENT_TYPE(UIComponent)
 
 #endif // !___UI_COMPONENT_H___

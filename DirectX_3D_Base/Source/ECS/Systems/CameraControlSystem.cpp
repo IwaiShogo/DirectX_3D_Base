@@ -18,11 +18,9 @@
  *********************************************************************/
 
 // ===== インクルード =====
-#include "ECS/Systems/CameraControlSystem.h"
+#include "ECS/ECS.h"
 #include "Systems/Geometory.h"	// カメラ設定関数を使用
 #include "Systems/Input.h"		// GetRightStick()
-#include "ECS/Components/PlayerControlComponent.h"
-#include "ECS/Components/GameStateComponent.h"
 #include <algorithm>
 
 using namespace DirectX;
@@ -30,12 +28,12 @@ using namespace DirectX;
 // ===== 定数・マクロ定義 =====
 // 右スティックの感度
 const float CAMERA_SENSITIVITY_X = 0.04f; // YAW感度
-const float CAMERA_SENSITIVITY_Y = 0.03f; // PITCH感度 (上下は控えめに)
+const float CAMERA_SENSITIVITY_Y = 0.02f; // PITCH感度 (上下は控えめに)
 // PITCHのクランプ値 (上下の限界)
-const float PITCH_MAX = -XM_PIDIV2 - 0.2f; // 約78度
-const float PITCH_MIN = XM_PIDIV2 * 0.3f; // 約-27度 (水平より少し下まで)
+const float PITCH_MAX = XM_PIDIV2 - 0.2f; // 約78度
+const float PITCH_MIN = XM_PIDIV2 * 0.0f; // 約-27度 (水平より少し下まで)
 // トップビューカメラの高さ定数
-const float TOP_VIEW_HEIGHT = 60.0f;
+const float TOP_VIEW_HEIGHT = 100.0f;
 
 /**
  * @brief 2つの位置を線形補間する (Lerp)
@@ -52,6 +50,168 @@ static XMFLOAT3 Lerp(const XMFLOAT3& start, const XMFLOAT3& end, float t)
 	result.y = start.y + (end.y - start.y) * t;
 	result.z = start.z + (end.z - start.z) * t;
 	return result;
+}
+
+/**
+ * @brief ワールド座標をグリッド座標 (XMINT2) に変換するヘルパー関数
+ * @note GuardAISystem.cpp と同様のロジック
+ */
+static XMINT2 GetGridPosition(const XMFLOAT3& worldPos)
+{
+    float x_f = (worldPos.x - X_ADJUSTMENT + MAP_CENTER_OFFSET) / TILE_SIZE;
+    float y_f = (worldPos.z - Z_ADJUSTMENT + MAP_CENTER_OFFSET) / TILE_SIZE;
+
+    int x = static_cast<int>(x_f);
+    int y = static_cast<int>(y_f);
+
+    x = std::min(std::max(0, x), MAP_GRID_SIZE - 1);
+    y = std::min(std::max(0, y), MAP_GRID_SIZE - 1);
+
+    return { x, y };
+}
+
+/**
+ * @brief 2点間レイキャストを行い、最初の壁との衝突点を求める
+ * @param start - 始点 (プレイヤー位置)
+ * @param end - 終点 (目標カメラ位置)
+ * @param mapComp - マップデータ
+ * @param [out] hitPoint - 衝突点 (壁の手前) のワールド座標
+ * @return bool - 衝突した場合は true
+ */
+static bool RaycastToWall(
+    const XMFLOAT3& start,
+    const XMFLOAT3& end,
+    const MapComponent& mapComp,
+    XMFLOAT3& hitPoint
+)
+{
+    constexpr float CAMERA_SAFETY_OFFSET = TILE_SIZE * 0.25f;
+
+    // 距離が近すぎる場合は衝突チェックをスキップ
+    XMVECTOR startV = XMLoadFloat3(&start);
+    XMVECTOR endV = XMLoadFloat3(&end);
+
+    // プレイヤーと目標カメラ位置の距離ベクトルと高さ
+    XMVECTOR directionV = endV - startV;
+    float distance = XMVectorGetX(XMVector3Length(directionV));
+
+    if (distance < CAMERA_SAFETY_OFFSET)
+    {
+        hitPoint = end;
+        return false;
+    }
+
+    // 方向ベクトルを正規化
+    XMVECTOR dirNormalized = XMVector3Normalize(directionV);
+
+    // Y軸（高さ）は無視し、XZ平面のみで考える (Z軸はY軸として計算)
+    float dx = XMVectorGetX(dirNormalized);
+    float dy = XMVectorGetZ(dirNormalized);
+
+    // 距離パラメータ t (t=0がstart, t=distanceがend)
+    float t = 0.0f;
+
+    XMINT2 currentGrid = GetGridPosition(start);
+
+    // 衝突判定ループ (t が total distance を超えるまで)
+    while (t < distance)
+    {
+        // 1. 次にレイが交差するグリッド境界までの距離を計算 (t_x, t_y)
+        float t_x = std::numeric_limits<float>::max();
+        float t_y = std::numeric_limits<float>::max();
+
+        // グリッド線がワールド座標のどこにあるか
+        float nextGridBoundaryX = 0.0f;
+        float nextGridBoundaryY = 0.0f;
+
+        // X軸方向の次のグリッド境界線を計算
+        if (std::abs(dx) > 1e-6)
+        {
+            if (dx > 0) // 正方向 (右)
+            {
+                // 現在のセルの右側の境界線
+                nextGridBoundaryX = ((float)currentGrid.x + 1.0f) * TILE_SIZE - MAP_CENTER_OFFSET + X_ADJUSTMENT;
+            }
+            else // 負方向 (左)
+            {
+                // 現在のセルの左側の境界線
+                nextGridBoundaryX = (float)currentGrid.x * TILE_SIZE - MAP_CENTER_OFFSET + X_ADJUSTMENT;
+            }
+
+            // 始点から境界線までの距離 (t)
+            t_x = (nextGridBoundaryX - start.x) / dx;
+        }
+
+        // Z軸（Yグリッド）方向の次のグリッド境界線を計算
+        if (std::abs(dy) > 1e-6)
+        {
+            if (dy > 0) // 正方向 (奥)
+            {
+                // 現在のセルの奥側の境界線
+                nextGridBoundaryY = ((float)currentGrid.y + 1.0f) * TILE_SIZE - MAP_CENTER_OFFSET + Z_ADJUSTMENT;
+            }
+            else // 負方向 (手前)
+            {
+                // 現在のセルの手前側の境界線
+                nextGridBoundaryY = (float)currentGrid.y * TILE_SIZE - MAP_CENTER_OFFSET + Z_ADJUSTMENT;
+            }
+
+            // 始点から境界線までの距離 (t)
+            t_y = (nextGridBoundaryY - start.z) / dy;
+        }
+
+        // 2. t_x と t_y のうち小さい方を選択 (次の交差点)
+        float t_next = std::min(t_x, t_y);
+
+        // ループの終点チェック (レイが終点を通り過ぎた場合)
+        if (t_next >= distance)
+        {
+            // 終点まで壁がなかった
+            hitPoint = end;
+            return false;
+        }
+
+        // 3. 次のセルへ移動
+        if (t_x < t_y) // X方向へ移動
+        {
+            if (dx > 0) currentGrid.x++;
+            else currentGrid.x--;
+        }
+        else // Y(Z)方向へ移動 (t_x == t_y の場合は斜め移動)
+        {
+            if (dy > 0) currentGrid.y++;
+            else currentGrid.y--;
+        }
+
+        // パラメータ t を更新
+        t = t_next;
+
+        // 4. 新しいセルが壁かどうかチェック
+        if (currentGrid.x >= 0 && currentGrid.x < MAP_GRID_SIZE &&
+            currentGrid.y >= 0 && currentGrid.y < MAP_GRID_SIZE)
+        {
+            // 移動先のセルが壁 (Wall) かどうか
+            if (mapComp.grid[currentGrid.y][currentGrid.x].type == CellType::Wall)
+            {
+                // 衝突検出: 衝突した境界の手前 CAMERA_SAFETY_OFFSET 分の位置を計算
+                float t_adjust = t - CAMERA_SAFETY_OFFSET;
+
+                // カメラがプレイヤーに埋まらないように最小距離を確保
+                float t_min = TILE_SIZE * 0.5f; // プレイヤーのサイズを考慮した最小距離
+                t_adjust = std::max(t_adjust, t_min);
+
+                // 衝突点のワールド座標を計算
+                XMVECTOR collisionPointV = startV + dirNormalized * t_adjust;
+
+                XMStoreFloat3(&hitPoint, collisionPointV);
+
+                return true; // 衝突検出
+            }
+        }
+    }
+
+    hitPoint = end; // 衝突なし
+    return false;
 }
 
 /**
@@ -168,7 +328,7 @@ void CameraControlSystem::Update()
 
                 // YAW/PITCHを右スティックで更新
                 m_currentYaw += rightStick.x * CAMERA_SENSITIVITY_X;
-                m_currentPitch += rightStick.y * CAMERA_SENSITIVITY_Y;
+                m_currentPitch -= rightStick.y * CAMERA_SENSITIVITY_Y;
 
                 // PITCH角のクランプ（BUG-03修正）
                 m_currentPitch = std::max(PITCH_MIN, std::min(PITCH_MAX, m_currentPitch));
@@ -186,11 +346,44 @@ void CameraControlSystem::Update()
 
                 XMVECTOR focusPos = XMLoadFloat3(&focusTrans.position);
 
-                targetCamPosV = focusPos + rotatedOffset;
+                // --- 衝突回避前の目標カメラ位置 ---
+                XMVECTOR rawTargetCamPosV = focusPos + rotatedOffset;
                 targetLookAtV = focusPos;
 
+                // ----------------------------------------------------
+                // ★★★ BUG-02修正: ウォールクリッピング回避 ★★★
+                // ----------------------------------------------------
+                XMFLOAT3 rawTargetCamPosF;
+                XMStoreFloat3(&rawTargetCamPosF, rawTargetCamPosV);
+
+                XMFLOAT3 adjustedCamPosF;
+
+                // MapComponentを持つEntityを取得
+                ECS::EntityID mapEntity = ECS::FindFirstEntityWithComponent<MapComponent>(m_coordinator);
+                if (mapEntity != ECS::INVALID_ENTITY_ID) {
+                    const MapComponent& mapComp = m_coordinator->GetComponent<MapComponent>(mapEntity);
+
+                    // プレイヤー位置から目標カメラ位置へレイキャスト
+                    XMFLOAT3 focusPosF = focusTrans.position;
+
+                    if (RaycastToWall(focusPosF, rawTargetCamPosF, mapComp, adjustedCamPosF))
+                    {
+                        // 衝突した場合、調整された位置を新しい目標位置とする
+                        targetCamPosV = XMLoadFloat3(&adjustedCamPosF);
+                    }
+                    else
+                    {
+                        // 衝突しない場合、元の目標位置を使用
+                        targetCamPosV = rawTargetCamPosV;
+                    }
+                }
+                else {
+                    // MapComponentがない場合、元の目標位置を使用
+                    targetCamPosV = rawTargetCamPosV;
+                }
+
                 // 【補間係数】通常の追従速度に戻す
-                cameraComp.followSpeed = 0.1f; // 例として初期値の0.1fに戻す
+                cameraComp.followSpeed = 0.1f;
             }
 
             // =====================================

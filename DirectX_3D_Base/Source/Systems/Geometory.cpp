@@ -142,16 +142,18 @@ struct PS_IN {
 	float4 pos : SV_POSITION;
 	float2 uv : TEXCOORD0;
 };
+cbuffer BoxColor : register(b0) { // b0レジスタの定数バッファを宣言
+    float4 geometryColor;          // Geometory::m_colorに対応する変数
+};
 float4 main(PS_IN pin) : SV_TARGET0 {
-	float4 color = float4(1.0f, 1.0f , 1.0f, 0.5f);
-	float2 halfGrid = floor(abs(pin.uv) * 2.0f);
+	/*float2 halfGrid = floor(abs(pin.uv) * 2.0f);
 	float2 quatGrid = floor(abs(pin.uv) * 8.0f);
 
 	float half = fmod(halfGrid.x + halfGrid.y, 2.0f);
 	float quat = fmod(quatGrid.x + quatGrid.y, 2.0f);
 
-	color.rgb = ((half * 0.1f) * quat + 0.45f) + (1 - quat) * 0.05f;
-	return color;
+	geometryColor.rgb = ((half * 0.1f) * quat + 0.45f) + (1 - quat) * 0.05f;*/
+	return geometryColor;
 })EOT";
 #else
 	const char* PSCode = R"EOT(

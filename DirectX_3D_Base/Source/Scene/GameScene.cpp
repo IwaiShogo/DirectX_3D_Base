@@ -24,6 +24,7 @@
 #include "ECS/ECS.h"
 #include "ECS/ECSInitializer.h"
 #include "ECS/EntityFactory.h"
+#include "ECS/Systems/CollectionSystem.h"
 
 #include <DirectXMath.h>
 #include <iostream>
@@ -40,7 +41,7 @@ using namespace DirectX;
 void GameScene::Init()
 {
 	// --- 1. ECS Coordinatorの初期化 ---
-	m_coordinator = std::make_unique<ECS::Coordinator>();
+	m_coordinator = std::make_shared<ECS::Coordinator>();
 
 	// 静的ポインタに現在のCoordinatorを設定
 	s_coordinator = m_coordinator.get();
@@ -48,9 +49,17 @@ void GameScene::Init()
 	ECS::ECSInitializer::InitECS(m_coordinator);
 
 	// --- 4. デモ用Entityの作成 ---
-	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
+	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());	
 
-	std::cout << "GameScene::Init() - ECS Initialized and Demo Entities Created." << std::endl;
+	// --- 5. システム間の連携設定-- -
+		// CollectionSystem に、表示すべきUIのIDを渡す
+		auto collectionSystem = ECS::ECSInitializer::GetSystem<CollectionSystem>();
+	if (collectionSystem)
+	{
+		collectionSystem->SetItemGetUI_ID(ECS::EntityFactory::GetItemGetUI_ID());
+
+		collectionSystem->SetInventoryItemUI_ID(ECS::EntityFactory::GetInventoryItemUI_ID());
+	}
 }
 
 void GameScene::Uninit()
@@ -99,7 +108,7 @@ void GameScene::Update(float deltaTime)
 	// アイテム回収ロジック
 	if (auto system = ECS::ECSInitializer::GetSystem<CollectionSystem>())
 	{
-		system->Update();
+		system->Update(deltaTime);
 	}
 
 	// 3. 衝突検出と応答（位置の修正）
@@ -129,6 +138,7 @@ void GameScene::Update(float deltaTime)
 		system->Update();
 	}
 #endif // _DEBUG
+
 	// 6. 警備員AI
 	if (auto system = ECS::ECSInitializer::GetSystem<GuardAISystem>())
 	{
@@ -147,5 +157,11 @@ void GameScene::Draw()
 
 		// 2. ECS Entityの描画
 		system->DrawEntities();
+	}
+
+	// UISystem
+	if (auto system = ECS::ECSInitializer::GetSystem<UISystem>())
+	{
+		system->Draw();
 	}
 }

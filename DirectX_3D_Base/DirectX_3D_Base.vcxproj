@@ -118,6 +118,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)External\dll\*.dll" "$(OutDir)" /Y /I /D</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -134,8 +137,12 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy "$(ProjectDir)*Assets" "$(OutDir)" /Y /I /D</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Include\ECS\ResourceManager.cpp" />
     <ClCompile Include="Source\ECS\ECSInitializer.cpp" />
     <ClCompile Include="Source\ECS\EntityFactory.cpp" />
     <ClCompile Include="Source\ECS\Systems\AudioSystem.cpp" />
@@ -151,6 +158,7 @@
     <ClCompile Include="Source\ECS\Systems\RenderSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\StateSwitchSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\UISystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\UITimerSystem.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Scene\GameScene.cpp" />
     <ClCompile Include="Source\Scene\ResultScene.cpp" />
@@ -187,12 +195,14 @@
     <ClInclude Include="Include\ECS\Components\RigidBodyComponent.h" />
     <ClInclude Include="Include\ECS\Components\SoundComponent.h" />
     <ClInclude Include="Include\ECS\Components\TagComponent.h" />
+    <ClInclude Include="Include\ECS\Components\TemporaryUIComponent.h" />
     <ClInclude Include="Include\ECS\Components\TransformComponent.h" />
     <ClInclude Include="Include\ECS\Components\UIComponent.h" />
     <ClInclude Include="Include\ECS\Coordinator.h" />
     <ClInclude Include="Include\ECS\ECSInitializer.h" />
     <ClInclude Include="Include\ECS\EntityFactory.h" />
     <ClInclude Include="Include\ECS\EntityManager.h" />
+    <ClInclude Include="Include\ECS\ResourceManager.h" />
     <ClInclude Include="Include\ECS\SystemManager.h" />
     <ClInclude Include="Include\ECS\Systems\AudioSystem.h" />
     <ClInclude Include="Include\ECS\Systems\CameraControlSystem.h" />
@@ -207,6 +217,7 @@
     <ClInclude Include="Include\ECS\Systems\RenderSystem.h" />
     <ClInclude Include="Include\ECS\Systems\StateSwitchSystem.h" />
     <ClInclude Include="Include\ECS\Systems\UISystem.h" />
+    <ClInclude Include="Include\ECS\Systems\UITimerSystem.h" />
     <ClInclude Include="Include\ECS\Types.h" />
     <ClInclude Include="Include\ECS\AllComponents.h" />
     <ClInclude Include="Include\ECS\ECS.h" />

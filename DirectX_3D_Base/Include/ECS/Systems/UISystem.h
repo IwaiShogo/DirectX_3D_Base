@@ -26,18 +26,19 @@
 #include "Scene/GameScene.h" 
 #include "Systems/Sprite.h" // Sprite::Draw‚È‚Ç‚ğg—p
 
- /**
-  * @class UISystem
-  * @brief UIComponent‚ğ‚ÂEntity‚Ì2D•`‰æ‚ğ’S“–‚·‚éSystem
-  * * ˆ—‘ÎÛ: UIComponent ‚ğ‚Â‘S‚Ä‚ÌEntity
-  */
+/**
+ * @class UISystem
+ * @brief UIComponent‚ğ‚ÂEntity‚Ì2D•`‰æ‚ğ’S“–‚·‚éSystem
+ * 
+ * ˆ—‘ÎÛ: UIComponent ‚ğ‚Â‘S‚Ä‚ÌEntity
+ */
 class UISystem : public ECS::System
 {
 private:
 	ECS::Coordinator* m_coordinator = nullptr;
 
 public:
-	void Init()
+	void Init(ECS::Coordinator* coordinator)override
 	{
 		m_coordinator = GameScene::GetCoordinator();
 	}

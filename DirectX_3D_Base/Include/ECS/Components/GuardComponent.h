@@ -29,7 +29,19 @@ struct GuardComponent
     bool isActive;              // AIが有効かどうか
     float delayBeforeChase;     // 追跡開始までの遅延（秒）
     float elapsedTime;          // 経過時間（内部用）
-    float speed;                // ガードの移動速度 ← 追加！
+    float speed;                // ガードの移動速度
+
+    // 経路探索結果の次の目標セル（グリッド座標）
+    DirectX::XMFLOAT2 targetGridPos = { -1.0f, -1.0f }; // -1は無効な目標を示す
+
+    // 現在の目標座標に到達したか
+    bool isPathCalculated = false;
+
+    // 経路探索結果の次の目標セル（グリッド座標）
+    DirectX::XMINT2 nextTargetGridPos = { -1, -1 }; // -1は無効な目標を指す
+
+    // 次のパスが計算が必要がどうかのフラグ
+    bool needsPathRecalc = true;
 
     // コンストラクタで初期値を設定可能
     GuardComponent(
