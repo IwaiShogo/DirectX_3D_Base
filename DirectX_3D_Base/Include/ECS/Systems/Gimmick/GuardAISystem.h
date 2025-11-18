@@ -45,7 +45,8 @@ struct AStarNode
 
     // コンストラクタ
     AStarNode()
-        : gCost(std::numeric_limits<float>::max())
+        : gridPos(0, 0)
+        , gCost(std::numeric_limits<float>::max())
         , hCost(0.0f)
         , fCost(std::numeric_limits<float>::max())
         , parentPos({ -1, -1 })

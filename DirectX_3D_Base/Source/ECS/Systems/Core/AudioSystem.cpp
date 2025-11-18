@@ -1,273 +1,183 @@
-#include "ECS/ECS.h"
-#include <fstream>
+/*****************************************************************//**
+ * @file	AudioSystem.cpp
+ * @brief	AudioSystenクラスの実装
+ * 
+ * @details	
+ * SoundComponentのPlay/Stop要求を処理する
+ * 
+ * ------------------------------------------------------------
+ * @author	Iwai Shogo
+ * ------------------------------------------------------------
+ * 
+ * @date   2025/11/18	初回作成日
+ * 			作業内容：	- 追加：AudioSystemクラスの実装
+ * 
+ * @update	2025/xx/xx	最終更新日
+ * 			作業内容：	- XX：
+ * 
+ * @note	（省略可）
+ *********************************************************************/
 
-// ==========================================================
-// コンストラクタ / デストラクタ
-// ==========================================================
-AudioSystem::AudioSystem() {}
+ // ===== インクルード =====
+#include "ECS/Systems/Core/AudioSystem.h"
+#include <iostream>
 
-AudioSystem::~AudioSystem()
+// グローバルコーディネータの取得を前提とする
+
+/**
+ * [void - UpdatePersistentSound]
+ * @brief SoundComponent (永続サウンド) の更新ロジック。
+ */
+void AudioSystem::UpdatePersistentSound(ECS::EntityID entity)
 {
-    DBG("AudioSystem destructor\n");
-    for (auto s : sounds)
-    {
-        if (s->voice) s->voice->DestroyVoice();
-        for (auto v : s->seVoices) v->DestroyVoice();
-    }
-    if (masterVoice) masterVoice->DestroyVoice();
-    if (xAudio2) xAudio2->Release();
+	// 永続サウンド (BGM/Ambient) のロジック
+	auto& soundComp = m_coordinator->GetComponent<SoundComponent>(entity);
+
+	Asset::AssetInfo* info = Asset::AssetManager::GetInstance().LoadSound(soundComp.assetID);
+	if (!info)
+	{
+		soundComp.isPlaying = false;
+		return;
+	}
+
+	Audio::SoundEffect* soundEffect = static_cast<Audio::SoundEffect*>(info->pResource);
+
+	// 1. 停止要求の処理
+	if (soundComp.stopRequested)
+	{
+		soundEffect->Stop();
+		soundComp.isPlaying = false;
+		soundComp.stopRequested = false;
+
+		if (m_playingPersistentSounds.count(entity))
+		{
+			m_playingPersistentSounds.erase(entity);
+		}
+		return;
+	}
+
+	// 2. 再生要求の処理
+	if (soundComp.playRequested)
+	{
+		// 既に再生中なら二重再生を防ぐ
+		if (soundComp.isPlaying)
+		{
+			soundComp.playRequested = false;
+			return;
+		}
+
+		soundEffect->Play(soundComp.loopCount, soundComp.volume);
+		soundComp.isPlaying = true;
+		soundComp.playRequested = false;
+
+		// 継続的なサウンドとしてトラッキングに登録
+		m_playingPersistentSounds[entity] = soundEffect;
+	}
+
+	// 3. 再生中状態の維持/終了チェック (基本的に永続サウンドはループしているため、IsPlayingチェックは不要だが、SE利用のために残す)
+	if (soundComp.isPlaying && soundComp.type == SoundType::SE)
+	{
+		if (!soundEffect->IsPlaying())
+		{
+			soundComp.isPlaying = false;
+		}
+	}
 }
 
-// ==========================================================
-// XAudio2 の初期化
-// ==========================================================
-bool AudioSystem::Init()
+/**
+ * [void - UpdateOneShotSound]
+ * @brief OneShotSoundComponent (単発SE) の更新ロジック。
+ */
+void AudioSystem::UpdateOneShotSound(ECS::EntityID entity)
 {
-    DBG("AudioSystem::Init start\n");
-    HRESULT hr = XAudio2Create(&xAudio2, 0, XAUDIO2_DEFAULT_PROCESSOR);
-    if (FAILED(hr))
-    {
-        char buf[256]; sprintf_s(buf, "XAudio2Create FAILED hr=0x%08x\n", (unsigned)hr);
-        DBG(buf);
-        return false;
-    }
-    DBG("XAudio2Create OK\n");
+	// 単発SEのロジック
+	auto& oneShotComp = m_coordinator->GetComponent<OneShotSoundComponent>(entity);
 
-    hr = xAudio2->CreateMasteringVoice(&masterVoice);
-    if (FAILED(hr))
-    {
-        char buf[256]; sprintf_s(buf, "CreateMasteringVoice FAILED hr=0x%08x\n", (unsigned)hr);
-        DBG(buf);
-        return false;
-    }
-    DBG("CreateMasteringVoice OK\n");
-    return true;
+	// 1. AssetManagerからSoundEffectリソースを取得
+	Asset::AssetInfo* info = Asset::AssetManager::GetInstance().LoadSound(oneShotComp.assetID);
+	if (!info)
+	{
+		// ロード失敗時、このエンティティを破棄
+		m_entitiesToDestroy.insert(entity);
+		return;
+	}
+
+	Audio::SoundEffect* soundEffect = static_cast<Audio::SoundEffect*>(info->pResource);
+
+	// 2. まだ処理されていなければ再生要求 (Play and Auto-Destroy Pattern)
+	if (!oneShotComp.processed)
+	{
+		// ループなし (0) で再生
+		soundEffect->Play(0, oneShotComp.volume);
+		oneShotComp.processed = true;
+		// 再生をキューに投入した後は、そのエンティティを次のフレームで破棄するためにマークする
+		// ここでは即座に破棄すると他のシステムに影響が出る可能性があるため、
+		// 処理済みフラグを立てた後、次のフレームで破棄する。
+		// ※ XAudio2はバッファキュー投入後、すぐに再生を開始する。
+	}
+	else
+	{
+		// 既に処理されたエンティティは即座に破棄し、リソースの追跡から外す
+		// SEは基本的に即時再生・即時破棄で運用し、再生完了はチェックしない。
+		// 再生完了を待つ必要があるSE(例: アニメーション同期)は、専用のシステムやComponentで管理するか、
+		// SoundComponentを短時間だけ利用するなどの工夫が必要。
+		m_entitiesToDestroy.insert(entity);
+	}
 }
 
-// ==========================================================
-// サウンド登録処理
-// ==========================================================
-void AudioSystem::RegisterSound(SoundComponent* sound)
-{
-    if (!sound) return;
-    DBG("RegisterSound start\n");
-    sounds.push_back(sound);
 
-    WAVEFORMATEX wfx = {};
-    std::vector<BYTE> buffer;
-    if (!LoadWavFile(sound->filePath, wfx, buffer))
-    {
-        DBG("LoadWavFile FAILED\n");
-        return;
-    }
-
-    IXAudio2SourceVoice* voice = nullptr;
-    HRESULT hr = xAudio2->CreateSourceVoice(&voice, &wfx);
-    if (FAILED(hr) || !voice)
-    {
-        DBG("CreateSourceVoice FAILED\n");
-        return;
-    }
-
-    voice->SetVolume(sound->volume);
-
-    XAUDIO2_BUFFER xb = {};
-    xb.pAudioData = buffer.data();
-    xb.AudioBytes = static_cast<UINT32>(buffer.size());
-    xb.Flags = XAUDIO2_END_OF_STREAM;
-    if (sound->type == SoundType::BGM && sound->loop)
-        xb.LoopCount = XAUDIO2_LOOP_INFINITE;
-
-    voice->SubmitSourceBuffer(&xb);
-
-    if (sound->type == SoundType::BGM)
-    {
-        sound->voice = voice;
-    }
-    else
-    {
-        sound->seVoices.push_back(voice);
-        sound->wfx = wfx;
-        sound->rawData = std::move(buffer);
-    }
-
-    DBG("RegisterSound end\n");
-}
-
-// ==========================================================
-// 再生要求セット
-// ==========================================================
-void AudioSystem::RequestPlay(SoundComponent* sound)
-{
-    if (!sound) return;
-    sound->playRequested = true;
-}
-
-// ==========================================================
-// 更新処理（再生実行）
-// ==========================================================
+/**
+ * [void - Update]
+ * @brief	毎フレームの更新処理。SoundComponentの状態をチェックし、サウンドを制御する。
+ */
 void AudioSystem::Update()
 {
-    for (auto sound : sounds)
-    {
-        if (!sound->playRequested) continue;
+	//(void)dt;
 
-        if (sound->type == SoundType::BGM && sound->voice)
-        {
-            sound->voice->SetVolume(sound->volume);
-            DBG("Start BGM\n");
-            HRESULT hr = sound->voice->Start(0);
-            if (FAILED(hr))
-            {
-                char buf[128]; sprintf_s(buf, "BGM Start FAILED hr=0x%08x\n", (unsigned)hr);
-                DBG(buf);
-            }
-        }
-        else if (sound->type == SoundType::SE)
-        {
-            DBG("Play SE requested\n");
-            bool played = false;
-            for (auto v : sound->seVoices)
-            {
-                XAUDIO2_VOICE_STATE state;
-                v->GetState(&state);
-                if (state.BuffersQueued == 0)
-                {
-                    if (!sound->rawData.empty())
-                    {
-                        XAUDIO2_BUFFER xb = {};
-                        xb.pAudioData = sound->rawData.data();
-                        xb.AudioBytes = static_cast<UINT32>(sound->rawData.size());
-                        xb.Flags = XAUDIO2_END_OF_STREAM;
-                        HRESULT hr = v->SubmitSourceBuffer(&xb);
-                        if (SUCCEEDED(hr))
-                        {
-                            v->SetVolume(sound->volume);
-                            v->Start(0);
-                            played = true;
-                            break;
-                        }
-                    }
-                }
-            }
+	// 永続サウンドと単発SEのエンティティを両方処理できるように、mEntitiesのループ内で処理を振り分ける
+	for (auto const& entity : m_entities)
+	{
+		// 永続サウンドのコンポーネントを持っているか
+		if (m_coordinator->HasComponent<SoundComponent>(entity))
+		{
+			UpdatePersistentSound(entity);
+		}
 
-            if (!played)
-            {
-                DBG("No idle SE voice found, creating a new voice\n");
-                IXAudio2SourceVoice* newV = nullptr;
-                HRESULT hr = xAudio2->CreateSourceVoice(&newV, &sound->wfx);
-                if (SUCCEEDED(hr) && newV)
-                {
-                    XAUDIO2_BUFFER xb = {};
-                    xb.pAudioData = sound->rawData.data();
-                    xb.AudioBytes = static_cast<UINT32>(sound->rawData.size());
-                    xb.Flags = XAUDIO2_END_OF_STREAM;
-                    hr = newV->SubmitSourceBuffer(&xb);
-                    if (SUCCEEDED(hr))
-                    {
-                        newV->SetVolume(sound->volume);
-                        newV->Start(0);
-                        sound->seVoices.push_back(newV);
-                        played = true;
-                    }
-                    else
-                    {
-                        newV->DestroyVoice();
-                    }
-                }
-            }
-        }
+		// 単発SEのコンポーネントを持っているか
+		if (m_coordinator->HasComponent<OneShotSoundComponent>(entity))
+		{
+			UpdateOneShotSound(entity);
+		}
 
-        sound->playRequested = false;
-    }
+		// 注: OneShotSoundComponentを持つエンティティは、UpdateOneShotSound内で破棄される。
+	}
+
+	for (ECS::EntityID entity : m_entitiesToDestroy)
+	{
+		m_coordinator->DestroyEntity(entity);
+	}
+	m_entitiesToDestroy.clear();
 }
 
-// ==========================================================
-// 音量調整関数
-// ==========================================================
-void AudioSystem::SetMasterVolume(float volume)
+/**
+ * [void - OnEntityDestroyed]
+ * @brief	エンティティが破壊された際のクリーンアップ処理。
+ */
+void AudioSystem::OnEntityDestroyed(ECS::EntityID entity)
 {
-    if (masterVoice)
-        masterVoice->SetVolume(volume);
-}
+	// 継続的なサウンドのエンティティが破壊された場合、再生を停止する
+	if (m_playingPersistentSounds.count(entity))
+	{
+		Audio::SoundEffect* soundEffect = m_playingPersistentSounds.at(entity);
+		if (soundEffect)
+		{
+			soundEffect->Stop();
+		}
+		m_playingPersistentSounds.erase(entity);
+	}
 
-void AudioSystem::SetBGMVolume(SoundComponent* sound, float volume)
-{
-    if (sound && sound->voice)
-        sound->voice->SetVolume(volume);
-}
-
-void AudioSystem::SetSEVolume(SoundComponent* sound, float volume)
-{
-    if (!sound) return;
-    for (auto v : sound->seVoices)
-    {
-        if (v)
-            v->SetVolume(volume);
-    }
-}
-
-// ==========================================================
-// WAVファイル読み込み処理
-// ==========================================================
-bool AudioSystem::LoadWavFile(const std::string& filename, WAVEFORMATEX& outWfx, std::vector<BYTE>& outBuffer)
-{
-    std::ifstream file(filename, std::ios::binary);
-    if (!file)
-    {
-        char buf[256]; sprintf_s(buf, "LoadWavFile: cannot open %s\n", filename.c_str());
-        DBG(buf);
-        return false;
-    }
-
-    char id[4];
-    file.read(id, 4); // "RIFF"
-    if (strncmp(id, "RIFF", 4) != 0) { DBG("Not RIFF\n"); return false; }
-    file.seekg(4, std::ios::cur); // Skip chunk size
-    file.read(id, 4); // "WAVE"
-    if (strncmp(id, "WAVE", 4) != 0) { DBG("Not WAVE\n"); return false; }
-
-    bool foundFmt = false;
-    bool foundData = false;
-    WAVEFORMATEX wfx = {};
-    std::vector<BYTE> data;
-
-    while (!file.eof())
-    {
-        file.read(id, 4);
-        if (file.eof()) break;
-        uint32_t chunkSize = 0;
-        file.read(reinterpret_cast<char*>(&chunkSize), 4);
-
-        if (strncmp(id, "fmt ", 4) == 0)
-        {
-            std::vector<BYTE> fmtBuf(chunkSize);
-            file.read(reinterpret_cast<char*>(fmtBuf.data()), chunkSize);
-            if (chunkSize >= 16)
-                memcpy(&wfx, fmtBuf.data(), sizeof(WAVEFORMATEX));
-            foundFmt = true;
-        }
-        else if (strncmp(id, "data", 4) == 0)
-        {
-            data.resize(chunkSize);
-            file.read(reinterpret_cast<char*>(data.data()), chunkSize);
-            foundData = true;
-        }
-        else
-        {
-            file.seekg(chunkSize, std::ios::cur);
-        }
-
-        if (foundFmt && foundData) break;
-    }
-
-    if (!foundFmt || !foundData)
-    {
-        DBG("fmt または data チャンクが見つかりませんでした\n");
-        return false;
-    }
-
-    outWfx = wfx;
-    outBuffer.swap(data);
-    return true;
+	if (m_entitiesToDestroy.count(entity))
+	{
+		m_entitiesToDestroy.erase(entity);
+	}
 }

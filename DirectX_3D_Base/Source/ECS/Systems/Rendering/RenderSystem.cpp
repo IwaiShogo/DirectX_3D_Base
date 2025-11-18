@@ -65,14 +65,6 @@ void RenderSystem::DrawSetup()
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(-size, 0, 0), XMFLOAT4(0, 0, 0, 1));
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, -size), XMFLOAT4(0, 0, 0, 1));
 
-	auto mapGenSystem = ECS::ECSInitializer::GetSystem<MapGenerationSystem>();
-	if (mapGenSystem)
-	{
-		mapGenSystem->DrawDebugLines();
-	}
-
-	Geometory::DrawLines();
-
 	// ÉJÉÅÉâÇÃíl
 	//static bool camAutoSwitch = false;
 	//static bool camUpDownSwitch = true;
@@ -109,6 +101,13 @@ void RenderSystem::DrawSetup()
 	//Geometory::SetView(mat[0]);
 	//Geometory::SetProjection(mat[1]);
 #endif
+	auto mapGenSystem = ECS::ECSInitializer::GetSystem<MapGenerationSystem>();
+	if (mapGenSystem)
+	{
+		mapGenSystem->DrawDebugLines();
+	}
+
+	Geometory::DrawLines();
 }
 
 /**

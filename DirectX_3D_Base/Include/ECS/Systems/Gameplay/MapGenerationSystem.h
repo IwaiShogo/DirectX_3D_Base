@@ -20,7 +20,7 @@
 #ifndef ___MAP_GENERATION_SYSTEM_H___
 #define ___MAP_GENERATION_SYSTEM_H___
 
- // ===== インクルード =====
+// ===== インクルード =====
 #include "ECS/ECS.h"
 #include <random>
 #include <stack>

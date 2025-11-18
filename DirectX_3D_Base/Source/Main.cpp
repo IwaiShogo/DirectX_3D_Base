@@ -29,6 +29,8 @@
 #include "Systems/Geometory.h"
 #include "Systems/Sprite.h"
 #include "Systems/Input.h"
+#include "Systems/AssetManager.h"
+#include "Systems/XAudio2/SoundEngine.h"
 
 // Scene
 #include "Scene/SceneManager.h"
@@ -162,7 +164,7 @@ int Init(HINSTANCE hInstance, int nCmdShow)
 	if (!RegisterClassEx(&wcex))
 	{
 		MessageBox(NULL, "Failed to RegisterClassEx", "Error", MB_OK);
-		return 0;
+		return -1;
 	}
 
 	/* ウィンドウの作成 */
@@ -182,7 +184,7 @@ int Init(HINSTANCE hInstance, int nCmdShow)
 	if (hWnd == NULL)
 	{
 		MessageBox(NULL, "ウィンドウの作成に失敗", "Error", MB_OK);
-		return 0;
+		return -1;
 	}
 
 	/* ウィンドウの表示 */
@@ -192,7 +194,25 @@ int Init(HINSTANCE hInstance, int nCmdShow)
 	/* DirectXの初期化 */
 	if (FAILED(InitDirectX(hWnd, SCREEN_WIDTH, SCREEN_HEIGHT, false))) {
 		MessageBox(hWnd, "DirectXの初期化に失敗", "エラー", MB_OK);
-		return 0;
+		return -1;
+	}
+
+	/* SoundEngine */
+	if (!Audio::SoundEngine::GetInstance().Initialize())
+	{
+		return -1;
+	}
+
+	/* AssetManager */
+	Asset::AssetManager& assetManager = Asset::AssetManager::GetInstance();
+	// CSVファイルを読み込む
+	if (!assetManager.LoadModelList("Assets/CSV/ModelList.csv") ||
+		!assetManager.LoadTextureList("Assets/CSV/TextureList.csv") ||
+		!assetManager.LoadSoundList("Assets/CSV/SoundList.csv"))
+	{
+		// 読み込み失敗時はログを出力し、初期化を中断
+		MessageBox(hWnd, "アセットリストのロードに失敗しました。ファイルパスを確認してください。", "エラー", MB_OK);
+		return -1;
 	}
 
 	/* 多機能初期化 */
@@ -222,6 +242,10 @@ void Uninit()
 	Sprite::Uninit();
 	Geometory::Uninit();
 	UninitDirectX();
+
+	/* AssetManager */
+	Asset::AssetManager::GetInstance().UnloadAll();
+	Asset::AssetManager::ReleaseInstance();
 }
 
 void Update(float deltaTime)

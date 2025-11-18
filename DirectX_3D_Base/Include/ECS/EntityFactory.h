@@ -21,7 +21,7 @@
 #ifndef ___ENTITY_FACTORY_H___
 #define ___ENTITY_FACTORY_H___
 
- // ===== インクルード =====
+// ===== インクルード =====
 #include "Coordinator.h"
 #include "Types.h"
 #include <DirectXMath.h> // コンポーネントの初期値設定に必要
@@ -41,63 +41,27 @@ namespace ECS
 		 */
 		static void CreateAllDemoEntities(Coordinator* coordinator);
 
-		/**
-		 * @brief プレイヤーエンティティを生成する
-		 */
 		static EntityID CreatePlayer(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
 		static EntityID CreateGameController(Coordinator* coordinator);
 
 		static EntityID CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
-		/**
-		 * @brief ゲームワールドの静的な地面エンティティを生成する
-		 */
 		static EntityID CreateGround(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale);
+
+		static EntityID CreateGuard(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
 		static EntityID CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY);
 
 		static EntityID CreateGoal(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
-		static EntityID CreateDemoUI(Coordinator* coordinator);
-
-
-		static EntityID CreateLuffyUI(Coordinator* coordinator, const DirectX::XMFLOAT2& position);
-
-		/**
-		 * @brief アイテム取得UIエンティティを生成する (初期状態: 非表示)
-		 */
-		static EntityID CreateItemGetUI(Coordinator* coordinator);
+		static EntityID CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume = 1.0f);
 		
-		static EntityID CreateInventoryFrameUI(Coordinator* coordinator, const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size);
-
-		/**
-		 * @brief ★追加：インベントリの「枠」UIを生成する (常に表示)
-		 * @param coordinator
-		 * @param position - 画面右上の座標など
-		 * @return EntityID
-		 */
-		static EntityID CreateInventoryItemUI(Coordinator* coordinator, const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size); // ★関数ごと追加
-		/**
-		* @brief 追跡エンティティを生成する
-		*/
-		static EntityID CreateGuard(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
-
-		static EntityID GetItemGetUI_ID() { return s_itemGetUI_ID; }
-
-		/**
-		 * @brief ★追加：生成済みの「インベントリの中身UI」エンティティIDを取得する
-		 */
-		static EntityID GetInventoryItemUI_ID() { return s_inventoryItemUI_ID; }
+		static EntityID CreateUITestEntity(Coordinator* coordinator, const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size, const std::string& assetID);
 
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止
 		EntityFactory() = delete;
-
-		/// @brief 生成したアイテム取得UIのIDをキャッシュする
-		static EntityID s_itemGetUI_ID;
-
-		static EntityID s_inventoryItemUI_ID;
 	};
 }
 

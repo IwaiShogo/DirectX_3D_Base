@@ -25,6 +25,7 @@
 #include <memory>
 #include "Systems/Model.h"
 #include "Systems/DirectX/ShaderList.h"
+#include "Systems/AssetManager.h"
 
  /**
   * @struct ModelComponent
@@ -32,7 +33,8 @@
   */
 struct ModelComponent
 {
-	std::unique_ptr<Model> pModel = std::make_unique<Model>();
+	Model* pModel = nullptr;
+	std::string assetID;
 
 	/**
 	 * @brief コンストラクタ
@@ -40,21 +42,33 @@ struct ModelComponent
 	ModelComponent() = default;
 
 	// ユーザーが作成した引数付きコンストラクタ
-	ModelComponent(const char* path, float scale, Model::Flip flip)
+	ModelComponent(const std::string& id, float scale, Model::Flip flip)
 	{
-		if (!pModel->Load(path, scale, flip))
+		assetID = id;
+
+		Asset::AssetInfo* pAssetInfo = Asset::AssetManager::GetInstance().LoadModel(id, scale, flip);
+
+		if (pAssetInfo != nullptr && pAssetInfo->pResource != nullptr)
 		{
-			MessageBox(NULL, "モデルのロードに失敗", "Error", MB_OK);
+			// キャッシュされたリソースポインタを取得し、Model*にキャスト
+			pModel = static_cast<Model*>(pAssetInfo->pResource);
+
+			// 既存のシェーダー設定ロジックを再利用
+			VertexShader* pVS = ShaderList::GetVS(ShaderList::VS_WORLD);
+			PixelShader* pPS = ShaderList::GetPS(ShaderList::PS_LAMBERT);
+
+			ShaderList::SetLight(DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), DirectX::XMFLOAT3(-1.0f, -1.0f, -1.0f));
+
+			// モデルに設定
+			pModel->SetVertexShader(pVS);
+			pModel->SetPixelShader(pPS);
 		}
-
-		VertexShader* pVS = ShaderList::GetVS(ShaderList::VS_WORLD);
-		PixelShader* pPS = ShaderList::GetPS(ShaderList::PS_LAMBERT);
-
-		ShaderList::SetLight(DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), DirectX::XMFLOAT3(-1.0f, -1.0f, -1.0f));
-
-		// モデルに設定
-		pModel->SetVertexShader(pVS);
-		pModel->SetPixelShader(pPS);
+		else
+		{
+			MessageBox(NULL, "AssetManagerからのモデルのロード/取得に失敗", "Error", MB_OK);
+			pModel = nullptr;
+		}
+		// pModel->Load()はAssetManager::LoadModel()の中で呼び出されるため、削除
 	}
 
 	ModelComponent(const ModelComponent&) = delete;

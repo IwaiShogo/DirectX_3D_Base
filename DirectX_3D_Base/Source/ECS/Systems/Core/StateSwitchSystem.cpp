@@ -20,31 +20,8 @@
 // ===== インクルード =====
 #include "ECS/Systems/Core/StateSwitchSystem.h"
 
-//サウンド用
-AudioSystem gAudio;
-SoundComponent bgm("Resourse/bgm.wav", SoundType::BGM, true, 0.3f);//なにもはいってません
-SoundComponent se("Resourse/se1.wav", SoundType::SE, false, 0.1f);//0.1で10%
-bool gInitialized = false;
-
-
 void StateSwitchSystem::Update()
 {
-	
-	if (!gInitialized)
-	{
-		gAudio.Init();
-		gAudio.RegisterSound(&bgm);
-		gAudio.RegisterSound(&se);
-		gInitialized = true;
-		gAudio.RequestPlay(&bgm);
-
-	}
-	//spaceを押したときSEを再生
-	if (IsKeyTrigger(VK_SPACE))
-		gAudio.RequestPlay(&se);	//デバック用のサウンドシステムのためそのうち消す
-	gAudio.Update();
-
-
 	// SpaceキーまたはXbox Aボタンで切り替え
 	bool isSwitchTriggered = IsKeyTrigger(VK_SPACE) || IsButtonTriggered(BUTTON_A);
 
