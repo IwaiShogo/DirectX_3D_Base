@@ -21,7 +21,7 @@
 #ifndef ___ENTITY_FACTORY_H___
 #define ___ENTITY_FACTORY_H___
 
- // ===== インクルード =====
+// ===== インクルード =====
 #include "Coordinator.h"
 #include "Types.h"
 #include <DirectXMath.h> // コンポーネントの初期値設定に必要
@@ -59,6 +59,8 @@ namespace ECS
 
 		static EntityID CreateGoal(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
+		static EntityID CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume = 1.0f);
+		
 		static EntityID CreateDemoUI(Coordinator* coordinator);
 
 

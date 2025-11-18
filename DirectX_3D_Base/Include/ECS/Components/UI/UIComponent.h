@@ -25,17 +25,17 @@
 #include <DirectXMath.h>
 #include <cstdint>
 
- /**
-  * @struct UIComponent
-  * @brief 2D UI要素の描画情報
-  */
+/**
+ * @struct UIComponent
+ * @brief 2D UI要素の描画情報
+ */
 struct UIComponent
 {
 	uint32_t TextureID;					///< 描画するテクスチャのリソースID
 	DirectX::XMFLOAT2 Position;			///< 画面上の中心座標 (ピクセル単位、例: 0, 0が左上)
 	DirectX::XMFLOAT2 Size;				///< 描画サイズ (ピクセル単位)
 	DirectX::XMFLOAT4 Color;			///< 描画時の色/乗算カラー (RGBA)
-	float Depth;		///< 描画深度 (0.0f～1.0f)
+	float Depth;						///< 描画深度 (0.0f～1.0f)
 	bool IsVisible;
 
 	/**

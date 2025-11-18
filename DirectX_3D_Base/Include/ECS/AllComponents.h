@@ -38,6 +38,8 @@
 #include "ECS/Components/Core/TagComponent.h"
 // @component	サウンド
 #include "ECS/Components/Core/SoundComponent.h"
+// @conponent	単発サウンド
+#include "ECS/Components/Core/OneShotSoundComponent.h"
 
 // @folder		Rendering
 // @component	描画

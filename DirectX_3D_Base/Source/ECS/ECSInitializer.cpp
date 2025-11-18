@@ -136,16 +136,22 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Coordinator  */  coordinator,
         /* System       */  UISystem,
         /* Components   */  UIComponent
-
     );
 
-    // --- UITimerSystem-- -
-        // TemporaryUIComponent ‚Æ UIComponent ‚Ì—¼•û‚ğ‚ÂEntity‚ğŠÄ‹‘ÎÛ‚Æ‚·‚é
-        REGISTER_SYSTEM_AND_INIT(
-            /* Coordinator  */  coordinator,
-            /* System       */  UITimerSystem,
-            /* Components   */  UIComponent, TemporaryUIComponent
-        );
+    // --- UITimerSystem ---
+    // TemporaryUIComponent ‚Æ UIComponent ‚Ì—¼•û‚ğ‚ÂEntity‚ğŠÄ‹‘ÎÛ‚Æ‚·‚é
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  UITimerSystem,
+        /* Components   */  UIComponent, TemporaryUIComponent
+    );
+
+    // --- AudioSystem ---
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  AudioSystem,
+        /* Components   */  SoundComponent
+    );
 
     std::cout << "ECSInitializer: All Systems registered and initialized." << std::endl;
 }

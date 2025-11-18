@@ -33,6 +33,90 @@ using namespace DirectX;
 // // エンティティIDはCoordinatorが管理するため不要
 ECS::EntityID EntityFactory::s_itemGetUI_ID = ECS::INVALID_ENTITY_ID;
 ECS::EntityID EntityFactory::s_inventoryItemUI_ID = ECS::INVALID_ENTITY_ID;
+
+/**
+ * @brief 全てのデモ用エンティティを生成し、ECSに登録する (GameScene::Init()から呼ばれる)
+ * @param coordinator - エンティティの生成と登録を行うCoordinator
+ */
+void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
+{
+	// 1. Map Entity (Game Controller) の作成と初期化
+	// GameStateComponent, ItemTrackerComponent, DebugComponent はこのEntityに付与
+
+
+
+
+	ECS::EntityID mapEntityID = coordinator->CreateEntity(
+		TagComponent("game_controller"),
+		MapComponent(), // 50x50のエリアでBSP/MSTを生成
+		GameStateComponent(GameMode::SCOUTING_MODE),
+		ItemTrackerComponent(),
+		DebugComponent() // F1キーによるデバッグ機能のトグル用
+	);
+
+	// 2. MapGenerationSystemを呼び出し、BSP/MSTを生成
+	auto mapGenSystem = ECSInitializer::GetSystem<MapGenerationSystem>();
+	if (mapGenSystem)
+	{
+		// MapGenerationSystem::GenerateMapがBSP/MSTを実行し、MapComponent.layoutを更新する
+		mapGenSystem->InitMap();
+	}
+	else
+	{
+		// マップ生成システムが見つからない場合は処理を中断
+		// throw std::runtime_error("MapGenerationSystem is not registered!");
+		return;
+	}
+
+	CreateLuffyUI(coordinator, XMFLOAT2(0.8f, 0.5f));
+
+	//作成
+	bool luffyLoad = ResourceManager::LoadTexture(100, "Assets/Texture/1.png");
+
+	if (!luffyLoad)
+	{
+		MessageBox(nullptr, "るふぃのUIテクスチャのロードに失敗しました", "エラー", MB_OK);
+	}
+
+	//アイテム取得UI（非表示で生成）
+	//CreateItemGetUI(coordinator);
+	//アイテム取得UI用のテクスチャをロード（ID: 101 と仮定）
+	bool itemGetUILoad = ResourceManager::LoadTexture(101, "Assets/Texture/2.png"); // このパスは仮です
+	if (!itemGetUILoad)
+	{
+		MessageBox(nullptr, "アイテム取得UIのテクスチャ(ID:101)のロードに失敗しました", "エラー", MB_OK);
+	}
+
+	// 1. インベントリUIの位置を定義（仮に画面右上に設定）
+// ※ 座標系（ピクセル or 0-1）は既存のUIに合わせてください
+	DirectX::XMFLOAT2 inventoryPos = DirectX::XMFLOAT2(0.9f, 0.1f); // 仮の座標 (右上)
+	DirectX::XMFLOAT2 inventorySize = DirectX::XMFLOAT2(0.1f, 0.1f); // 仮のサイズ
+
+	// 2. インベントリの「枠」を生成 (常に表示)
+	CreateInventoryFrameUI(coordinator, inventoryPos, inventorySize);
+
+	// 3. インベントリの「中身」を生成 (最初は非表示)
+	CreateInventoryItemUI(coordinator, inventoryPos, inventorySize);
+
+	// 4. インベントリUI用のテクスチャをロード
+	// (ID: 102 を「枠」と仮定)
+	bool frameLoad = ResourceManager::LoadTexture(102, "Assets/Texture/3.png"); // 仮パス
+	if (!frameLoad)
+	{
+		MessageBox(nullptr, "インベントリ枠のテクスチャ(ID:102)のロードに失敗", "エラー", MB_OK);
+	}
+
+	// (ID: 103 を「中身」と仮定)
+	bool itemLoad = ResourceManager::LoadTexture(103, "Assets/Texture/2.png"); // 仮パス
+	if (!itemLoad)
+	{
+		MessageBox(nullptr, "インベントリ中身のテクスチャ(ID:103)のロードに失敗", "エラー", MB_OK);
+	}
+
+	std::cout << "GameScene::Init() - ECS Initialized and Demo Entities Created." << std::endl;
+
+}
+
 /**
  * @brief プレイヤーエンティティを生成する
  * @param coordinator - エンティティの生成と登録を行うCoordinator
@@ -321,88 +405,20 @@ EntityID ECS::EntityFactory::CreateGoal(Coordinator* coordinator, const DirectX:
 	return goal;
 }
 
-
-/**
- * @brief 全てのデモ用エンティティを生成し、ECSに登録する (GameScene::Init()から呼ばれる)
- * @param coordinator - エンティティの生成と登録を行うCoordinator
- */
-void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
+EntityID ECS::EntityFactory::CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume)
 {
-	// 1. Map Entity (Game Controller) の作成と初期化
-	// GameStateComponent, ItemTrackerComponent, DebugComponent はこのEntityに付与
-	
-
-
-
-	ECS::EntityID mapEntityID = coordinator->CreateEntity(
-		TagComponent("game_controller"),
-		MapComponent(), // 50x50のエリアでBSP/MSTを生成
-		GameStateComponent(GameMode::SCOUTING_MODE),
-		ItemTrackerComponent(),
-		DebugComponent() // F1キーによるデバッグ機能のトグル用
+	EntityID entity = coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"OneShot_" + assetID
+		),
+		SoundComponent(),
+		OneShotSoundComponent(
+			/* AssetID	*/	assetID,
+			/* Volume	*/	volume
+		)
 	);
 
-	// 2. MapGenerationSystemを呼び出し、BSP/MSTを生成
-	auto mapGenSystem = ECSInitializer::GetSystem<MapGenerationSystem>();
-	if (mapGenSystem)
-	{
-		// MapGenerationSystem::GenerateMapがBSP/MSTを実行し、MapComponent.layoutを更新する
-		mapGenSystem->InitMap();
-	}
-	else
-	{
-		// マップ生成システムが見つからない場合は処理を中断
-		// throw std::runtime_error("MapGenerationSystem is not registered!");
-		return;
-	}
-
-	CreateLuffyUI(coordinator, XMFLOAT2(0.8f, 0.5f));
-
-	//作成
-	bool luffyLoad = ResourceManager::LoadTexture(100, "Assets/Texture/1.png");
-
-	if (!luffyLoad)
-	{
-		MessageBox(nullptr, "るふぃのUIテクスチャのロードに失敗しました", "エラー", MB_OK);
-	}
-
-	    //アイテム取得UI（非表示で生成）
-		//CreateItemGetUI(coordinator);
-		//アイテム取得UI用のテクスチャをロード（ID: 101 と仮定）
-		bool itemGetUILoad = ResourceManager::LoadTexture(101, "Assets/Texture/2.png"); // このパスは仮です
-		if (!itemGetUILoad)
-		{
-			MessageBox(nullptr, "アイテム取得UIのテクスチャ(ID:101)のロードに失敗しました", "エラー", MB_OK);
-		}
-
-		// 1. インベントリUIの位置を定義（仮に画面右上に設定）
-	// ※ 座標系（ピクセル or 0-1）は既存のUIに合わせてください
-		DirectX::XMFLOAT2 inventoryPos = DirectX::XMFLOAT2(0.9f, 0.1f); // 仮の座標 (右上)
-		DirectX::XMFLOAT2 inventorySize = DirectX::XMFLOAT2(0.1f, 0.1f); // 仮のサイズ
-
-		// 2. インベントリの「枠」を生成 (常に表示)
-		CreateInventoryFrameUI(coordinator, inventoryPos, inventorySize);
-
-		// 3. インベントリの「中身」を生成 (最初は非表示)
-		CreateInventoryItemUI(coordinator, inventoryPos, inventorySize);
-
-		// 4. インベントリUI用のテクスチャをロード
-		// (ID: 102 を「枠」と仮定)
-		bool frameLoad = ResourceManager::LoadTexture(102, "Assets/Texture/3.png"); // 仮パス
-		if (!frameLoad)
-		{
-			MessageBox(nullptr, "インベントリ枠のテクスチャ(ID:102)のロードに失敗", "エラー", MB_OK);
-		}
-
-		// (ID: 103 を「中身」と仮定)
-		bool itemLoad = ResourceManager::LoadTexture(103, "Assets/Texture/2.png"); // 仮パス
-		if (!itemLoad)
-		{
-			MessageBox(nullptr, "インベントリ中身のテクスチャ(ID:103)のロードに失敗", "エラー", MB_OK);
-		}
-
-	std::cout << "GameScene::Init() - ECS Initialized and Demo Entities Created." << std::endl;
-	
+	return entity;
 }
 
 EntityID EntityFactory::CreateDemoUI(Coordinator* coordinator)

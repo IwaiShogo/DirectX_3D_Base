@@ -28,6 +28,7 @@
 #include "Utility/CSVLoader.h"
 #include "Systems/Model.h"
 #include "Systems/DirectX/Texture.h"
+#include "Systems/XAudio2/SoundEffect.h"
 
 namespace Asset
 {

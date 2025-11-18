@@ -51,9 +51,9 @@ void GameScene::Init()
 	// --- 4. デモ用Entityの作成 ---
 	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());	
 
-	// --- 5. システム間の連携設定-- -
-		// CollectionSystem に、表示すべきUIのIDを渡す
-		auto collectionSystem = ECS::ECSInitializer::GetSystem<CollectionSystem>();
+	// --- 5. システム間の連携設定 ---
+	// CollectionSystem に、表示すべきUIのIDを渡す
+	auto collectionSystem = ECS::ECSInitializer::GetSystem<CollectionSystem>();
 	if (collectionSystem)
 	{
 		collectionSystem->SetItemGetUI_ID(ECS::EntityFactory::GetItemGetUI_ID());
@@ -145,6 +145,16 @@ void GameScene::Update(float deltaTime)
 		system->Update();
 	}
 
+	// Audio
+	if (auto system = ECS::ECSInitializer::GetSystem<AudioSystem>())
+	{
+		system->Update();
+	}
+
+	if (IsKeyTrigger(VK_SPACE))
+	{
+		ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_TEST");
+	}
 }
 
 void GameScene::Draw()
