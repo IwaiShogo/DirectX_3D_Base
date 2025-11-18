@@ -214,7 +214,8 @@ namespace Asset
 		Texture* newTexture = new Texture();
 
 		// Texture::Load() のシグネチャを仮定 (Texture.hの構造に依存)
-		if (newTexture->Create(filePath.c_str()))
+		HRESULT hr = newTexture->Create(filePath.c_str());
+		if (!hr)
 		{
 			info.pResource = newTexture; // 成功したらポインタをキャッシュ (void*)
 			std::cout << "Texture '" << assetID << "' loaded successfully from " << filePath << std::endl;
@@ -287,23 +288,10 @@ namespace Asset
 					{
 						delete static_cast<Model*>(info.pResource);
 					}
-					// テクスチャは DirectX リソース (IDirect3DTexture9* など) のため Release()
-					// ※ ここでは Texture::ReleaseTexture(info.pResource) のようなラッパー関数があると仮定します
 					else if (info.type == AssetType::Texture)
 					{
-						// 例として、DirectXのCOMオブジェクトのRelease()を呼び出します。
-						// static_cast<IUnknown*>(info.pResource)->Release();
-						// 実際にはTexture::Unload()のようなラッパーが望ましいです。
-						// 一旦、Modelと同じくヒープ確保と仮定して delete で統一します。（要修正）
-						// ※ ここは、テクスチャやサウンドのリソース型の実際のライフサイクルに合わせてください。
-
-						// 今回は AssetManager の設計に集中するため、Model と同様に delete で一時的に統一します。
-						// 実際は Texture/Sound の実装に合わせて修正が必要です。
-						// delete static_cast<void*>(info.pResource); 
-
-						// 型安全のため、ここでは警告を出し、解放は一旦保留とします。
-						// TODO: Texture/Soundの解放ロジックを actual type に合わせて修正する
-						std::cerr << "Warning: Texture/Sound resource type (" << typeName << ") not explicitly handled. Possible leak." << std::endl;
+						delete static_cast<Texture*>(info.pResource);
+						releasedCount++;
 					}
 					else if (info.type == AssetType::Sound)
 					{

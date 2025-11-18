@@ -28,32 +28,6 @@ void CollectionSystem::Update(float deltaTime)
 {
 	if (!m_coordinator) return;
 
-	float deltaTimeInSeconds = deltaTime / 1000.0f;
-	float safeDeltaTime = deltaTimeInSeconds;
-	if (safeDeltaTime > 0.1f)
-	{
-		safeDeltaTime = 0.1f;
-	}
-	//タイマーの更新処理-- -
-		if (m_uiTimer > 0.0f)
-		{
-			m_uiTimer -= safeDeltaTime;
-
-			// タイマーが0以下になったらUIを非表示にする
-			if (m_uiTimer <= 0.0f)
-			{
-				if (m_itemGetUI_ID != ECS::INVALID_ENTITY_ID)
-				{
-					try
-					{
-						auto& uiComp = m_coordinator->GetComponent<UIComponent>(m_itemGetUI_ID);
-						uiComp.IsVisible = false;
-					}
-					catch (...) { /* UIが存在しない（エラー）*/ }
-				}
-			}
-		}
-
 	// 1. プレイヤーとトラッカー（GameController）のEntityIDを取得
 	ECS::EntityID playerID = ECS::FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
 	ECS::EntityID trackerID = ECS::FindFirstEntityWithComponent<ItemTrackerComponent>(m_coordinator);
@@ -95,40 +69,6 @@ void CollectionSystem::Update(float deltaTime)
 			entitiesToDestroy.push_back(itemEntity);	// リストに追加
 
 			// TODO: 回収エフェクト、サウンド再生などのロジックを追加
-
-			//3 - c.アイテム取得UIの表示
-				if (m_itemGetUI_ID != ECS::INVALID_ENTITY_ID)
-				{
-					try
-					{
-						// キャッシュしておいたIDを使い、UIComponentを取得して表示する
-						auto& uiComp = m_coordinator->GetComponent<UIComponent>(m_itemGetUI_ID);
-						uiComp.IsVisible = true;
-
-						//タイマーを3秒にセット（リセット）
-							m_uiTimer = UI_DISPLAY_DURATION;
-					}
-					catch (...)
-					{
-						// GetComponent<UIComponent> が失敗した場合（あり得ないはずだが）
-						// エラーログを出力するなど
-					}
-				}
-
-				// 3-d. インベントリUI（中身）の表示
-				if (m_inventoryItemUI_ID != ECS::INVALID_ENTITY_ID)
-				{
-					try
-					{
-						// キャッシュしておいたIDを使い、インベントリの中身を表示する
-						auto& uiComp = m_coordinator->GetComponent<UIComponent>(m_inventoryItemUI_ID);
-						uiComp.IsVisible = true;
-					}
-					catch (...)
-					{
-						// GetComponent<UIComponent> が失敗した場合
-					}
-				}
 		}
 	}
 

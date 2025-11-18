@@ -49,17 +49,7 @@ void GameScene::Init()
 	ECS::ECSInitializer::InitECS(m_coordinator);
 
 	// --- 4. デモ用Entityの作成 ---
-	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());	
-
-	// --- 5. システム間の連携設定 ---
-	// CollectionSystem に、表示すべきUIのIDを渡す
-	auto collectionSystem = ECS::ECSInitializer::GetSystem<CollectionSystem>();
-	if (collectionSystem)
-	{
-		collectionSystem->SetItemGetUI_ID(ECS::EntityFactory::GetItemGetUI_ID());
-
-		collectionSystem->SetInventoryItemUI_ID(ECS::EntityFactory::GetInventoryItemUI_ID());
-	}
+	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
 }
 
 void GameScene::Uninit()
@@ -169,9 +159,8 @@ void GameScene::Draw()
 		system->DrawEntities();
 	}
 
-	// UISystem
-	if (auto system = ECS::ECSInitializer::GetSystem<UISystem>())
+	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
 	{
-		system->Draw();
+		system->Render();
 	}
 }

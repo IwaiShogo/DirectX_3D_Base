@@ -56,10 +56,8 @@
 #include "ECS/Components/Physics/RigidBodyComponent.h"
 
 // @folder		UI
-// @component	UI要素
-#include "ECS/Components/UI/UIComponent.h"
-// @component	一時的なUI
-#include "ECS/Components/UI/TemporaryUIComponent.h"
+// @component	画像UI
+#include "ECS/Components/UI/UIImageComponent.h"
 
 // @folder		Gameplay
 // @component	プレイヤー入力制御

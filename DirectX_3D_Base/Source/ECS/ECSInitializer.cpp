@@ -131,19 +131,11 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  GuardComponent, TransformComponent, RigidBodyComponent
 	);
 
-    // --- UISystem ---
+    // --- UIRenderSystem ---
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
-        /* System       */  UISystem,
-        /* Components   */  UIComponent
-    );
-
-    // --- UITimerSystem ---
-    // TemporaryUIComponent ‚Æ UIComponent ‚Ì—¼•û‚ğ‚ÂEntity‚ğŠÄ‹‘ÎÛ‚Æ‚·‚é
-    REGISTER_SYSTEM_AND_INIT(
-        /* Coordinator  */  coordinator,
-        /* System       */  UITimerSystem,
-        /* Components   */  UIComponent, TemporaryUIComponent
+        /* System       */  UIRenderSystem,
+        /* Components   */  UIImageComponent
     );
 
     // --- AudioSystem ---

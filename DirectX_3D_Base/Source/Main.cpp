@@ -207,6 +207,7 @@ int Init(HINSTANCE hInstance, int nCmdShow)
 	Asset::AssetManager& assetManager = Asset::AssetManager::GetInstance();
 	// CSVファイルを読み込む
 	if (!assetManager.LoadModelList("Assets/CSV/ModelList.csv") ||
+		!assetManager.LoadTextureList("Assets/CSV/TextureList.csv") ||
 		!assetManager.LoadSoundList("Assets/CSV/SoundList.csv"))
 	{
 		// 読み込み失敗時はログを出力し、初期化を中断
