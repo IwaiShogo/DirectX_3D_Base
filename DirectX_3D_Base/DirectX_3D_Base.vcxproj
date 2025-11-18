@@ -138,13 +138,13 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)*Assets" "$(OutDir)" /Y /I /D</Command>
+      <Command>xcopy "$(ProjectDir)External\dll\*.dll" "$(OutDir)" /Y /I /D
+xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\ECS\ECSInitializer.cpp" />
     <ClCompile Include="Source\ECS\EntityFactory.cpp" />
-    <ClCompile Include="Source\ECS\ResourceManager.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\AudioSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\CameraControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\GameFlowSystem.cpp" />
@@ -157,8 +157,7 @@
     <ClCompile Include="Source\ECS\Systems\Physics\PhysicsSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Rendering\DebugDrawSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Rendering\RenderSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\UI\UISystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\UI\UITimerSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\UI\UIRenderSystem.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Scene\GameScene.cpp" />
     <ClCompile Include="Source\Scene\ResultScene.cpp" />
@@ -175,6 +174,8 @@
     <ClCompile Include="Source\Systems\Input.cpp" />
     <ClCompile Include="Source\Systems\Model.cpp" />
     <ClCompile Include="Source\Systems\Sprite.cpp" />
+    <ClCompile Include="Source\Systems\XAudio2\SoundEffect.cpp" />
+    <ClCompile Include="Source\Systems\XAudio2\SoundEngine.cpp" />
     <ClCompile Include="Source\Works\_geometory.cpp" />
     <ClCompile Include="Source\Works\_model.cpp" />
   </ItemGroup>
@@ -184,6 +185,7 @@
     <ClInclude Include="Include\ECS\ComponentRegistry.h" />
     <ClInclude Include="Include\ECS\Components\Core\CameraComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\GameStateComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\OneShotSoundComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\SoundComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\TagComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\TransformComponent.h" />
@@ -197,14 +199,12 @@
     <ClInclude Include="Include\ECS\Components\Rendering\DebugComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\ModelComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\RenderComponent.h" />
-    <ClInclude Include="Include\ECS\Components\UI\TemporaryUIComponent.h" />
-    <ClInclude Include="Include\ECS\Components\UI\UIComponent.h" />
+    <ClInclude Include="Include\ECS\Components\UI\UIImageComponent.h" />
     <ClInclude Include="Include\ECS\Coordinator.h" />
     <ClInclude Include="Include\ECS\ECS.h" />
     <ClInclude Include="Include\ECS\ECSInitializer.h" />
     <ClInclude Include="Include\ECS\EntityFactory.h" />
     <ClInclude Include="Include\ECS\EntityManager.h" />
-    <ClInclude Include="Include\ECS\ResourceManager.h" />
     <ClInclude Include="Include\ECS\SystemManager.h" />
     <ClInclude Include="Include\ECS\Systems\Core\AudioSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\CameraControlSystem.h" />
@@ -218,8 +218,7 @@
     <ClInclude Include="Include\ECS\Systems\Physics\PhysicsSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Rendering\DebugDrawSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Rendering\RenderSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\UI\UISystem.h" />
-    <ClInclude Include="Include\ECS\Systems\UI\UITimerSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\UI\UIRenderSystem.h" />
     <ClInclude Include="Include\ECS\AllComponents.h" />
     <ClInclude Include="Include\ECS\Types.h" />
     <ClInclude Include="Include\Main.h" />
@@ -240,10 +239,16 @@
     <ClInclude Include="Include\Systems\Input.h" />
     <ClInclude Include="Include\Systems\Model.h" />
     <ClInclude Include="Include\Systems\Sprite.h" />
+    <ClInclude Include="Include\Systems\XAudio2\SoundEffect.h" />
+    <ClInclude Include="Include\Systems\XAudio2\SoundEngine.h" />
     <ClInclude Include="Include\Utility\CSVLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
+    <None Include="Assets\CSV\ModelList.csv" />
+    <None Include="Assets\CSV\SoundList.csv" />
+    <None Include="Assets\CSV\TextureList.csv" />
+    <None Include="Tools\Assets.xlsm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -94,7 +94,7 @@ XMINT2 GuardAISystem::FindNextTargetGridPos(
     AStarNode startNode;
     startNode.gridPos = startGrid;
     startNode.gCost = 0.0f;
-    startNode.hCost = std::abs(targetGrid.x - startGrid.x) + std::abs(targetGrid.y - startGrid.y); // マンハッタン距離
+    startNode.hCost = (float)std::abs(targetGrid.x - startGrid.x) + std::abs(targetGrid.y - startGrid.y); // マンハッタン距離
     startNode.fCost = startNode.hCost;
     startNode.parentPos = { startGrid.x, startGrid.y }; // 親は自分自身とする
 
@@ -167,7 +167,7 @@ XMINT2 GuardAISystem::FindNextTargetGridPos(
 
                 neighborNode.gridPos = neighborPos;
                 neighborNode.gCost = newGCost;
-                neighborNode.hCost = std::abs(targetGrid.x - neighborPos.x) + std::abs(targetGrid.y - neighborPos.y);
+                neighborNode.hCost = (float)std::abs(targetGrid.x - neighborPos.x) + std::abs(targetGrid.y - neighborPos.y);
                 neighborNode.fCost = neighborNode.gCost + neighborNode.hCost;
                 neighborNode.parentPos = current.gridPos;
 

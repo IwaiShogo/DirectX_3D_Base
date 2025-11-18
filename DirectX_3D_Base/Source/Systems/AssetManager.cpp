@@ -189,80 +189,82 @@ namespace Asset
 		}
 	}
 
-	//AssetInfo* AssetManager::LoadTexture(const std::string& assetID)
-	//{
-	//	auto it = m_textureMap.find(assetID);
-	//	if (it == m_textureMap.end())
-	//	{
-	//		std::cerr << "Error: Texture Asset ID '" << assetID << "' not registered in CSV." << std::endl;
-	//		return nullptr;
-	//	}
+	AssetInfo* AssetManager::LoadTexture(const std::string& assetID)
+	{
+		auto it = m_textureMap.find(assetID);
+		if (it == m_textureMap.end())
+		{
+			std::cerr << "Error: Texture Asset ID '" << assetID << "' not registered in CSV." << std::endl;
+			return nullptr;
+		}
 
-	//	AssetInfo& info = it->second;
+		AssetInfo& info = it->second;
 
-	//	// 【キャッシュチェック】
-	//	if (info.pResource != nullptr)
-	//	{
-	//		return &info;
-	//	}
+		// 【キャッシュチェック】: 既にロード済みならそれを返す
+		if (info.pResource != nullptr)
+		{
+			return &info;
+		}
 
-	//	// 【新規ロード】
-	//	const std::string& filePath = info.filePath;
+		// 【新規ロード】: ファイルパスを取得し、Textureをロードする
+		const std::string& filePath = info.filePath;
 
-	//	// Texture::LoadTextureのシグネチャを仮定 (実際のものに合わせてください)
-	//	// DirectXプロジェクトでは、IDirect3DTexture9* などを返すことが多い
-	//	IDirect3DTexture9* texPtr = Texture::LoadTexture(filePath);
+		// Texture はヒープに確保し、pResource に格納する
+		// Textureクラスが、リソース解放をデストラクタで担うことを前提とします。
+		Texture* newTexture = new Texture();
 
-	//	if (texPtr != nullptr)
-	//	{
-	//		info.pResource = texPtr; // ポインタをキャッシュ
-	//		std::cout << "Texture '" << assetID << "' loaded successfully." << std::endl;
-	//		return &info;
-	//	}
-	//	else
-	//	{
-	//		std::cerr << "Error: Failed to load texture file: " << filePath << std::endl;
-	//		return nullptr;
-	//	}
-	//}
+		// Texture::Load() のシグネチャを仮定 (Texture.hの構造に依存)
+		HRESULT hr = newTexture->Create(filePath.c_str());
+		if (!hr)
+		{
+			info.pResource = newTexture; // 成功したらポインタをキャッシュ (void*)
+			std::cout << "Texture '" << assetID << "' loaded successfully from " << filePath << std::endl;
+			return &info;
+		}
+		else
+		{
+			std::cerr << "Error: Failed to load texture file: " << filePath << std::endl;
+			delete newTexture; // ロード失敗時はインスタンスを解放
+			return nullptr;
+		}
+	}
 
-	//AssetInfo* AssetManager::LoadSound(const std::string& assetID)
-	//{
-	//	auto it = m_soundMap.find(assetID);
-	//	if (it == m_soundMap.end())
-	//	{
-	//		std::cerr << "Error: Sound Asset ID '" << assetID << "' not registered in CSV." << std::endl;
-	//		return nullptr;
-	//	}
+	AssetInfo* AssetManager::LoadSound(const std::string& assetID)
+	{
+		auto it = m_soundMap.find(assetID);
+		if (it == m_soundMap.end())
+		{
+			std::cerr << "Error: Sound Asset ID '" << assetID << "' not registered in CSV." << std::endl;
+			return nullptr;
+		}
 
-	//	AssetInfo& info = it->second;
+		AssetInfo& info = it->second;
 
-	//	// 【キャッシュチェック】
-	//	if (info.pResource != nullptr)
-	//	{
-	//		return &info;
-	//	}
+		// 【キャッシュチェック】：既にロード済みならそれを返す
+		if (info.pResource != nullptr)
+		{
+			return &info;
+		}
 
-	//	// 【新規ロード】
-	//	const std::string& filePath = info.filePath;
+		// 【新規ロード】: ファイルパスを取得し、SoundEffectをロードする
+		const std::string& filePath = info.filePath;
 
-	//	// AudioSystem::LoadSoundのシグネチャを仮定
-	//	// ここでは便宜上、AudioSystem内にリソースを保持する構造があるものと仮定し、
-	//	// 成功した場合は何らかのポインタ（ここではvoid*）を返すものとします。
-	//	void* soundResourcePtr = AudioSystem::LoadSound(filePath);
+		// SoundEffect はヒープに確保し、pResource に格納する
+		Audio::SoundEffect* newSound = new Audio::SoundEffect();
 
-	//	if (soundResourcePtr != nullptr)
-	//	{
-	//		info.pResource = soundResourcePtr; // ポインタをキャッシュ
-	//		std::cout << "Sound '" << assetID << "' loaded successfully." << std::endl;
-	//		return &info;
-	//	}
-	//	else
-	//	{
-	//		std::cerr << "Error: Failed to load sound file: " << filePath << std::endl;
-	//		return nullptr;
-	//	}
-	//}
+ 		if (newSound->Load(filePath)) // SoundEffect::Load()を呼び出す
+		{
+			info.pResource = newSound; // 成功したらポインタをキャッシュ (void*)
+			std::cout << "Sound '" << assetID << "' loaded successfully from " << filePath << std::endl;
+			return &info;
+		}
+		else
+		{
+			std::cerr << "Error: Failed to load sound file: " << filePath << std::endl;
+			delete newSound; // ロード失敗時はインスタンスを解放
+			return nullptr;
+		}
+	}
 
 	// ----------------------------------------
 	// キャッシュ解放関数
@@ -286,28 +288,15 @@ namespace Asset
 					{
 						delete static_cast<Model*>(info.pResource);
 					}
-					// テクスチャは DirectX リソース (IDirect3DTexture9* など) のため Release()
-					// ※ ここでは Texture::ReleaseTexture(info.pResource) のようなラッパー関数があると仮定します
 					else if (info.type == AssetType::Texture)
 					{
-						// 例として、DirectXのCOMオブジェクトのRelease()を呼び出します。
-						// static_cast<IUnknown*>(info.pResource)->Release();
-						// 実際にはTexture::Unload()のようなラッパーが望ましいです。
-						// 一旦、Modelと同じくヒープ確保と仮定して delete で統一します。（要修正）
-						// ※ ここは、テクスチャやサウンドのリソース型の実際のライフサイクルに合わせてください。
-
-						// 今回は AssetManager の設計に集中するため、Model と同様に delete で一時的に統一します。
-						// 実際は Texture/Sound の実装に合わせて修正が必要です。
-						// delete static_cast<void*>(info.pResource); 
-
-						// 型安全のため、ここでは警告を出し、解放は一旦保留とします。
-						// TODO: Texture/Soundの解放ロジックを actual type に合わせて修正する
-						std::cerr << "Warning: Texture/Sound resource type (" << typeName << ") not explicitly handled. Possible leak." << std::endl;
+						delete static_cast<Texture*>(info.pResource);
+						releasedCount++;
 					}
 					else if (info.type == AssetType::Sound)
 					{
-						// 同上
-						std::cerr << "Warning: Texture/Sound resource type (" << typeName << ") not explicitly handled. Possible leak." << std::endl;
+						delete static_cast<Audio::SoundEffect*>(info.pResource);
+						releasedCount++; // 警告を出さず、解放できたものとしてカウント
 					}
 					else
 					{

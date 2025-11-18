@@ -1,35 +1,71 @@
-#pragma once
+/*****************************************************************//**
+ * @file	AudioSystem.h
+ * @brief	SoundComponentを処理し、サウンドの再生・停止を制御するECSシステム
+ * 
+ * @details	
+ * SoundComponentの要求に基づき、AssetManagerからSoundEffectを取得し、
+ * 再生、停止、ループ処理を管理する。
+ * 
+ * ------------------------------------------------------------
+ * @author	Iwai Shogo
+ * ------------------------------------------------------------
+ * 
+ * @date   2025/11/18	初回作成日
+ * 			作業内容：	- 追加：AudioSystemクラスの定義
+ * 
+ * @update	2025/xx/xx	最終更新日
+ * 			作業内容：	- XX：
+ * 
+ * @note	（省略可）
+ *********************************************************************/
 
+#ifndef ___AUDIO_SYSTEM_H___
+#define ___AUDIO_SYSTEM_H___
+
+// ===== インクルード =====
 #include "ECS/ECS.h"
-#include <vector>
-#include <xaudio2.h>
-#include <string>
-#include <memory>
-#include <windows.h>
+#include "Systems/AssetManager.h"
+#include "Systems/XAudio2/SoundEffect.h"
+#include <map>
+#include <iostream>
 
-// デバッグ用ヘルパー関数（OutputDebugStringAでログ出力）
-inline void DBG(const char* s) { OutputDebugStringA(s); }
-
+/**
+ * @class	AudioSystem
+ * @brief	サウンドの再生・停止を制御する
+ */
 class AudioSystem
+	: public ECS::System
 {
 private:
-    IXAudio2* xAudio2 = nullptr;
-    IXAudio2MasteringVoice* masterVoice = nullptr;
-    std::vector<SoundComponent*> sounds;
+	// BGMなど、継続定期に再生されるサウンドをトラッキングするためのマップ。
+	// Entityが持つSoundEffectのポインタを保持し、停止/クリーンアップに利用する。
+	std::map<ECS::EntityID, Audio::SoundEffect*> m_playingPersistentSounds;
+
+	// 破棄対象のエンティティIDを保持するセット
+	std::set<ECS::EntityID> m_entitiesToDestroy;
+
+	ECS::Coordinator* m_coordinator = nullptr;
 
 public:
-    AudioSystem();
-    ~AudioSystem();
+	void Init(ECS::Coordinator* coordinator) override
+	{
+		m_coordinator = coordinator;
+	}
 
-    bool Init();
-    void RegisterSound(SoundComponent* sound);
-    void RequestPlay(SoundComponent* sound);
-    void Update();
+	void Update();
 
-    void SetMasterVolume(float volume);
-    void SetBGMVolume(SoundComponent* sound, float volume);
-    void SetSEVolume(SoundComponent* sound, float volume);
+	void OnEntityDestroyed(ECS::EntityID entity);
 
 private:
-    bool LoadWavFile(const std::string& filename, WAVEFORMATEX& outWfx, std::vector<BYTE>& outBuffer);
+	/**
+	 * @brief	SoundComponent（永続サウンド）の更新ロジック
+	 */
+	void UpdatePersistentSound(ECS::EntityID entity);
+
+	/**
+	 * @brief	OneShotSoundComponent（単発SE）の更新ロジック
+	 */
+	void UpdateOneShotSound(ECS::EntityID entity);
 };
+
+#endif // !___AUDIO_SYSTEM_H___

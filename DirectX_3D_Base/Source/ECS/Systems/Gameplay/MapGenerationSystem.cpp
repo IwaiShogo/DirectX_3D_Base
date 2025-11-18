@@ -241,7 +241,7 @@ void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& tracke
                         if (std::uniform_int_distribution<int>(0, 3)(s_generator) < 3) // 0, 1, 2 ならTrue -> 75%
                         {
                             // ランダムに1つの壁を選択し、通路にする
-                            auto& targetWall = wallNeighbors[std::uniform_int_distribution<int>(0, wallNeighbors.size() - 1)(s_generator)];
+                            auto& targetWall = wallNeighbors[std::uniform_int_distribution<size_t>(0, wallNeighbors.size() - 1)(s_generator)];
                             mapComp.grid[targetWall.second][targetWall.first].type = CellType::Path;
                             mapComp.grid[targetWall.second][targetWall.first].visited = true; // 接続済みとしてマーク
                         }

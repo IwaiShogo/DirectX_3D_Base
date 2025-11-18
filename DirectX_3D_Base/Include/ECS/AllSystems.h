@@ -46,10 +46,8 @@
 #include "ECS/Systems/Physics/PhysicsSystem.h"
 
 // @folder	UI
-// @system	UI
-#include "ECS/Systems/UI/UISystem.h"
-// @system	UI‚ÌŠÔŠÇ—
-#include "ECS/Systems/UI/UITimerSystem.h"
+// @system	‰æ‘œUI
+#include "ECS/Systems/UI/UIRenderSystem.h"
 
 // @folder	Gameplay
 // @system	ƒvƒŒƒCƒ„[“ü—Í§Œä
