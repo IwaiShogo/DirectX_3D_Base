@@ -287,6 +287,7 @@ namespace Asset
 					if (info.type == AssetType::Model)
 					{
 						delete static_cast<Model*>(info.pResource);
+						releasedCount++;
 					}
 					else if (info.type == AssetType::Texture)
 					{
@@ -296,16 +297,16 @@ namespace Asset
 					else if (info.type == AssetType::Sound)
 					{
 						delete static_cast<Audio::SoundEffect*>(info.pResource);
-						releasedCount++; // 警告を出さず、解放できたものとしてカウント
+						releasedCount++;
 					}
 					else
 					{
-						// Modelの場合:
-						delete static_cast<Model*>(info.pResource);
+						// ★危険なelseブロックを削除し、Unknownの場合はログを出力するだけに留める★
+						std::cerr << "Warning: Skipping unload for asset '" << info.assetID
+							<< "' due to unknown AssetType." << std::endl;
 					}
 
 					info.pResource = nullptr;
-					releasedCount++;
 				}
 			}
 			std::cout << "AssetManager: Unloaded " << releasedCount << " " << typeName << " resources." << std::endl;
