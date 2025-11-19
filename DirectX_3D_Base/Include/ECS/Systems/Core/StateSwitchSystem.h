@@ -31,7 +31,7 @@ private:
 
 public:
 	void Init(ECS::Coordinator* coordinator) override { m_coordinator = coordinator; }
-	void Update(); // 入力に応じてモードを切り替える
+	void Update(float deltaTime) override; // 入力に応じてモードを切り替える
 };
 
 #endif // !___SWITCH_STATE_SYSTEM_H___

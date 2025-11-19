@@ -351,7 +351,7 @@ EntityID ECS::EntityFactory::CreateOneShotSoundEntity(Coordinator* coordinator, 
 {
 	EntityID entity = coordinator->CreateEntity(
 		TagComponent(
-			/* Tag	*/	"OneShot_" + assetID
+			/* Tag	*/	"SE"
 		),
 		SoundComponent(),
 		OneShotSoundComponent(

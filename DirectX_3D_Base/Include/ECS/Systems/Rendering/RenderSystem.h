@@ -51,6 +51,8 @@ public:
 		m_coordinator = coordinator;
 	}
 
+	void Update(float deltaTime) override {}
+
 	/// @brief 描画に必要なカメラ設定、デバッグ描画などを行う
 	void DrawSetup();
 

@@ -130,9 +130,9 @@ void AudioSystem::UpdateOneShotSound(ECS::EntityID entity)
  * [void - Update]
  * @brief	毎フレームの更新処理。SoundComponentの状態をチェックし、サウンドを制御する。
  */
-void AudioSystem::Update()
+void AudioSystem::Update(float deltaTime)
 {
-	//(void)dt;
+	(void)deltaTime;
 
 	// 永続サウンドと単発SEのエンティティを両方処理できるように、mEntitiesのループ内で処理を振り分ける
 	for (auto const& entity : m_entities)

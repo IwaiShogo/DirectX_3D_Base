@@ -20,7 +20,7 @@
 // ===== インクルード =====
 #include "ECS/Systems/Core/StateSwitchSystem.h"
 
-void StateSwitchSystem::Update()
+void StateSwitchSystem::Update(float deltaTime)
 {
 	// SpaceキーまたはXbox Aボタンで切り替え
 	bool isSwitchTriggered = IsKeyTrigger(VK_SPACE) || IsButtonTriggered(BUTTON_A);

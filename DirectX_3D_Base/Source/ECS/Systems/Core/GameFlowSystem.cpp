@@ -21,7 +21,7 @@
 #include "ECS/Systems/Core/GameFlowSystem.h"
 #include "Scene/SceneManager.h"
 
-void GameFlowSystem::Update()
+void GameFlowSystem::Update(float deltaTime)
 {
     // GameController EntityÇåüçı
     ECS::EntityID controllerID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);

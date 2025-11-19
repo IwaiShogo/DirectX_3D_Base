@@ -36,6 +36,8 @@ public:
 		m_coordinator = coordinator;
 	}
 
+	void Update(float deltaTime) override {}
+
 	/**
 	 * [void - Render]
 	 * @brief	•`‰æˆ—

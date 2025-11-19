@@ -61,7 +61,7 @@ public:
 	}
 
 	/// @brief Õ“ËŒŸo‚Æ‰“š‚ğs‚¤
-	void Update();
+	void Update(float deltaTime) override;
 };
 
 #endif // !___COLLISION_SYSTEM_H___

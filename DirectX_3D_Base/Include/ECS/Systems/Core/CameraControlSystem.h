@@ -62,7 +62,7 @@ public:
 	}
 
 	/// @brief カメラの位置を計算し、RenderSystemのカメラ設定関数を呼び出す
-	void Update();
+	void Update(float deltaTime) override;
 };
 
 #endif // !___CAMERA_CONTROL_SYSTEM_H___

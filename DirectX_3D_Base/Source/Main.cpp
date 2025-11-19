@@ -62,6 +62,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
  */
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+	//_CrtSetBreakAlloc();	// 割り当て番号を設定
+
 	/* メモリリークチェック */
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
@@ -123,7 +125,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				// ***************************** //
 				//          ▼ 更新処理          //
 				// ***************************** //
-				Update(1000.0f / fFPS);
+				Update(1.0f / fFPS);
 
 				// ***************************** //
 				//          ▼ 描画処理          //
@@ -246,6 +248,9 @@ void Uninit()
 	/* AssetManager */
 	Asset::AssetManager::GetInstance().UnloadAll();
 	Asset::AssetManager::ReleaseInstance();
+
+	/* SoundEngine */
+	Audio::SoundEngine::ReleaseInstance();
 }
 
 void Update(float deltaTime)

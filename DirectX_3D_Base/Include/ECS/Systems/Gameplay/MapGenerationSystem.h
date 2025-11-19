@@ -56,7 +56,7 @@ public:
 
 	void InitMap();
 
-	void Update() {}
+	void Update(float deltaTime) override {}
 
 	void DrawDebugLines();
 	DirectX::XMFLOAT3 GetWorldPosition(int x, int y);

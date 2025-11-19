@@ -274,6 +274,11 @@ namespace ECS
 
 			return system;
 		}
+
+		void UpdateSystems(float deltaTime)
+		{
+			m_systemManager->UpdateSystems(deltaTime);
+		}
 	};
 
 	template<typename T>

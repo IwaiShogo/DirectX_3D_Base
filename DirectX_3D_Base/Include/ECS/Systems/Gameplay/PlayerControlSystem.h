@@ -42,7 +42,7 @@ public:
 	}
 
 	/// @brief “ü—Í‚É‰‚¶‚ÄRigidBody‚Ì‘¬“x‚ğXV‚·‚é
-	void Update();
+	void Update(float deltaTime) override;
 };
 
 #endif // !___PLAYER_CONTROL_SYSTEM_H___

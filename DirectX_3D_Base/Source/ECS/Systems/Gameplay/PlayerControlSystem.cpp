@@ -29,7 +29,7 @@ using namespace DirectX;
 /**
  * @brief 入力に応じてRigidBodyの速度を更新する
  */
-void PlayerControlSystem::Update()
+void PlayerControlSystem::Update(float deltaTime)
 {
 	// CameraControlSystemはECSInitializerによって登録されている前提
 	auto cameraSystem = ECS::ECSInitializer::GetSystem<CameraControlSystem>();

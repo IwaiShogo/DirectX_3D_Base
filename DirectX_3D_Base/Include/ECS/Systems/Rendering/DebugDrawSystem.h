@@ -36,7 +36,7 @@ private:
 
 public:
 	void Init(ECS::Coordinator* coordinator) override { m_coordinator = coordinator; }
-	void Update();
+	void Update(float deltaTime) override;
 };
 
 #endif // !___DEBUG_DRAW_SYSTEM_H___

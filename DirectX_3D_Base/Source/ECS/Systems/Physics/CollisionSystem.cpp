@@ -213,7 +213,7 @@ void CollisionSystem::ResolveCollision(ECS::EntityID entityA, ECS::EntityID enti
 /**
  * @brief Õ“ËŒŸo‚Æ‰“š‚ğs‚¤
  */
-void CollisionSystem::Update()
+void CollisionSystem::Update(float deltaTime)
 {
 	// --- 0. ‰Šú‰»‚ÆƒQ[ƒ€ó‘Ô‚Ìæ“¾ ---
 	ECS::EntityID controllerID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);

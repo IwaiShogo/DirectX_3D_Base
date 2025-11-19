@@ -287,6 +287,7 @@ namespace Asset
 					if (info.type == AssetType::Model)
 					{
 						delete static_cast<Model*>(info.pResource);
+						releasedCount++;
 					}
 					else if (info.type == AssetType::Texture)
 					{
@@ -296,16 +297,10 @@ namespace Asset
 					else if (info.type == AssetType::Sound)
 					{
 						delete static_cast<Audio::SoundEffect*>(info.pResource);
-						releasedCount++; // 警告を出さず、解放できたものとしてカウント
-					}
-					else
-					{
-						// Modelの場合:
-						delete static_cast<Model*>(info.pResource);
+						releasedCount++;
 					}
 
 					info.pResource = nullptr;
-					releasedCount++;
 				}
 			}
 			std::cout << "AssetManager: Unloaded " << releasedCount << " " << typeName << " resources." << std::endl;

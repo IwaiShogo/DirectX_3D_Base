@@ -35,7 +35,7 @@ public:
 		m_coordinator = coordinator;
 	}
 
-	void Update(float deltaTime);
+	void Update(float deltaTime) override;
 };
 
 #endif // !___COLLECTION_SYSTEM_H___

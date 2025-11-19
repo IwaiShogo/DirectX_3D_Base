@@ -79,7 +79,7 @@ public:
         m_coordinator = coordinator;
     }
 
-    void Update();
+    void Update(float deltaTime) override;
 };
 
 #endif // !___GUARD_AI_SYSTEM_H___
