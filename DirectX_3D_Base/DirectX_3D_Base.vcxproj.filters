@@ -94,14 +94,17 @@
     <ClCompile Include="Source\ECS\Systems\Rendering\RenderSystem.cpp">
       <Filter>Source Files\ECS\Systems\Rendering</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\UI\UISystem.cpp">
-      <Filter>Source Files\ECS\Systems\UI</Filter>
+    <ClCompile Include="Source\Systems\AssetManager.cpp">
+      <Filter>Source Files\Systems</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\UI\UITimerSystem.cpp">
-      <Filter>Source Files\ECS\Systems\UI</Filter>
+    <ClCompile Include="Source\Systems\XAudio2\SoundEffect.cpp">
+      <Filter>Source Files\Systems\XAudio2</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ECS\ResourceManager.cpp">
-      <Filter>Source Files\ECS</Filter>
+    <ClCompile Include="Source\Systems\XAudio2\SoundEngine.cpp">
+      <Filter>Source Files\Systems\XAudio2</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\UI\UIRenderSystem.cpp">
+      <Filter>Source Files\ECS\Systems\UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -174,12 +177,6 @@
     <ClInclude Include="Include\ECS\Components\Core\CameraComponent.h">
       <Filter>Header Files\ECS\Components\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Include\ECS\Components\UI\UIComponent.h">
-      <Filter>Header Files\ECS\Components\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\UI\TemporaryUIComponent.h">
-      <Filter>Header Files\ECS\Components\UI</Filter>
-    </ClInclude>
     <ClInclude Include="Include\ECS\Components\Rendering\RenderComponent.h">
       <Filter>Header Files\ECS\Components\Rendering</Filter>
     </ClInclude>
@@ -197,12 +194,6 @@
     </ClInclude>
     <ClInclude Include="Include\ECS\Components\Core\GameStateComponent.h">
       <Filter>Header Files\ECS\Components\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\UI\UISystem.h">
-      <Filter>Header Files\ECS\Systems\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\UI\UITimerSystem.h">
-      <Filter>Header Files\ECS\Systems\UI</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Components\Gameplay\PlayerControlComponent.h">
       <Filter>Header Files\ECS\Components\Gameplay</Filter>
@@ -276,14 +267,32 @@
     <ClInclude Include="Include\ECS\EntityManager.h">
       <Filter>Header Files\ECS</Filter>
     </ClInclude>
-    <ClInclude Include="Include\ECS\ResourceManager.h">
-      <Filter>Header Files\ECS</Filter>
-    </ClInclude>
     <ClInclude Include="Include\ECS\SystemManager.h">
       <Filter>Header Files\ECS</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Types.h">
       <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\XAudio2\SoundEngine.h">
+      <Filter>Header Files\Systems\XAudio2</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\XAudio2\SoundEffect.h">
+      <Filter>Header Files\Systems\XAudio2</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\AssetManager.h">
+      <Filter>Header Files\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Utility\CSVLoader.h">
+      <Filter>Header Files\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Core\OneShotSoundComponent.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\UI\UIImageComponent.h">
+      <Filter>Header Files\ECS\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\UI\UIRenderSystem.h">
+      <Filter>Header Files\ECS\Systems\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -386,10 +395,40 @@
     <Filter Include="Header Files\ECS\Systems\UI">
       <UniqueIdentifier>{e516dde2-4329-4a10-a77f-2b5e186944e8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Assets">
+      <UniqueIdentifier>{0c658128-c2ff-41c6-85ce-e6d71020f9bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tools">
+      <UniqueIdentifier>{c0958990-18ee-426a-8cfe-dabd53e3a12d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\CSV">
+      <UniqueIdentifier>{9e1f6fc9-2613-4015-b024-129c6b59949b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Systems\XAudio2">
+      <UniqueIdentifier>{87a2d371-66df-49d9-91c4-04440adce4fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Utility">
+      <UniqueIdentifier>{ff9b10f1-b9ef-489a-af0f-47ddf4cd7970}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Systems\XAudio2">
+      <UniqueIdentifier>{0f598e98-9f42-4d5f-a0bb-b38345de1902}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md">
       <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Tools\Assets.xlsm">
+      <Filter>Tools</Filter>
+    </None>
+    <None Include="Assets\CSV\ModelList.csv">
+      <Filter>Assets\CSV</Filter>
+    </None>
+    <None Include="Assets\CSV\TextureList.csv">
+      <Filter>Assets\CSV</Filter>
+    </None>
+    <None Include="Assets\CSV\SoundList.csv">
+      <Filter>Assets\CSV</Filter>
     </None>
   </ItemGroup>
 </Project>
