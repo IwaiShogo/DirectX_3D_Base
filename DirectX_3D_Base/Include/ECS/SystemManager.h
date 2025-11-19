@@ -51,6 +51,8 @@ namespace ECS
 		 * @param coordinator - Coordinatorインスタンスへの生ポインタ
 		 */
 		virtual void Init(Coordinator* coordinator) {}
+
+		virtual void Update(float deltaTime) {}
 	};
 
 	/**
@@ -65,6 +67,9 @@ namespace ECS
 
 		// Systemの型情報と、そのSystemが要求するComponent Signatureのマッピング
 		std::unordered_map<std::type_index, Signature> m_signatures;
+
+		// 実行順序を保証するための、登録済みSystemのリスト
+		std::vector<std::shared_ptr<System>> m_systemOrder;
 
 	public:
 		SystemManager() = default;
@@ -85,6 +90,10 @@ namespace ECS
 			// Systemのインスタンスを生成し、マップに格納
 			std::shared_ptr<T> system = std::make_shared<T>();
 			m_systems[type] = system;
+
+			// 実行順序リストにも格納
+			m_systemOrder.push_back(system);
+
 			return system;
 		}
 
@@ -147,6 +156,15 @@ namespace ECS
 			for (auto const& pair : m_systems)
 			{
 				pair.second->m_entities.erase(entityID);
+			}
+		}
+
+		/// @brief	登録されている全てのSystemを、登録された順序で更新する。
+		void UpdateSystems(float deltaTime)
+		{
+			for (auto const& system : m_systemOrder)
+			{
+				system->Update(deltaTime);
 			}
 		}
 	};

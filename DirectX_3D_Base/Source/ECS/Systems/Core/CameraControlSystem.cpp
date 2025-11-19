@@ -217,8 +217,10 @@ static bool RaycastToWall(
 /**
  * @brief カメラの位置を計算し、ビュー・プロジェクション行列を設定する
  */
-void CameraControlSystem::Update()
+void CameraControlSystem::Update(float deltaTime)
 {
+    (void)deltaTime;
+
     // 1. ゲームステートとデバッグ状態の取得
     ECS::EntityID controllerID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
     GameMode currentMode = GameMode::ACTION_MODE;

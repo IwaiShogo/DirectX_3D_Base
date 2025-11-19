@@ -73,73 +73,8 @@ void GameScene::Update(float deltaTime)
 		SceneManager::ChangeScene<GameScene>();
 	}
 
-	// --- 2. ECS Systemの更新
-	
-	// 0. 状態切り替え
-	if (auto system = ECS::ECSInitializer::GetSystem<StateSwitchSystem>())
-	{
-		system->Update();
-	}
-
-	// 1. 入力
-	// if (m_playerControlSystem) // 削除
-	if (auto system = ECS::ECSInitializer::GetSystem<PlayerControlSystem>())
-	{
-		system->Update();
-	}
-
-	// 2. 物理計算（位置の更新）
-	// if (m_physicsSystem) // 削除
-	if (auto system = ECS::ECSInitializer::GetSystem<PhysicsSystem>())
-	{
-		system->Update();
-	}
-
-	// アイテム回収ロジック
-	if (auto system = ECS::ECSInitializer::GetSystem<CollectionSystem>())
-	{
-		system->Update(deltaTime);
-	}
-
-	// 3. 衝突検出と応答（位置の修正）
-	// if (m_collisionSystem) // 削除
-	if (auto system = ECS::ECSInitializer::GetSystem<CollisionSystem>())
-	{
-		system->Update();
-	}
-
-	// 4. ゲームステート
-	if (auto system = ECS::ECSInitializer::GetSystem<GameFlowSystem>())
-	{
-		system->Update();
-	}
-
-	// 5. カメラ制御（ビュー・プロジェクション行列の更新）
-	// if (m_cameraControlSystem) // 削除
-	if (auto system = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
-	{
-		system->Update();
-	}
-
-#ifdef _DEBUG
-	// デバッグ描画システム
-	if (auto system = ECS::ECSInitializer::GetSystem<DebugDrawSystem>())
-	{
-		system->Update();
-	}
-#endif // _DEBUG
-
-	// 6. 警備員AI
-	if (auto system = ECS::ECSInitializer::GetSystem<GuardAISystem>())
-	{
-		system->Update();
-	}
-
-	// Audio
-	if (auto system = ECS::ECSInitializer::GetSystem<AudioSystem>())
-	{
-		system->Update();
-	}
+	// ECSの更新
+	m_coordinator->UpdateSystems(deltaTime);
 
 	if (IsKeyTrigger(VK_SPACE))
 	{
@@ -149,16 +84,15 @@ void GameScene::Update(float deltaTime)
 
 void GameScene::Draw()
 {
-	// RenderSystemは常に存在すると仮定
+	
+	// エンティティの描画
 	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
 	{
-		// 1. カメラ設定やデバッググリッド描画
 		system->DrawSetup();
-
-		// 2. ECS Entityの描画
 		system->DrawEntities();
 	}
 
+	// UIの描画
 	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
 	{
 		system->Render();

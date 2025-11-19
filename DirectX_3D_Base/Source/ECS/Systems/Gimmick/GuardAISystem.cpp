@@ -214,10 +214,8 @@ XMINT2 GuardAISystem::GetGridPosition(const XMFLOAT3& worldPos)
 // GuardAISystem::Update() の本体
 // --------------------------------------------------------------------------------
 
-void GuardAISystem::Update()
+void GuardAISystem::Update(float deltaTime)
 {
-    float deltaTime = 1.0f / fFPS;
-
     // プレイヤーエンティティの検索 (追跡目標)
     EntityID playerEntity = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
     if (playerEntity == INVALID_ENTITY_ID) return;

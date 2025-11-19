@@ -26,12 +26,8 @@ using namespace DirectX;
 /**
  * @brief 運動積分と基本的な衝突前処理を行う
  */
-void PhysicsSystem::Update()
+void PhysicsSystem::Update(float deltaTime)
 {
-	// 運動に必要な時間差分 (dt = 1/FPS)
-	// Main.hで定義されているfFPSを使用
-	const float deltaTime = 1.0f / fFPS;
-
 	// Systemが保持するEntityセットをイテレート
 	for (auto const& entity : m_entities)
 	{

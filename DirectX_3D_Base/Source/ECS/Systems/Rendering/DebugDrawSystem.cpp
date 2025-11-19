@@ -24,7 +24,7 @@
 
 using namespace DirectX;
 
-void DebugDrawSystem::Update()
+void DebugDrawSystem::Update(float deltaTime)
 {
     // 1. GameController Entity‚ð’T‚·
     ECS::EntityID controllerID = ECS::FindFirstEntityWithComponent<DebugComponent>(m_coordinator);

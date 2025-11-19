@@ -26,6 +26,8 @@ using namespace DirectX;
 
 void CollectionSystem::Update(float deltaTime)
 {
+	(void)deltaTime;
+
 	if (!m_coordinator) return;
 
 	// 1. プレイヤーとトラッカー（GameController）のEntityIDを取得

@@ -52,7 +52,7 @@ public:
 		m_coordinator = coordinator;
 	}
 
-	void Update();
+	void Update(float deltaTime) override;
 
 	void OnEntityDestroyed(ECS::EntityID entity);
 

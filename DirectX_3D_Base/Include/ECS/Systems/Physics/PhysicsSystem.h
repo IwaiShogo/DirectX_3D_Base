@@ -49,7 +49,7 @@ public:
 	}
 
 	/// @brief 運動積分と基本的な衝突前処理を行う
-	void Update();
+	void Update(float deltaTime) override;
 };
 
 #endif // !___PHYSICS_SYSTEM_H___

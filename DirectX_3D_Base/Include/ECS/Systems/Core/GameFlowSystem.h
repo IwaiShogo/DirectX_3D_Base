@@ -38,7 +38,7 @@ private:
 
 public:
 	void Init(ECS::Coordinator* coordinator) override { m_coordinator = coordinator; }
-	void Update();
+	void Update(float deltaTime) override;
 };
 
 #endif // !___GAME_FLOW_SYSTEM_H___
