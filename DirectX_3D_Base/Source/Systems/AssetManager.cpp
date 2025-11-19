@@ -299,12 +299,6 @@ namespace Asset
 						delete static_cast<Audio::SoundEffect*>(info.pResource);
 						releasedCount++;
 					}
-					else
-					{
-						// ★危険なelseブロックを削除し、Unknownの場合はログを出力するだけに留める★
-						std::cerr << "Warning: Skipping unload for asset '" << info.assetID
-							<< "' due to unknown AssetType." << std::endl;
-					}
 
 					info.pResource = nullptr;
 				}
