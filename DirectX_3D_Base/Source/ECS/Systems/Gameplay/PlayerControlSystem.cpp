@@ -54,44 +54,52 @@ void PlayerControlSystem::Update(float deltaTime)
 		}
 	}
 
-	// Xboxコントローラーの左スティック入力
+	// =====================================
+	// 入力取得とベクトル合成
+	// =====================================
+
+	// 1. Xboxコントローラーの左スティック入力 (0.0 ~ 1.0)
 	XMFLOAT2 leftStick = GetLeftStick();
 
-	// キーボード入力 (W/A/S/D) をベクトル化
+	// 2. キーボード入力 (W/A/S/D) をベクトル化 (-1.0, 0.0, 1.0)
 	XMFLOAT2 keyInput = XMFLOAT2(0.0f, 0.0f);
 
-	if (IsKeyPress('W')) // W: 前進 (Z軸+)
-	{
-		keyInput.y += 1.0f;
-	}
-	if (IsKeyPress('S')) // S: 後退 (Z軸-)
-	{
-		keyInput.y -= 1.0f;
-	}
-	if (IsKeyPress('A')) // A: 左移動 (X軸-)
-	{
-		keyInput.x -= 1.0f;
-	}
-	if (IsKeyPress('D')) // D: 右移動 (X軸+)
-	{
-		keyInput.x += 1.0f;
-	}
+	if (IsKeyPress('W')) keyInput.y += 1.0f;
+	if (IsKeyPress('S')) keyInput.y -= 1.0f;
+	if (IsKeyPress('A')) keyInput.x -= 1.0f;
+	if (IsKeyPress('D')) keyInput.x += 1.0f;
 
-	if (IsKeyPress('N'))
+	// 3. 入力の合成
+	XMVECTOR stickV = XMLoadFloat2(&leftStick);
+	XMVECTOR keyV = XMLoadFloat2(&keyInput);
+
+	// 単純加算 (Stick + Keyboard)
+	XMVECTOR totalInputV = XMVectorAdd(stickV, keyV);
+
+	// 入力強度 (Magnitude) の計算
+	float inputMagnitude = XMVectorGetX(XMVector2Length(totalInputV));
+
+	// デッドゾーン処理 (微小入力の無視)
+	if (inputMagnitude < 0.1f)
 	{
-		SceneManager::ChangeScene<ResultScene>();
+		inputMagnitude = 0.0f;
+		totalInputV = XMVectorZero();
 	}
-	
-	// キーボードとスティックの入力を合成
-	// コントローラーが優先されるように、または単純に加算して正規化
-	// ここでは単純に加算し、正規化後にスティック入力を優先するように調整します
-	XMVECTOR totalInput = XMVectorSet(leftStick.x + keyInput.x, 0.0f, leftStick.y + keyInput.y, 0.0f);
-
-	// 入力ベクトルの長さをチェック (デッドゾーン/キー押し判定)
-	float inputLengthSq = XMVectorGetX(XMVector3LengthSq(totalInput));
-
-	// Bボタン入力
-	bool isBTriggered = IsButtonTriggered(BUTTON_B) || IsKeyPress(VK_SPACE);
+	else
+	{
+		// 4. 正規化とクランプ (アナログ操作への対応)
+		// Magnitudeが1.0を超えている場合（キー同時押しやStick+Key）は1.0に制限
+		// 1.0未満の場合（スティックを少し倒した状態）は、その強度を維持する
+		if (inputMagnitude > 1.0f)
+		{
+			totalInputV = XMVector2Normalize(totalInputV);
+			inputMagnitude = 1.0f;
+		}
+		// ※ここでNormalizeしてしまうと「歩き」ができなくなるため、
+		//  方向だけNormalizeし、長さはinputMagnitudeを使うアプローチをとるか、
+		//  あるいは既にLengthが1以下ならそのまま使う。
+		//  ここでは「入力ベクトルそのもの」を速度係数として扱います。
+	}
 
 	// Systemが保持するEntityセットをイテレート
 	for (auto const& entity : m_entities)
@@ -105,58 +113,58 @@ void PlayerControlSystem::Update(float deltaTime)
 		// 1. 移動 (カメラ基準での移動)
 		// =====================================
 
-		// 移動入力がある場合
-		if (inputLengthSq > 0.01f) // 0.01f は許容誤差
+		// 1. 移動処理
+		if (inputMagnitude > 0.0f)
 		{
-			// 1. 移動方向を正規化し、速度を乗算
-			XMVECTOR normalizedInput = XMVector3Normalize(totalInput);
+			// カメラの向きに合わせて入力ベクトルを回転
+			// 入力は2D (x, y) だが、3D空間では (x, 0, z) に対応する
+			// totalInputV.x -> Move X, totalInputV.y -> Move Z
 
-			// 2. カメラのYAW角に基づいた回転行列を構築
-			// Playerの移動はX-Z平面で行うため、Y軸周りの回転行列を使用
+			float inputX = XMVectorGetX(totalInputV);
+			float inputZ = XMVectorGetY(totalInputV); // 2DのYを3DのZとして扱う
+
+			XMVECTOR moveDirectionLocal = XMVectorSet(inputX, 0.0f, inputZ, 0.0f);
+
+			// Y軸回転行列 (カメラのYaw)
 			XMMATRIX rotationMatrix = XMMatrixRotationY(cameraYaw);
 
-			// 3. 入力ベクトルを回転させて、ワールド座標系での移動方向 moveVector を得る
-			XMVECTOR rotatedMoveVector = XMVector3TransformNormal(normalizedInput, rotationMatrix);
+			// ワールド座標系での移動ベクトル
+			XMVECTOR moveVectorWorld = XMVector3TransformNormal(moveDirectionLocal, rotationMatrix);
 
-			// 速度を乗算
-			XMVECTOR moveVector = rotatedMoveVector * playerControl.moveSpeed;
+			// 最終速度 = 方向 * 入力強度(0~1) * プレイヤーの最高速度
+			// ※ inputMagnitude は totalInputV に既に含まれているとも言えるが、
+			//    totalInputVの長さそのものが速度係数になる
+			XMVECTOR finalVelocity = moveVectorWorld * playerControl.moveSpeed;
 
-			// ----------------------------------------------------
+			// RigidBodyに設定
+			rigidBody.velocity.x = XMVectorGetX(finalVelocity);
+			rigidBody.velocity.z = XMVectorGetZ(finalVelocity);
 
-			// 4. 進行方向への自動回転
-			// ターゲット角度を、回転後のワールド方向ベクトルから算出
-			float targetAngle = atan2f(XMVectorGetX(rotatedMoveVector), XMVectorGetZ(rotatedMoveVector));
+			// 2. キャラクターの向きの自動回転 (進行方向を向く)
+			// 入力が十分にある場合のみ回転更新
+			if (inputMagnitude > 0.1f)
+			{
+				float targetAngle = atan2f(XMVectorGetX(moveVectorWorld), XMVectorGetZ(moveVectorWorld));
+				float currentAngle = transform.rotation.y;
 
-			float currentAngle = transform.rotation.y;
-			float deltaAngle = targetAngle - currentAngle;
+				// 角度差の計算と正規化 (-PI ~ PI)
+				float deltaAngle = targetAngle - currentAngle;
+				while (deltaAngle > XM_PI) deltaAngle -= XM_2PI;
+				while (deltaAngle < -XM_PI) deltaAngle += XM_2PI;
 
-			// 180度以上の差を補正
-			if (deltaAngle > XM_PI) deltaAngle -= XM_2PI;
-			if (deltaAngle < -XM_PI) deltaAngle += XM_2PI;
+				// スムーズな回転 (補間)
+				transform.rotation.y += deltaAngle * 0.15f;
 
-			// スムーズな回転（線形補間: 0.15fは応答速度）
-			transform.rotation.y += deltaAngle * 0.15f;
-
-			// 2πの範囲に収める
-			if (transform.rotation.y > XM_PI) transform.rotation.y -= XM_2PI;
-			if (transform.rotation.y < -XM_PI) transform.rotation.y += XM_2PI;
-
-			// 5. RigidBodyの速度を更新
-			rigidBody.velocity.x = XMVectorGetX(moveVector);
-			rigidBody.velocity.z = XMVectorGetZ(moveVector);
+				// 回転の正規化
+				if (transform.rotation.y > XM_PI) transform.rotation.y -= XM_2PI;
+				if (transform.rotation.y < -XM_PI) transform.rotation.y += XM_2PI;
+			}
 		}
 		else
 		{
-			// 入力がない場合は停止
+			// 入力なし -> 停止
 			rigidBody.velocity.x = 0.0f;
 			rigidBody.velocity.z = 0.0f;
 		}
-
-		// Y軸の速度（ジャンプや重力）はPhysicsSystemに委ねるため、ここでは変更しない
-
-		// =====================================
-		// 3. アイテム回収 (Bボタン)
-		// =====================================
-		playerControl.isItemStealTriggered = isBTriggered;
 	}
 }

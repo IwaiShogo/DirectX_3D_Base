@@ -246,10 +246,10 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
+    <None Include="Assets\Config\map_config.json" />
     <None Include="Assets\CSV\ModelList.csv" />
     <None Include="Assets\CSV\SoundList.csv" />
     <None Include="Assets\CSV\TextureList.csv" />
-    <None Include="Assets\JSON\map_config.json" />
     <None Include="Tools\Assets.xlsm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
