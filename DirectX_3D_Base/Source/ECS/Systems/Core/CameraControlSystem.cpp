@@ -29,6 +29,8 @@ using namespace DirectX;
 // 右スティックの感度
 const float CAMERA_SENSITIVITY_X = 0.04f; // YAW感度
 const float CAMERA_SENSITIVITY_Y = 0.02f; // PITCH感度 (上下は控えめに)
+// マウスの感度（ピクセル単位なのでスティックより小さく設定）
+const float MOUSE_SENSITIVITY = 0.005f;
 // PITCHのクランプ値 (上下の限界)
 const float PITCH_MAX = XM_PIDIV2 - 0.2f; // 約78度
 const float PITCH_MIN = XM_PIDIV2 * 0.0f; // 約-27度 (水平より少し下まで)
@@ -245,16 +247,24 @@ void CameraControlSystem::Update(float deltaTime)
         }
     }
 
+    // 2. 右スティック入力の取得 (アクションモードでのみ有効)
+    XMFLOAT2 rightStick = GetRightStick();
+    XMFLOAT2 mouseDelta = GetMouseDelta();
+
+    // カメラ回転量の計算 (スティック + マウス)
+    // マウスのY移動は、画面上(マイナス)に行くとカメラを上に向けたい -> スティック上(プラス)と同じ挙動に合わせるため反転
+    float yawInput = rightStick.x * CAMERA_SENSITIVITY_X + mouseDelta.x * MOUSE_SENSITIVITY;
+    float pitchInput = rightStick.y * CAMERA_SENSITIVITY_Y - mouseDelta.y * MOUSE_SENSITIVITY;
+
     // 2. 【フリーカメラ】デバッグモードが有効な場合
     if (isDebugMode)
     {
         // カメラの現在の位置と注視点を直接操作するためのロジック
         // ※ 既存のm_currentCameraPosとm_currentLookAtを直接更新します。
 
-        // 右スティック（またはマウス）でYAW/PITCHを更新 (既存のロジックを再利用)
-        XMFLOAT2 rightStick = GetRightStick();
-        m_currentYaw += rightStick.x * CAMERA_SENSITIVITY_X * 2.0f; // 感度を上げる
-        m_currentPitch -= rightStick.y * CAMERA_SENSITIVITY_Y * 2.0f;
+        // 右スティック＋マウスでYAW/PITCHを更新
+        m_currentYaw += yawInput * 2.0f; // デバッグ時は少し早めに
+        m_currentPitch -= pitchInput * 2.0f;
         m_currentPitch = std::max(PITCH_MIN, std::min(PITCH_MAX, m_currentPitch));
 
         // YAW/PITCHから前方/右方向ベクトルを計算
@@ -290,10 +300,6 @@ void CameraControlSystem::Update(float deltaTime)
 
         return; // 通常のカメラロジックは実行しない
     }
-
-    // 2. 右スティック入力の取得 (アクションモードでのみ有効)
-    XMFLOAT2 rightStick = (currentMode == GameMode::ACTION_MODE) ? GetRightStick() : XMFLOAT2(0.0f, 0.0f);
-
 
     for (auto const& entity : m_entities) // CameraComponentを持つEntityを対象
     {
@@ -338,8 +344,8 @@ void CameraControlSystem::Update(float deltaTime)
                 // =====================================
 
                 // YAW/PITCHを右スティックで更新
-                m_currentYaw += rightStick.x * CAMERA_SENSITIVITY_X;
-                m_currentPitch -= rightStick.y * CAMERA_SENSITIVITY_Y;
+                m_currentYaw += yawInput;
+                m_currentPitch -= pitchInput;
 
                 // PITCH角のクランプ（BUG-03修正）
                 m_currentPitch = std::max(PITCH_MIN, std::min(PITCH_MAX, m_currentPitch));
