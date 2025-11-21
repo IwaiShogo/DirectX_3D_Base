@@ -23,18 +23,6 @@
 // ===== インクルード =====
 #include <DirectXMath.h>
 #include <vector>
-    
-// ===== 定数・マクロ定義 =====
-// マップのグリッドサイズ（10 x 10セル = 50m x 50m）
-constexpr int MAP_GRID_SIZE = 20;
-// 1セルあたりのワールドサイズ（5m）
-constexpr float TILE_SIZE = 5.0f;
-// 壁の高さ（モジュールアセットに合わせる想定で仮に5mとしておく）
-constexpr float WALL_HEIGHT = 20.0f;
-
-constexpr float MAP_CENTER_OFFSET = (MAP_GRID_SIZE / 2.0f) * TILE_SIZE; // 20.0f
-constexpr float X_ADJUSTMENT = 0.5f * TILE_SIZE; // 1.0f
-constexpr float Z_ADJUSTMENT = 1.0f * TILE_SIZE; // 2.0f
 
 /**
  * @enum    CellType
@@ -78,24 +66,23 @@ struct Cell
  */
 struct MapComponent
 {
-    //// 迷路のグリッドデータ (10x10)
-    Cell grid[MAP_GRID_SIZE][MAP_GRID_SIZE];
+    // 実行時に設定されるマップの寸法とスケール
+    int gridSizeX = 0;
+    int gridSizeY = 0;
+    float tileSize = 0.0f;
+    float wallHeight = 0.0f;
 
-    //// マップ生成に必要な座標情報
+    // マップのグリッドデータ
+    std::vector<std::vector<Cell>> grid;
+
+    // マップ生成に必要な座標情報
     DirectX::XMINT2 startPos = { 0, 0 }; // プレイヤー初期位置
-    DirectX::XMINT2 goalPos = { MAP_GRID_SIZE - 1, MAP_GRID_SIZE - 1 }; // ゴール位置
+    DirectX::XMINT2 goalPos = { 0, 0 }; // ゴール位置
     std::vector<DirectX::XMINT2> itemPositions; // アイテムの配置位置
 
     MapComponent()
     {
-        // 全てのセルを初期状態(Wall)に設定
-        for (int y = 0; y < MAP_GRID_SIZE; ++y)
-        {
-            for (int x = 0; x < MAP_GRID_SIZE; ++x)
-            {
-                // Cellのデフォルトコンストラクタが呼ばれ、Wall/hasWall=trueで初期化される
-            }
-        }
+
     }
 };
 

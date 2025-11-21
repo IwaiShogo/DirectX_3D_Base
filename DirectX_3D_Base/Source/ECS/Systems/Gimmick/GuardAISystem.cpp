@@ -76,9 +76,10 @@ XMINT2 GuardAISystem::FindNextTargetGridPos(
 )
 {
     // マップの境界チェック (スタートとターゲットが有効なグリッド内か)
-    constexpr int MAX_INDEX = MAP_GRID_SIZE - 1;
-    if (startGrid.x <= 0 || startGrid.x >= MAX_INDEX || startGrid.y <= 0 || startGrid.y >= MAX_INDEX ||
-        targetGrid.x <= 0 || targetGrid.x >= MAX_INDEX || targetGrid.y <= 0 || targetGrid.y >= MAX_INDEX)
+    const int MAX_INDEX_X = mapComp.gridSizeX - 1;
+    const int MAX_INDEX_Y = mapComp.gridSizeY - 1;
+    if (startGrid.x <= 0 || startGrid.x >= MAX_INDEX_X || startGrid.y <= 0 || startGrid.y >= MAX_INDEX_Y ||
+        targetGrid.x <= 0 || targetGrid.x >= MAX_INDEX_X || targetGrid.y <= 0 || targetGrid.y >= MAX_INDEX_Y)
     {
         return { -1, -1 }; // 無効な位置
     }
@@ -143,8 +144,8 @@ XMINT2 GuardAISystem::FindNextTargetGridPos(
             XMINT2 neighborPos = { current.gridPos.x + directions[i][0], current.gridPos.y + directions[i][1] };
 
             // 境界チェック
-            if (neighborPos.x <= 0 || neighborPos.x >= MAP_GRID_SIZE - 1 ||
-                neighborPos.y <= 0 || neighborPos.y >= MAP_GRID_SIZE - 1)
+            if (neighborPos.x <= 0 || neighborPos.x >= mapComp.gridSizeX - 1 ||
+                neighborPos.y <= 0 || neighborPos.y >= mapComp.gridSizeY - 1)
             {
                 continue;
             }
@@ -190,22 +191,23 @@ XMINT2 GuardAISystem::FindNextTargetGridPos(
  * @param worldPos - ワールド座標 (Y軸は無視)
  * @return グリッド座標 (X, Y)
  */
-XMINT2 GuardAISystem::GetGridPosition(const XMFLOAT3& worldPos)
+XMINT2 GuardAISystem::GetGridPosition(const XMFLOAT3& worldPos, const MapComponent& mapComp)
 {
-    // MapGenerationSystem.cpp の GetWorldPositionの逆算
-    // pos.x = (float)x * TILE_SIZE - MAP_CENTER_OFFSET + X_ADJUSTMENT;
-    // (pos.x - X_ADJUSTMENT + MAP_CENTER_OFFSET) / TILE_SIZE = (float)x
+    const float MAP_CENTER_OFFSET_X = (mapComp.gridSizeX / 2.0f) * mapComp.tileSize; // 20.0f
+    const float MAP_CENTER_OFFSET_Y = (mapComp.gridSizeY / 2.0f) * mapComp.tileSize;
+    const float X_ADJUSTMENT = 0.5f * mapComp.tileSize; // 1.0f
+    const float Z_ADJUSTMENT = 1.0f * mapComp.tileSize; // 2.0f
 
-    float x_f = (worldPos.x - X_ADJUSTMENT + MAP_CENTER_OFFSET) / TILE_SIZE;
-    float y_f = (worldPos.z - Z_ADJUSTMENT + MAP_CENTER_OFFSET) / TILE_SIZE;
+    float x_f = (worldPos.x - X_ADJUSTMENT + MAP_CENTER_OFFSET_X) / mapComp.tileSize;
+    float y_f = (worldPos.z - Z_ADJUSTMENT + MAP_CENTER_OFFSET_Y) / mapComp.tileSize;
 
     // 四捨五入ではなく、単にキャストしてグリッドインデックスを取得
     int x = static_cast<int>(x_f);
     int y = static_cast<int>(y_f);
 
     // 境界クランプ
-    x = std::min(std::max(0, x), MAP_GRID_SIZE - 1);
-    y = std::min(std::max(0, y), MAP_GRID_SIZE - 1);
+    x = std::min(std::max(0, x), mapComp.gridSizeX - 1);
+    y = std::min(std::max(0, y), mapComp.gridSizeY - 1);
 
     return { x, y };
 }
@@ -216,20 +218,24 @@ XMINT2 GuardAISystem::GetGridPosition(const XMFLOAT3& worldPos)
 
 void GuardAISystem::Update(float deltaTime)
 {
-    // プレイヤーエンティティの検索 (追跡目標)
-    EntityID playerEntity = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
-    if (playerEntity == INVALID_ENTITY_ID) return;
-
-    // プレイヤーのTransformComponentを取得
-    const TransformComponent& playerTransform = m_coordinator->GetComponent<TransformComponent>(playerEntity);
-    XMINT2 playerGridPos = GetGridPosition(playerTransform.position);
-
     // MapComponentを持つEntity (GameController) を検索
     EntityID mapEntity = FindFirstEntityWithComponent<MapComponent>(m_coordinator);
     if (mapEntity == INVALID_ENTITY_ID) return;
 
     const MapComponent& mapComp = m_coordinator->GetComponent<MapComponent>(mapEntity);
     const GameStateComponent& gameStateComp = m_coordinator->GetComponent<GameStateComponent>(mapEntity);
+
+    // プレイヤーエンティティの検索 (追跡目標)
+    EntityID playerEntity = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+    if (playerEntity == INVALID_ENTITY_ID) return;
+
+    // プレイヤーのTransformComponentを取得
+    const TransformComponent& playerTransform = m_coordinator->GetComponent<TransformComponent>(playerEntity);
+    XMINT2 playerGridPos = GetGridPosition(playerTransform.position, mapComp);
+
+    // 動的マップサイズを取得
+    const int GRID_SIZE_X = mapComp.gridSizeX;
+    const int GRID_SIZE_Y = mapComp.gridSizeY;
 
     // 警備員エンティティ全体を反復処理
     for (auto const& entity : m_entities)
@@ -261,7 +267,7 @@ void GuardAISystem::Update(float deltaTime)
             if (!guardComp.isActive)
             {
                 // Y座標は床の高さに合わせる (MapGenerationSystem.cppのロジックを再現)
-                guardTransform.position.y = TILE_SIZE / 2.0f;
+                guardTransform.position.y = mapComp.tileSize / 2.0f;
 
                 guardComp.elapsedTime += deltaTime; // デルタタイムでタイマーを進める
 
@@ -280,7 +286,7 @@ void GuardAISystem::Update(float deltaTime)
             }
         }
 
-        XMINT2 guardGridPos = GetGridPosition(guardTransform.position);
+        XMINT2 guardGridPos = GetGridPosition(guardTransform.position, mapComp);
 
         // ------------------------------------------------------------------
         // 1. 目標到達判定とパス再計算の必要性チェック
@@ -322,6 +328,11 @@ void GuardAISystem::Update(float deltaTime)
                 mapComp
             );
 
+            const float MAP_CENTER_OFFSET_X = (mapComp.gridSizeX / 2.0f) * mapComp.tileSize; // 20.0f
+            const float MAP_CENTER_OFFSET_Y = (mapComp.gridSizeY / 2.0f) * mapComp.tileSize;
+            const float X_ADJUSTMENT = 0.5f * mapComp.tileSize; // 1.0f
+            const float Z_ADJUSTMENT = 1.0f * mapComp.tileSize; // 2.0f
+
             // 探索結果をGuardComponentに保存 (ステップ2-2のロジックを再利用)
             guardComp.nextTargetGridPos = nextTarget;
 
@@ -333,9 +344,9 @@ void GuardAISystem::Update(float deltaTime)
                 // ワールド座標の再計算ロジック（GetGridPositionの逆）を一時的に使用します。
 
                 // X座標: (グリッドX * TILE_SIZE - MAP_CENTER_OFFSET + X_ADJUSTMENT) + TILE_SIZE/2.0f
-                float targetWorldX = (float)nextTarget.x * TILE_SIZE - MAP_CENTER_OFFSET + X_ADJUSTMENT + TILE_SIZE / 2.0f;
+                float targetWorldX = (float)nextTarget.x * mapComp.tileSize - MAP_CENTER_OFFSET_X + X_ADJUSTMENT + mapComp.tileSize / 2.0f;
                 // Z座標: (グリッドY * TILE_SIZE - MAP_CENTER_OFFSET + Z_ADJUSTMENT) + TILE_SIZE/2.0f
-                float targetWorldZ = (float)nextTarget.y * TILE_SIZE - MAP_CENTER_OFFSET + Z_ADJUSTMENT + TILE_SIZE / 2.0f;
+                float targetWorldZ = (float)nextTarget.y * mapComp.tileSize - MAP_CENTER_OFFSET_Y + Z_ADJUSTMENT + mapComp.tileSize / 2.0f;
 
                 guardComp.targetGridPos.x = targetWorldX; // ワールドX
                 guardComp.targetGridPos.y = targetWorldZ; // ワールドZ (ComponentではYと命名)

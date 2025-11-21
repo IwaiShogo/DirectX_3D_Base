@@ -62,31 +62,37 @@ std::mt19937 MazeGenerator::s_generator(std::random_device{}());
  * @brief 迷路生成ロジックの本体。MapComponentのgridを書き換える。
  * @param mapComp - 迷路データを書き込むMapComponentへの参照
  */
-void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& trackerComp)
+void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& trackerComp, const MapStageConfig& config)
 {
-    // BUG-01修正強化: マップ生成の品質保証のための定数
+    // configから動的な定数を取得
+    const int GRID_SIZE_X = config.gridSizeX;
+    const int GRID_SIZE_Y = config.gridSizeY;
+    const int MAX_INDEX_X = GRID_SIZE_X - 1;
+    const int MAX_INDEX_Y = GRID_SIZE_Y - 1;
+
+    // マップ生成の品質保証のための定数
     constexpr int MAX_GENERATION_ATTEMPTS = 10;
+
     // 迷路として許容できる最小通路セル割合 (50x50グリッドの場合、25%で625セル)
-    constexpr float MIN_PATH_PERCENTAGE = 0.25f;
-    constexpr int MIN_PATH_COUNT = (int)(MAP_GRID_SIZE * MAP_GRID_SIZE * MIN_PATH_PERCENTAGE);
-    int MAX_INDEX = MAP_GRID_SIZE - 1;
+    const float MIN_PATH_PERCENTAGE = config.minPathPercentage;
+    // 最小通路セル数を動的に計算
+    const int MIN_PATH_COUNT = (int)(GRID_SIZE_X * GRID_SIZE_Y * MIN_PATH_PERCENTAGE);
+
     int directions[4][2] = { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
 
     // 成功するまでマップ生成プロセスを繰り返す
     for (int attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; ++attempt)
     {
+        // 可変サイズに対応するため、gridをリサイズ
+        mapComp.grid.assign(GRID_SIZE_Y, std::vector<Cell>(GRID_SIZE_X));
 
         // 全てのセルを未訪問(Unvisited)にリセット
-        for (int y = 0; y < MAP_GRID_SIZE; ++y)
+        for (int y = 0; y < GRID_SIZE_Y; ++y)
         {
-            for (int x = 0; x < MAP_GRID_SIZE; ++x)
+            for (int x = 0; x < GRID_SIZE_X; ++x)
             {
                 mapComp.grid[y][x].visited = false;
                 mapComp.grid[y][x].type = CellType::Wall; // 初期状態はすべて壁
-                mapComp.grid[y][x].hasWallNorth = true;
-                mapComp.grid[y][x].hasWallSouth = true;
-                mapComp.grid[y][x].hasWallEast = true;
-                mapComp.grid[y][x].hasWallWest = true;
             }
         }
 
@@ -94,30 +100,31 @@ void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& tracke
         // 【ステップ5-2: 部屋配置ロジックの追加】
         // --------------------------------------------------------------------------------
 
-        // 部屋パラメータ
-        constexpr int MIN_ROOM_SIZE = 3;    // 最小部屋サイズ (奇数)
-        constexpr int MAX_ROOM_SIZE = 3;    // 最大部屋サイズ (奇数)
-        constexpr int MAX_ROOM_COUNT = 5;   // 最大配置部屋数
+        // 部屋パラメータをconfigから取得
+        const int MIN_ROOM_SIZE = config.minRoomSize;
+        const int MAX_ROOM_SIZE = config.maxRoomSize;
+        const int MAX_ROOM_COUNT = config.maxRoomCount;
 
         // 部屋の配置を試行する
         for (int i = 0; i < MAX_ROOM_COUNT; ++i) // 失敗を見越して多めに試行
         {
             // 部屋のサイズをランダムに決定 (奇数に限定して迷路生成との接続を容易にする)
             std::uniform_int_distribution<int> sizeDist(MIN_ROOM_SIZE / 2, MAX_ROOM_SIZE / 2);
-            int halfWidth = sizeDist(s_generator) * 2 + 1; // 3, 5, 7, 9...
-            int halfHeight = sizeDist(s_generator) * 2 + 1;
+            int halfSize = sizeDist(s_generator);
+            int roomWidth = halfSize * 2 + 1;
+            int roomHeight = halfSize * 2 + 1;
 
             // 部屋の左上角の座標をランダムに決定
-            std::uniform_int_distribution<int> posDist(1, MAP_GRID_SIZE - MAX_ROOM_SIZE - 1);
-            int startX = posDist(s_generator);
-            int startY = posDist(s_generator);
+            // 配置可能範囲を (1, 1) から (GRID_SIZE - MAX_ROOM_SIZE - 2) までに限定
+            std::uniform_int_distribution<int> posXDist(1, GRID_SIZE_X - roomWidth - 1);
+            std::uniform_int_distribution<int> posYDist(1, GRID_SIZE_Y - roomHeight - 1);
+
+            int startX = posXDist(s_generator);
+            int startY = posYDist(s_generator);
 
             // 部屋のサイズを調整 (境界からはみ出さないように)
-            int roomWidth = halfWidth;
-            int roomHeight = halfHeight;
-
-            if (startX + roomWidth >= MAP_GRID_SIZE - 1) roomWidth = MAP_GRID_SIZE - startX - 2;
-            if (startY + roomHeight >= MAP_GRID_SIZE - 1) roomHeight = MAP_GRID_SIZE - startY - 2;
+            if (startX + roomWidth >= MAX_INDEX_X) roomWidth = MAX_INDEX_X - startX - 1;
+            if (startY + roomHeight >= MAX_INDEX_Y) roomHeight = MAX_INDEX_Y - startY - 1;
 
             // 部屋のサイズが奇数で、かつ最小サイズ以上であることを保証
             roomWidth = (roomWidth % 2 == 0) ? roomWidth - 1 : roomWidth;
@@ -125,15 +132,17 @@ void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& tracke
 
             if (roomWidth < MIN_ROOM_SIZE || roomHeight < MIN_ROOM_SIZE) continue;
 
-            // 重複チェックはここでは省略し、シンプルに上書きを許容する
-
-            // 部屋の領域をPathとしてマークし、visited=true (迷路生成の対象外とする)
+            // 部屋の領域をRoomとしてマークし、visited=true (迷路生成の対象外)
             for (int y = startY; y < startY + roomHeight; ++y)
             {
                 for (int x = startX; x < startX + roomWidth; ++x)
                 {
-                    mapComp.grid[y][x].type = CellType::Room;
-                    mapComp.grid[y][x].visited = true; // 迷路生成アルゴリズムの対象外
+                    // 境界からはみ出さないか最終チェック
+                    if (x >= 0 && x < GRID_SIZE_X && y >= 0 && y < GRID_SIZE_Y)
+                    {
+                        mapComp.grid[y][x].type = CellType::Room;
+                        mapComp.grid[y][x].visited = true; // 迷路生成アルゴリズムの対象外
+                    }
                 }
             }
         }
@@ -141,35 +150,43 @@ void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& tracke
         // --------------------------------------------------------------------------------
         // 【ステップ5-3: 迷路生成の実行】
         // --------------------------------------------------------------------------------
-        int startX = mapComp.startPos.x;
-        int startY = mapComp.startPos.y;
+        // スタート位置をグリッドの中心に近い奇数座標の範囲で決定
+        std::uniform_int_distribution<int> startXDist(1, GRID_SIZE_X - 2);
+        std::uniform_int_distribution<int> startYDist(1, GRID_SIZE_Y - 2);
 
-        // 開始セルを確実にPathとしてマークし、visitedをリセット
+        int startX = startXDist(s_generator);
+        int startY = startYDist(s_generator);
+
+        startX = 1;
+        startY = 1;
+
+        // 開始セルをPathとしてマークし、visitedをリセット
         mapComp.grid[startY][startX].type = CellType::Path;
         mapComp.grid[startY][startX].visited = false;
 
-        RecursiveBacktracker(mapComp, startX, startY);
+        RecursiveBacktracker(mapComp, config, startX, startY);
 
         // --------------------------------------------------------------------------------
         // 5. 迷路生成の後に、最外周の壁セルをvisited=trueに固定する
         // --------------------------------------------------------------------------------
         // 迷路生成が完了した後で、外周を確実に固定します。
-        int MAX_INDEX = MAP_GRID_SIZE - 1;
-        for (int i = 0; i < MAP_GRID_SIZE; ++i)
+        for (int i = 0; i < GRID_SIZE_X; ++i)
         {
-            // 1. 上下の境界 (y=0 と y=MAX_INDEX)
+            // 1. 上下の境界 (y=0 と y=MAX_INDEX_Y)
             mapComp.grid[0][i].type = CellType::Wall;
             mapComp.grid[0][i].visited = true;
 
-            mapComp.grid[MAX_INDEX][i].type = CellType::Wall;
-            mapComp.grid[MAX_INDEX][i].visited = true;
-
-            // 2. 左右の境界 (x=0 と x=MAX_INDEX)
+            mapComp.grid[MAX_INDEX_Y][i].type = CellType::Wall;
+            mapComp.grid[MAX_INDEX_Y][i].visited = true;
+        }
+        for (int i = 0; i < GRID_SIZE_Y; ++i)
+        {
+            // 2. 左右の境界 (x=0 と x=MAX_INDEX_X)
             mapComp.grid[i][0].type = CellType::Wall;
             mapComp.grid[i][0].visited = true;
 
-            mapComp.grid[i][MAX_INDEX].type = CellType::Wall;
-            mapComp.grid[i][MAX_INDEX].visited = true;
+            mapComp.grid[i][MAX_INDEX_X].type = CellType::Wall;
+            mapComp.grid[i][MAX_INDEX_X].visited = true;
         }
 
         // --------------------------------------------------------------------------------
@@ -177,15 +194,15 @@ void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& tracke
         // --------------------------------------------------------------------------------
         bool mapWasConnected = false;
 
-        // 接続プロセスを最大でMAP_GRID_SIZE分繰り返す (複雑な分断でも接続を保証)
-        for (int connection_iter = 0; connection_iter < MAP_GRID_SIZE; ++connection_iter)
+        // 接続プロセスを最大でGRID_SIZE分繰り返す
+        for (int connection_iter = 0; connection_iter < GRID_SIZE_X + GRID_SIZE_Y; ++connection_iter)
         {
             bool wallDestroyed = false;
 
             // a) Flood Fillのための visitedフラグをリセット
-            for (int y = 0; y < MAP_GRID_SIZE; ++y)
+            for (int y = 0; y < GRID_SIZE_Y; ++y)
             {
-                for (int x = 0; x < MAP_GRID_SIZE; ++x)
+                for (int x = 0; x < GRID_SIZE_X; ++x)
                 {
                     if (mapComp.grid[y][x].type != CellType::Wall)
                     {
@@ -194,10 +211,13 @@ void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& tracke
                 }
             }
 
+            // スタート位置を一時的に設定（スタート/ゴール配置前の暫定処理）
+            XMINT2 tempStartPos = { startX, startY };
+
             // b) Flood Fill (BFS) を実行: スタートから到達可能なセルをマーク
             std::vector<XMINT2> bfs_queue;
-            bfs_queue.push_back(mapComp.startPos);
-            mapComp.grid[mapComp.startPos.y][mapComp.startPos.x].visited = true;
+            bfs_queue.push_back(tempStartPos);
+            mapComp.grid[tempStartPos.y][tempStartPos.x].visited = true;
 
             size_t head = 0;
             while (head < bfs_queue.size())
@@ -209,7 +229,8 @@ void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& tracke
                     int nx = current.x + directions[i][0];
                     int ny = current.y + directions[i][1];
 
-                    if (nx > 0 && nx < MAX_INDEX && ny > 0 && ny < MAX_INDEX &&
+                    // 境界チェックにMAX_INDEX_X, MAX_INDEX_Yを使用
+                    if (nx > 0 && nx < MAX_INDEX_X && ny > 0 && ny < MAX_INDEX_Y &&
                         mapComp.grid[ny][nx].type != CellType::Wall &&
                         !mapComp.grid[ny][nx].visited)
                     {
@@ -220,9 +241,10 @@ void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& tracke
             }
 
             // c) 接続の試行: 未到達エリアと到達エリアを繋ぐ壁を探して破壊
-            for (int y = 1; y < MAX_INDEX; ++y)
+            // 境界チェックにMAX_INDEX_X, MAX_INDEX_Yを使用
+            for (int y = 1; y < MAX_INDEX_Y; ++y)
             {
-                for (int x = 1; x < MAX_INDEX; ++x)
+                for (int x = 1; x < MAX_INDEX_X; ++x)
                 {
                     if (mapComp.grid[y][x].type == CellType::Wall)
                     {
@@ -234,7 +256,8 @@ void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& tracke
                             int nx = x + directions[i][0];
                             int ny = y + directions[i][1];
 
-                            if (nx > 0 && nx < MAX_INDEX && ny > 0 && ny < MAX_INDEX &&
+                            // 境界チェックにMAX_INDEX_X, MAX_INDEX_Yを使用
+                            if (nx > 0 && nx < MAX_INDEX_X && ny > 0 && ny < MAX_INDEX_Y &&
                                 mapComp.grid[ny][nx].type != CellType::Wall)
                             {
                                 if (mapComp.grid[ny][nx].visited) bordersReachable = true;
@@ -268,9 +291,9 @@ void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& tracke
 
         // 1. 通路/部屋セルの総数をカウント
         int totalPathCells = 0;
-        for (int y = 0; y < MAP_GRID_SIZE; ++y)
+        for (int y = 0; y < GRID_SIZE_Y; ++y)
         {
-            for (int x = 0; x < MAP_GRID_SIZE; ++x)
+            for (int x = 0; x < GRID_SIZE_X; ++x)
             {
                 if (mapComp.grid[y][x].type != CellType::Wall && mapComp.grid[y][x].type != CellType::Unvisited)
                 {
@@ -303,10 +326,6 @@ end_generate_loop:;
     // --------------------------------------------------------------------------------
     // 【ステップ2-1: 行き止まり（袋小路）除去ロジックの導入】
     // --------------------------------------------------------------------------------
-    // マップの回遊性を高め、一本道の通路を完全に削減するまで繰り返す
-
-    // 4方向 (2マス先)
-    std::vector<std::pair<int, int>> directions2x2 = { { 0, -2 }, { 2, 0 }, { 0, 2 }, { -2, 0 } };
     // 4方向 (1マス先)
     int directions_1step[4][2] = { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
     bool deadEndConnected = false;
@@ -314,7 +333,6 @@ end_generate_loop:;
     // デバッグ用カウンタの宣言
     int totalDeadEndsResolved = 0; // 解消された総数のみを追跡する
 
-    // ★ 修正：do-whileループの構造を根本的に変更 ★
     // 変更がなくなるまでループし、デッドエンドのリストを更新する
     bool deadEndsWereProcessed;
     do
@@ -324,10 +342,11 @@ end_generate_loop:;
         std::vector<XMINT2> deadEndCandidates;
 
         // 1. 全てのPathセルを走査し、真の「行き止まり」セル（openDirections <= 2）をコンテナに収集
-        for (int y = 1; y < MAX_INDEX; ++y)
+        for (int y = 1; y < MAX_INDEX_Y; ++y)
         {
-            for (int x = 1; x < MAX_INDEX; ++x)
+            for (int x = 1; x < MAX_INDEX_X; ++x)
             {
+                // Roomも開通していると見なすため、Pathのみを対象とする
                 if (mapComp.grid[y][x].type != CellType::Path) continue;
 
                 int openDirections = 0;
@@ -337,7 +356,7 @@ end_generate_loop:;
                     int nx = x + directions_1step[i][0];
                     int ny = y + directions_1step[i][1];
 
-                    if (nx > 0 && nx < MAX_INDEX && ny > 0 && ny < MAX_INDEX)
+                    if (nx > 0 && nx < MAX_INDEX_X && ny > 0 && ny < MAX_INDEX_Y)
                     {
                         CellType type = mapComp.grid[ny][nx].type;
                         if (type == CellType::Path || type == CellType::Room || type == CellType::Start || type == CellType::Goal)
@@ -376,13 +395,13 @@ end_generate_loop:;
                 int nx = targetDeadEnd.x + directions_1step[i][0];
                 int ny = targetDeadEnd.y + directions_1step[i][1];
 
-                if (nx > 0 && nx < MAX_INDEX && ny > 0 && ny < MAX_INDEX)
+                if (nx > 0 && nx < MAX_INDEX_X && ny > 0 && ny < MAX_INDEX_Y)
                 {
                     XMINT2 neighbor = { nx, ny };
                     CellType neighborType = mapComp.grid[ny][nx].type;
 
-                    // 【修正】もし隣接セルがPath/Roomの場合、それがデッドエンドの真の根元である
-                    if (neighborType == CellType::Path || neighborType == CellType::Room || neighborType == CellType::Start)
+                    // もし隣接セルがPath/Roomの場合、それがデッドエンドの真の根元である
+                    if (neighborType == CellType::Path || neighborType == CellType::Room || neighborType == CellType::Start || neighborType == CellType::Goal)
                     {
                         // 既に開通している通路方向（根元）を探索対象から除外
                         visitedSet.insert(neighbor);
@@ -424,7 +443,7 @@ end_generate_loop:;
                     int nx = current.x + directions_1step[i][0]; // 1マスステップ
                     int ny = current.y + directions_1step[i][1]; // 1マスステップ
 
-                    if (nx > 0 && nx < MAX_INDEX && ny > 0 && ny < MAX_INDEX)
+                    if (nx > 0 && nx < MAX_INDEX_X && ny > 0 && ny < MAX_INDEX_Y)
                     {
                         XMINT2 neighbor = { nx, ny };
                         if (visitedSet.find(neighbor) == visitedSet.end())
@@ -500,9 +519,9 @@ end_generate_loop:;
     std::vector<XMINT2> perimeterSpawnPositions;// 外周より一つ内側の境界セル (スポーン優先)
 
     // 最外周の壁より一つ内側の領域 (1 to MAX_INDEX - 1) の Pathセルを収集する
-    for (int y = 1; y < MAX_INDEX; ++y)
+    for (int y = 1; y < MAX_INDEX_Y; ++y)
     {
-        for (int x = 1; x < MAX_INDEX; ++x)
+        for (int x = 1; x < MAX_INDEX_X; ++x)
         {
             // WallでもUnvisitedでもない (Path/Room) セルを候補とする
             if (mapComp.grid[y][x].type != CellType::Wall && mapComp.grid[y][x].type != CellType::Unvisited) {
@@ -510,8 +529,8 @@ end_generate_loop:;
                 // 全ての有効なセルを候補に追加
                 spawnablePositions.push_back({ x, y });
 
-                // ★ プレイヤーの要件: 外周より一つ内側のセル (x=1, MAX-1, y=1, MAX-1) を抽出 ★
-                if (x == 1 || x == MAX_INDEX - 1 || y == 1 || y == MAX_INDEX - 1) {
+                // プレイヤーの要件: 外周より一つ内側のセル (x=1, MAX-1, y=1, MAX-1) を抽出
+                if (x == 1 || x == MAX_INDEX_X - 1 || y == 1 || y == MAX_INDEX_Y - 1) {
                     perimeterSpawnPositions.push_back({ x, y });
                 }
             }
@@ -551,7 +570,7 @@ end_generate_loop:;
     else {
         // パスセルが足りない場合のデバッグ処理
         mapComp.startPos = { 1, 1 };
-        mapComp.goalPos = { MAX_INDEX - 1, MAX_INDEX - 1 };
+        mapComp.goalPos = { MAX_INDEX_X - 1, MAX_INDEX_Y - 1 };
     }
 
     // 3. セルタイプを更新
@@ -564,9 +583,9 @@ end_generate_loop:;
 
     // 配置可能なパス座標のリストを収集
     std::vector<XMINT2> availablePathPositions;
-    for (int y = 0; y < MAP_GRID_SIZE; ++y)
+    for (int y = 0; y < GRID_SIZE_Y; ++y)
     {
-        for (int x = 0; x < MAP_GRID_SIZE; ++x)
+        for (int x = 0; x < GRID_SIZE_X; ++x)
         {
             // 通路であり、かつスタート・ゴールではない位置を候補とする
             if (mapComp.grid[y][x].type == CellType::Path)
@@ -579,16 +598,12 @@ end_generate_loop:;
     // ランダムな位置を選択できるようにシャッフル
     std::shuffle(availablePathPositions.begin(), availablePathPositions.end(), s_generator);
 
-    // 1. アイテム (3〜5個) の配置
-    constexpr int MIN_ITEMS = 3;
-    constexpr int MAX_ITEMS = 5;
-    // 乱数でアイテム数を決定 (std::uniform_int_distributionを使用)
-    std::uniform_int_distribution<int> itemDist(MIN_ITEMS, MAX_ITEMS);
-    int itemsToPlace = itemDist(s_generator);
-    trackerComp.totalItems = itemsToPlace;
+    // 1. アイテム (config.itemCount) の配置
+    const int ITEMS_TO_PLACE = config.itemCount;
+    trackerComp.totalItems = ITEMS_TO_PLACE;
 
     // 配置可能な数が足りない場合は、リストのサイズを上限とする
-    itemsToPlace = std::min((int)availablePathPositions.size(), itemsToPlace);
+    int itemsToPlace = std::min((int)availablePathPositions.size(), ITEMS_TO_PLACE);
 
     for (int i = 0; i < itemsToPlace; ++i)
     {
@@ -599,16 +614,36 @@ end_generate_loop:;
         mapComp.itemPositions.push_back(pos); // ItemComponentで管理するために位置情報を保存
     }
 
-    // 2. 警備員（敵）の配置 (ここでは1体とする)
-    constexpr int GUARDS_TO_PLACE = 1;
+    // 2. 警備員（敵）の配置 (config.guardCount)
+    const int GUARDS_TO_PLACE = config.guardCount;
 
-    if (availablePathPositions.size() >= GUARDS_TO_PLACE)
+    int guardsPlaced = 0;
+    while (guardsPlaced < GUARDS_TO_PLACE && !availablePathPositions.empty())
     {
         XMINT2 pos = availablePathPositions.back();
         availablePathPositions.pop_back();
 
         mapComp.grid[pos.y][pos.x].type = CellType::Guard;
-        // 警備員の位置はMapComponentに専用の変数を用意することもできるが、ここではグリッドに直接マークする
+        guardsPlaced++;
+    }
+
+    // 3. その他のギミック配置 (config.gimmickCounts を利用)
+    // NOTE: CellType::Gimmick の処理はMapComponent.hにCellTypeを追加した後で実装
+
+    for (const auto& pair : config.gimmickCounts)
+    {
+        CellType gimmickType = pair.first;
+        int count = pair.second;
+
+        // availablePathPositionsが空になるまで、配置を試みる
+        for (int i = 0; i < count && !availablePathPositions.empty(); ++i)
+        {
+            XMINT2 pos = availablePathPositions.back();
+            availablePathPositions.pop_back();
+
+            mapComp.grid[pos.y][pos.x].type = gimmickType;
+            // 必要に応じて、追加のギミック位置リストをMapComponentに追加可能
+        }
     }
 }
 
@@ -618,11 +653,17 @@ end_generate_loop:;
  * @param x - 現在のセルのX座標
  * @param y - 現在のセルのY座標
  */
-void MazeGenerator::RecursiveBacktracker(MapComponent& mapComp, int x, int y)
+void MazeGenerator::RecursiveBacktracker(MapComponent& mapComp, const MapStageConfig& config, int x, int y)
 {
+    const int GRID_SIZE_X = config.gridSizeX;
+    const int GRID_SIZE_Y = config.gridSizeY;
+
     // 現在のセルを訪問済みとしてマーク
     mapComp.grid[y][x].visited = true;
-    mapComp.grid[y][x].type = CellType::Path; // 通路を掘る
+    if (mapComp.grid[y][x].type != CellType::Room)
+    {
+        mapComp.grid[y][x].type = CellType::Path; // 通路を掘る
+    }
 
     // 進行方向の候補 (dx, dy) を定義 (北, 東, 南, 西)
     // 迷路のセルは2x2の壁と壁の間に1マスの通路が掘られるイメージ
@@ -650,7 +691,7 @@ void MazeGenerator::RecursiveBacktracker(MapComponent& mapComp, int x, int y)
         int wallY = y + dy / 2;
 
         // 境界チェック (nx, ny がグリッド内か)
-        if (nx >= 0 && nx < MAP_GRID_SIZE && ny >= 0 && ny < MAP_GRID_SIZE)
+        if (nx >= 0 && nx < GRID_SIZE_X && ny >= 0 && ny < GRID_SIZE_Y)
         {
             if (!mapComp.grid[ny][nx].visited)
             {
@@ -658,7 +699,7 @@ void MazeGenerator::RecursiveBacktracker(MapComponent& mapComp, int x, int y)
                 mapComp.grid[wallY][wallX].type = CellType::Path; // 間のセルを通路として掘る
 
                 // 次のセルへ進む
-                RecursiveBacktracker(mapComp, nx, ny);
+                RecursiveBacktracker(mapComp, config, nx, ny); // <--- configを渡す
             }
         }
     }
@@ -669,61 +710,67 @@ void MazeGenerator::RecursiveBacktracker(MapComponent& mapComp, int x, int y)
 // ===================================================================
 
 /**
- * @brief マップ生成システムを初期化し、迷路を生成する。
+ * [void - CreateMap]
+ * @brief	マップ生成システムを初期化し、迷路を生成する。
+ * 
+ * @param	[in] stageID 読み込むステージ設定のID
  */
-void MapGenerationSystem::InitMap()
+void MapGenerationSystem::CreateMap(const std::string& stageID)
 {
-    // MapComponentを持つエンティティは一つだけとする (ゲーム全体を司るController Entity)
+    // 1. 設定の読み込み
+    MapStageConfig config = MapConfigLoader::Load(stageID);
+
+    // MapComponentを持つエンティティは一つだけとする
     EntityID mapEntity = FindFirstEntityWithComponent<MapComponent>(m_coordinator);
 
-    // 見つからなかった場合は、専用のEntityを生成してアタッチ
-    if (mapEntity == INVALID_ENTITY_ID)
-    {
-        //mapEntity = m_coordinator->CreateEntity();
-        //m_coordinator->AddComponent(mapEntity, MapComponent{});
-        // MapComponentがEntityFactoryで生成されたGameControllerにアタッチされる可能性もあるため、
-        // 必ずしもここでTransformなどを持たせる必要はない。ここではデータのみとする。
-        return;
-    }
+    // 見つからなかった場合は、専用のエンティティを生成してアタッチ
+    if (mapEntity == INVALID_ENTITY_ID) return;
 
-    // MapComponentを取得して迷路を生成
-    MapComponent& mapComp = m_coordinator->GetComponent<MapComponent>(mapEntity);
-    ItemTrackerComponent& trackerComp = m_coordinator->GetComponent<ItemTrackerComponent>(mapEntity);
+    auto& mapComp = m_coordinator->GetComponent<MapComponent>(mapEntity);
+    auto& trackerComp = m_coordinator->GetComponent<ItemTrackerComponent>(mapEntity);
 
-    // 1. 迷路データの生成
-    // ★ 修正点：50x50グリッドの奇数座標から開始 (1, 1)
+    // 2. 迷路データの生成
+    // MapComponent内に設定情報がコピーされる
+    mapComp.gridSizeX = config.gridSizeX;
+    mapComp.gridSizeY = config.gridSizeY;
+    mapComp.tileSize = config.tileSize;
+    mapComp.wallHeight = config.wallHeight;
     mapComp.startPos = { 1, 1 };
-    // ゴール位置を決定 (右下に近い奇数座標)
-    mapComp.goalPos = { MAP_GRID_SIZE - 2, MAP_GRID_SIZE - 2 }; // (48, 48)
+    mapComp.goalPos = { config.gridSizeX - 2, config.gridSizeY - 2 };
 
-    MazeGenerator::Generate(mapComp, trackerComp);
+    MazeGenerator::Generate(mapComp, trackerComp, config);
 
-    // 2. 3D空間へのEntity配置
-    SpawnMapEntities(mapComp);
+    // 3. 3D空間へのEntity配置
+    SpawnMapEntities(mapComp, config);
 }
 
 /**
  * @brief グリッド座標をワールド座標に変換するヘルパー関数
  */
-XMFLOAT3 MapGenerationSystem::GetWorldPosition(int x, int y)
+XMFLOAT3 MapGenerationSystem::GetWorldPosition(int x, int y, const MapStageConfig& config)
 {
-    // MAP_GRID_SIZE = 50, TILE_SIZE = 1.0f
-    // マップの中心をワールド原点(0, 0, 0)とするためのオフセット計算 (25.0f)
-    constexpr float MAP_CENTER_OFFSET = (MAP_GRID_SIZE / 2.0f) * TILE_SIZE;
+    // configから動的な定数を取得
+    const float TILE_SIZE = config.tileSize;
+    const int GRID_SIZE_X = config.gridSizeX;
+    const int GRID_SIZE_Y = config.gridSizeY;
 
-    // ★ 修正点: ズレ補正用の定数オフセット ★
-    // 左に 0.5m ズレているのを修正するため、+X方向に 0.5m オフセット
-    constexpr float X_ADJUSTMENT = 0.5f * TILE_SIZE;
-    // 下に 1.0m ズレているのを修正するため、+Z方向に 1.0m オフセット
-    constexpr float Z_ADJUSTMENT = 1.0f * TILE_SIZE;
+    // マップの中心をワールド原点(0, 0, 0)とするためのオフセット計算
+    // X軸の中心オフセットを動的に計算
+    const float MAP_CENTER_OFFSET_X = (GRID_SIZE_X / 2.0f) * TILE_SIZE;
+    // Z軸の中心オフセットを動的に計算
+    const float MAP_CENTER_OFFSET_Z = (GRID_SIZE_Y / 2.0f) * TILE_SIZE;
+
+    // ハードコードされた定数からconfigのtileSizeを使用するように変更
+    constexpr float X_ADJUSTMENT = 0.5f;
+    constexpr float Z_ADJUSTMENT = 1.0f;
 
     XMFLOAT3 pos;
-    // X座標: (グリッドX * TILE_SIZE - MAP_CENTER_OFFSET) + X_ADJUSTMENT
-    pos.x = (float)x * TILE_SIZE - MAP_CENTER_OFFSET + X_ADJUSTMENT;
+    // X座標: (グリッドX * TILE_SIZE - MAP_CENTER_OFFSET_X) + X_ADJUSTMENT * TILE_SIZE
+    pos.x = (float)x * TILE_SIZE - MAP_CENTER_OFFSET_X + X_ADJUSTMENT * TILE_SIZE;
     // Y座標: 地面なので0
     pos.y = 0.0f;
-    // Z座標: (グリッドY * TILE_SIZE - MAP_CENTER_OFFSET) + Z_ADJUSTMENT
-    pos.z = (float)y * TILE_SIZE - MAP_CENTER_OFFSET + Z_ADJUSTMENT;
+    // Z座標: (グリッドY * TILE_SIZE - MAP_CENTER_OFFSET_Z) + Z_ADJUSTMENT * TILE_SIZE
+    pos.z = (float)y * TILE_SIZE - MAP_CENTER_OFFSET_Z + Z_ADJUSTMENT * TILE_SIZE;
 
     return pos;
 }
@@ -732,73 +779,70 @@ XMFLOAT3 MapGenerationSystem::GetWorldPosition(int x, int y)
 void MapGenerationSystem::DrawDebugLines()
 {
     using namespace DirectX;
-    // マップの中心をワールド原点(0, 0, 0)とするためのオフセット計算
-    // NOTE: これらの定数は MapComponent.h または MapGenerationSystem.cpp のグローバル定数から取得します。
-
     // MapComponentを持つエンティティを取得
     ECS::EntityID mapEntity = FindFirstEntityWithComponent<MapComponent>(m_coordinator);
     if (mapEntity == INVALID_ENTITY_ID) return;
 
     MapComponent& mapComp = m_coordinator->GetComponent<MapComponent>(mapEntity);
 
-    XMFLOAT4 wallColor = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f); // 赤色
+    // MapComponentから動的な定数を取得
+    const int GRID_SIZE_X = mapComp.gridSizeX;
+    const int GRID_SIZE_Y = mapComp.gridSizeY;
+    const float TILE_SIZE = mapComp.tileSize;
+    const float WALL_HEIGHT = mapComp.wallHeight;
+
+    XMFLOAT4 wallColor = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f); // 緑色
+
+    MapStageConfig tempConfig;
+    tempConfig.gridSizeX = mapComp.gridSizeX;
+    tempConfig.gridSizeY = mapComp.gridSizeY;
+    tempConfig.tileSize = mapComp.tileSize;
+    tempConfig.wallHeight = mapComp.wallHeight;
+
+    // 描画の高さを床の上(Y=0.1f)に設定して、Zファイティングを避ける
+    const float LINE_HEIGHT_ADJUST = tempConfig.wallHeight + 1.0f; // WALL_HEIGHTは20.0fなので、LINE_HEIGHTは21.0f
+    const float LINE_HEIGHT = WALL_HEIGHT + LINE_HEIGHT_ADJUST;
 
     // グリッド全体を走査し、壁と通路の境界線を描画
-    for (int y = 0; y < MAP_GRID_SIZE; ++y)
+    for (int y = 0; y < GRID_SIZE_Y; ++y)
     {
-        for (int x = 0; x < MAP_GRID_SIZE; ++x)
+        for (int x = 0; x < GRID_SIZE_X; ++x)
         {
             // 現在のセルタイプ
-            CellType currentType = mapComp.grid[y][x].type; //
+            CellType currentType = mapComp.grid[y][x].type;
 
-            // 壁または未訪問のセルは描画対象外（通路の境界のみを描画したい）
-            // ※ ここでは、通路(Path)または特殊セル(Start/Goal/Item/Guard)を「床」とみなす
-            if (currentType == CellType::Wall || currentType == CellType::Unvisited) //
+            // 壁または未訪問のセルは描画対象外
+            if (currentType == CellType::Wall || currentType == CellType::Unvisited)
             {
                 continue;
             }
 
-            // セルの角のワールド座標を取得（床の厚さを無視してY=0として描画する）
-            // GetWorldPosition(x, y) はセグメントの左上隅を返す仕様（z軸方向が反転している可能性を考慮）
-            XMFLOAT3 cellCorner = GetWorldPosition(x, y);
-            // GetWorldPositionはセルの中心ではなく、グリッドセルの角（または左下隅）の座標を返す想定
-
-            // 描画の高さを床の上(Y=0.1f)に設定して、Zファイティングを避ける
-            constexpr float LINE_HEIGHT = WALL_HEIGHT + 1.0f;
-
             // 1. 北側の境界線 (y-1)
             if (y > 0)
             {
-                CellType neighborType = mapComp.grid[y - 1][x].type; //
-                // 隣が壁で、自身が通路の場合、境界線を描画
-                if (neighborType == CellType::Wall) //
+                CellType neighborType = mapComp.grid[y - 1][x].type;
+                if (neighborType == CellType::Wall)
                 {
-                    // 始点: (x, y) の左上角
-                    XMFLOAT3 start = GetWorldPosition(x, y); // GetWorldPosition(x, y) は壁Entityの左下隅を返す仕様
+                    XMFLOAT3 start = GetWorldPosition(x, y, tempConfig); // <--- tempConfigを渡す
                     start.y = LINE_HEIGHT;
 
-                    // 終点: (x, y) の右上角
                     XMFLOAT3 end = start;
                     end.x += TILE_SIZE;
 
-                    // Geometory::AddLineは外部システムのため、ここでインクルードの確認が必要だが、ここでは仮に存在するものとする
                     Geometory::AddLine(start, end, wallColor);
                 }
             }
 
             // 2. 東側の境界線 (x+1)
-            if (x < MAP_GRID_SIZE - 1)
+            if (x < GRID_SIZE_X - 1)
             {
-                CellType neighborType = mapComp.grid[y][x + 1].type; //
-                // 隣が壁で、自身が通路の場合、境界線を描画
-                if (neighborType == CellType::Wall) //
+                CellType neighborType = mapComp.grid[y][x + 1].type;
+                if (neighborType == CellType::Wall)
                 {
-                    // 始点: (x, y) の右上角
-                    XMFLOAT3 start = GetWorldPosition(x, y);
+                    XMFLOAT3 start = GetWorldPosition(x, y, tempConfig); // <--- tempConfigを渡す
                     start.x += TILE_SIZE;
                     start.y = LINE_HEIGHT;
 
-                    // 終点: (x, y) の右下角
                     XMFLOAT3 end = start;
                     end.z += TILE_SIZE;
 
@@ -807,18 +851,15 @@ void MapGenerationSystem::DrawDebugLines()
             }
 
             // 3. 南側の境界線 (y+1)
-            if (y < MAP_GRID_SIZE - 1)
+            if (y < GRID_SIZE_Y - 1)
             {
-                CellType neighborType = mapComp.grid[y + 1][x].type; //
-                // 隣が壁で、自身が通路の場合、境界線を描画
-                if (neighborType == CellType::Wall) //
+                CellType neighborType = mapComp.grid[y + 1][x].type;
+                if (neighborType == CellType::Wall)
                 {
-                    // 始点: (x, y) の左下角
-                    XMFLOAT3 start = GetWorldPosition(x, y);
+                    XMFLOAT3 start = GetWorldPosition(x, y, tempConfig); // <--- tempConfigを渡す
                     start.z += TILE_SIZE;
                     start.y = LINE_HEIGHT;
 
-                    // 終点: (x, y) の右下角
                     XMFLOAT3 end = start;
                     end.x += TILE_SIZE;
 
@@ -829,15 +870,12 @@ void MapGenerationSystem::DrawDebugLines()
             // 4. 西側の境界線 (x-1)
             if (x > 0)
             {
-                CellType neighborType = mapComp.grid[y][x - 1].type; //
-                // 隣が壁で、自身が通路の場合、境界線を描画
-                if (neighborType == CellType::Wall) //
+                CellType neighborType = mapComp.grid[y][x - 1].type;
+                if (neighborType == CellType::Wall)
                 {
-                    // 始点: (x, y) の左上角
-                    XMFLOAT3 start = GetWorldPosition(x, y);
+                    XMFLOAT3 start = GetWorldPosition(x, y, tempConfig); // <--- tempConfigを渡す
                     start.y = LINE_HEIGHT;
 
-                    // 終点: (x, y) の左下角
                     XMFLOAT3 end = start;
                     end.z += TILE_SIZE;
 
@@ -851,19 +889,26 @@ void MapGenerationSystem::DrawDebugLines()
 /**
  * @brief 生成されたマップデータに基づき、3D空間に壁、床、オブジェクトを配置する
  */
-void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp)
+void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStageConfig& config)
 {
+    // configから動的な定数を取得
+    const int GRID_SIZE_X = config.gridSizeX;
+    const int GRID_SIZE_Y = config.gridSizeY;
+    const float TILE_SIZE = config.tileSize;
+    const float WALL_HEIGHT = config.wallHeight;
+
     // --------------------------------------------------------------------------------
     // 【最適化】Greedy Meshingのための処理済みフラグ用グリッド
     // --------------------------------------------------------------------------------
-    bool processed[MAP_GRID_SIZE][MAP_GRID_SIZE] = { false };
+    // グリッドサイズを動的に変更
+    std::vector<std::vector<bool>> processed(GRID_SIZE_Y, std::vector<bool>(GRID_SIZE_X, false));
 
     // --------------------------------------------------------------------
-    // 1. 床Entityの生成（Path, Start, Goal, Item, Guardセルを全てPathとして結合）
+    // 1. 床Entityの生成
     // --------------------------------------------------------------------
-    for (int y = 0; y < MAP_GRID_SIZE; ++y)
+    for (int y = 0; y < GRID_SIZE_Y; ++y)
     {
-        for (int x = 0; x < MAP_GRID_SIZE; ++x)
+        for (int x = 0; x < GRID_SIZE_X; ++x)
         {
             if (mapComp.grid[y][x].type == CellType::Wall ||
                 mapComp.grid[y][x].type == CellType::Unvisited ||
@@ -874,7 +919,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp)
 
             // X軸方向への結合を試みる (Path/特殊セルは全て床として結合)
             int endX = x;
-            while (endX + 1 < MAP_GRID_SIZE &&
+            while (endX + 1 < GRID_SIZE_X && // GRID_SIZE_X を使用
                 !processed[y][endX + 1] &&
                 mapComp.grid[y][endX + 1].type != CellType::Wall &&
                 mapComp.grid[y][endX + 1].type != CellType::Unvisited)
@@ -886,23 +931,22 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp)
             int segmentLength = endX - x + 1;
             float worldLength = (float)segmentLength * TILE_SIZE;
 
-            // ★ 修正1: グリッドの左下隅の座標を取得 (BUG-06対応)
-            XMFLOAT3 segmentStartPos = GetWorldPosition(x, y);
+            // グリッドの左下隅の座標を取得
+            XMFLOAT3 segmentStartPos = GetWorldPosition(x, y, config); // <--- configを渡す
 
-            // ★ 修正2: Entityの中心座標を計算 (BUG-06対応)
+            // Entityの中心座標を計算
             XMFLOAT3 segmentCenterPos = segmentStartPos;
             segmentCenterPos.x += worldLength / 2.0f; // Entityの長さの半分をオフセット
-
             segmentCenterPos.z += TILE_SIZE / 2.0f;
 
-            // 修正3: Y座標のオフセット (BUG-05対応)
-            segmentCenterPos.y = -0.01f; // Zファイティング回避のためわずかに下げる
+            // Y座標のオフセット 
+            segmentCenterPos.y = -0.01f;
 
             // 床 Entityの生成
             EntityFactory::CreateGround(
                 m_coordinator,
                 segmentCenterPos,
-                XMFLOAT3(worldLength, TILE_SIZE, TILE_SIZE) // X: 長さ, Y: 1m(厚さ), Z: 1m幅
+                XMFLOAT3(worldLength, TILE_SIZE, TILE_SIZE) // X: 長さ, Y: TILE_SIZE (厚さ), Z: TILE_SIZE (幅)
             );
 
             // 処理済みフラグの更新
@@ -916,24 +960,20 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp)
 
 
     // --------------------------------------------------------------------
-    // 2. 壁Entityの生成（Wallセルのみを結合）
+    // 2. 壁Entityの生成
     // --------------------------------------------------------------------
     // 処理済みフラグをリセットして壁の結合に再利用
-    for (int y = 0; y < MAP_GRID_SIZE; ++y) {
-        for (int x = 0; x < MAP_GRID_SIZE; ++x) {
-            processed[y][x] = false;
-        }
-    }
+    processed.assign(GRID_SIZE_Y, std::vector<bool>(GRID_SIZE_X, false));
 
-    for (int y = 0; y < MAP_GRID_SIZE; ++y)
+    for (int y = 0; y < GRID_SIZE_Y; ++y)
     {
-        for (int x = 0; x < MAP_GRID_SIZE; ++x)
+        for (int x = 0; x < GRID_SIZE_X; ++x)
         {
             if (mapComp.grid[y][x].type != CellType::Wall || processed[y][x]) continue;
 
             // X軸方向への結合を試みる (Wallセルのみ)
             int endX = x;
-            while (endX + 1 < MAP_GRID_SIZE &&
+            while (endX + 1 < GRID_SIZE_X && // GRID_SIZE_X を使用
                 !processed[y][endX + 1] &&
                 mapComp.grid[y][endX + 1].type == CellType::Wall)
             {
@@ -944,23 +984,23 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp)
             int segmentLength = endX - x + 1;
             float worldLength = (float)segmentLength * TILE_SIZE;
 
-            // ★ 修正1: グリッドの左下隅の座標を取得 (BUG-06対応)
-            XMFLOAT3 segmentStartPos = GetWorldPosition(x, y);
+            // グリッドの左下隅の座標を取得
+            XMFLOAT3 segmentStartPos = GetWorldPosition(x, y, config); // <--- configを渡す
 
-            // ★ 修正2: Entityの中心座標を計算 (BUG-06対応)
+            // Entityの中心座標を計算
             XMFLOAT3 segmentCenterPos = segmentStartPos;
             segmentCenterPos.x += worldLength / 2.0f; // Entityの長さの半分をオフセット
 
             segmentCenterPos.z += TILE_SIZE / 2.0f;
 
-            // 修正3: Y座標のオフセット (BUG-05対応)
-            segmentCenterPos.y = WALL_HEIGHT / 2.0f; // 2.5f (壁の中心を地面より上に持ち上げる)
+            // Y座標のオフセット 
+            segmentCenterPos.y = WALL_HEIGHT / 2.0f;
 
             // 壁 Entityの生成
             EntityFactory::CreateWall(
                 m_coordinator,
                 segmentCenterPos,
-                XMFLOAT3(worldLength, WALL_HEIGHT, TILE_SIZE), // X: 長さ, Y: 高さ, Z: 厚さ (1m)
+                XMFLOAT3(worldLength, WALL_HEIGHT, TILE_SIZE), // X: 長さ, Y: 高さ, Z: TILE_SIZE (厚さ)
                 0.0f // 回転なし
             );
 
@@ -976,9 +1016,9 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp)
     // --------------------------------------------------------------------
     // 3. 特殊 Entityの配置（単独セル）
     // --------------------------------------------------------------------
-    for (int y = 0; y < MAP_GRID_SIZE; ++y)
+    for (int y = 0; y < GRID_SIZE_Y; ++y) // GRID_SIZE_Y を使用
     {
-        for (int x = 0; x < MAP_GRID_SIZE; ++x)
+        for (int x = 0; x < GRID_SIZE_X; ++x) // GRID_SIZE_X を使用
         {
             Cell& cell = mapComp.grid[y][x];
 
@@ -988,14 +1028,16 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp)
             case CellType::Goal:
             case CellType::Item:
             case CellType::Guard:
+                // TODO: CellType::Room に配置するギミックがある場合はここに追加
+                // case CellType::Teleporter: 
             {
                 // 単独セルの中心座標を取得
-                XMFLOAT3 cellCenter = GetWorldPosition(x, y);
+                XMFLOAT3 cellCenter = GetWorldPosition(x, y, config); // <--- configを渡す
                 // GetWorldPositionは角座標を返すので、単独セルの中心オフセットを追加
                 cellCenter.x += TILE_SIZE / 2.0f;
                 cellCenter.z += TILE_SIZE / 2.0f;
 
-                // 特殊オブジェクトのY座標を床の表面に合わせる (0.5f = プレイヤー/アイテムの中心)
+                // 特殊オブジェクトのY座標を床の表面に合わせる (TILE_SIZE / 2.0f = プレイヤー/アイテムの中心)
                 cellCenter.y = TILE_SIZE / 2.0f;
 
                 if (cell.type == CellType::Start) {

@@ -1,0 +1,25 @@
+{
+  "ST_001": {
+    "name": "Stage1 Maze",
+    "gridSizeX": 30,
+    "gridSizeY": 20,
+    "tileSize": 5.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 5,
+    "itemCount": 3,
+    "guardCount": 1,
+    "minPathPercentage": 0.25,
+    "gimmicks": [
+      {
+        "type": "Teleporter",
+        "count": 0
+      },
+      {
+        "type": "TrapDoor",
+        "count": 0
+      }
+    ]
+  }
+}

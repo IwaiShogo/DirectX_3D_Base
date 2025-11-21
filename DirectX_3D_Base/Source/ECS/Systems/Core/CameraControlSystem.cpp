@@ -56,16 +56,21 @@ static XMFLOAT3 Lerp(const XMFLOAT3& start, const XMFLOAT3& end, float t)
  * @brief ワールド座標をグリッド座標 (XMINT2) に変換するヘルパー関数
  * @note GuardAISystem.cpp と同様のロジック
  */
-static XMINT2 GetGridPosition(const XMFLOAT3& worldPos)
+static XMINT2 GetGridPosition(const XMFLOAT3& worldPos, const MapComponent& mapComp)
 {
-    float x_f = (worldPos.x - X_ADJUSTMENT + MAP_CENTER_OFFSET) / TILE_SIZE;
-    float y_f = (worldPos.z - Z_ADJUSTMENT + MAP_CENTER_OFFSET) / TILE_SIZE;
+    const float MAP_CENTER_OFFSET_X = (mapComp.gridSizeX / 2.0f) * mapComp.tileSize; // 20.0f
+    const float MAP_CENTER_OFFSET_Y = (mapComp.gridSizeY / 2.0f) * mapComp.tileSize;
+    const float X_ADJUSTMENT = 0.5f * mapComp.tileSize; // 1.0f
+    const float Z_ADJUSTMENT = 1.0f * mapComp.tileSize; // 2.0f
+
+    float x_f = (worldPos.x - X_ADJUSTMENT + MAP_CENTER_OFFSET_X) / mapComp.tileSize;
+    float y_f = (worldPos.z - Z_ADJUSTMENT + MAP_CENTER_OFFSET_Y) / mapComp.tileSize;
 
     int x = static_cast<int>(x_f);
     int y = static_cast<int>(y_f);
 
-    x = std::min(std::max(0, x), MAP_GRID_SIZE - 1);
-    y = std::min(std::max(0, y), MAP_GRID_SIZE - 1);
+    x = std::min(std::max(0, x), mapComp.gridSizeX - 1);
+    y = std::min(std::max(0, y), mapComp.gridSizeY - 1);
 
     return { x, y };
 }
@@ -85,7 +90,11 @@ static bool RaycastToWall(
     XMFLOAT3& hitPoint
 )
 {
-    constexpr float CAMERA_SAFETY_OFFSET = TILE_SIZE * 0.25f;
+    const float CAMERA_SAFETY_OFFSET = mapComp.tileSize * 0.25f;
+    const float MAP_CENTER_OFFSET_X = (mapComp.gridSizeX / 2.0f) * mapComp.tileSize; // 20.0f
+    const float MAP_CENTER_OFFSET_Y = (mapComp.gridSizeY / 2.0f) * mapComp.tileSize;
+    const float X_ADJUSTMENT = 0.5f * mapComp.tileSize; // 1.0f
+    const float Z_ADJUSTMENT = 1.0f * mapComp.tileSize; // 2.0f
 
     // 距離が近すぎる場合は衝突チェックをスキップ
     XMVECTOR startV = XMLoadFloat3(&start);
@@ -111,7 +120,7 @@ static bool RaycastToWall(
     // 距離パラメータ t (t=0がstart, t=distanceがend)
     float t = 0.0f;
 
-    XMINT2 currentGrid = GetGridPosition(start);
+    XMINT2 currentGrid = GetGridPosition(start, mapComp);
 
     // 衝突判定ループ (t が total distance を超えるまで)
     while (t < distance)
@@ -130,12 +139,12 @@ static bool RaycastToWall(
             if (dx > 0) // 正方向 (右)
             {
                 // 現在のセルの右側の境界線
-                nextGridBoundaryX = ((float)currentGrid.x + 1.0f) * TILE_SIZE - MAP_CENTER_OFFSET + X_ADJUSTMENT;
+                nextGridBoundaryX = ((float)currentGrid.x + 1.0f) * mapComp.tileSize - MAP_CENTER_OFFSET_X + X_ADJUSTMENT;
             }
             else // 負方向 (左)
             {
                 // 現在のセルの左側の境界線
-                nextGridBoundaryX = (float)currentGrid.x * TILE_SIZE - MAP_CENTER_OFFSET + X_ADJUSTMENT;
+                nextGridBoundaryX = (float)currentGrid.x * mapComp.tileSize - MAP_CENTER_OFFSET_X + X_ADJUSTMENT;
             }
 
             // 始点から境界線までの距離 (t)
@@ -148,12 +157,12 @@ static bool RaycastToWall(
             if (dy > 0) // 正方向 (奥)
             {
                 // 現在のセルの奥側の境界線
-                nextGridBoundaryY = ((float)currentGrid.y + 1.0f) * TILE_SIZE - MAP_CENTER_OFFSET + Z_ADJUSTMENT;
+                nextGridBoundaryY = ((float)currentGrid.y + 1.0f) * mapComp.tileSize - MAP_CENTER_OFFSET_Y + Z_ADJUSTMENT;
             }
             else // 負方向 (手前)
             {
                 // 現在のセルの手前側の境界線
-                nextGridBoundaryY = (float)currentGrid.y * TILE_SIZE - MAP_CENTER_OFFSET + Z_ADJUSTMENT;
+                nextGridBoundaryY = (float)currentGrid.y * mapComp.tileSize - MAP_CENTER_OFFSET_Y + Z_ADJUSTMENT;
             }
 
             // 始点から境界線までの距離 (t)
@@ -187,8 +196,8 @@ static bool RaycastToWall(
         t = t_next;
 
         // 4. 新しいセルが壁かどうかチェック
-        if (currentGrid.x >= 0 && currentGrid.x < MAP_GRID_SIZE &&
-            currentGrid.y >= 0 && currentGrid.y < MAP_GRID_SIZE)
+        if (currentGrid.x >= 0 && currentGrid.x < mapComp.gridSizeX &&
+            currentGrid.y >= 0 && currentGrid.y < mapComp.gridSizeY)
         {
             // 移動先のセルが壁 (Wall) かどうか
             if (mapComp.grid[currentGrid.y][currentGrid.x].type == CellType::Wall)
@@ -197,7 +206,7 @@ static bool RaycastToWall(
                 float t_adjust = t - CAMERA_SAFETY_OFFSET;
 
                 // カメラがプレイヤーに埋まらないように最小距離を確保
-                float t_min = TILE_SIZE * 0.5f; // プレイヤーのサイズを考慮した最小距離
+                float t_min = mapComp.tileSize * 0.5f; // プレイヤーのサイズを考慮した最小距離
                 t_adjust = std::max(t_adjust, t_min);
 
                 // 衝突点のワールド座標を計算

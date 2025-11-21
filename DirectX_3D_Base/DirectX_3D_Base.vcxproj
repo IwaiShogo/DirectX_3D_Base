@@ -180,6 +180,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\Works\_model.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="External\JSON\json.hpp" />
     <ClInclude Include="Include\ECS\AllSystems.h" />
     <ClInclude Include="Include\ECS\ComponentManager.h" />
     <ClInclude Include="Include\ECS\ComponentRegistry.h" />
@@ -248,6 +249,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <None Include="Assets\CSV\ModelList.csv" />
     <None Include="Assets\CSV\SoundList.csv" />
     <None Include="Assets\CSV\TextureList.csv" />
+    <None Include="Assets\JSON\map_config.json" />
     <None Include="Tools\Assets.xlsm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

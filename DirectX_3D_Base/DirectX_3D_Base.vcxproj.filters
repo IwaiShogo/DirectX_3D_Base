@@ -294,6 +294,9 @@
     <ClInclude Include="Include\ECS\Systems\UI\UIRenderSystem.h">
       <Filter>Header Files\ECS\Systems\UI</Filter>
     </ClInclude>
+    <ClInclude Include="External\JSON\json.hpp">
+      <Filter>External\JSON</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -413,6 +416,15 @@
     <Filter Include="Source Files\Systems\XAudio2">
       <UniqueIdentifier>{0f598e98-9f42-4d5f-a0bb-b38345de1902}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External">
+      <UniqueIdentifier>{4bee3e7e-0b4e-4177-9113-3c801c77f2f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\JSON">
+      <UniqueIdentifier>{dbfa2c48-b4e0-4db5-9cc6-671c7853c4b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Config">
+      <UniqueIdentifier>{cb155b88-3788-4c6c-aa61-76912b66fedf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md">
@@ -429,6 +441,9 @@
     </None>
     <None Include="Assets\CSV\SoundList.csv">
       <Filter>Assets\CSV</Filter>
+    </None>
+    <None Include="Assets\JSON\map_config.json">
+      <Filter>Assets\Config</Filter>
     </None>
   </ItemGroup>
 </Project>
