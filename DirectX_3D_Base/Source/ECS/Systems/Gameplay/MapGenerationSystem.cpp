@@ -25,6 +25,8 @@
 #include <algorithm>
 #include <random>
 #include <cmath>
+#include <map>
+#include <set>
 
 using namespace DirectX;
 using namespace ECS;
@@ -37,6 +39,15 @@ namespace DirectX {
     inline bool operator==(const XMINT2& lhs, const XMINT2& rhs)
     {
         return lhs.x == rhs.x && lhs.y == rhs.y;
+    }
+
+    /**
+     * @brief XMINT2に対する比較演算子（operator<）を定義する (std::map, std::set用)
+     */
+    inline bool operator<(const XMINT2& lhs, const XMINT2& rhs)
+    {
+        if (lhs.y != rhs.y) return lhs.y < rhs.y;
+        return lhs.x < rhs.x;
     }
 }
 
@@ -114,14 +125,14 @@ void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& tracke
 
             if (roomWidth < MIN_ROOM_SIZE || roomHeight < MIN_ROOM_SIZE) continue;
 
-            // ★ 重複チェックはここでは省略し、シンプルに上書きを許容する ★
+            // 重複チェックはここでは省略し、シンプルに上書きを許容する
 
             // 部屋の領域をPathとしてマークし、visited=true (迷路生成の対象外とする)
             for (int y = startY; y < startY + roomHeight; ++y)
             {
                 for (int x = startX; x < startX + roomWidth; ++x)
                 {
-                    mapComp.grid[y][x].type = CellType::Path;
+                    mapComp.grid[y][x].type = CellType::Room;
                     mapComp.grid[y][x].visited = true; // 迷路生成アルゴリズムの対象外
                 }
             }
@@ -140,7 +151,7 @@ void MazeGenerator::Generate(MapComponent& mapComp, ItemTrackerComponent& tracke
         RecursiveBacktracker(mapComp, startX, startY);
 
         // --------------------------------------------------------------------------------
-        // 5. ★ 修正点: 迷路生成の後に、最外周の壁セルをvisited=trueに固定する ★
+        // 5. 迷路生成の後に、最外周の壁セルをvisited=trueに固定する
         // --------------------------------------------------------------------------------
         // 迷路生成が完了した後で、外周を確実に固定します。
         int MAX_INDEX = MAP_GRID_SIZE - 1;
@@ -294,154 +305,192 @@ end_generate_loop:;
     // --------------------------------------------------------------------------------
     // マップの回遊性を高め、一本道の通路を完全に削減するまで繰り返す
 
-    bool deadEndRemoved;
+    // 4方向 (2マス先)
+    std::vector<std::pair<int, int>> directions2x2 = { { 0, -2 }, { 2, 0 }, { 0, 2 }, { -2, 0 } };
+    // 4方向 (1マス先)
+    int directions_1step[4][2] = { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
+    bool deadEndConnected = false;
 
-    // 1パスで変更がなくなるまで繰り返し、一本道を完全に排除する
+    // デバッグ用カウンタの宣言
+    int totalDeadEndsResolved = 0; // 解消された総数のみを追跡する
+
+    // ★ 修正：do-whileループの構造を根本的に変更 ★
+    // 変更がなくなるまでループし、デッドエンドのリストを更新する
+    bool deadEndsWereProcessed;
     do
     {
-        deadEndRemoved = false;
+        deadEndsWereProcessed = false;
+        // 検出された全てのデッドエンドを保持するコンテナ
+        std::vector<XMINT2> deadEndCandidates;
 
+        // 1. 全てのPathセルを走査し、真の「行き止まり」セル（openDirections <= 2）をコンテナに収集
         for (int y = 1; y < MAX_INDEX; ++y)
         {
             for (int x = 1; x < MAX_INDEX; ++x)
             {
-                // [修正・安定化] PathまたはRoomセルのみを対象とする (特殊セルを保護)
-                if (mapComp.grid[y][x].type == CellType::Path)
+                if (mapComp.grid[y][x].type != CellType::Path) continue;
+
+                int openDirections = 0;
+                // 1マス先の隣接セルをチェック (前回修正されたロジック)
+                for (int i = 0; i < 4; ++i)
                 {
-                    std::vector<XMINT2> wallNeighbors;
+                    int nx = x + directions_1step[i][0];
+                    int ny = y + directions_1step[i][1];
 
-                    for (int i = 0; i < 4; ++i)
+                    if (nx > 0 && nx < MAX_INDEX && ny > 0 && ny < MAX_INDEX)
                     {
-                        int nx = x + directions[i][0];
-                        int ny = y + directions[i][1];
-
-                        if (nx > 0 && nx < MAX_INDEX && ny > 0 && ny < MAX_INDEX &&
-                            mapComp.grid[ny][nx].type == CellType::Wall)
+                        CellType type = mapComp.grid[ny][nx].type;
+                        if (type == CellType::Path || type == CellType::Room || type == CellType::Start || type == CellType::Goal)
                         {
-                            wallNeighbors.push_back({ nx, ny });
+                            openDirections++;
                         }
                     }
+                }
 
-                    // 行き止まり判定: 周囲に壁が3つ以上ある場合 (袋小路)
-                    if (wallNeighbors.size() >= 3)
-                    {
-                        // ランダムに1つの壁を選択し、通路にする
-                        // ★ 修正：ランダム選択を排除し、リストの最初の壁を選択することで、動作の確実性を高める
-                        auto& targetWall = wallNeighbors[0];
-
-                        mapComp.grid[targetWall.y][targetWall.x].type = CellType::Path;
-                        deadEndRemoved = true;
-                    }
+                if (openDirections <= 1)
+                {
+                    deadEndCandidates.push_back({ x, y });
                 }
             }
         }
-    } while (deadEndRemoved);
 
+        // 処理が行われる前に総数を報告することで、検出数を確認する
+        printf("DeadEnd Removal Pass: Detected %zu dead ends.\n", deadEndCandidates.size());
 
-    // --------------------------------------------------------------------------------
-    // 【ステップ2-2: Wall Expansion (壁拡張) ロジックの導入 (壁の厚み増加)】
-    // --------------------------------------------------------------------------------
-
-    // 拡張の回数（回数が多いほど通路が細くなる）
-    //constexpr int EXPANSION_ITERATIONS = 1;
-
-    //for (int iter = 0; iter < EXPANSION_ITERATIONS; ++iter)
-    //{
-    //    bool wallExpanded = false;
-
-    //    std::vector<XMINT2> expansionCandidates;
-
-    //    for (int y = 1; y < MAX_INDEX; ++y)
-    //    {
-    //        for (int x = 1; x < MAX_INDEX; ++x)
-    //        {
-    //            // PathセルまたはRoomセルが対象
-    //            if (mapComp.grid[y][x].type == CellType::Path)
-    //            {
-    //                int wallNeighbors = 0;
-    //                for (int i = 0; i < 4; ++i)
-    //                {
-    //                    int nx = x + directions[i][0];
-    //                    int ny = y + directions[i][1];
-
-    //                    // 周囲のWallセルをカウント
-    //                    if (nx > 0 && nx < MAX_INDEX && ny > 0 && ny < MAX_INDEX &&
-    //                        mapComp.grid[ny][nx].type == CellType::Wall)
-    //                    {
-    //                        wallNeighbors++;
-    //                    }
-    //                }
-
-    //                // 周囲に壁が3つ以上ある通路を優先的に拡張候補とする
-    //                if (wallNeighbors >= 3)
-    //                {
-    //                    expansionCandidates.push_back({ x, y });
-    //                }
-    //            }
-    //        }
-    //    }
-
-    //    // [修正] 候補の約15%を壁に変換 (積極性を下げて安定性を向上)
-    //    int targetExpansions = (int)(expansionCandidates.size() * 0.15f);
-    //    // ランダムに選択
-    //    std::shuffle(expansionCandidates.begin(), expansionCandidates.end(), s_generator);
-
-    //    for (int i = 0; i < targetExpansions; ++i)
-    //    {
-    //        if (i >= expansionCandidates.size()) break;
-
-    //        XMINT2 targetPos = expansionCandidates[i];
-
-    //        // Wallに変換
-    //        mapComp.grid[targetPos.y][targetPos.x].type = CellType::Wall;
-    //        mapComp.grid[targetPos.y][targetPos.x].visited = true;
-    //        wallExpanded = true;
-    //    }
-
-    //    if (!wallExpanded) break;
-    //}
-
-    // --------------------------------------------------------------------------------
-    // 【ステップ2-1再実行: Wall Expansionによって再生成された行き止まりの除去】
-    // --------------------------------------------------------------------------------
-    // Wall ExpansionでPathがWallに変換された結果、新しい行き止まりが発生する可能性があるため、再度除去を行う。
-    do
-    {
-        deadEndRemoved = false;
-
-        for (int y = 1; y < MAX_INDEX; ++y)
+        // 2. 検出された全てのデッドエンドを順番に処理する
+        for (const auto& targetDeadEnd : deadEndCandidates)
         {
-            for (int x = 1; x < MAX_INDEX; ++x)
+            if (mapComp.grid[targetDeadEnd.y][targetDeadEnd.x].type != CellType::Path) continue;
+
+            // ----------------------------------------------------------------------------------
+            // 3. 行き止まりセルから、最も近い Path/Room への接続経路を BFS で検索
+            // ----------------------------------------------------------------------------------
+
+            std::vector<XMINT2> bfs_queue;
+            std::map<XMINT2, XMINT2> parentMap;
+            std::set<XMINT2> visitedSet;
+
+            // BFSの初期化ロジック (根元の通路を除外) はそのまま利用
+            for (int i = 0; i < 4; ++i)
             {
-                // [修正・安定化] PathまたはRoomセルのみを対象とする
-                if (mapComp.grid[y][x].type == CellType::Path)
+                int nx = targetDeadEnd.x + directions_1step[i][0];
+                int ny = targetDeadEnd.y + directions_1step[i][1];
+
+                if (nx > 0 && nx < MAX_INDEX && ny > 0 && ny < MAX_INDEX)
                 {
-                    std::vector<XMINT2> wallNeighbors;
+                    XMINT2 neighbor = { nx, ny };
+                    CellType neighborType = mapComp.grid[ny][nx].type;
 
-                    for (int i = 0; i < 4; ++i)
+                    // 【修正】もし隣接セルがPath/Roomの場合、それがデッドエンドの真の根元である
+                    if (neighborType == CellType::Path || neighborType == CellType::Room || neighborType == CellType::Start)
                     {
-                        int nx = x + directions[i][0];
-                        int ny = y + directions[i][1];
-
-                        if (nx > 0 && nx < MAX_INDEX && ny > 0 && ny < MAX_INDEX &&
-                            mapComp.grid[ny][nx].type == CellType::Wall)
-                        {
-                            wallNeighbors.push_back({ nx, ny });
-                        }
+                        // 既に開通している通路方向（根元）を探索対象から除外
+                        visitedSet.insert(neighbor);
                     }
-
-                    if (wallNeighbors.size() >= 3)
+                    else if (neighborType == CellType::Wall)
                     {
-                        // ★ 修正：ランダム選択を排除し、リストの最初の壁を選択する
-                        auto& targetWall = wallNeighbors[0];
-
-                        mapComp.grid[targetWall.y][targetWall.x].type = CellType::Path;
-                        deadEndRemoved = true;
+                        // 壁の場合は、初期キューに追加し、壁破壊経路から探索を開始
+                        if (visitedSet.find(neighbor) == visitedSet.end())
+                        {
+                            visitedSet.insert(neighbor);
+                            parentMap[neighbor] = targetDeadEnd;
+                            bfs_queue.push_back(neighbor);
+                        }
                     }
                 }
             }
+            visitedSet.insert(targetDeadEnd);
+
+            XMINT2 foundTarget = { -1, -1 };
+            size_t head = 0;
+            while (head < bfs_queue.size())
+            {
+                XMINT2 current = bfs_queue[head++];
+
+                // 接続ターゲットの発見チェック (自身は除く)
+                if (current.x != targetDeadEnd.x || current.y != targetDeadEnd.y)
+                {
+                    CellType type = mapComp.grid[current.y][current.x].type;
+                    if (type == CellType::Path || type == CellType::Room)
+                    {
+                        foundTarget = current;
+                        break; // 最短の接続先を発見
+                    }
+                }
+
+                // 4方向の隣接セル（1マス先）を探索 (Wallも通過可能)
+                for (int i = 0; i < 4; ++i)
+                {
+                    int nx = current.x + directions_1step[i][0]; // 1マスステップ
+                    int ny = current.y + directions_1step[i][1]; // 1マスステップ
+
+                    if (nx > 0 && nx < MAX_INDEX && ny > 0 && ny < MAX_INDEX)
+                    {
+                        XMINT2 neighbor = { nx, ny };
+                        if (visitedSet.find(neighbor) == visitedSet.end())
+                        {
+                            CellType type = mapComp.grid[ny][nx].type;
+
+                            if (type != CellType::Unvisited)
+                            {
+                                visitedSet.insert(neighbor);
+                                parentMap[neighbor] = current;
+                                bfs_queue.push_back(neighbor);
+                            }
+                        }
+                    }
+                }
+            } // end while (BFS)
+
+
+            // ----------------------------------------------------------------------------------
+            // 4. 接続経路の逆追跡と、破壊する壁の特定
+            // ----------------------------------------------------------------------------------
+            if (foundTarget.x != -1)
+            {
+                XMINT2 current = foundTarget;
+                XMINT2 wallToDestroy = { -1, -1 };
+
+                // ★ 修正：デッドエンドからターゲットまでの最短経路を逆追跡し、最初に見つけた壁を破壊する ★
+
+                // ターゲットからデッドエンドまでの最短経路を逆追跡し、経路上の壁を探す
+                while (parentMap.count(current))
+                {
+                    XMINT2 parent = parentMap[current];
+
+                    // currentが壁セルで、かつ親がデッドエンドではない場合（デッドエンド側から見て最初の壁を探す）
+                    if (mapComp.grid[current.y][current.x].type == CellType::Wall)
+                    {
+                        wallToDestroy = current; // ターゲットに最も近い壁を一旦保持
+                    }
+
+                    // 親がデッドエンドである、または current がデッドエンドであれば終了
+                    if (parent.x == targetDeadEnd.x && parent.y == targetDeadEnd.y)
+                    {
+                        // デッドエンドに隣接する最後のセルが壁であればそれを破壊
+                        if (mapComp.grid[current.y][current.x].type == CellType::Wall)
+                        {
+                            wallToDestroy = current;
+                        }
+                        break;
+                    }
+
+                    current = parent;
+                }
+
+                // 5. 壁の破壊
+                if (wallToDestroy.x != -1)
+                {
+                    mapComp.grid[wallToDestroy.y][wallToDestroy.x].type = CellType::Path;
+                    deadEndsWereProcessed = true;
+                    totalDeadEndsResolved++;
+                    printf("Resolved dead end at (%d, %d) by destroying wall at (%d, %d). Total resolved: %d\n",
+                        targetDeadEnd.x, targetDeadEnd.y, wallToDestroy.x, wallToDestroy.y, totalDeadEndsResolved);
+                }
+            }
         }
-    } while (deadEndRemoved);
+
+    } while (deadEndConnected);
 
     // --------------------------------------------------------------------------------
     // 【ステップ4-1/3: スタート/ゴール位置の決定とランダム化】
