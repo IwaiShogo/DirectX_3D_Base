@@ -136,7 +136,6 @@ VS_OUT main(VS_IN vin) {
 
 void Geometory::MakePS()
 {
-#ifdef _DEBUG
 	const char* PSCode = R"EOT(
 struct PS_IN {
 	float4 pos : SV_POSITION;
@@ -155,16 +154,6 @@ float4 main(PS_IN pin) : SV_TARGET0 {
 	geometryColor.rgb = ((half * 0.1f) * quat + 0.45f) + (1 - quat) * 0.05f;*/
 	return geometryColor;
 })EOT";
-#else
-	const char* PSCode = R"EOT(
-struct PS_IN {
-	float4 pos : SV_POSITION;
-	float2 uv : TEXCOORD0;
-};
-float4 main(PS_IN pin) : SV_TARGET0 {
-	return float4(1.0f, 0.0f, 1.0f, 1.0f);
-})EOT";
-#endif
 
 	m_pPS = new PixelShader();
 	m_pPS->Compile(PSCode);

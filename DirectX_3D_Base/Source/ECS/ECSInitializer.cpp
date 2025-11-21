@@ -22,9 +22,6 @@
 #include "ECS/AllComponents.h"
 #include "ECS/AllSystems.h"
 
-#include "ECS/Systems/UITimerSystem.h"
-#include "ECS/Components/TemporaryUIComponent.h"
-
 #include <iostream>
 
 using namespace ECS;
@@ -51,104 +48,129 @@ void ECSInitializer::RegisterComponents(Coordinator* coordinator)
 
 void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
 {
-    Coordinator* coordPtr = coordinator;
-
     // ============================================================
     // システムの登録とシグネチャの設定（ここから下に追加）
+    // ※登録順にシステムが実行される。
     // ============================================================
 
-    // --- RenderSystem ---
-    REGISTER_SYSTEM_AND_INIT(
-        /* Coordinator  */  coordinator,
-        /* System       */  RenderSystem,
-        /* Components   */  RenderComponent, TransformComponent
-    );
+    // ------------------------------------------------------------
+    // 1. Update（更新処理）
+    // ------------------------------------------------------------
 
-    // --- PhysicsSystem ---
-    REGISTER_SYSTEM_AND_INIT(
-        /* Coordinator  */  coordinator,
-        /* System       */  PhysicsSystem,
-        /* Components   */  RigidBodyComponent, TransformComponent, CollisionComponent
-    );
-
-    // --- PlayerControlSystem ---
-    REGISTER_SYSTEM_AND_INIT(
-        /* Coordinator  */  coordinator,
-        /* System       */  PlayerControlSystem,
-        /* Components   */  PlayerControlComponent, TransformComponent, RigidBodyComponent
-    );
-    
-    // --- CollisionSystem ---
-    REGISTER_SYSTEM_AND_INIT(
-        /* Coordinator  */  coordinator,
-        /* System       */  CollisionSystem,
-        /* Components   */  CollisionComponent, TransformComponent, RigidBodyComponent
-    );
-
-    // --- CameraControlSystem ---
-    REGISTER_SYSTEM_AND_INIT(
-        /* Coordinator  */  coordinator,
-        /* System       */  CameraControlSystem,
-        /* Components   */  CameraComponent
-    );
-
-    // --- StateSwitchSystem ---
+    // @system  StateSwitchSystem
+    // @brief   状態の切り替え
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  StateSwitchSystem,
         /* Components   */  GameStateComponent
     );
 
-    // --- CollectionSystem ---
+    // @system  PlayerControlSystem
+    // @brief   キー入力、コントローラー入力
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  PlayerControlSystem,
+        /* Components   */  PlayerControlComponent, TransformComponent, RigidBodyComponent
+    );
+
+    // @system  PhysicsSystem
+    // @brief   物理計算（位置の更新）
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  PhysicsSystem,
+        /* Components   */  RigidBodyComponent, TransformComponent, CollisionComponent
+    );
+
+    // @system  CollectionSystem
+    // @brief   アイテム回収ロジック
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  CollectionSystem,
         /* Components   */  CollectableComponent, TransformComponent
     );
 
-    // --- GameFlowSystem ---
+    // @system  CollisionSystem
+    // @brief   衝突検出と応答（位置の修正）
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  CollisionSystem,
+        /* Components   */  CollisionComponent, TransformComponent, RigidBodyComponent
+    );
+
+    // @system  GameFlowSystem
+    // @brief   ゲームステート
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  GameFlowSystem,
         /* Components   */  GameStateComponent
     );
 
-    // --- MapGenerationSystem ---
+    // @system  CameraControlSystem
+    // @brief   カメラ制御（ビュー・プロジェクション行列の更新）
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
-        /* System       */  MapGenerationSystem,
-        /* Components   */  MapComponent
+        /* System       */  CameraControlSystem,
+        /* Components   */  CameraComponent
     );
 
-    // --- DebugDrawSystem ---
+#ifdef _DEBUG
+    // @system  DebugDrawSystem
+    // @brief   デバッグ描画システム
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  DebugDrawSystem,
         /* Components   */  DebugComponent
     );
+#endif
 
-    // --- GuardAISystem ---
+    // @system  GuardAISystem
+    // @brief   警備員AI
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  GuardAISystem,
         /* Components   */  GuardComponent, TransformComponent, RigidBodyComponent
 	);
 
-    // --- UISystem ---
+    // @system  AudioSystem
+    // @brief   音声再生
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
-        /* System       */  UISystem,
-        /* Components   */  UIComponent
-
+        /* System       */  AudioSystem,
+        /* Components   */  SoundComponent
     );
 
-    // --- UITimerSystem-- -
-        // TemporaryUIComponent と UIComponent の両方を持つEntityを監視対象とする
-        REGISTER_SYSTEM_AND_INIT(
-            /* Coordinator  */  coordinator,
-            /* System       */  UITimerSystem,
-            /* Components   */  UIComponent, TemporaryUIComponent
-        );
+    // ------------------------------------------------------------
+    // 2. Draw（描画処理）
+    // ------------------------------------------------------------
+
+
+    // @system  RenderSystem
+    // @brief   カメラ設定や、デバッググリッド描画＆Entitiesの描画
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  RenderSystem,
+        /* Components   */  RenderComponent, TransformComponent
+    );
+
+    // @system  UIRenderSystem
+    // @brief   UIの描画
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  UIRenderSystem,
+        /* Components   */  UIImageComponent
+    );
+
+    // ------------------------------------------------------------
+    // 3. その他Updateが行われないシステム
+    // ------------------------------------------------------------
+
+    // @system  MapGenerationSystem
+    // @brief   ランダムマップを生成
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  MapGenerationSystem,
+        /* Components   */  MapComponent
+    );
 
     std::cout << "ECSInitializer: All Systems registered and initialized." << std::endl;
 }

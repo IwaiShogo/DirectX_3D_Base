@@ -27,36 +27,50 @@
 #include "ECS/Types.h"
 
 // --- 全てのコンポーネントヘッダーを集約 ---
+// @folder		Core
 // @component	カメラ
-#include "ECS/Components/CameraComponent.h"
-// @component	衝突判定
-#include "ECS/Components/CollisionComponent.h"
-// @component	モデル描画
-#include "ECS/Components/ModelComponent.h"
-// @component	プレイヤー入力制御
-#include "ECS/Components/PlayerControlComponent.h"
-// @component	描画
-#include "ECS/Components/RenderComponent.h"
-// @component	剛体 / 物理演算
-#include "ECS/Components/RigidBodyComponent.h"
+#include "ECS/Components/Core/CameraComponent.h"
 // @component	位置・回転・スケール
-#include "ECS/Components/TransformComponent.h"
-// @component	UI要素
-#include "ECS/Components/UIComponent.h"
+#include "ECS/Components/Core/TransformComponent.h"
 // @component	カメラ切り替え
-#include "ECS/Components/GameStateComponent.h"
+#include "ECS/Components/Core/GameStateComponent.h"
 // @component	タグ
-#include "ECS/Components/TagComponent.h"
-// @component	回収可能なお宝
-#include "ECS/Components/CollectableComponent.h"
-// @component	ステージ内のアイテム管理
-#include "ECS/Components/ItemTrackerComponent.h"
-// @component	マップ管理
-#include "ECS/Components/MapComponent.h"
+#include "ECS/Components/Core/TagComponent.h"
+// @component	サウンド
+#include "ECS/Components/Core/SoundComponent.h"
+// @conponent	単発サウンド
+#include "ECS/Components/Core/OneShotSoundComponent.h"
 
+// @folder		Rendering
+// @component	描画
+#include "ECS/Components/Rendering/RenderComponent.h"
 // @component	デバッグ
-#include "ECS/Components/DebugComponent.h"
+#include "ECS/Components/Rendering/DebugComponent.h"
+// @component	モデル描画
+#include "ECS/Components/Rendering/ModelComponent.h"
+
+// @folder		Physics
+// @component	衝突判定
+#include "ECS/Components/Physics/CollisionComponent.h"
+// @component	剛体 / 物理演算
+#include "ECS/Components/Physics/RigidBodyComponent.h"
+
+// @folder		UI
+// @component	画像UI
+#include "ECS/Components/UI/UIImageComponent.h"
+
+// @folder		Gameplay
+// @component	プレイヤー入力制御
+#include "ECS/Components/Gameplay/PlayerControlComponent.h"
+// @component	回収可能なお宝
+#include "ECS/Components/Gameplay/CollectableComponent.h"
+// @component	ステージ内のアイテム管理
+#include "ECS/Components/Gameplay/ItemTrackerComponent.h"
+// @component	マップ管理
+#include "ECS/Components/Gameplay/MapComponent.h"
+
+// @folder		Gimmick
 // @component	警備員AI
-#include "ECS/Components/GuardComponent.h"
+#include "ECS/Components/Gimmick/GuardComponent.h"
 
 #endif // !___ALL_COMPONENTS_H___

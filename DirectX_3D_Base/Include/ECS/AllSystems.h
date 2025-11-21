@@ -23,30 +23,41 @@
 #define ___ALL_SYSTEM_H___
 
 // ===== インクルード =====
+// @folder	Core
 // @system	カメラ操作
-#include "ECS/Systems/CameraControlSystem.h"
-// @system	プレイヤー入力制御
-#include "ECS/Systems/PlayerControlSystem.h"
-// @system	衝突判定
-#include "ECS/Systems/CollisionSystem.h"
-// @system	物理演算
-#include "ECS/Systems/PhysicsSystem.h"
-// @system	描画
-#include "ECS/Systems/RenderSystem.h"
-// @system	UI
-#include "ECS/Systems/UISystem.h"
+#include "ECS/Systems/Core/CameraControlSystem.h"
 // @system	カメラ切り替え
-#include "ECS/Systems/StateSwitchSystem.h"
+#include "ECS/Systems/Core/StateSwitchSystem.h"
 // @system	ゲーム終了時の処理
-#include "ECS/Systems/GameFlowSystem.h"
-// @system	システム
-#include "ECS/Systems/CollectionSystem.h"
-// @system	マップ生成
-#include "ECS/Systems/MapGenerationSystem.h"
+#include "ECS/Systems/Core/GameFlowSystem.h"
+// @system	オーディオ
+#include "ECS/Systems/Core/AudioSystem.h"
 
+// @folder	Rendering
+// @system	描画
+#include "ECS/Systems/Rendering/RenderSystem.h"
 // @system	デバッグ
-#include "ECS/Systems/DebugDrawSystem.h"
+#include "ECS/Systems/Rendering/DebugDrawSystem.h"
+
+// @folder	Physics
+// @system	衝突判定
+#include "ECS/Systems/Physics/CollisionSystem.h"
+// @system	物理演算
+#include "ECS/Systems/Physics/PhysicsSystem.h"
+
+// @folder	UI
+// @system	画像UI
+#include "ECS/Systems/UI/UIRenderSystem.h"
+
+// @folder	Gameplay
+// @system	プレイヤー入力制御
+#include "ECS/Systems/Gameplay/PlayerControlSystem.h"
+// @system	システム
+#include "ECS/Systems/Gameplay/CollectionSystem.h"
+// @system	マップ生成
+#include "ECS/Systems/Gameplay/MapGenerationSystem.h"
+
 // @system	警備員AI
-#include "ECS/Systems/GuardAISystem.h"
+#include "ECS/Systems/Gimmick/GuardAISystem.h"
 
 #endif // !___ALL_SYSTEM_H___

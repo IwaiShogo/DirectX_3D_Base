@@ -137,6 +137,20 @@ namespace ECS
 			return m_componentManager->GetComponent<T>(entityID);
 		}
 
+		template<typename T>
+		bool HasComponent(EntityID entityID)
+		{
+			// 1. ComponentのTypeIDを取得
+			ComponentTypeID typeID = m_componentManager->GetComponentTypeID<T>(); // ComponentManager.h
+
+			// 2. EntityのSignatureを取得
+			Signature entitySignature = m_entityManager->GetSignature(entityID); // EntityManager.h
+
+			// 3. Signatureの対応するビットが立っているかチェック
+			// std::bitset::test() を使用して、ComponentTypeIDに対応するビットを確認する
+			return entitySignature.test(typeID);
+		}
+
 		/// @brief 特定のComponentのTypeIDを取得する
 		template<typename T>
 		ComponentTypeID GetComponentTypeID()
@@ -235,7 +249,7 @@ namespace ECS
 		{
 			m_systemManager->SetSignature<T>(signature);
 		}
-
+		
 		/**
 		 * @brief システムを登録し、関連するコンポーネントのシグネチャを同時に設定します。（C++11/14互換の再帰テンプレート版）
 		 *
@@ -259,6 +273,11 @@ namespace ECS
 			SetSystemSignature<TSystem>(signature);
 
 			return system;
+		}
+
+		void UpdateSystems(float deltaTime)
+		{
+			m_systemManager->UpdateSystems(deltaTime);
 		}
 	};
 

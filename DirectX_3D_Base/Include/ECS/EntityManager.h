@@ -64,7 +64,7 @@ namespace ECS
 		EntityID CreateEntity()
 		{
 			// 利用可能なIDが残っているかチェック
-			if (m_livingEntityCount >= MAX_ENTITIES)
+ 			if (m_livingEntityCount >= MAX_ENTITIES)
 			{
 				// TODO: エラー処理。ログに出力すべき
 				throw std::runtime_error("Error: Entity limit reached!");

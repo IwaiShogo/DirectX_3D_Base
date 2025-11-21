@@ -24,7 +24,7 @@
 #include "ECS/ECS.h"
 #include "ECS/ECSInitializer.h"
 #include "ECS/EntityFactory.h"
-#include "ECS/Systems/CollectionSystem.h"
+#include "ECS/Systems/Gameplay/CollectionSystem.h"
 
 #include <DirectXMath.h>
 #include <iostream>
@@ -49,17 +49,7 @@ void GameScene::Init()
 	ECS::ECSInitializer::InitECS(m_coordinator);
 
 	// --- 4. デモ用Entityの作成 ---
-	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());	
-
-	// --- 5. システム間の連携設定-- -
-		// CollectionSystem に、表示すべきUIのIDを渡す
-		auto collectionSystem = ECS::ECSInitializer::GetSystem<CollectionSystem>();
-	if (collectionSystem)
-	{
-		collectionSystem->SetItemGetUI_ID(ECS::EntityFactory::GetItemGetUI_ID());
-
-		collectionSystem->SetInventoryItemUI_ID(ECS::EntityFactory::GetInventoryItemUI_ID());
-	}
+	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
 }
 
 void GameScene::Uninit()
@@ -83,85 +73,28 @@ void GameScene::Update(float deltaTime)
 		SceneManager::ChangeScene<GameScene>();
 	}
 
-	// --- 2. ECS Systemの更新
-	
-	// 0. 状態切り替え
-	if (auto system = ECS::ECSInitializer::GetSystem<StateSwitchSystem>())
-	{
-		system->Update();
-	}
+	// ECSの更新
+	m_coordinator->UpdateSystems(deltaTime);
 
-	// 1. 入力
-	// if (m_playerControlSystem) // 削除
-	if (auto system = ECS::ECSInitializer::GetSystem<PlayerControlSystem>())
+	if (IsKeyTrigger(VK_SPACE))
 	{
-		system->Update();
+		ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_TEST");
 	}
-
-	// 2. 物理計算（位置の更新）
-	// if (m_physicsSystem) // 削除
-	if (auto system = ECS::ECSInitializer::GetSystem<PhysicsSystem>())
-	{
-		system->Update();
-	}
-
-	// アイテム回収ロジック
-	if (auto system = ECS::ECSInitializer::GetSystem<CollectionSystem>())
-	{
-		system->Update(deltaTime);
-	}
-
-	// 3. 衝突検出と応答（位置の修正）
-	// if (m_collisionSystem) // 削除
-	if (auto system = ECS::ECSInitializer::GetSystem<CollisionSystem>())
-	{
-		system->Update();
-	}
-
-	// 4. ゲームステート
-	if (auto system = ECS::ECSInitializer::GetSystem<GameFlowSystem>())
-	{
-		system->Update();
-	}
-
-	// 5. カメラ制御（ビュー・プロジェクション行列の更新）
-	// if (m_cameraControlSystem) // 削除
-	if (auto system = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
-	{
-		system->Update();
-	}
-
-#ifdef _DEBUG
-	// デバッグ描画システム
-	if (auto system = ECS::ECSInitializer::GetSystem<DebugDrawSystem>())
-	{
-		system->Update();
-	}
-#endif // _DEBUG
-
-	// 6. 警備員AI
-	if (auto system = ECS::ECSInitializer::GetSystem<GuardAISystem>())
-	{
-		system->Update();
-	}
-
 }
 
 void GameScene::Draw()
 {
-	// RenderSystemは常に存在すると仮定
+	
+	// エンティティの描画
 	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
 	{
-		// 1. カメラ設定やデバッググリッド描画
 		system->DrawSetup();
-
-		// 2. ECS Entityの描画
 		system->DrawEntities();
 	}
 
-	// UISystem
-	if (auto system = ECS::ECSInitializer::GetSystem<UISystem>())
+	// UIの描画
+	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
 	{
-		system->Draw();
+		system->Render();
 	}
 }

@@ -138,33 +138,33 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(ProjectDir)*Assets" "$(OutDir)" /Y /I /D</Command>
+      <Command>xcopy "$(ProjectDir)External\dll\*.dll" "$(OutDir)" /Y /I /D
+xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Include\ECS\ResourceManager.cpp" />
     <ClCompile Include="Source\ECS\ECSInitializer.cpp" />
     <ClCompile Include="Source\ECS\EntityFactory.cpp" />
-    <ClCompile Include="Source\ECS\Systems\AudioSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\CameraControlSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\CollectionSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\CollisionSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\DebugDrawSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\GameFlowSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\MapGenerationSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\GuardAISystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\PhysicsSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\PlayerControlSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\RenderSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\StateSwitchSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\UISystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\UITimerSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\AudioSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\CameraControlSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\GameFlowSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\StateSwitchSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Gameplay\CollectionSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Gameplay\MapGenerationSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Gameplay\PlayerControlSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Gimmick\GuardAISystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Physics\CollisionSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Physics\PhysicsSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Rendering\DebugDrawSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Rendering\RenderSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\UI\UIRenderSystem.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Scene\GameScene.cpp" />
     <ClCompile Include="Source\Scene\ResultScene.cpp" />
     <ClCompile Include="Source\Scene\SceneManager.cpp" />
     <ClCompile Include="Source\Scene\StageSelectScene.cpp" />
     <ClCompile Include="Source\Scene\TitleScene.cpp" />
+    <ClCompile Include="Source\Systems\AssetManager.cpp" />
     <ClCompile Include="Source\Systems\DirectX\DirectX.cpp" />
     <ClCompile Include="Source\Systems\DirectX\MeshBuffer.cpp" />
     <ClCompile Include="Source\Systems\DirectX\Shader.cpp" />
@@ -174,53 +174,54 @@
     <ClCompile Include="Source\Systems\Input.cpp" />
     <ClCompile Include="Source\Systems\Model.cpp" />
     <ClCompile Include="Source\Systems\Sprite.cpp" />
+    <ClCompile Include="Source\Systems\XAudio2\SoundEffect.cpp" />
+    <ClCompile Include="Source\Systems\XAudio2\SoundEngine.cpp" />
     <ClCompile Include="Source\Works\_geometory.cpp" />
     <ClCompile Include="Source\Works\_model.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="External\JSON\json.hpp" />
     <ClInclude Include="Include\ECS\AllSystems.h" />
     <ClInclude Include="Include\ECS\ComponentManager.h" />
     <ClInclude Include="Include\ECS\ComponentRegistry.h" />
-    <ClInclude Include="Include\ECS\Components\CameraComponent.h" />
-    <ClInclude Include="Include\ECS\Components\CollectableComponent.h" />
-    <ClInclude Include="Include\ECS\Components\CollisionComponent.h" />
-    <ClInclude Include="Include\ECS\Components\DebugComponent.h" />
-    <ClInclude Include="Include\ECS\Components\GameStateComponent.h" />
-    <ClInclude Include="Include\ECS\Components\GuardComponent.h" />
-    <ClInclude Include="Include\ECS\Components\ItemTrackerComponent.h" />
-    <ClInclude Include="Include\ECS\Components\MapComponent.h" />
-    <ClInclude Include="Include\ECS\Components\ModelComponent.h" />
-    <ClInclude Include="Include\ECS\Components\PlayerControlComponent.h" />
-    <ClInclude Include="Include\ECS\Components\RenderComponent.h" />
-    <ClInclude Include="Include\ECS\Components\RigidBodyComponent.h" />
-    <ClInclude Include="Include\ECS\Components\SoundComponent.h" />
-    <ClInclude Include="Include\ECS\Components\TagComponent.h" />
-    <ClInclude Include="Include\ECS\Components\TemporaryUIComponent.h" />
-    <ClInclude Include="Include\ECS\Components\TransformComponent.h" />
-    <ClInclude Include="Include\ECS\Components\UIComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\CameraComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\GameStateComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\OneShotSoundComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\SoundComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\TagComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\TransformComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Gameplay\CollectableComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Gameplay\ItemTrackerComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Gameplay\MapComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Gameplay\PlayerControlComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Gimmick\GuardComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Physics\CollisionComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Physics\RigidBodyComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Rendering\DebugComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Rendering\ModelComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Rendering\RenderComponent.h" />
+    <ClInclude Include="Include\ECS\Components\UI\UIImageComponent.h" />
     <ClInclude Include="Include\ECS\Coordinator.h" />
+    <ClInclude Include="Include\ECS\ECS.h" />
     <ClInclude Include="Include\ECS\ECSInitializer.h" />
     <ClInclude Include="Include\ECS\EntityFactory.h" />
     <ClInclude Include="Include\ECS\EntityManager.h" />
-    <ClInclude Include="Include\ECS\ResourceManager.h" />
     <ClInclude Include="Include\ECS\SystemManager.h" />
-    <ClInclude Include="Include\ECS\Systems\AudioSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\CameraControlSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\CollectionSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\CollisionSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\DebugDrawSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\GameFlowSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\MapGenerationSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\GuardAISystem.h" />
-    <ClInclude Include="Include\ECS\Systems\PhysicsSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\PlayerControlSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\RenderSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\StateSwitchSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\UISystem.h" />
-    <ClInclude Include="Include\ECS\Systems\UITimerSystem.h" />
-    <ClInclude Include="Include\ECS\Types.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\AudioSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\CameraControlSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\GameFlowSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\StateSwitchSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Gameplay\CollectionSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Gameplay\MapGenerationSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Gameplay\PlayerControlSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Gimmick\GuardAISystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Physics\CollisionSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Physics\PhysicsSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Rendering\DebugDrawSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Rendering\RenderSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\UI\UIRenderSystem.h" />
     <ClInclude Include="Include\ECS\AllComponents.h" />
-    <ClInclude Include="Include\ECS\ECS.h" />
+    <ClInclude Include="Include\ECS\Types.h" />
     <ClInclude Include="Include\Main.h" />
     <ClInclude Include="Include\Scene\GameScene.h" />
     <ClInclude Include="Include\Scene\ResultScene.h" />
@@ -228,6 +229,7 @@
     <ClInclude Include="Include\Scene\SceneManager.h" />
     <ClInclude Include="Include\Scene\StageSelectScene.h" />
     <ClInclude Include="Include\Scene\TitleScene.h" />
+    <ClInclude Include="Include\Systems\AssetManager.h" />
     <ClInclude Include="Include\Systems\Camera.h" />
     <ClInclude Include="Include\Systems\DirectX\DirectX.h" />
     <ClInclude Include="Include\Systems\DirectX\MeshBuffer.h" />
@@ -238,9 +240,17 @@
     <ClInclude Include="Include\Systems\Input.h" />
     <ClInclude Include="Include\Systems\Model.h" />
     <ClInclude Include="Include\Systems\Sprite.h" />
+    <ClInclude Include="Include\Systems\XAudio2\SoundEffect.h" />
+    <ClInclude Include="Include\Systems\XAudio2\SoundEngine.h" />
+    <ClInclude Include="Include\Utility\CSVLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
+    <None Include="Assets\CSV\ModelList.csv" />
+    <None Include="Assets\CSV\SoundList.csv" />
+    <None Include="Assets\CSV\TextureList.csv" />
+    <None Include="Assets\JSON\map_config.json" />
+    <None Include="Tools\Assets.xlsm" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
