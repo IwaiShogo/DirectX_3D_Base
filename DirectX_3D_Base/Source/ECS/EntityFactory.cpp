@@ -47,7 +47,7 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 	if (mapGenSystem)
 	{
 		// MapGenerationSystem::GenerateMapがBSP/MSTを実行し、MapComponent.layoutを更新する
-		mapGenSystem->InitMap();
+		mapGenSystem->CreateMap("ST_001");
 	}
 	else
 	{
