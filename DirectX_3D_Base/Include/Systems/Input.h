@@ -38,6 +38,10 @@ bool IsKeyTrigger(BYTE key);
 bool IsKeyRelease(BYTE key);
 bool IsKeyRepeat(BYTE key);
 
+// マウス入力処理
+DirectX::XMFLOAT2 GetMouseDelta();
+bool IsMousePress(int mouseButton);
+
 // コントローラーの状態を取得する関数
 DirectX::XMFLOAT2 GetLeftStick();
 DirectX::XMFLOAT2 GetRightStick();
