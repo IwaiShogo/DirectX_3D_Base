@@ -23,7 +23,6 @@ public:
 		ZFlipUseAnime,	// DirecX準拠(アニメーションさせる場合
 	};
 
-private:
 	// アニメーション計算領域
 	enum AnimeTransform
 	{
@@ -43,6 +42,34 @@ public:
 	static const NodeIndex	INDEX_NONE = -1;		// 該当ノードなし
 	static const AnimeNo	ANIME_NONE = -1;		// 該当アニメーションなし
 	static const AnimeNo	PARAMETRIC_ANIME = -2;	// 合成アニメーション
+
+	// ECS統合用：アニメーション再生状態構造体
+	// Modelkる亜州男内部状態として持っていた変数をここに移動
+	struct AnimationState
+	{
+		AnimeNo		playNo = ANIME_NONE;			// 現在再生中のアニメ番号
+		AnimeNo		blendNo = ANIME_NONE;			// ブレンド再生を行うアニメ番号
+		AnimeNo		parametric[2] = { ANIME_NONE, ANIME_NONE };	// 合成再生を行うアニメ番号
+
+		float		blendTime = 0.0f;				// 現在の遷移経過時間
+		float		blendTotalTime = 0.0f;			// アニメ遷移にかかる合計時間
+		float		parametricBlend = 0.0f;			// パラメトリックの再生割合
+
+		// アニメーションごとの再生時間・速度・ループ設定
+		// Model内で共有されるAnimationデータではなく、インスタンスごとの状態
+		struct Info {
+			float nowTime = 0.0f;
+			float speed = 1.0f;
+			bool  isLoop = false;
+		};
+		// 最大で同時に管理するアニメーション数（メイン、ブレンド、パラメトリック0/1など）
+		// ここでは簡易的に、アニメーション番号をキーにしたマップか、
+		// 実行中のスロットとして管理する。
+		// 既存実装との互換性のため、playNo用、blendNo用、parametric用の状態を保持
+		Info infoMain;
+		Info infoBlend;
+		Info infoParametric[2];
+	};
 
 private:
 	// 内部型定義
@@ -127,10 +154,7 @@ public:
 	// アニメーション情報
 	struct Animation
 	{
-		float		nowTime;	// 現在の再生時間
 		float		totalTime;	// 最大再生時間
-		float		speed;		// 再生速度
-		bool		isLoop;		// ループ指定
 		Channels	channels;	// 変換情報
 	};
 	using Animations = std::vector<Animation>;
@@ -156,25 +180,31 @@ public:
 	// アニメーションの読み込み
 	AnimeNo AddAnimation(const char* file);
 	// アニメーションの更新
-	void Step(float tick);
+	//void Step(float tick);
 
-	// アニメーションの再生
-	void Play(AnimeNo no, bool loop, float speed = 1.0f);
-	// アニメーションのブレンド再生
-	void PlayBlend(AnimeNo no, float blendTime, bool loop, float speed = 1.0f);
-	// アニメーションの合成設定
-	void SetParametric(AnimeNo no1, AnimeNo no2);
-	// アニメーションの合成割合設定
-	void SetParametricBlend(float blendRate);
-	// アニメーションの現在再生時間を変更
-	void SetAnimationTime(AnimeNo no, float time);
+	// ECS対応：アニメーションの状態更新
+	// 内部状態を持たず、渡されたstateを更新し、それに基づいてボーン行列を計算する
+	void UpdateAnimation(AnimationState& state, float tick);
 
-	// 再生フラグ
-	bool IsPlay(AnimeNo no);
-	// 現在再生中のアニメ番号
-	AnimeNo GetPlayNo();
-	// ブレンド中のアニメ番号
-	AnimeNo GetBlendNo();
+	void SendBoneDataToShader();
+
+	//// アニメーションの再生
+	//void Play(AnimeNo no, bool loop, float speed = 1.0f);
+	//// アニメーションのブレンド再生
+	//void PlayBlend(AnimeNo no, float blendTime, bool loop, float speed = 1.0f);
+	//// アニメーションの合成設定
+	//void SetParametric(AnimeNo no1, AnimeNo no2);
+	//// アニメーションの合成割合設定
+	//void SetParametricBlend(float blendRate);
+	//// アニメーションの現在再生時間を変更
+	//void SetAnimationTime(AnimeNo no, float time);
+
+	//// 再生フラグ
+	//bool IsPlay(AnimeNo no);
+	//// 現在再生中のアニメ番号
+	//AnimeNo GetPlayNo();
+	//// ブレンド中のアニメ番号
+	//AnimeNo GetBlendNo();
 
 #ifdef _DEBUG
 	static std::string GetError();
@@ -191,10 +221,13 @@ private:
 
 	// 内部計算
 	bool AnimeNoCheck(AnimeNo no);
-	void InitAnime(AnimeNo no);
-	void CalcAnime(AnimeTransform kind, AnimeNo no);
-	void UpdateAnime(AnimeNo no, float tick);
-	void CalcBones(NodeIndex node, const DirectX::XMMATRIX parent);
+	// void InitAnime(AnimeNo no); // state操作になるため不要
+
+	// 計算メソッドもstateを受け取るように変更
+	void CalcAnime(AnimeTransform kind, AnimeNo no, float time, const AnimationState& state);
+	void UpdateAnimeState(AnimationState::Info& info, const Animation& animeData, float tick); // 新規: 時間更新用
+
+	//void CalcBones(NodeIndex node, const DirectX::XMMATRIX parent);
 	void LerpTransform(Transform* pOut, const Transform& a, const Transform& b, float rate);
 
 private:
@@ -216,12 +249,12 @@ private:
 	VertexShader*	m_pVS;			// 設定中の頂点シェーダ
 	PixelShader*	m_pPS;			// 設定中のピクセルシェーダ
 	
-	AnimeNo			m_playNo;			// 現在再生中のアニメ番号
-	AnimeNo			m_blendNo;			// ブレンド再生を行うアニメ番号
-	AnimeNo			m_parametric[2];	// 合成再生を行うアニメ番号
-	float			m_blendTime;		// 現在の遷移経過時間
-	float			m_blendTotalTime;	// アニメ遷移にかかる合計時間
-	float			m_parametricBlend;	// パラメトリックの再生割合
+	//AnimeNo			m_playNo;			// 現在再生中のアニメ番号
+	//AnimeNo			m_blendNo;			// ブレンド再生を行うアニメ番号
+	//AnimeNo			m_parametric[2];	// 合成再生を行うアニメ番号
+	//float			m_blendTime;		// 現在の遷移経過時間
+	//float			m_blendTotalTime;	// アニメ遷移にかかる合計時間
+	//float			m_parametricBlend;	// パラメトリックの再生割合
 
 	Transforms		m_nodeTransform[MAX_TRANSFORM];	// アニメーション別変形情報
 };

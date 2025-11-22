@@ -139,6 +139,14 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  SoundComponent
     );
 
+    // @system  AnimationSystem
+    // @brief   アニメーション更新
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  AnimationSystem,
+        /* Components   */  ModelComponent, AnimationComponent
+    );
+
     // ------------------------------------------------------------
     // 2. Draw（描画処理）
     // ------------------------------------------------------------

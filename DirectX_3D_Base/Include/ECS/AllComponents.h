@@ -48,6 +48,8 @@
 #include "ECS/Components/Rendering/DebugComponent.h"
 // @component	モデル描画
 #include "ECS/Components/Rendering/ModelComponent.h"
+// @component	アニメーション
+#include "ECS/Components/Rendering/AnimationComponent.h"
 
 // @folder		Physics
 // @component	衝突判定

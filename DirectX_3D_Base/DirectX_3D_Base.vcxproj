@@ -155,6 +155,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\ECS\Systems\Gimmick\GuardAISystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Physics\CollisionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Physics\PhysicsSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Rendering\AnimationSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Rendering\DebugDrawSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Rendering\RenderSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\UI\UIRenderSystem.cpp" />
@@ -197,6 +198,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Components\Gimmick\GuardComponent.h" />
     <ClInclude Include="Include\ECS\Components\Physics\CollisionComponent.h" />
     <ClInclude Include="Include\ECS\Components\Physics\RigidBodyComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Rendering\AnimationComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\DebugComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\ModelComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\RenderComponent.h" />
@@ -217,6 +219,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Systems\Gimmick\GuardAISystem.h" />
     <ClInclude Include="Include\ECS\Systems\Physics\CollisionSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Physics\PhysicsSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Rendering\AnimationSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Rendering\DebugDrawSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Rendering\RenderSystem.h" />
     <ClInclude Include="Include\ECS\Systems\UI\UIRenderSystem.h" />

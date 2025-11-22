@@ -83,9 +83,10 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 		),
 		ModelComponent(
 			/* Path		*/	"P_PLAYER",
-			/* Scale	*/	0.1f,
+			/* Scale	*/	0.5f,
 			/* Flip		*/	Model::None
 		),
+		AnimationComponent(),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -102,6 +103,23 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 			/* MoveSpeed	*/	9.0f
 		)
 	);
+
+	auto& modelComp = coordinator->GetComponent<ModelComponent>(player);
+	if (modelComp.pModel)
+	{
+		// 待機モーション (Ambient -> anbientoo.fbx と推測)
+		int idleAnim = modelComp.pModel->AddAnimation("Assets/Model/test/anime.fbx");
+
+		// 走りモーションなどが存在する場合はここに追加ロード
+		// int runAnim = modelComp.pModel->AddAnimation("Assets/Model/Player/run.fbx");
+
+		// 初期アニメーションの再生 (待機)
+		if (idleAnim != Model::ANIME_NONE)
+		{
+			auto& animComp = coordinator->GetComponent<AnimationComponent>(player);
+			animComp.Play(idleAnim, true, 1.0f); // ループ再生
+		}
+	}
 
 	// 2. プレイヤーに追従するカメラエンティティ生成（後続ステップ1-3の準備）
 	// CameraComponentは、追従ロジックをCameraControlSystemに伝える情報を保持すると仮定
