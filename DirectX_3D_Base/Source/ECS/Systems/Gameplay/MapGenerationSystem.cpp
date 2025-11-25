@@ -627,6 +627,18 @@ end_generate_loop:;
         guardsPlaced++;
     }
 
+    //テーザーの配置
+    const int TASER_TO_PLACE = config.taserCount;
+    int taserPlaced = 0;
+    while (taserPlaced < TASER_TO_PLACE && !availablePathPositions.empty())
+    {
+        XMINT2 pos = availablePathPositions.back();
+        availablePathPositions.pop_back();
+
+        mapComp.grid[pos.y][pos.x].type = CellType::Taser;
+        taserPlaced++;
+    }
+
     // 3. その他のギミック配置 (config.gimmickCounts を利用)
     // NOTE: CellType::Gimmick の処理はMapComponent.hにCellTypeを追加した後で実装
 
@@ -1028,6 +1040,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
             case CellType::Goal:
             case CellType::Item:
             case CellType::Guard:
+            case CellType::Taser:
                 // TODO: CellType::Room に配置するギミックがある場合はここに追加
                 // case CellType::Teleporter: 
             {
@@ -1053,6 +1066,11 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                 }
                 else if (cell.type == CellType::Guard) {
                     //EntityFactory::CreateGuard(m_coordinator, cellCenter);
+                }
+                else if (cell.type == CellType::Taser) {
+                    XMFLOAT3 taserPos = cellCenter;
+                    taserPos.y += 0.0f;
+                    EntityFactory::CreateTaser(m_coordinator, taserPos);
                 }
             }
             break;

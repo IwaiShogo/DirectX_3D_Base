@@ -47,6 +47,7 @@ struct MapStageConfig
 
 	int itemCount = 3;			// 配置するアイテムの総数
 	int guardCount = 1;			// 配置する警備員の総数
+    int taserCount = 3;         // 配置するテーザーの総数
 
 	std::map<CellType, int> gimmickCounts;
 
@@ -100,6 +101,7 @@ public:
 
                 if (stageData.contains("itemCount")) config.itemCount = stageData["itemCount"];
                 if (stageData.contains("guardCount")) config.guardCount = stageData["guardCount"];
+                if (stageData.contains("taserCount")) config.taserCount = stageData["taserCount"];
                 if (stageData.contains("minPathPercentage")) config.minPathPercentage = stageData["minPathPercentage"];
 
                 // ギミック情報の読み込み (拡張用)

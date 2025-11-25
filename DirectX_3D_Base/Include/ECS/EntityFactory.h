@@ -55,6 +55,8 @@ namespace ECS
 
 		static EntityID CreateGoal(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
+		static EntityID CreateTaser(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
+
 		static EntityID CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume = 1.0f);
 		
 		static EntityID CreateUITestEntity(Coordinator* coordinator, const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size, const std::string& assetID);

@@ -41,7 +41,8 @@ enum class CellType
     Start = 4,      // プレイヤーの開始位置
     Goal = 5,       // ゴール
     Item = 6,       // 回収アイテム
-    Guard = 7       // 警備員（敵）の初期位置
+    Guard = 7,       // 警備員（敵）の初期位置
+    Taser = 8,
 };
 
 /**
