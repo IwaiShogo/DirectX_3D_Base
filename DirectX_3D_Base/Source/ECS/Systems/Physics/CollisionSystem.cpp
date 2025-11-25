@@ -304,6 +304,12 @@ void CollisionSystem::Update(float deltaTime)
 					state.isCleared = true;
 				}
 			}
+			if (tagB.tag == "taser")
+			{
+				state.isGameOver = true;
+				// ゲームオーバー時は、すぐにリターンし、他の処理（アイテム回収など）を停止
+				return;
+			}
 		}
 	}
 

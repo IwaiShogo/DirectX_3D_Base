@@ -347,6 +347,37 @@ EntityID ECS::EntityFactory::CreateGoal(Coordinator* coordinator, const DirectX:
 	return goal;
 }
 
+EntityID ECS::EntityFactory::CreateTaser(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+{
+	ECS::EntityID taser = coordinator->CreateEntity(
+		TagComponent(
+			/* Tag */    "taser"
+		),
+		TransformComponent(
+			/* Position	*/	position,
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
+		),
+		RenderComponent(
+			/* MeshType	*/	MESH_BOX,                   // —§•û‘Ì‚ğw’è
+			/* Color	*/	XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) // ÂF (R,G,B,A)
+		),
+		RigidBodyComponent(
+			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass			*/	1.0f,
+			/* Friction		*/	0.5f,
+			/* Restitution	*/	0.1f
+		),
+		CollisionComponent(
+			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f), // Scale 1.0‚Ì”¼•ª
+			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType	*/	COLLIDER_DYNAMIC
+		)
+	);
+	return taser;
+}
+
 EntityID ECS::EntityFactory::CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume)
 {
 	EntityID entity = coordinator->CreateEntity(
