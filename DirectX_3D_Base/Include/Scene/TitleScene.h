@@ -8,6 +8,8 @@
 #include "Scene/SceneManager.h"
 #include "Scene/GameScene.h"	//推移先
 
+#include "vector"
+
 class TitleScene :public Scene
 {
 public:
@@ -19,5 +21,11 @@ public:
 private:
 	//このシーンで作成したエンティティのIDリスト(Uninitで破棄するため)
 	//std;;vector<ECS::EntityID> m_sceneEntities;
+
+	std::shared_ptr<ECS::Coordinator> m_coordinator;
+
+	
+
+	
 };
 #endif //!___TitleScene_H___

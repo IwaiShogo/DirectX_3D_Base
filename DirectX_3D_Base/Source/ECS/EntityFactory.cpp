@@ -24,6 +24,7 @@
 #include "ECS/ECS.h" // すべてのコンポーネントとCoordinatorにアクセスするため
 #include "Main.h" // METERなどの定数にアクセス
 
+
 using namespace ECS;
 using namespace DirectX;
 
@@ -56,7 +57,7 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 		return;
 	}
 
-	CreateUITestEntity(coordinator, { 0.9f, 0.0f }, { 0.5f, 1.0f }, "UI_TEST");
+	//CreateUITestEntity(coordinator, { 0.9f, 0.0f }, { 0.5f, 1.0f }, "UI_TEST");
 }
 
 /**
