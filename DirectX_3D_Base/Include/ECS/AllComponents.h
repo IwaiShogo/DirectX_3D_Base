@@ -68,7 +68,8 @@
 #include "ECS/Components/Gameplay/ItemTrackerComponent.h"
 // @component	ƒ}ƒbƒvŠÇ—
 #include "ECS/Components/Gameplay/MapComponent.h"
-
+//@component	SceneGameŠÇ—
+#include "ECS/Components/Core/GameSceneComponent.h"
 // @folder		Gimmick
 // @component	Œx”õˆõAI
 #include "ECS/Components/Gimmick/GuardComponent.h"

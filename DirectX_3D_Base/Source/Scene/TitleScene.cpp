@@ -66,18 +66,9 @@ void TitleScene::Init()
 			/* Scale	*/	XMFLOAT3(0.2f, 0.1f, 1.0f)
 		),
 		UIInteractableComponent(0.4f,0.6f),
-
 		UIImageComponent(
-
-			"UI_TEST"
-				
+			"UI_TEST1"	
 			)
-		
-
-
-			
-			
-			
 		);
 
 	

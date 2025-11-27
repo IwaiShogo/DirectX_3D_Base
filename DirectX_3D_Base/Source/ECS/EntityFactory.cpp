@@ -432,7 +432,8 @@ EntityID ECS::EntityFactory::CreateUITestEntity(Coordinator* coordinator, const 
 
 EntityID ECS::EntityFactory::CreateGameSceneEntity(Coordinator* coordinator)
 {
-	EntityID gamescene = coordinator->CreateEntity();
-
-	return gamescene;
+	EntityID entity = coordinator->CreateEntity(
+		GameSceneComponent{}
+	);
+	return entity;
 }
