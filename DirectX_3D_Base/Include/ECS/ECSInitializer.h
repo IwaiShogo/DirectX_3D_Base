@@ -28,6 +28,9 @@
 
 #include <memory>
 
+#include <unordered_map>
+#include <typeindex>
+
 namespace ECS
 {
 	/**
@@ -59,6 +62,12 @@ namespace ECS
 				return std::static_pointer_cast<T>(it->second);
 			}
 			return nullptr;
+
+
+
+			
+
+
 		}
 
 	private:
@@ -72,7 +81,15 @@ namespace ECS
 		// 登録された全システムインスタンスを保持する静的マップ
 		// Systemの型をキーとし、SharedPtrを値とする
 		static std::unordered_map<std::type_index, std::shared_ptr<System>> s_systems;
+
+
+	private:
+
+		
+
 	};
+
+
 
 }
 

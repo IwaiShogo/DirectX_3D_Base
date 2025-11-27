@@ -182,6 +182,18 @@ bool IsMousePress(int mouseButton) // 0:Left, 1:Right, 2:Middle
 	return IsKeyPress(static_cast<BYTE>(key));
 }
 
+DirectX::XMFLOAT2 GetMousePosition()
+{
+	POINT pt;
+	GetCursorPos(&pt);
+	ScreenToClient(GetActiveWindow(), &pt);
+
+
+
+
+	return DirectX::XMFLOAT2((float)pt.x, (float)pt.y);
+}
+
 // ===========================================
 //    スティック入力処理（デッドゾーン＆正規化）
 // ===========================================
