@@ -21,6 +21,7 @@
 #include "ECS/Systems/Gameplay/CollectionSystem.h"
 #include <DirectXMath.h>
 #include <vector>
+#include "ECS/EntityFactory.h"
 
 using namespace DirectX;
 
@@ -66,6 +67,7 @@ void CollectionSystem::Update(float deltaTime)
 			// 3-a. トラッカーの更新
 			tracker.collectedItems++;
 			collectable.isCollected = true;
+			ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST3");
 
 			// 3-b. アイテムエンティティの破棄
 			entitiesToDestroy.push_back(itemEntity);	// リストに追加

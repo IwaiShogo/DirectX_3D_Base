@@ -59,7 +59,13 @@ namespace ECS
 
 		static EntityID CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume = 1.0f);
 		
+		static EntityID CreateLoopSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume = 1.0f);
+
 		static EntityID CreateUITestEntity(Coordinator* coordinator, const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size, const std::string& assetID);
+
+		static EntityID CreateGameSceneEntity(Coordinator* coordinator);
+
+
 
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止

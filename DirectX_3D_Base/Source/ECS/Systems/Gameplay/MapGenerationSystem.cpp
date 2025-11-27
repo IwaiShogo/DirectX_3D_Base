@@ -1028,6 +1028,9 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
     // --------------------------------------------------------------------
     // 3. 特殊 Entityの配置（単独セル）
     // --------------------------------------------------------------------
+  
+    int itemSpawnCount = 0;
+
     for (int y = 0; y < GRID_SIZE_Y; ++y) // GRID_SIZE_Y を使用
     {
         for (int x = 0; x < GRID_SIZE_X; ++x) // GRID_SIZE_X を使用

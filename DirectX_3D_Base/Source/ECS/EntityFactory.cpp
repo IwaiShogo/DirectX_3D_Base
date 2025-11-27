@@ -56,7 +56,7 @@ void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 		return;
 	}
 
-	CreateUITestEntity(coordinator, { 0.9f, 0.0f }, { 0.5f, 1.0f }, "UI_TEST");
+	//CreateUITestEntity(coordinator, { 0.9f, 0.0f }, { 0.5f, 1.0f }, "UI_TEST");
 }
 
 /**
@@ -394,6 +394,21 @@ EntityID ECS::EntityFactory::CreateOneShotSoundEntity(Coordinator* coordinator, 
 	return entity;
 }
 
+EntityID ECS::EntityFactory::CreateLoopSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume)
+{
+	EntityID entity = coordinator->CreateEntity(
+		TagComponent("BGM"),
+		SoundComponent()//サウンドコンポーネント
+	);
+
+	//コンポーネント値設定
+	auto& sound = coordinator->GetComponent<SoundComponent>(entity);
+	sound.assetID = assetID;
+	sound.type = SoundType::BGM;
+	sound.RequestPlay(volume, XAUDIO2_LOOP_INFINITE);
+	return entity;
+}
+
 EntityID ECS::EntityFactory::CreateUITestEntity(Coordinator* coordinator, const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size, const std::string& assetID)
 {
 	EntityID entity = coordinator->CreateEntity(
@@ -411,4 +426,12 @@ EntityID ECS::EntityFactory::CreateUITestEntity(Coordinator* coordinator, const 
 	);
 
 	return entity;
+}
+
+
+EntityID ECS::EntityFactory::CreateGameSceneEntity(Coordinator* coordinator)
+{
+	EntityID gamescene = coordinator->CreateEntity();
+
+	return gamescene;
 }

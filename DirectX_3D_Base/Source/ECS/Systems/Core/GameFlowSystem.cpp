@@ -20,6 +20,7 @@
  // ===== インクルード =====
 #include "ECS/Systems/Core/GameFlowSystem.h"
 #include "Scene/SceneManager.h"
+#include "ECS/EntityFactory.h"
 
 void GameFlowSystem::Update(float deltaTime)
 {
@@ -40,6 +41,7 @@ void GameFlowSystem::Update(float deltaTime)
         state.requestRestart = true;
 
         SceneManager::ChangeScene<GameScene>();
+        //SceneManager::ChangeScene<ResultScene>();
     }
 
     // 2. クリア時の処理
@@ -51,6 +53,7 @@ void GameFlowSystem::Update(float deltaTime)
         state.requestNextStage = true;
 
         SceneManager::ChangeScene<GameScene>();
+        //SceneManager::ChangeScene<ResultScene>();
     }
 
     // 【重要な注意】
