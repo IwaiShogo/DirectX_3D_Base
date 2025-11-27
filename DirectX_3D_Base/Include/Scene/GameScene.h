@@ -42,6 +42,18 @@ private:
 	// ECSのグローバルアクセス用 (SystemなどがECS操作を行うための窓口)
 	static ECS::Coordinator* s_coordinator;
 
+	//UI用変数
+	ECS::EntityID m_completeUIEntity = ECS::INVALID_ENTITY_ID;
+	std::vector<ECS::EntityID> m_uiEntities;
+
+	//BGM用変数
+	ECS::EntityID m_bgmScoutID = ECS::INVALID_ENTITY_ID;
+	ECS::EntityID m_bgmActionID = ECS::INVALID_ENTITY_ID;
+	ECS::EntityID m_bgmCompleteID = ECS::INVALID_ENTITY_ID;
+	bool m_isScoutPlaying = false;
+	bool m_isActionPlaying = false;
+	bool m_isCompletePlaying = false;
+
 public:
 	// コンストラクタとデストラクタ（Sceneを継承しているため仮想デストラクタはScene側で定義済みと仮定）
 	GameScene()

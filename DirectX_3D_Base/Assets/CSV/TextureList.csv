@@ -1,2 +1,8 @@
 AssetID,AssetType,FilePath
-UI_TEST,Texture,Assets/Texture/Star.png
+UI_TEST1,Texture1,Assets/Texture/UI_1.png
+UI_TEST2,Texture2,Assets/Texture/UI_2.png
+UI_TEST3,Texture3,Assets/Texture/UI_3.png
+UI_TEST1_OFF,Texture4,Assets/Texture/UI1_off.png
+UI_TEST2_OFF,Texture5,Assets/Texture/UI2_off.png
+UI_TEST3_OFF,Texture6,Assets/Texture/UI3_off.png
+UI_TEST4,Texture7,Assets/Texture/Complete.png

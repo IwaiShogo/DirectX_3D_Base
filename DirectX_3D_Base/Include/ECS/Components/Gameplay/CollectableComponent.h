@@ -33,7 +33,7 @@ struct CollectableComponent
 	float collectionRadius = 0.5f;
 
 	CollectableComponent(float radius)
-		: collectionRadius(radius) {}
+		: collectionRadius(radius){}
 };
 
 // Component“o˜^

@@ -22,6 +22,10 @@
 #include "ECS/AllComponents.h"
 #include "ECS/AllSystems.h"
 
+#include "ECS/Systems/UI/UIInputSystem.h"
+#include "ECS/Components/UI/UIInteractableComponent.h"
+
+
 #include <iostream>
 
 using namespace ECS;
@@ -160,6 +164,14 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  UIImageComponent
     );
 
+
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        UIInputSystem,
+        UIInteractableComponent, TransformComponent
+    );
+
+
     // ------------------------------------------------------------
     // 3. その他Updateが行われないシステム
     // ------------------------------------------------------------
@@ -171,6 +183,9 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* System       */  MapGenerationSystem,
         /* Components   */  MapComponent
     );
+
+
+
 
     std::cout << "ECSInitializer: All Systems registered and initialized." << std::endl;
 }

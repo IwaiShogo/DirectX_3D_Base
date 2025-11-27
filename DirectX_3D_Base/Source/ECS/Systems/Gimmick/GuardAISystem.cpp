@@ -21,6 +21,7 @@
 #include "ECS/AllComponents.h"
 #include "ECS/AllSystems.h"
 #include "ECS/ECSInitializer.h"
+#include "ECS/EntityFactory.h"
 
 #include <DirectXMath.h>
 #include <algorithm>
@@ -262,7 +263,7 @@ void GuardAISystem::Update(float deltaTime)
         {
             //// 追跡開始遅延時間を設定（例: 3秒）
             //guardComp.delayBeforeChase = 3.0f;
-
+          
             // 警備員がまだアクティブでない場合のみ初期配置とタイマー処理を行う
             if (!guardComp.isActive)
             {
@@ -275,6 +276,8 @@ void GuardAISystem::Update(float deltaTime)
                 {
                     // 遅延時間経過後、AI追跡を有効化
                     guardComp.isActive = true;
+                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST2");
+
                     // 以降、AI追跡ロジックに移行
                 }
                 else
