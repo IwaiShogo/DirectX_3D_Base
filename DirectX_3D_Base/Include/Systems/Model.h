@@ -1,5 +1,5 @@
 /*
-* @brief 
+* @brief
 * @ 合成アニメーションとは
 */
 #ifndef __MODEL_H__
@@ -7,8 +7,8 @@
 
 #include <DirectXMath.h>
 #include <vector>
-#include "DirectX/Shader.h"
-#include "DirectX/MeshBuffer.h"
+#include "Systems/DirectX/Shader.h"
+#include "Systems/DirectX/MeshBuffer.h"
 #include <functional>
 
 class Model
@@ -36,20 +36,48 @@ private:
 
 public:
 	// 型定義
-	using NodeIndex	= int;	// ボーン(階層)番号
-	using AnimeNo	= int;	// アニメーション番号
+	using NodeIndex = int;	// ボーン(階層)番号
+	using AnimeNo = int;	// アニメーション番号
 
 	// 定数定義
 	static const NodeIndex	INDEX_NONE = -1;		// 該当ノードなし
 	static const AnimeNo	ANIME_NONE = -1;		// 該当アニメーションなし
 	static const AnimeNo	PARAMETRIC_ANIME = -2;	// 合成アニメーション
 
+	// ECS統合用：アニメーション再生状態構造体
+	// Modelkる亜州男内部状態として持っていた変数をここに移動
+	struct AnimationState
+	{
+		AnimeNo		playNo = ANIME_NONE;			// 現在再生中のアニメ番号
+		AnimeNo		blendNo = ANIME_NONE;			// ブレンド再生を行うアニメ番号
+		AnimeNo		parametric[2] = { ANIME_NONE, ANIME_NONE };	// 合成再生を行うアニメ番号
+
+		float		blendTime = 0.0f;				// 現在の遷移経過時間
+		float		blendTotalTime = 0.0f;			// アニメ遷移にかかる合計時間
+		float		parametricBlend = 0.0f;			// パラメトリックの再生割合
+
+		// アニメーションごとの再生時間・速度・ループ設定
+		// Model内で共有されるAnimationデータではなく、インスタンスごとの状態
+		struct Info {
+			float nowTime = 0.0f;
+			float speed = 1.0f;
+			bool  isLoop = false;
+		};
+		// 最大で同時に管理するアニメーション数（メイン、ブレンド、パラメトリック0/1など）
+		// ここでは簡易的に、アニメーション番号をキーにしたマップか、
+		// 実行中のスロットとして管理する。
+		// 既存実装との互換性のため、playNo用、blendNo用、parametric用の状態を保持
+		Info infoMain;
+		Info infoBlend;
+		Info infoParametric[2];
+	};
+
 private:
 	// 内部型定義
-	using Children	= std::vector<NodeIndex>;	// ノード階層情報
+	using Children = std::vector<NodeIndex>;	// ノード階層情報
 
 	// 内部定数定義
-	static const UINT		MAX_BONE			=	200;	// １メッシュの最大ボーン数(ここを変更する場合.hlsl側の定義も変更する
+	static const UINT		MAX_BONE = 200;	// １メッシュの最大ボーン数(ここを変更する場合.hlsl側の定義も変更する
 
 	// アニメーションの変換情報
 	struct Transform
@@ -58,9 +86,9 @@ private:
 		DirectX::XMFLOAT4	quaternion;
 		DirectX::XMFLOAT3	scale;
 	};
-	using Key			= std::pair<float, Transform>;
-	using Timeline		= std::map<float, Transform>;
-	using Transforms	= std::vector<Transform>;
+	using Key = std::pair<float, Transform>;
+	using Timeline = std::map<float, Transform>;
+	using Transforms = std::vector<Transform>;
 
 	// アニメーションとボーンの関連付け情報
 	struct Channel
@@ -80,7 +108,7 @@ private:
 	};
 	using Nodes = std::vector<Node>;
 
-	
+
 public:
 	// 頂点情報
 	struct Vertex
@@ -92,8 +120,8 @@ public:
 		float				weight[4];
 		unsigned int		index[4];
 	};
-	using Vertices	= std::vector<Vertex>;
-	using Indices	= std::vector<unsigned long>;
+	using Vertices = std::vector<Vertex>;
+	using Indices = std::vector<unsigned long>;
 
 	// 頂点の骨変形情報
 	struct Bone
@@ -110,7 +138,7 @@ public:
 		Indices			indices;
 		unsigned int	materialID;
 		Bones			bones;
-		MeshBuffer*		pMesh;
+		MeshBuffer* pMesh;
 	};
 	using Meshes = std::vector<Mesh>;
 
@@ -154,14 +182,17 @@ public:
 
 	//--- アニメーション
 	// アニメーションの読み込み
-	AnimeNo AddAnimation(const char* file);
+	AnimeNo AddAnimation(const std::string& assetID);
+	AnimeNo AddAnimation(const char* file, const std::string& aliasID = "");
 	// アニメーションの更新
 	void Step(float tick);
 
 	// アニメーションの再生
 	void Play(AnimeNo no, bool loop, float speed = 1.0f);
+	void Play(const std::string& assetID, bool loop, float speed = 1.0f);
 	// アニメーションのブレンド再生
 	void PlayBlend(AnimeNo no, float blendTime, bool loop, float speed = 1.0f);
+	void PlayBlend(const std::string& animeID, float blendTime, bool loop = true, float speed = 1.0f);
 	// アニメーションの合成設定
 	void SetParametric(AnimeNo no1, AnimeNo no2);
 	// アニメーションの合成割合設定
@@ -198,11 +229,11 @@ private:
 	void LerpTransform(Transform* pOut, const Transform& a, const Transform& b, float rate);
 
 private:
-	static VertexShader*	m_pDefVS;		// デフォルト頂点シェーダー
-	static PixelShader*		m_pDefPS;		// デフォルトピクセルシェーダー
+	static VertexShader* m_pDefVS;		// デフォルト頂点シェーダー
+	static PixelShader* m_pDefPS;		// デフォルトピクセルシェーダー
 	static unsigned int		m_shaderRef;	// シェーダー参照数
 #ifdef _DEBUG
-	static std::string m_errorStr;	
+	static std::string m_errorStr;
 #endif
 
 private:
@@ -213,9 +244,9 @@ private:
 	Materials		m_materials;	// マテリアル配列
 	Nodes			m_nodes;		// 階層情報
 	Animations		m_animes;		// アニメ配列
-	VertexShader*	m_pVS;			// 設定中の頂点シェーダ
-	PixelShader*	m_pPS;			// 設定中のピクセルシェーダ
-	
+	VertexShader* m_pVS;			// 設定中の頂点シェーダ
+	PixelShader* m_pPS;			// 設定中のピクセルシェーダ
+
 	AnimeNo			m_playNo;			// 現在再生中のアニメ番号
 	AnimeNo			m_blendNo;			// ブレンド再生を行うアニメ番号
 	AnimeNo			m_parametric[2];	// 合成再生を行うアニメ番号
@@ -224,6 +255,8 @@ private:
 	float			m_parametricBlend;	// パラメトリックの再生割合
 
 	Transforms		m_nodeTransform[MAX_TRANSFORM];	// アニメーション別変形情報
+
+	std::map<std::string, AnimeNo> m_animeIdMap;
 };
 
 

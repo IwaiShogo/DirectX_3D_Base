@@ -41,6 +41,7 @@ namespace Asset
 		Model,
 		Texture,
 		Sound,
+		Animation,
 		Unknown	// 不明な種類
 	};
 
@@ -74,6 +75,7 @@ namespace Asset
 		std::map<std::string, AssetInfo> m_modelMap;
 		std::map<std::string, AssetInfo> m_textureMap;
 		std::map<std::string, AssetInfo> m_soundMap;
+		std::map<std::string, AssetInfo> m_animationMap;
 
 	private:
 		// 外部からのインスタンス化を禁止
@@ -124,6 +126,7 @@ namespace Asset
 		bool LoadModelList(const std::string& csvPath);
 		bool LoadTextureList(const std::string& csvPath);
 		bool LoadSoundList(const std::string& csvPath);
+		bool LoadAnimationList(const std::string& csvPath);
 
 		// ----------------------------------------
 		// アセットパス取得インターフェス
@@ -131,7 +134,7 @@ namespace Asset
 		std::string GetModelPath(const std::string& assetID) const;
 		std::string GetTexturePath(const std::string& assetID) const;
 		std::string GetSoundPath(const std::string& assetID) const;
-
+		std::string GetAnimationPath(const std::string& assetID) const;
 
 		// ----------------------------------------
 		// リソースロードインタフェース
