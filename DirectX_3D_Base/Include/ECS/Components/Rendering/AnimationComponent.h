@@ -22,8 +22,8 @@
 #define ___ANIMATION_COMPONENT_H___
 
 // ===== インクルード =====
-#include "Systems/Model.h"
-#include <map>
+#include <string>
+#include <vector>
 
 /**
  * @struct	AnimationComponent
@@ -31,103 +31,67 @@
  */
 struct AnimationComponent
 {
-	// アニメーションの全状態を保持する構造体
-	Model::AnimationState m_state;
+    // --- データ定義 ---
 
-	/**
-	 * @brief コンストラクタ
-	 */
-	AnimationComponent()
-	{
-		// 初期化
-		m_state.playNo = Model::ANIME_NONE;
-		m_state.blendNo = Model::ANIME_NONE;
-		m_state.parametric[0] = Model::ANIME_NONE;
-		m_state.parametric[1] = Model::ANIME_NONE;
-		m_state.blendTime = 0.0f;
-		m_state.blendTotalTime = 0.0f;
-		m_state.parametricBlend = 0.0f;
-	}
+    // 1. ロード予約リスト
+    std::vector<std::string> preloadList;
 
-	// ----------------------------------------
-	// アニメーション再生API（ラッパー）
-	// ----------------------------------------
+    // 2. 再生リクエスト情報構造体
+    struct PlayRequest {
+        std::string animeID;
+        bool loop;
+        float speed;
+        bool isBlend;
+        float blendTime;
 
-	/**
-	 * @brief アニメーションの再生を開始する
-	 * @param[in] no 再生するアニメーション番号
-	 * @param[in] loop ループ再生するかどうか
-	 * @param[in] speed 再生速度
-	 */
-	void Play(Model::AnimeNo no, bool loop = true, float speed = 1.0f)
-	{
-		if (no == Model::ANIME_NONE) return;
-		if (m_state.playNo == no) return; // 同じアニメーションなら無視
+        // コンストラクタ
+        PlayRequest()
+            : animeID(""), loop(true), speed(1.0f), isBlend(false), blendTime(0.0f) {
+        }
 
-		// 通常再生の初期化
-		m_state.playNo = no;
-		m_state.infoMain.nowTime = 0.0f;
-		m_state.infoMain.speed = speed;
-		m_state.infoMain.isLoop = loop;
+        PlayRequest(std::string id, bool l, float s, bool blend, float time)
+            : animeID(id), loop(l), speed(s), isBlend(blend), blendTime(time) {
+        }
+    };
 
-		// ブレンド等はリセット
-		m_state.blendNo = Model::ANIME_NONE;
-		m_state.blendTime = 0.0f;
-		m_state.blendTotalTime = 0.0f;
-	}
+    PlayRequest currentRequest;
+    bool hasRequest = false; // std::optionalの代わりのフラグ
 
-	/**
-	 * @brief アニメーションのブレンド再生を開始する
-	 * @param[in] no ブレンド再生するアニメーション番号
-	 * @param[in] blendTime ブレンドに掛ける時間
-	 * @param[in] loop ループフラグ
-	 * @param[in] speed 再生速度
-	 */
-	void PlayBlend(Model::AnimeNo no, float blendTime, bool loop = true, float speed = 1.0f)
-	{
-		if (no == Model::ANIME_NONE) return;
+    // --- コンストラクタ ---
+    AnimationComponent() : hasRequest(false) {}
 
-		// ブレンドアニメの初期化
-		m_state.blendNo = no;
-		m_state.blendTime = 0.0f;
-		m_state.blendTotalTime = blendTime;
+    AnimationComponent(std::initializer_list<std::string> animeIDs)
+        : hasRequest(false)
+    {
+        preloadList.insert(preloadList.end(), animeIDs.begin(), animeIDs.end());
+    }
 
-		m_state.infoBlend.nowTime = 0.0f;
-		m_state.infoBlend.speed = speed;
-		m_state.infoBlend.isLoop = loop;
-	}
+    // --- ヘルパー関数 ---
 
-	/**
-	 * @brief アニメーションの合成設定 (パラメトリックアニメーション用)
-	 * @param[in] no1 合成元アニメ1
-	 * @param[in] no2 合成元アニメ2
-	 * @param[in] loop ループ設定
-	 */
-	void SetParametric(Model::AnimeNo no1, Model::AnimeNo no2, bool loop = true)
-	{
-		m_state.playNo = Model::PARAMETRIC_ANIME;
+    // 事前にロードしておきたいアニメーションIDを登録
+    void RegisterAnimation(const std::string& animeID)
+    {
+        preloadList.push_back(animeID);
+    }
 
-		m_state.parametric[0] = no1;
-		m_state.parametric[1] = no2;
-		m_state.parametricBlend = 0.0f; // 初期ブレンド率
+    void RegisterAnimations(std::initializer_list<std::string> animeIDs)
+    {
+        preloadList.insert(preloadList.end(), animeIDs.begin(), animeIDs.end());
+    }
 
-		// 両方のアニメーションを初期化
-		for (int i = 0; i < 2; ++i) {
-			m_state.infoParametric[i].nowTime = 0.0f;
-			m_state.infoParametric[i].speed = 1.0f; // 速度はブレンド率更新時に調整されるのが理想だが一旦1.0
-			m_state.infoParametric[i].isLoop = loop;
-		}
-	}
+    // 再生命令
+    void Play(const std::string& animeID, bool loop = true, float speed = 1.0f)
+    {
+        currentRequest = PlayRequest(animeID, loop, speed, false, 0.0f);
+        hasRequest = true;
+    }
 
-	/**
-	 * @brief パラメトリックアニメーションのブレンド率設定
-	 * @param[in] blendRate 合成割合 (0.0f ~ 1.0f)
-	 */
-	void SetParametricBlend(float blendRate)
-	{
-		m_state.parametricBlend = blendRate;
-		// 必要に応じて、ここで再生速度の再計算などを入れることも可能
-	}
+    // ブレンド再生命令
+    void PlayBlend(const std::string& animeID, float blendTime, bool loop = true, float speed = 1.0f)
+    {
+        currentRequest = PlayRequest(animeID, loop, speed, true, blendTime);
+        hasRequest = true;
+    }
 };
 
 // Component登録

@@ -197,11 +197,6 @@ void RenderSystem::DrawEntities()
 
 				model.pModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
 
-				if (isAnimated)
-				{
-					model.pModel->SendBoneDataToShader();
-				}
-
 				// 描画実行
 				for (uint32_t i = 0; i < model.pModel->GetMeshNum(); ++i) {
 					// モデルのメッシュを取得
@@ -212,6 +207,7 @@ void RenderSystem::DrawEntities()
 					ShaderList::SetMaterial(material);
 					// モデルの描画
 					model.pModel->Draw(i);
+					model.pModel->DrawBone();
 				}
 
 			}

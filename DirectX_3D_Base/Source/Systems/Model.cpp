@@ -1,6 +1,7 @@
 #include "Systems/Model.h"
 #include "Systems/DirectX/ShaderList.h"
 #include "../../DirectXTex/DirectXTex.h"
+#include "Systems/AssetManager.h"
 #include <algorithm>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -31,11 +32,11 @@
 #endif
 
 // staticメンバ変数定義
-VertexShader*	Model::m_pDefVS		= nullptr;
-PixelShader*	Model::m_pDefPS		= nullptr;
-unsigned int	Model::m_shaderRef	= 0;
+VertexShader* Model::m_pDefVS = nullptr;
+PixelShader* Model::m_pDefPS = nullptr;
+unsigned int	Model::m_shaderRef = 0;
 #ifdef _DEBUG
-std::string		Model::m_errorStr	= "";
+std::string		Model::m_errorStr = "";
 #endif
 
 /*
@@ -61,12 +62,6 @@ DirectX::XMMATRIX GetMatrixFromAssimpMatrix(aiMatrix4x4 M)
 void MakeModelDefaultShader(VertexShader** vs, PixelShader** ps)
 {
 	const char* ModelVS = R"EOT(
-cbuffer MatrixBuffer : register(b0) { // Geometoryと共有のb0を使用すると仮定
-	matrix world;
-	matrix view;
-	matrix projection;
-	float4 cameraPos;
-};
 struct VS_IN {
 	float3 pos : POSITION0;
 	float3 normal : NORMAL0;
@@ -79,18 +74,10 @@ struct VS_OUT {
 };
 VS_OUT main(VS_IN vin) {
 	VS_OUT vout;
-
-
-	// WVP行列を結合: W * V * P
-	matrix wvp = mul(world, view); // W * V
-	wvp = mul(wvp, projection);    // (W * V) * P
-
-	// 頂点座標をWVP行列で一度に変換
-	vout.pos = mul(float4(vin.pos, 1.0f), wvp); // ← WVP行列による変換
-
-	// 法線はワールド行列の回転成分のみを適用 (簡易的な実装)
-	vout.normal = mul(vin.normal, (float3x3)world);
-
+	vout.pos = float4(vin.pos, 1.0f);
+	vout.pos.z += 0.5f;
+	vout.pos.y -= 0.8f;
+	vout.normal = vin.normal;
 	vout.uv = vin.uv;
 	return vout;
 })EOT";
@@ -120,6 +107,12 @@ float4 main(PS_IN pin) : SV_TARGET
 Model::Model()
 	: m_loadScale(1.0f)
 	, m_loadFlip(None)
+	, m_playNo(ANIME_NONE)
+	, m_blendNo(ANIME_NONE)
+	, m_parametric{ ANIME_NONE, ANIME_NONE }
+	, m_blendTime(0.0f)
+	, m_blendTotalTime(0.0f)
+	, m_parametricBlend(0.0f)
 {
 	// デフォルトシェーダーの適用
 	if (m_shaderRef == 0)
@@ -246,24 +239,61 @@ void Model::Draw(int meshNo)
 	m_pVS->Bind();
 	m_pPS->Bind();
 
-	// テクスチャ自動設定
+	// テクスチャ自動設定フラグ
 	bool isAutoTexture = (meshNo == -1);
 
-	// 描画数設定
+	// 描画範囲設定
 	size_t drawNum = m_meshes.size();
-	if (meshNo != -1)
+	UINT startMesh = 0;
+	if (meshNo != -1) {
+		startMesh = meshNo;
 		drawNum = meshNo + 1;
-	else
-		meshNo = 0;
+	}
 
-
-	// 描画
-	for (UINT i = meshNo; i < drawNum; ++i)
+	// メッシュごとの描画ループ
+	for (UINT i = startMesh; i < drawNum; ++i)
 	{
+		// テクスチャ設定
 		if (isAutoTexture) {
 			m_pPS->SetTexture(0, m_materials[m_meshes[i].materialID].pTexture);
 		}
-		m_meshes[i].pMesh->Draw();
+
+		// --- スキニング行列の作成と転送 ---
+
+		// 1. 配列を確保し、すべて単位行列で初期化する (重要)
+		//    初期化しないと、使用しない要素にゴミが入り、GPU側で不具合を起こします
+		DirectX::XMFLOAT4X4 boneMatrices[MAX_BONE];
+
+		const UINT boneCount = static_cast<UINT>(std::min(m_meshes[i].bones.size(), static_cast<size_t>(MAX_BONE)));
+		for (UINT b = 0; b < boneCount; ++b)
+		{
+			const Bone& bone = m_meshes[i].bones[b];
+
+			DirectX::XMMATRIX m = DirectX::XMMatrixIdentity();
+			if (bone.index != INDEX_NONE)
+			{
+				// 最終スキニング行列
+				m = bone.invOffset * m_nodes[bone.index].mat;
+			}
+
+			DirectX::XMStoreFloat4x4(&boneMatrices[b], DirectX::XMMatrixTranspose(m));
+		}
+
+		for (UINT b = boneCount; b < MAX_BONE; ++b)
+		{
+			DirectX::XMStoreFloat4x4(&boneMatrices[b], DirectX::XMMatrixIdentity());
+		}
+
+		// 3. 定数バッファへ書き込み
+		//    ShaderListを経由して、現在バインドされているシェーダー(VS_ANIME)の定数バッファを更新
+		ShaderList::SetBones(boneMatrices);
+		// ----------------------------------------
+
+		// 描画
+		if (m_meshes[i].pMesh)
+		{
+			m_meshes[i].pMesh->Draw();
+		}
 	}
 }
 
@@ -339,13 +369,34 @@ const Model::Animation* Model::GetAnimation(AnimeNo no)
 	return nullptr;
 }
 
+// IDのみを指定してロードする関数
+Model::AnimeNo Model::AddAnimation(const std::string& assetID)
+{
+	if (m_animeIdMap.count(assetID) > 0)
+	{
+		return m_animeIdMap[assetID];
+	}
+
+	// AssetManagerからパスを取得
+	// Asset名前空間のシングルトンにアクセス
+	std::string filePath = Asset::AssetManager::GetInstance().GetAnimationPath(assetID);
+
+	if (filePath.empty())
+	{
+		// パスが見つからない場合のエラー処理
+		return ANIME_NONE;
+	}
+
+	// パスを使ってロードを実行（第2引数にIDを渡してマップ登録も任せる）
+	return AddAnimation(filePath.c_str(), assetID);
+}
 
 /*
 * @brief アニメーション読み込み
 * @param[in] file 読み込むアニメーションファイルへのパス
 * @return 内部で割り当てられたアニメーション番号
 */
-Model::AnimeNo Model::AddAnimation(const char* file)
+Model::AnimeNo Model::AddAnimation(const char* file, const std::string& aliasID)
 {
 #ifdef _DEBUG
 	m_errorStr = "";
@@ -384,7 +435,7 @@ Model::AnimeNo Model::AddAnimation(const char* file)
 
 	// アニメーション設定
 	float animeFrame = static_cast<float>(assimpAnime->mTicksPerSecond);
-	anime.totalTime = static_cast<float>(assimpAnime->mDuration )/ animeFrame;
+	anime.totalTime = static_cast<float>(assimpAnime->mDuration) / animeFrame;
 	anime.channels.resize(assimpAnime->mNumChannels);
 	Channels::iterator channelIt = anime.channels.begin();
 	while (channelIt != anime.channels.end())
@@ -399,7 +450,7 @@ Model::AnimeNo Model::AddAnimation(const char* file)
 		if (nodeIt == m_nodes.end())
 		{
 			channelIt->index = INDEX_NONE;
-			++ channelIt;
+			++channelIt;
 			continue;
 		}
 
@@ -416,7 +467,7 @@ Model::AnimeNo Model::AddAnimation(const char* file)
 		{
 			aiVectorKey& key = assimpChannel->mPositionKeys[i];
 			keys[0].insert(XMVectorKey(static_cast<float>(key.mTime) / animeFrame,
-					DirectX::XMVectorSet(key.mValue.x, key.mValue.y, key.mValue.z, 0.0f)
+				DirectX::XMVectorSet(key.mValue.x, key.mValue.y, key.mValue.z, 0.0f)
 			));
 		}
 		// 回転
@@ -435,26 +486,34 @@ Model::AnimeNo Model::AddAnimation(const char* file)
 		}
 
 		// 各タイムラインの先頭の参照を設定
-		XMVectorKeys::iterator it[] = {keys[0].begin(), keys[1].begin(), keys[2].begin()};
+		XMVectorKeys::iterator it[] = { keys[0].begin(), keys[1].begin(), keys[2].begin() };
 		for (int i = 0; i < 3; ++i)
 		{
 			// キーが一つしかない場合は、参照終了
 			if (keys[i].size() == 1)
-				++ it[i];
+				++it[i];
 		}
 
 		// 各要素ごとのタイムラインではなく、すべての変換を含めたタイムラインの作成
-		while (it[0] != keys[0].end() && it[1] != keys[1].end() && it[2] != keys[2].end())
+		while (it[0] != keys[0].end() || it[1] != keys[1].end() || it[2] != keys[2].end())
 		{
+			// 最小時間の算出ロジック
 			// 現状の参照位置で一番小さい時間を取得
-			float time = anime.totalTime;
+			float time = anime.totalTime; // ループ毎に初期化が必要かもしくは十分大きな値
+			bool isEnd = true; // 終了判定用
+
 			for (int i = 0; i < 3; ++i)
 			{
+				// 変更：イテレータが終端でない場合のみ時間を比較
 				if (it[i] != keys[i].end())
 				{
 					time = std::min(it[i]->first, time);
+					isEnd = false;
 				}
 			}
+
+			// すべてのイテレータが終端なら終了
+			if (isEnd) break;
 
 			// 時間に基づいて補間値を計算
 			DirectX::XMVECTOR result[3];
@@ -496,37 +555,46 @@ Model::AnimeNo Model::AddAnimation(const char* file)
 			timeline.insert(Key(time, transform));
 		}
 
-		++ channelIt;
+		++channelIt;
 	}
 
-	// アニメ番号を返す
-	return static_cast<AnimeNo>(m_animes.size() - 1);
+	// アニメ番号を決定
+	AnimeNo newIndex = static_cast<AnimeNo>(m_animes.size() - 1);
+
+	// IDが指定されていればマップに登録
+	if (!aliasID.empty())
+	{
+		m_animeIdMap[aliasID] = newIndex;
+	}
+
+	return newIndex;
 }
 
-// ------------------------------------------------------------
-// ECS対応：ステートレスな更新処理
-// ------------------------------------------------------------
-void Model::UpdateAnimation(AnimationState& state, float tick)
+/*
+* @brief アニメーションの更新処理
+* @param[in] tick アニメーション経過時間
+*/
+void Model::Step(float tick)
 {
 	// アニメーションの再生確認
-	if (state.playNo == ANIME_NONE) { return; }
+	if (m_playNo == ANIME_NONE) { return; }
 
 	//--- アニメーション行列の更新
 	// パラメトリック
-	if (state.playNo == PARAMETRIC_ANIME || state.blendNo == PARAMETRIC_ANIME)
+	if (m_playNo == PARAMETRIC_ANIME || m_blendNo == PARAMETRIC_ANIME)
 	{
-		CalcAnime(PARAMETRIC0, state.parametric[0], state.infoParametric[0].nowTime, state);
-		CalcAnime(PARAMETRIC1, state.parametric[1], state.infoParametric[1].nowTime, state);
+		CalcAnime(PARAMETRIC0, m_parametric[0]);
+		CalcAnime(PARAMETRIC1, m_parametric[1]);
 	}
 	// メインアニメ
-	if (state.playNo != ANIME_NONE && state.playNo != PARAMETRIC_ANIME)
+	if (m_playNo != ANIME_NONE && m_playNo != PARAMETRIC_ANIME)
 	{
-		CalcAnime(MAIN, state.playNo, state.infoMain.nowTime, state);
+		CalcAnime(MAIN, m_playNo);
 	}
 	// ブレンドアニメ
-	if (state.blendNo != ANIME_NONE && state.blendNo != PARAMETRIC_ANIME)
+	if (m_blendNo != ANIME_NONE && m_blendNo != PARAMETRIC_ANIME)
 	{
-		CalcAnime(BLEND, state.blendNo, state.infoBlend.nowTime, state);
+		CalcAnime(BLEND, m_blendNo);
 	}
 
 	std::function<void(NodeIndex, DirectX::XMMATRIX)> funcCalcBones =
@@ -534,16 +602,16 @@ void Model::UpdateAnimation(AnimationState& state, float tick)
 		{
 			Transform transform;
 			// パラメトリック
-			if (state.playNo == PARAMETRIC_ANIME || state.blendNo == PARAMETRIC_ANIME)
+			if (m_playNo == PARAMETRIC_ANIME || m_blendNo == PARAMETRIC_ANIME)
 			{
-				LerpTransform(&transform, m_nodeTransform[PARAMETRIC0][index], m_nodeTransform[PARAMETRIC1][index], state.parametricBlend);
-				if (state.playNo == PARAMETRIC_ANIME) m_nodeTransform[MAIN][index] = transform;
-				if (state.blendNo == PARAMETRIC_ANIME) m_nodeTransform[BLEND][index] = transform;
+				LerpTransform(&transform, m_nodeTransform[PARAMETRIC0][index], m_nodeTransform[PARAMETRIC1][index], m_parametricBlend);
+				if (m_playNo == PARAMETRIC_ANIME) m_nodeTransform[MAIN][index] = transform;
+				if (m_blendNo == PARAMETRIC_ANIME) m_nodeTransform[BLEND][index] = transform;
 			}
 			// ブレンドアニメ
-			if (state.blendNo != ANIME_NONE)
+			if (m_blendNo != ANIME_NONE)
 			{
-				LerpTransform(&transform, m_nodeTransform[MAIN][index], m_nodeTransform[BLEND][index], state.blendTime / state.blendTotalTime);
+				LerpTransform(&transform, m_nodeTransform[MAIN][index], m_nodeTransform[BLEND][index], m_blendTime / m_blendTotalTime);
 			}
 			else
 			{
@@ -569,260 +637,234 @@ void Model::UpdateAnimation(AnimationState& state, float tick)
 
 	//--- アニメーションの時間更新
 	// メインアニメ
-	if (state.playNo != ANIME_NONE && state.playNo != PARAMETRIC_ANIME) {
-		UpdateAnimeState(state.infoMain, m_animes[state.playNo], tick);
+	if (m_playNo != ANIME_NONE && m_playNo != PARAMETRIC_ANIME) {
+		UpdateAnime(m_playNo, tick);
 	}
 	// ブレンドアニメ
-	if (state.blendNo != ANIME_NONE)
+	if (m_blendNo != ANIME_NONE)
 	{
-		if (state.blendNo != PARAMETRIC_ANIME) {
-			UpdateAnimeState(state.infoBlend, m_animes[state.blendNo], tick);
+		if (m_blendNo != PARAMETRIC_ANIME) {
+			UpdateAnime(m_blendNo, tick);
 		}
-		state.blendTime += tick;
-		if (state.blendTime >= state.blendTotalTime) // バグ修正: <= ではなく >=
+		m_blendTime += tick;
+		if (m_blendTime >= m_blendTotalTime) // バグ修正: <= ではなく >=
 		{
 			// ブレンドアニメの自動終了
-			state.blendTime = 0.0f;
-			state.blendTotalTime = 0.0f;
-			state.playNo = state.blendNo;
-			state.infoMain = state.infoBlend; // 状態の引継ぎ
-			state.blendNo = ANIME_NONE;
+			m_blendTime = 0.0f;
+			m_blendTotalTime = 0.0f;
+			m_playNo = m_blendNo;
+			m_blendNo = ANIME_NONE;
 		}
 	}
 	// パラメトリック
-	if (state.playNo == PARAMETRIC_ANIME || state.blendNo == PARAMETRIC_ANIME)
+	if (m_playNo == PARAMETRIC_ANIME || m_blendNo == PARAMETRIC_ANIME)
 	{
-		UpdateAnimeState(state.infoParametric[0], m_animes[state.parametric[0]], tick);
-		UpdateAnimeState(state.infoParametric[1], m_animes[state.parametric[1]], tick);
+		UpdateAnime(m_parametric[0], tick);
+		UpdateAnime(m_parametric[1], tick);
 	}
 }
 
 /*
-* @brief アニメーションの更新処理
-* @param[in] tick アニメーション経過時間
+* @brief アニメーション再生
+* @param[in] no 再生するアニメーション番号
+* @param[in] loop ループ再生フラグ
+* @param[in] speed 再生速度
 */
-//void Model::Step(float tick)
-//{
-//	// アニメーションの再生確認
-//	if (m_playNo == ANIME_NONE) { return; }
-//
-//	//--- アニメーション行列の更新
-//	// パラメトリック
-//	if (m_playNo == PARAMETRIC_ANIME || m_blendNo == PARAMETRIC_ANIME)
-//	{
-//		CalcAnime(PARAMETRIC0, m_parametric[0]);
-//		CalcAnime(PARAMETRIC1, m_parametric[1]);
-//	}
-//	// メインアニメ
-//	if (m_playNo != ANIME_NONE && m_playNo != PARAMETRIC_ANIME)
-//	{
-//		CalcAnime(MAIN, m_playNo);
-//	}
-//	// ブレンドアニメ
-//	if (m_blendNo != ANIME_NONE && m_blendNo != PARAMETRIC_ANIME)
-//	{
-//		CalcAnime(BLEND, m_blendNo);
-//	}
-//
-//	// アニメーション行列に基づいて骨行列を更新
-//	CalcBones(0, DirectX::XMMatrixScaling(m_loadScale, m_loadScale, m_loadScale));
-//
-//	//--- アニメーションの時間更新
-//	// メインアニメ
-//	UpdateAnime(m_playNo, tick);
-//	// ブレンドアニメ
-//	if (m_blendNo != ANIME_NONE)
-//	{
-//		UpdateAnime(m_blendNo, tick);
-//		m_blendTime += tick;
-//		if (m_blendTime <= m_blendTime)
-//		{
-//			// ブレンドアニメの自動終了
-//			m_blendTime = 0.0f;
-//			m_blendTotalTime = 0.0f;
-//			m_playNo = m_blendNo;
-//			m_blendNo = ANIME_NONE;
-//		}
-//	}
-//	// パラメトリック
-//	if (m_playNo == PARAMETRIC_ANIME || m_blendNo == PARAMETRIC_ANIME)
-//	{
-//		UpdateAnime(m_parametric[0], tick);
-//		UpdateAnime(m_parametric[1], tick);
-//	}
-//}
-//
-///*
-//* @brief アニメーション再生
-//* @param[in] no 再生するアニメーション番号
-//* @param[in] loop ループ再生フラグ
-//* @param[in] speed 再生速度
-//*/
-//void Model::Play(AnimeNo no, bool loop, float speed)
-//{
-//	// 再生チェック
-//	if (!AnimeNoCheck(no)) { return; }
-//	if (m_playNo == no) { return; }
-//
-//	// 合成アニメーションかチェック
-//	if (no != PARAMETRIC_ANIME)
-//	{
-//		// 通常の初期化
-//		InitAnime(no);
-//		m_animes[no].isLoop = loop;
-//		m_animes[no].speed = speed;
-//	}
-//	else
-//	{
-//		// 合成アニメーションの元になっているアニメーションを初期化
-//		InitAnime(m_parametric[0]);
-//		InitAnime(m_parametric[1]);
-//		m_animes[m_parametric[0]].isLoop = loop;
-//		m_animes[m_parametric[1]].isLoop = loop;
-//		SetParametricBlend(0.0f);
-//	}
-//
-//	// 再生アニメーションの設定
-//	m_playNo = no;
-//}
-//
-///*
-//* @brief ブレンド再生
-//* @param[in] no アニメーション番号
-//* @param[in] blendTime ブレンドに掛ける時間
-//* @param[in] loop ループフラグ
-//* @param[in] speed 再生速度
-//*/
-//void Model::PlayBlend(AnimeNo no, float blendTime, bool loop, float speed)
-//{
-//	// 再生チェック
-//	if (!AnimeNoCheck(no)) { return; }
-//
-//	// 合成アニメーションかチェック
-//	if (no != PARAMETRIC_ANIME)
-//	{
-//		InitAnime(no);
-//		m_animes[no].isLoop = loop;
-//		m_animes[no].speed = speed;
-//	}
-//	else
-//	{
-//		// 合成アニメーションの元になっているアニメーションを初期化
-//		InitAnime(m_parametric[0]);
-//		InitAnime(m_parametric[1]);
-//		m_animes[m_parametric[0]].isLoop = loop;
-//		m_animes[m_parametric[1]].isLoop = loop;
-//		SetParametricBlend(0.0f);
-//	}
-//
-//	// ブレンドの設定
-//	m_blendTime = 0.0f;
-//	m_blendTotalTime = blendTime;
-//	m_blendNo = no;
-//}
-//
-///*
-//* @brief 合成元アニメーションの設定
-//* @param[in] no1 合成元アニメ1
-//* @param[in] no2 合成元アニメ2
-//*/
-//void Model::SetParametric(AnimeNo no1, AnimeNo no2)
-//{
-//	// アニメーションチェック
-//	if (!AnimeNoCheck(no1)) { return; }
-//	if (!AnimeNoCheck(no2)) { return; }
-//
-//	// 合成設定
-//	m_parametric[0] = no1;
-//	m_parametric[1] = no2;
-//	SetParametricBlend(0.0f);
-//}
-//
-///*
-//* @brief アニメーションの合成割合設定
-//* @param[in] blendRate 合成割合
-//*/
-//void Model::SetParametricBlend(float blendRate)
-//{
-//	// 合成元アニメが設定されているか確認
-//	if (m_parametric[0] == ANIME_NONE || m_parametric[1] == ANIME_NONE) return;
-//
-//	// 合成割合設定
-//	m_parametricBlend = blendRate;
-//
-//	// 割合に基づいてアニメーションの再生速度を設定
-//	Animation& anime1 = m_animes[m_parametric[0]];
-//	Animation& anime2 = m_animes[m_parametric[1]];
-//	float blendTotalTime = anime1.totalTime * (1.0f - m_parametricBlend) + anime2.totalTime * m_parametricBlend;
-//	anime1.speed = anime1.totalTime / blendTotalTime;
-//	anime2.speed = anime2.totalTime / blendTotalTime;
-//}
-//
-///*
-//* @brief アニメーションの再生時間を変更
-//* @param[in] no 変更するアニメ
-//* @param[in] time 新しい再生時間
-//*/
-//void Model::SetAnimationTime(AnimeNo no, float time)
-//{
-//	// アニメーションチェック
-//	if (!AnimeNoCheck(no)) { return; }
-//
-//	// 再生時間変更
-//	Animation& anime = m_animes[no];
-//	anime.nowTime = time;
-//	while (anime.nowTime >= anime.totalTime)
-//	{
-//		anime.nowTime -= anime.totalTime;
-//	}
-//}
-//
-///*
-//* @brief 再生フラグの取得
-//* @param[in] no 調べるアニメ番号
-//* @return 現在再生中ならtrue
-//*/
-//bool Model::IsPlay(AnimeNo no)
-//{
-//	// アニメーションチェック
-//	if (!AnimeNoCheck(no)) { return false; }
-//
-//	// パラメトリックは合成元のアニメを基準に判断
-//	if (no == PARAMETRIC_ANIME) { no = m_parametric[0]; }
-//
-//	// 再生時間の判定
-//	if (m_animes[no].totalTime < m_animes[no].nowTime) { return false; }
-//
-//	// それぞれの再生番号に設定されているか確認
-//	if (m_playNo == no) { return true; }
-//	if (m_blendNo == no) { return true; }
-//	if (m_playNo == PARAMETRIC_ANIME || m_blendNo == PARAMETRIC_ANIME)
-//	{
-//		if (m_parametric[0] == no) { return true; }
-//		if (m_parametric[1] == no) { return true; }
-//	}
-//
-//	// 再生中でない
-//	return false;
-//}
-//
-///*
-//* @brief 再生中の番号の取得
-//* @return アニメ番号
-//*/
-//Model::AnimeNo Model::GetPlayNo()
-//{
-//	return m_playNo;
-//}
-//
-///*
-//* @brief 再生中のブレンドアニメの取得
-//* @return アニメ番号
-//*/
-//Model::AnimeNo Model::GetBlendNo()
-//{
-//	return m_blendNo;
-//}
+void Model::Play(AnimeNo no, bool loop, float speed)
+{
+	// 再生チェック
+	if (!AnimeNoCheck(no)) { return; }
+	if (m_playNo == no) { return; }
+
+	// 合成アニメーションかチェック
+	if (no != PARAMETRIC_ANIME)
+	{
+		// 通常の初期化
+		InitAnime(no);
+		m_animes[no].isLoop = loop;
+		m_animes[no].speed = speed;
+	}
+	else
+	{
+		// 合成アニメーションの元になっているアニメーションを初期化
+		InitAnime(m_parametric[0]);
+		InitAnime(m_parametric[1]);
+		m_animes[m_parametric[0]].isLoop = loop;
+		m_animes[m_parametric[1]].isLoop = loop;
+		SetParametricBlend(0.0f);
+	}
+
+	// 再生アニメーションの設定
+	m_playNo = no;
+}
+
+void Model::Play(const std::string& assetID, bool loop, float speed)
+{
+	auto it = m_animeIdMap.find(assetID);
+	if (it != m_animeIdMap.end())
+	{
+		// 見つかったインデックスを使って既存のPlayを呼ぶ
+		Play(it->second, loop, speed);
+	}
+	else
+	{
+		std::cerr << "Warning: Animation ID '" << assetID << "' not found in model." << std::endl;
+	}
+}
+
+/*
+* @brief ブレンド再生
+* @param[in] no アニメーション番号
+* @param[in] blendTime ブレンドに掛ける時間
+* @param[in] loop ループフラグ
+* @param[in] speed 再生速度
+*/
+void Model::PlayBlend(AnimeNo no, float blendTime, bool loop, float speed)
+{
+	// 再生チェック
+	if (!AnimeNoCheck(no)) { return; }
+
+	// 合成アニメーションかチェック
+	if (no != PARAMETRIC_ANIME)
+	{
+		InitAnime(no);
+		m_animes[no].isLoop = loop;
+		m_animes[no].speed = speed;
+	}
+	else
+	{
+		// 合成アニメーションの元になっているアニメーションを初期化
+		InitAnime(m_parametric[0]);
+		InitAnime(m_parametric[1]);
+		m_animes[m_parametric[0]].isLoop = loop;
+		m_animes[m_parametric[1]].isLoop = loop;
+		SetParametricBlend(0.0f);
+	}
+
+	// ブレンドの設定
+	m_blendTime = 0.0f;
+	m_blendTotalTime = blendTime;
+	m_blendNo = no;
+}
+
+void Model::PlayBlend(const std::string& animeID, float blendTime, bool loop, float speed)
+{
+	// IDからインデックスを検索
+	auto it = m_animeIdMap.find(animeID);
+	if (it != m_animeIdMap.end())
+	{
+		// 見つかったインデックス(AnimeNo)を使って、既存のPlayBlendを呼ぶ
+		PlayBlend(it->second, blendTime, loop, speed);
+	}
+	else
+	{
+		// IDが見つからない場合はエラーログを出して何もしない
+		std::cerr << "Warning: PlayBlend failed. Animation ID '" << animeID << "' not found." << std::endl;
+	}
+}
+
+/*
+* @brief 合成元アニメーションの設定
+* @param[in] no1 合成元アニメ1
+* @param[in] no2 合成元アニメ2
+*/
+void Model::SetParametric(AnimeNo no1, AnimeNo no2)
+{
+	// アニメーションチェック
+	if (!AnimeNoCheck(no1)) { return; }
+	if (!AnimeNoCheck(no2)) { return; }
+
+	// 合成設定
+	m_parametric[0] = no1;
+	m_parametric[1] = no2;
+	SetParametricBlend(0.0f);
+}
+
+/*
+* @brief アニメーションの合成割合設定
+* @param[in] blendRate 合成割合
+*/
+void Model::SetParametricBlend(float blendRate)
+{
+	// 合成元アニメが設定されているか確認
+	if (m_parametric[0] == ANIME_NONE || m_parametric[1] == ANIME_NONE) return;
+
+	// 合成割合設定
+	m_parametricBlend = blendRate;
+
+	// 割合に基づいてアニメーションの再生速度を設定
+	Animation& anime1 = m_animes[m_parametric[0]];
+	Animation& anime2 = m_animes[m_parametric[1]];
+	float blendTotalTime = anime1.totalTime * (1.0f - m_parametricBlend) + anime2.totalTime * m_parametricBlend;
+	anime1.speed = anime1.totalTime / blendTotalTime;
+	anime2.speed = anime2.totalTime / blendTotalTime;
+}
+
+/*
+* @brief アニメーションの再生時間を変更
+* @param[in] no 変更するアニメ
+* @param[in] time 新しい再生時間
+*/
+void Model::SetAnimationTime(AnimeNo no, float time)
+{
+	// アニメーションチェック
+	if (!AnimeNoCheck(no)) { return; }
+
+	// 再生時間変更
+	Animation& anime = m_animes[no];
+	anime.nowTime = time;
+	while (anime.nowTime >= anime.totalTime)
+	{
+		anime.nowTime -= anime.totalTime;
+	}
+}
+
+/*
+* @brief 再生フラグの取得
+* @param[in] no 調べるアニメ番号
+* @return 現在再生中ならtrue
+*/
+bool Model::IsPlay(AnimeNo no)
+{
+	// アニメーションチェック
+	if (!AnimeNoCheck(no)) { return false; }
+
+	// パラメトリックは合成元のアニメを基準に判断
+	if (no == PARAMETRIC_ANIME) { no = m_parametric[0]; }
+
+	// 再生時間の判定
+	if (m_animes[no].totalTime < m_animes[no].nowTime) { return false; }
+
+	// それぞれの再生番号に設定されているか確認
+	if (m_playNo == no) { return true; }
+	if (m_blendNo == no) { return true; }
+	if (m_playNo == PARAMETRIC_ANIME || m_blendNo == PARAMETRIC_ANIME)
+	{
+		if (m_parametric[0] == no) { return true; }
+		if (m_parametric[1] == no) { return true; }
+	}
+
+	// 再生中でない
+	return false;
+}
+
+/*
+* @brief 再生中の番号の取得
+* @return アニメ番号
+*/
+Model::AnimeNo Model::GetPlayNo()
+{
+	return m_playNo;
+}
+
+/*
+* @brief 再生中のブレンドアニメの取得
+* @return アニメ番号
+*/
+Model::AnimeNo Model::GetBlendNo()
+{
+	return m_blendNo;
+}
 
 
 #ifdef _DEBUG
@@ -844,20 +886,20 @@ void Model::DrawBone()
 	// 再帰処理
 	std::function<void(int, DirectX::XMFLOAT3)> FuncDrawBone =
 		[&FuncDrawBone, this](int idx, DirectX::XMFLOAT3 parent)
-	{
-		// 親ノードから現在位置まで描画
-		DirectX::XMFLOAT3 pos;
-		DirectX::XMStoreFloat3(&pos, DirectX::XMVector3TransformCoord(DirectX::XMVectorZero(), m_nodes[idx].mat));
-		Geometory::AddLine(parent, pos, DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f));
-
-		// 子ノードの描画
-		auto it = m_nodes[idx].children.begin();
-		while (it != m_nodes[idx].children.end())
 		{
-			FuncDrawBone(*it, pos);
-			++it;
-		}
-	};
+			// 親ノードから現在位置まで描画
+			DirectX::XMFLOAT3 pos;
+			DirectX::XMStoreFloat3(&pos, DirectX::XMVector3TransformCoord(DirectX::XMVectorZero(), m_nodes[idx].mat));
+			Geometory::AddLine(parent, pos, DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f));
+
+			// 子ノードの描画
+			auto it = m_nodes[idx].children.begin();
+			while (it != m_nodes[idx].children.end())
+			{
+				FuncDrawBone(*it, pos);
+				++it;
+			}
+		};
 
 	// 描画実行
 	FuncDrawBone(0, DirectX::XMFLOAT3());
@@ -948,8 +990,8 @@ void Model::MakeWeight(const void* ptr, int meshIdx)
 			std::string boneName = assimpBone->mName.data;
 			auto nodeIt = std::find_if(m_nodes.begin(), m_nodes.end(),
 				[boneName](const Node& val) {
-				return val.name == boneName;
-			});
+					return val.name == boneName;
+				});
 			// メッシュに割り当てられているボーンが、ノードに存在しない
 			if (nodeIt == m_nodes.end())
 			{
@@ -965,7 +1007,7 @@ void Model::MakeWeight(const void* ptr, int meshIdx)
 			boneIt->invOffset.r[3].m128_f32[2] *= m_loadScale;
 			boneIt->invOffset =
 				DirectX::XMMatrixScaling(m_loadFlip == ZFlipUseAnime ? -1.0f : 1.0f, 1.0f, 1.0f) *
-				boneIt->invOffset * 
+				boneIt->invOffset *
 				DirectX::XMMatrixScaling(1.f / m_loadScale, 1.f / m_loadScale, 1.f / m_loadScale);
 
 			// ウェイトの設定
@@ -973,7 +1015,7 @@ void Model::MakeWeight(const void* ptr, int meshIdx)
 			for (UINT i = 0; i < weightNum; ++i)
 			{
 				aiVertexWeight weight = assimpBone->mWeights[i];
-				weights[weight.mVertexId].push_back({boneIdx, weight.mWeight});
+				weights[weight.mVertexId].push_back({ boneIdx, weight.mWeight });
 			}
 		}
 
@@ -984,7 +1026,7 @@ void Model::MakeWeight(const void* ptr, int meshIdx)
 			{
 				std::sort(weights[i].begin(), weights[i].end(), [](WeightPair& a, WeightPair& b) {
 					return a.weight > b.weight;
-				});
+					});
 				// ウェイト数4に合わせて正規化
 				float total = 0.0f;
 				for (int j = 0; j < 4; ++j)
@@ -1015,17 +1057,17 @@ void Model::MakeWeight(const void* ptr, int meshIdx)
 		// メッシュでない親ノードを再帰探索
 		std::function<int(int)> FuncFindNode =
 			[&FuncFindNode, this, pScene](NodeIndex parent)
-		{
-			std::string name = m_nodes[parent].name;
-			for (UINT i = 0; i < pScene->mNumMeshes; ++i)
 			{
-				if (name == pScene->mMeshes[i]->mName.data)
+				std::string name = m_nodes[parent].name;
+				for (UINT i = 0; i < pScene->mNumMeshes; ++i)
 				{
-					return FuncFindNode(m_nodes[parent].parent);
+					if (name == pScene->mMeshes[i]->mName.data)
+					{
+						return FuncFindNode(m_nodes[parent].parent);
+					}
 				}
-			}
-			return parent;
-		};
+				return parent;
+			};
 
 		Bone bone;
 		bone.index = FuncFindNode(nodeIt->parent);
@@ -1044,13 +1086,31 @@ void Model::MakeWeight(const void* ptr, int meshIdx)
 
 bool Model::AnimeNoCheck(AnimeNo no)
 {
-	// パラメトリックなどの特殊ステートのチェックはComponent側（AnimationState）の責務とし、
-	// ここでは単純にリソース配列の範囲内かだけをチェックする
-	return 0 <= no && no < static_cast<int>(m_animes.size());
+	// パラメトリックアニメーション確認
+	if (no == PARAMETRIC_ANIME)
+	{
+		// パラメトリックのアニメーションが両方正しく設定されているか
+		return
+			m_parametric[0] != ANIME_NONE &&
+			m_parametric[1] != ANIME_NONE;
+	}
+	else
+	{
+		// 問題ないアニメーション番号かどうか
+		return 0 <= no && no < m_animes.size();
+	}
 }
+void Model::InitAnime(AnimeNo no)
+{
+	// アニメの設定なし、パラメトリックで設定されているなら初期化しない
+	if (no == ANIME_NONE || no == PARAMETRIC_ANIME) { return; }
 
-// 内部計算用
-void Model::CalcAnime(AnimeTransform kind, AnimeNo no, float time, const AnimationState& state)
+	Animation& anime = m_animes[no];
+	anime.nowTime = 0.0f;
+	anime.speed = 1.0f;
+	anime.isLoop = false;
+}
+void Model::CalcAnime(AnimeTransform kind, AnimeNo no)
 {
 	Animation& anime = m_animes[no];
 	Channels::iterator channelIt = anime.channels.begin();
@@ -1069,17 +1129,17 @@ void Model::CalcAnime(AnimeTransform kind, AnimeNo no, float time, const Animati
 		if (timeline.size() <= 1)
 		{
 			// キーが一つしかないので値をそのまま使用
-			transform = channelIt->timeline[0];
+			transform = channelIt->timeline.begin()->second;
 		}
 		else
 		{
 			Timeline::iterator startIt = timeline.begin();
-			if (time <= startIt->first)
+			if (anime.nowTime <= startIt->first)
 			{
 				// 先頭キーよりも前の時間なら、先頭の値を使用
 				transform = startIt->second;
 			}
-			else if (timeline.rbegin()->first <= time)
+			else if (timeline.rbegin()->first <= anime.nowTime)
 			{
 				// 最終キーよりも後の時間なら、最後の値を使用
 				transform = timeline.rbegin()->second;
@@ -1087,10 +1147,10 @@ void Model::CalcAnime(AnimeTransform kind, AnimeNo no, float time, const Animati
 			else
 			{
 				// 指定された時間を挟む2つのキーから、補間された値を計算
-				Timeline::iterator nextIt = timeline.upper_bound(time);
+				Timeline::iterator nextIt = timeline.upper_bound(anime.nowTime);
 				startIt = nextIt;
 				--startIt;
-				float rate = (time - startIt->first) / (nextIt->first - startIt->first);
+				float rate = (anime.nowTime - startIt->first) / (nextIt->first - startIt->first);
 				LerpTransform(&transform, startIt->second, nextIt->second, rate);
 			}
 		}
@@ -1098,135 +1158,63 @@ void Model::CalcAnime(AnimeTransform kind, AnimeNo no, float time, const Animati
 		++channelIt;
 	}
 }
-
-void Model::UpdateAnimeState(AnimationState::Info& info, const Animation& animeData, float tick)
+void Model::UpdateAnime(AnimeNo no, float tick)
 {
-	info.nowTime += info.speed * tick;
-	if (info.isLoop)
+	if (no == PARAMETRIC_ANIME) { return; }
+
+	Animation& anime = m_animes[no];
+	anime.nowTime += anime.speed * tick;
+	if (anime.isLoop)
 	{
-		while (info.nowTime >= animeData.totalTime)
+		while (anime.nowTime >= anime.totalTime)
 		{
-			info.nowTime -= animeData.totalTime;
+			anime.nowTime -= anime.totalTime;
 		}
 	}
 }
+void Model::CalcBones(NodeIndex index, const DirectX::XMMATRIX parent)
+{
+	//--- アニメーションごとのパラメータを合成
+	Transform transform;
+	// パラメトリック
+	if (m_playNo == PARAMETRIC_ANIME || m_blendNo == PARAMETRIC_ANIME)
+	{
+		LerpTransform(&transform, m_nodeTransform[PARAMETRIC0][index], m_nodeTransform[PARAMETRIC1][index], m_parametricBlend);
+		if (m_playNo == PARAMETRIC_ANIME)
+		{
+			m_nodeTransform[MAIN][index] = transform;
+		}
+		if (m_blendNo == PARAMETRIC_ANIME)
+		{
+			m_nodeTransform[BLEND][index] = transform;
+		}
+	}
+	// ブレンドアニメ
+	if (m_blendNo != ANIME_NONE)
+	{
+		LerpTransform(&transform, m_nodeTransform[MAIN][index], m_nodeTransform[BLEND][index], m_blendTime / m_blendTotalTime);
+	}
+	else
+	{
+		// メインアニメのみ
+		transform = m_nodeTransform[MAIN][index];
+	}
 
-//void Model::InitAnime(AnimeNo no)
-//{
-//	// アニメの設定なし、パラメトリックで設定されているなら初期化しない
-//	if (no == ANIME_NONE || no == PARAMETRIC_ANIME) { return; }
-//
-//	Animation& anime = m_animes[no];
-//	anime.nowTime = 0.0f;
-//	anime.speed = 1.0f;
-//	anime.isLoop = false;
-//}
-//void Model::CalcAnime(AnimeTransform kind, AnimeNo no)
-//{
-//	Animation& anime = m_animes[no];
-//	Channels::iterator channelIt = anime.channels.begin();
-//	while (channelIt != anime.channels.end())
-//	{
-//		// 一致するボーンがなければスキップ
-//		Timeline& timeline = channelIt->timeline;
-//		if (channelIt->index == INDEX_NONE || timeline.empty())
-//		{
-//			++channelIt;
-//			continue;
-//		}
-//
-//		//--- 該当ノードの姿勢をアニメーションで更新
-//		Transform& transform = m_nodeTransform[kind][channelIt->index];
-//		if (timeline.size() <= 1)
-//		{
-//			// キーが一つしかないので値をそのまま使用
-//			transform = channelIt->timeline[0];
-//		}
-//		else
-//		{
-//			Timeline::iterator startIt = timeline.begin();
-//			if (anime.nowTime <= startIt->first)
-//			{
-//				// 先頭キーよりも前の時間なら、先頭の値を使用
-//				transform = startIt->second;
-//			}
-//			else if (timeline.rbegin()->first <= anime.nowTime)
-//			{
-//				// 最終キーよりも後の時間なら、最後の値を使用
-//				transform = timeline.rbegin()->second;
-//			}
-//			else
-//			{
-//				// 指定された時間を挟む2つのキーから、補間された値を計算
-//				Timeline::iterator nextIt = timeline.upper_bound(anime.nowTime);
-//				startIt = nextIt;
-//				--startIt;
-//				float rate = (anime.nowTime - startIt->first) / (nextIt->first - startIt->first);
-//				LerpTransform(&transform, startIt->second, nextIt->second, rate);
-//			}
-//		}
-//
-//		++channelIt;
-//	}
-//}
-//void Model::UpdateAnime(AnimeNo no, float tick)
-//{
-//	if (no == PARAMETRIC_ANIME) { return; }
-//
-//	Animation& anime = m_animes[no];
-//	anime.nowTime += anime.speed * tick;
-//	if (anime.isLoop)
-//	{
-//		while (anime.nowTime >= anime.totalTime)
-//		{
-//			anime.nowTime -= anime.totalTime;
-//		}
-//	}
-//}
-//
-//void Model::CalcBones(NodeIndex index, const DirectX::XMMATRIX parent)
-//{
-//	//--- アニメーションごとのパラメータを合成
-//	Transform transform;
-//	// パラメトリック
-//	if (m_playNo == PARAMETRIC_ANIME || m_blendNo == PARAMETRIC_ANIME)
-//	{
-//		LerpTransform(&transform, m_nodeTransform[PARAMETRIC0][index], m_nodeTransform[PARAMETRIC1][index], m_parametricBlend);
-//		if (m_playNo == PARAMETRIC_ANIME)
-//		{
-//			m_nodeTransform[MAIN][index] = transform;
-//		}
-//		if (m_blendNo == PARAMETRIC_ANIME)
-//		{
-//			m_nodeTransform[BLEND][index] = transform;
-//		}
-//	}
-//	// ブレンドアニメ
-//	if (m_blendNo != ANIME_NONE)
-//	{
-//		LerpTransform(&transform, m_nodeTransform[MAIN][index], m_nodeTransform[BLEND][index], m_blendTime / m_blendTotalTime);
-//	}
-//	else
-//	{
-//		// メインアニメのみ
-//		transform = m_nodeTransform[MAIN][index];
-//	}
-//
-//	// 該当ノードの姿勢行列を計算
-//	Node& node = m_nodes[index];
-//	DirectX::XMMATRIX T = DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&transform.translate));
-//	DirectX::XMMATRIX R = DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&transform.quaternion));
-//	DirectX::XMMATRIX S = DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&transform.scale));
-//	node.mat = (S * R * T) * parent;
-//
-//	// 子要素の姿勢を更新
-//	Children::iterator it = node.children.begin();
-//	while (it != node.children.end())
-//	{
-//		CalcBones(*it, node.mat);
-//		++it;
-//	}
-//}
+	// 該当ノードの姿勢行列を計算
+	Node& node = m_nodes[index];
+	DirectX::XMMATRIX T = DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&transform.translate));
+	DirectX::XMMATRIX R = DirectX::XMMatrixRotationQuaternion(DirectX::XMLoadFloat4(&transform.quaternion));
+	DirectX::XMMATRIX S = DirectX::XMMatrixScalingFromVector(DirectX::XMLoadFloat3(&transform.scale));
+	node.mat = (S * R * T) * parent;
+
+	// 子要素の姿勢を更新
+	Children::iterator it = node.children.begin();
+	while (it != node.children.end())
+	{
+		CalcBones(*it, node.mat);
+		++it;
+	}
+}
 
 void Model::LerpTransform(Transform* pOut, const Transform& a, const Transform& b, float rate)
 {
@@ -1242,30 +1230,4 @@ void Model::LerpTransform(Transform* pOut, const Transform& a, const Transform& 
 	DirectX::XMStoreFloat3(&pOut->translate, vec[0][0]);
 	DirectX::XMStoreFloat4(&pOut->quaternion, vec[1][0]);
 	DirectX::XMStoreFloat3(&pOut->scale, vec[2][0]);
-}
-
-void Model::SendBoneDataToShader()
-{
-	// シェーダーの定数バッファ定義に合わせて構造体や配列を用意
-	// ShaderListの仕様に依存しますが、一般的には以下のように配列を作って送ります
-	static DirectX::XMFLOAT4X4 boneMatrices[MAX_BONE];
-
-	// m_nodes は計算済みの行列を持っているので、それをコピー
-	size_t nodeCount = m_nodes.size();
-	if (nodeCount > MAX_BONE) nodeCount = MAX_BONE;
-
-	for (size_t i = 0; i < nodeCount; ++i)
-	{
-		DirectX::XMStoreFloat4x4(&boneMatrices[i], m_nodes[i].mat);
-	}
-
-	// 足りない分は単位行列で埋める（必要であれば）
-	for (size_t i = nodeCount; i < MAX_BONE; ++i)
-	{
-		DirectX::XMStoreFloat4x4(&boneMatrices[i], DirectX::XMMatrixIdentity());
-	}
-
-	// ShaderListにあるヘルパー関数を使って送信
-	// ※ ShaderList::SetBoneMatrix が存在すると仮定しています
-	ShaderList::SetBones(boneMatrices);
 }

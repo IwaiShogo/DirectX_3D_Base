@@ -19,29 +19,56 @@
 
 // ===== インクルード =====
 #include "ECS/Systems/Rendering/AnimationSystem.h"
+#include "ECS/ECS.h"
 
 using namespace ECS;
 
-/**
- * [void - Update]
- * @brief	アニメーションを更新する
- * 
- * @param	[in] deltaTime デルタタイム
- */
 void AnimationSystem::Update(float deltaTime)
 {
-	// Systemが保持するEntityセットをイテレート
-	for (auto const& entity : m_entities)
-	{
-		// 必要なコンポーネントを取得
-		ModelComponent& modelComp = m_coordinator->GetComponent<ModelComponent>(entity);
-		AnimationComponent& animComp = m_coordinator->GetComponent<AnimationComponent>(entity);
+    for (auto const& entity : m_entities)
+    {
+        auto& modelComp = m_coordinator->GetComponent<ModelComponent>(entity);
+        auto& animComp = m_coordinator->GetComponent<AnimationComponent>(entity);
 
-		if (modelComp.pModel)
-		{
-			// コンポーネントが保持する「状態(m_state)」を渡して、
-			// モデルの計算ロジックを実行する。
-			modelComp.pModel->UpdateAnimation(animComp.m_state, deltaTime);
-		}
-	}
+        // モデルの実体がなければスキップ
+        if (!modelComp.pModel) continue;
+
+        // ----------------------------------------------------
+        // 1. 未ロードのアニメーションがあればロードを実行
+        // ----------------------------------------------------
+        if (!animComp.preloadList.empty())
+        {
+            for (const auto& animeID : animComp.preloadList)
+            {
+                // STEP 2でModelに追加した「IDだけでロードする関数」を呼ぶ
+                modelComp.pModel->AddAnimation(animeID);
+            }
+            animComp.preloadList.clear();
+        }
+
+        // ----------------------------------------------------
+        // 2. 再生リクエストがあれば実行 (C++14対応)
+        // ----------------------------------------------------
+        if (animComp.hasRequest)
+        {
+            const auto& req = animComp.currentRequest;
+
+            if (req.isBlend)
+            {
+                modelComp.pModel->PlayBlend(req.animeID, req.blendTime, req.loop, req.speed);
+            }
+            else
+            {
+                modelComp.pModel->Play(req.animeID, req.loop, req.speed);
+            }
+
+            // リクエスト消費完了（フラグを下ろす）
+            animComp.hasRequest = false;
+        }
+
+        // ----------------------------------------------------
+        // 3. アニメーションの更新ステップ実行
+        // ----------------------------------------------------
+        modelComp.pModel->Step(deltaTime);
+    }
 }
