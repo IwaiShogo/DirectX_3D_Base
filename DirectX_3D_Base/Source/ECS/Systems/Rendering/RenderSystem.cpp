@@ -124,6 +124,12 @@ void RenderSystem::DrawEntities()
     }
 	auto& cameraComp = m_coordinator->GetComponent<CameraComponent>(cameraID);
 
+	RenderTarget* pRTV = GetDefaultRTV();   // デフォルトのRenderTargetViewを取得
+	DepthStencil* pDSV = GetDefaultDSV();	// デフォルトのDepthStencilViewを取得
+	SetRenderTargets(1, &pRTV, pDSV);		// 第3引数がnullの場合、2D表示となる
+
+	SetDepthTest(true); // デプス・テストが有効化されていることを確認
+
 	// Systemが保持するEntityセットをイテレート
 	for (auto const& entity : m_entities)
 	{
@@ -135,7 +141,6 @@ void RenderSystem::DrawEntities()
 		DirectX::XMMATRIX world;
 
 		// 1. ワールド行列の計算 (TransformComponent -> XMMATRIX -> XMFLOAT4X4)
-		// ... (スケール、回転、平行移動の計算ロジックは維持) ...
 		XMMATRIX S = XMMatrixScaling(transform.scale.x, transform.scale.y, transform.scale.z);
 		XMMATRIX Rx = XMMatrixRotationX(transform.rotation.x);
 		XMMATRIX Ry = XMMatrixRotationY(transform.rotation.y);
@@ -170,23 +175,30 @@ void RenderSystem::DrawEntities()
 			Geometory::DrawBox(); // 代替としてBoxを描画
 			break;
 		case MESH_MODEL:
-			// ModelSystemに移行後、実装
 		{
 			// ModelComponentを取得し、Model::Draw()を呼び出す
 			// RenderSystemのシグネチャにModelComponentが含まれている前提
 			ModelComponent& model = m_coordinator->GetComponent<ModelComponent>(entity);
 			if (model.pModel)
 			{
-				model.pModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_WORLD));
+				bool isAnimated = false;
+				if (m_coordinator->HasComponent<AnimationComponent>(entity))
+				{
+					// アニメーション用のシェーダーを設定 (VS_SKIN がある前提)
+					// ShaderListに VS_SKIN が定義されていない場合は、追加するか既存のボーン対応シェーダーを指定してください
+					model.pModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_ANIME));
+					isAnimated = true;
+				}
+				else
+				{
+					// 通常のシェーダー
+					model.pModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_WORLD));
+				}
+
 				model.pModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
 
+				// 描画処理
 				for (uint32_t i = 0; i < model.pModel->GetMeshNum(); ++i) {
-					RenderTarget* pRTV = GetDefaultRTV();    // デフォルトのRenderTargetViewを取得
-					DepthStencil* pDSV = GetDefaultDSV();    // デフォルトのDepthStencilViewを取得
-					SetRenderTargets(1, &pRTV, pDSV);    // 第3引数がnullの場合、2D表示となる
-
-					SetDepthTest(true); // 【確認・維持】デプス・テストが有効化されていることを確認
-
 					// モデルのメッシュを取得
 					Model::Mesh mesh = *model.pModel->GetMesh(i);
 					// メッシュに割り当てられているマテリアルを取得

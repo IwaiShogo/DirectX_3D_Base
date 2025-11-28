@@ -6,76 +6,99 @@
 
 void Model::MakeMesh(const void* ptr, float scale, Flip flip)
 {
-	// 事前準備
-	aiVector3D zero3(0.0f, 0.0f, 0.0f);
-	aiColor4D one4(1.0f, 1.0f, 1.0f, 1.0f);
 	const aiScene* pScene = reinterpret_cast<const aiScene*>(ptr);
-	float xFlip = flip == Flip::XFlip ? -1.0f : 1.0f;
-	float zFlip = (flip == Flip::ZFlip || flip == Flip::ZFlipUseAnime) ? -1.0f : 1.0f;
-	int idx1 = (flip == Flip::XFlip || flip == Flip::ZFlip) ? 2 : 1;
-	int idx2 = (flip == Flip::XFlip || flip == Flip::ZFlip) ? 1 : 2;
 
-	// メッシュの作成
+	// メッシュ配列の確保
 	m_meshes.resize(pScene->mNumMeshes);
-	for (unsigned int i = 0; i < m_meshes.size(); ++i)
+
+	for (UINT i = 0; i < pScene->mNumMeshes; ++i)
 	{
-		// 頂点書き込み先の領域を用意
-		m_meshes[i].vertices.resize(pScene->mMeshes[i]->mNumVertices);
+		aiMesh* pAssimpMesh = pScene->mMeshes[i];
+		Mesh& mesh = m_meshes[i];
 
-		// 頂点データの書き込み
-		for (unsigned int j = 0; j < m_meshes[i].vertices.size(); ++j) {
-			// ☆モデルデータから値の取得
-			aiVector3D pos = pScene->mMeshes[i]->mVertices[j];
-			aiVector3D normal = pScene->mMeshes[i]->HasNormals() ?
-				pScene->mMeshes[i]->mNormals[j] : zero3;
-			aiVector3D uv = pScene->mMeshes[i]->HasTextureCoords(0) ?
-				pScene->mMeshes[i]->mTextureCoords[0][j] : zero3;
-			aiColor4D color = pScene->mMeshes[i]->HasVertexColors(0) ?
-				pScene->mMeshes[i]->mColors[0][j] : one4;
+		// --- 1. 頂点情報の抽出 ---
+		mesh.vertices.resize(pAssimpMesh->mNumVertices);
+		for (UINT v = 0; v < pAssimpMesh->mNumVertices; ++v)
+		{
+			Vertex& vertex = mesh.vertices[v];
+			aiVector3D pos = pAssimpMesh->mVertices[v];
+			aiVector3D normal = pAssimpMesh->mNormals[v];
 
-			// ☆値を設定
-			m_meshes[i].vertices[j] = {
-				DirectX::XMFLOAT3(pos.x * scale * xFlip, pos.y * scale, pos.z * scale * zFlip),
-				DirectX::XMFLOAT3(normal.x, normal.y, normal.z),
-				DirectX::XMFLOAT2(uv.x, uv.y),
-				DirectX::XMFLOAT4(color.r, color.g, color.b, color.a)
-			};
+			// 座標・法線
+			vertex.pos = DirectX::XMFLOAT3(pos.x * scale, pos.y * scale, pos.z * scale);
+			vertex.normal = DirectX::XMFLOAT3(normal.x, normal.y, normal.z);
+
+			// UV
+			if (pAssimpMesh->HasTextureCoords(0))
+			{
+				vertex.uv = DirectX::XMFLOAT2(pAssimpMesh->mTextureCoords[0][v].x, pAssimpMesh->mTextureCoords[0][v].y);
+			}
+			else
+			{
+				vertex.uv = DirectX::XMFLOAT2(0.0f, 0.0f);
+			}
+
+			// カラー
+			if (pAssimpMesh->HasVertexColors(0))
+			{
+				vertex.color = DirectX::XMFLOAT4(
+					pAssimpMesh->mColors[0][v].r, pAssimpMesh->mColors[0][v].g, pAssimpMesh->mColors[0][v].b, pAssimpMesh->mColors[0][v].a
+				);
+			}
+			else
+			{
+				vertex.color = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+			}
+
+			// 反転処理
+			if (flip == XFlip)
+			{
+				vertex.pos.x *= -1.0f;
+				vertex.normal.x *= -1.0f;
+			}
+			else if (flip == ZFlip || flip == ZFlipUseAnime)
+			{
+				vertex.pos.z *= -1.0f;
+				vertex.normal.z *= -1.0f;
+			}
+
+			// ウェイトとインデックスの初期化
+			for (int j = 0; j < 4; ++j) {
+				vertex.weight[j] = 0.0f;
+				vertex.index[j] = 0;
+			}
 		}
 
-		// ボーン生成
-		MakeWeight(pScene, i);
-
-		// インデックスの書き込み先の用意
-		// mNumFacesはポリゴンの数を表す(１ポリゴンで3インデックス
-		m_meshes[i].indices.resize(pScene->mMeshes[i]->mNumFaces * 3);
-
-		// インデックスの書き込み
-		for (unsigned int j = 0; j < pScene->mMeshes[i]->mNumFaces; ++j) {
-			// ☆モデルデータから値の取得
-			aiFace face = pScene->mMeshes[i]->mFaces[j];
-			// ☆値の設定
-			int idx = j * 3;
-			m_meshes[i].indices[idx + 0] = face.mIndices[0];
-			m_meshes[i].indices[idx + 1] = face.mIndices[idx1];
-			m_meshes[i].indices[idx + 2] = face.mIndices[idx2];
+		// --- 2. インデックス情報の抽出 ---
+		mesh.indices.resize(pAssimpMesh->mNumFaces * 3);
+		for (UINT f = 0; f < pAssimpMesh->mNumFaces; ++f)
+		{
+			aiFace& face = pAssimpMesh->mFaces[f];
+			mesh.indices[f * 3 + 0] = face.mIndices[0];
+			mesh.indices[f * 3 + 1] = face.mIndices[1];
+			mesh.indices[f * 3 + 2] = face.mIndices[2];
+			if (flip != None) std::swap(mesh.indices[f * 3 + 1], mesh.indices[f * 3 + 2]);
 		}
 
-		// マテリアルの割り当て
-		m_meshes[i].materialID = pScene->mMeshes[i]->mMaterialIndex;
+		// --- 3. マテリアルID ---
+		mesh.materialID = pAssimpMesh->mMaterialIndex;
 
-		// ☆頂点バッファに必要なデータを設定
+		// --- 4. ウェイト計算（★ここが重要） ---
+		MakeWeight(ptr, i);
+
+		// --- 5. GPUバッファの作成 ---
 		MeshBuffer::Description desc = {};
-		desc.pVtx = m_meshes[i].vertices.data();
+		desc.pVtx = mesh.vertices.data();
 		desc.vtxSize = sizeof(Vertex);
-		desc.vtxCount = m_meshes[i].vertices.size();
-		desc.pIdx = m_meshes[i].indices.data();
+		desc.vtxCount = static_cast<UINT>(mesh.vertices.size());
+		desc.pIdx = mesh.indices.data();
 		desc.idxSize = sizeof(unsigned long);
-		desc.idxCount = m_meshes[i].indices.size();
+		desc.idxCount = static_cast<UINT>(mesh.indices.size());
 		desc.topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-				
-		// ☆頂点バッファ作成
-		m_meshes[i].pMesh = new MeshBuffer();
-		m_meshes[i].pMesh->Create(desc);
+		desc.isWrite = false;
+
+		mesh.pMesh = new MeshBuffer();
+		mesh.pMesh->Create(desc);
 	}
 }
 

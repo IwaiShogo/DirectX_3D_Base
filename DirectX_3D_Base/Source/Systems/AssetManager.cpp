@@ -19,6 +19,7 @@
 
 // ===== インクルード =====
 #include "Systems/AssetManager.h"
+#include "Systems/DirectX/ShaderList.h"
 
 // シングルトンインスタンスの初期化
 Asset::AssetManager* Asset::AssetManager::s_instance = nullptr;
@@ -113,6 +114,11 @@ namespace Asset
 		return LoadAssetListInternal(csvPath, m_soundMap, AssetType::Sound);
 	}
 
+	bool AssetManager::LoadAnimationList(const std::string& csvPath)
+	{
+		return LoadAssetListInternal(csvPath, m_animationMap, AssetType::Animation);
+	}
+
 	// ----------------------------------------
 	// アセットパス取得インターフェス
 	// ----------------------------------------
@@ -146,6 +152,17 @@ namespace Asset
 			return it->second.filePath;
 		}
 		std::cerr << "Error: Model Asset ID '" << assetID << "' not found." << std::endl;
+		return "";
+	}
+
+	std::string AssetManager::GetAnimationPath(const std::string& assetID) const
+	{
+		auto it = m_animationMap.find(assetID);
+		if (it != m_animationMap.end())
+		{
+			return it->second.filePath;
+		}
+		std::cerr << "Error: Animation Asset ID '" << assetID << "' not found." << std::endl;
 		return "";
 	}
 	
