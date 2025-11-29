@@ -19,6 +19,7 @@
 
 // ===== インクルード =====
 #include "Scene/TitleScene.h"
+#include "Scene/StageSelectScene.h"
 #include "ECS/ECSInitializer.h"
 #include "DirectXMath.h"
 #include <iostream>
@@ -38,7 +39,7 @@ using namespace DirectX;
 
 
 //仮の入力チェック関数
-bool IsInputStart() {
+static bool IsInputStart() {
 	//ここに実際の入力チェックロジックが入る
 	//今回は遷移テストのため、デバッグで一時的にtrueを返すなどしてもいい
 	return false;
@@ -130,22 +131,10 @@ void TitleScene::Update(float deltaTime)
 			if (comp.isClicked)
 			{
 				std::cout << "Button Clicked! -> GameScene" << std::endl;
-				SceneManager::ChangeScene<GameScene>();
+				SceneManager::ChangeScene<StageSelectScene>();
 			}
 			
 		}
-
-
-
-
-
-	
-	
-	
-	if (IsKeyTrigger('N'))
-	{
-		SceneManager::ChangeScene<GameScene>();//N:ゲームシーンに切り替え
-	}
 }
 
 void TitleScene::Draw()

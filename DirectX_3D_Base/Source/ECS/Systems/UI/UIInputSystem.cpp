@@ -24,6 +24,8 @@
 #include "ECS/Components/UI/UIInteractableComponent.h"
 #include  "ECS/Components/Core/TransformComponent.h"
 
+#include "ECS/Components/Core/TagComponent.h"
+
 #include "ECS/Coordinator.h"
 
 #include "Systems/Input.h"
@@ -75,6 +77,31 @@ void UIInputSystem::Update()
 		interactable.isHovered = hit;
 		interactable.isClicked = (hit && isTrigger);
 		interactable.isPressed = (hit && isPressed);
+		// TagComponentを持っているかチェック
+		if (m_coordinator->HasComponent<TagComponent>(entity))
+		{
+			const auto& tag = m_coordinator->GetComponent<TagComponent>(entity);
 
+			// "SelectSceneUIA" タグなら、Aボタンでクリック判定を上書き
+			if (tag.tag == "SelectSceneUIA")
+			{
+				if (IsKeyTrigger('A') || IsButtonTriggered(BUTTON_A))
+				{
+					interactable.isClicked = true;
+				}
+			}
+
+			// "SelectSceneUIB" タグなら、Bボタンでクリック判定を上書き
+			if (tag.tag == "SelectSceneUIB")
+			{
+				if (IsKeyTrigger('B') || IsButtonTriggered(BUTTON_B))
+				{
+					interactable.isClicked = true;
+				}
+			}
+
+		
+			
+		}
 	}
 }

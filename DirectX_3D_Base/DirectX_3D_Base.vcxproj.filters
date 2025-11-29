@@ -35,10 +35,10 @@
       <Filter>Source Files\Systems\DirectX</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\ECSInitializer.cpp">
-      <Filter>Source Files\ECS</Filter>
+      <Filter>Source Files\Scene\ECS</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\EntityFactory.cpp">
-      <Filter>Source Files\ECS</Filter>
+      <Filter>Source Files\Scene\ECS</Filter>
     </ClCompile>
     <ClCompile Include="Source\Scene\GameScene.cpp">
       <Filter>Source Files\Scene</Filter>
@@ -59,40 +59,40 @@
       <Filter>Source Files\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Core\AudioSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Core</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Core\CameraControlSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Core</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Core\GameFlowSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Core</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Core\StateSwitchSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Core</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Gameplay\CollectionSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Gameplay</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\Gameplay</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Gameplay\MapGenerationSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Gameplay</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\Gameplay</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Gameplay\PlayerControlSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Gameplay</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\Gameplay</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Gimmick\GuardAISystem.cpp">
-      <Filter>Source Files\ECS\Systems\Gimmick</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\Gimmick</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Physics\CollisionSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Physics</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\Physics</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Physics\PhysicsSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Physics</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\Physics</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Rendering\DebugDrawSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Rendering</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Rendering\RenderSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Rendering</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Source\Systems\AssetManager.cpp">
       <Filter>Source Files\Systems</Filter>
@@ -104,13 +104,19 @@
       <Filter>Source Files\Systems\XAudio2</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\UI\UIRenderSystem.cpp">
-      <Filter>Source Files\ECS\Systems\UI</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\UI\UIInputSystem.cpp">
-      <Filter>Source Files\ECS\Systems\UI</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Core\GameSceneSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Core</Filter>
+      <Filter>Source Files\Scene\ECS\Systems\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\StageinformationScene.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\ScoreManager.cpp">
+      <Filter>Source Files\Scene\ECS</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -315,6 +321,10 @@
     <ClInclude Include="Include\ECS\Systems\Core\GameSceneSystem.h">
       <Filter>Header Files\ECS\Systems\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Include\Scene\StageinformationScene.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\ScoreManager.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -353,32 +363,8 @@
     <Filter Include="Source Files\Scene">
       <UniqueIdentifier>{7d4dd219-1558-433c-8c70-326541984262}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\ECS">
-      <UniqueIdentifier>{e792c94f-247c-452f-a846-58cffbcaa654}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\ECS\Systems">
-      <UniqueIdentifier>{96ed9615-c337-412e-a6e5-6e0f49d2da7d}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Systems\DirectX">
       <UniqueIdentifier>{6750fbb7-ac09-43c2-9fff-00dce06557a3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\ECS\Systems\Core">
-      <UniqueIdentifier>{d298074e-27ff-4dfd-9743-e6e4a5cd7d78}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\ECS\Systems\Rendering">
-      <UniqueIdentifier>{1f8c3853-4e21-4e25-a362-4d9d682a942f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\ECS\Systems\Physics">
-      <UniqueIdentifier>{50c13c6e-9abe-4d3f-969f-daec48daba47}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\ECS\Systems\UI">
-      <UniqueIdentifier>{49b8fd35-14a8-46ca-abe4-9fb4edb0119e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\ECS\Systems\Gimmick">
-      <UniqueIdentifier>{ee674e02-dd04-4339-a727-ad150f58aa28}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\ECS\Systems\Gameplay">
-      <UniqueIdentifier>{4e8af539-28ec-4c78-849b-9ff662bf3f2b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\ECS\Components\Core">
       <UniqueIdentifier>{bf25f6b0-9348-4f80-8d9e-3c2fae60c058}</UniqueIdentifier>
@@ -442,6 +428,30 @@
     </Filter>
     <Filter Include="Assets\Config">
       <UniqueIdentifier>{cb155b88-3788-4c6c-aa61-76912b66fedf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS">
+      <UniqueIdentifier>{e792c94f-247c-452f-a846-58cffbcaa654}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS\Systems">
+      <UniqueIdentifier>{96ed9615-c337-412e-a6e5-6e0f49d2da7d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS\Systems\Core">
+      <UniqueIdentifier>{d298074e-27ff-4dfd-9743-e6e4a5cd7d78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS\Systems\Rendering">
+      <UniqueIdentifier>{1f8c3853-4e21-4e25-a362-4d9d682a942f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS\Systems\Physics">
+      <UniqueIdentifier>{50c13c6e-9abe-4d3f-969f-daec48daba47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS\Systems\UI">
+      <UniqueIdentifier>{49b8fd35-14a8-46ca-abe4-9fb4edb0119e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS\Systems\Gimmick">
+      <UniqueIdentifier>{ee674e02-dd04-4339-a727-ad150f58aa28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS\Systems\Gameplay">
+      <UniqueIdentifier>{4e8af539-28ec-4c78-849b-9ff662bf3f2b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

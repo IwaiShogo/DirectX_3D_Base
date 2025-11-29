@@ -21,6 +21,8 @@
 // ===== インクルード =====
 #include "Scene/GameScene.h"
 
+#include"Scene/StageinformationScene.h"
+#include "Ecs/Components/ScoreManager.h"
 #include "ECS/ECS.h"
 #include "ECS/ECSInitializer.h"
 #include "ECS/EntityFactory.h"
@@ -28,17 +30,19 @@
 #include "ECS/Components/Core/GameStateComponent.h"
 #include "Systems/Input.h"
 #include "ECS/Systems/Core/GameSceneSystem.h"
+#include "ECS/Components/ScoreManager.h"
 
 #include <DirectXMath.h>
 #include <iostream>
 #include <typeindex> // SystemManagerからのRenderSystem取得に使用
- 
+#include <sstream> 
+
 // ===== 静的メンバー変数の定義 =====u
 // 他のシステムからECSにアクセスするための静的ポインタ
 ECS::Coordinator* GameScene::s_coordinator = nullptr;
 
 using namespace DirectX;
-
+int GameScene::s_StageNo = 1;
 // ===== GameScene メンバー関数の実装 =====
 
 void GameScene::Init()
@@ -58,12 +62,23 @@ void GameScene::Init()
         m_coordinator->SetSystemSignature<GameSceneSystem>(signature);
         system->Init(m_coordinator.get());
     }
+	// --- 2. ステージIDの作成 ---
+	// 例: s_StageNo が 1 なら "ST_001"、 6 なら "ST_006" という文字列を作る
+	std::stringstream ss;
+	ss << "ST_" << std::setfill('0') << std::setw(3) << s_StageNo;
+	std::string stageID = ss.str();
 
-	// --- 4. デモ用Entityの作成 ---
+	std::cout << "Starting Stage No: " << s_StageNo << " (ID: " << stageID << ")" << std::endl;
+
+	// --- 3. JSONコンフィグを使って一撃生成！ ---
+	// あなたが作った「一撃関数」に、IDとCoordinatorを渡します
+	// ※関数名は実際のコードに合わせて書き換えてください
+	ECS::EntityFactory::GenerateStageFromConfig(m_coordinator.get(), stageID);
+
+	// --- 4. その他の共通Entityの作成 ---
 	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
-
 	ECS::EntityFactory::CreateGameSceneEntity(m_coordinator.get());
-}
+	}
 
 void GameScene::Uninit()
 {
@@ -81,6 +96,26 @@ void GameScene::Uninit()
 
 void GameScene::Update(float deltaTime)
 {
+
+	m_elapsedTime += deltaTime;
+
+	// 2. ゴール判定（とりあえずデバッグ用に 'G' キーでゴール扱いにします）
+	// ※後で「プレイヤーがゴールに当たったら true」になるように書き換えてください
+	bool isGoal = IsKeyTrigger('G');
+
+	// 3. ゴールした時の処理
+	if (isGoal)
+	{
+		std::cout << "GOAL! Time: " << m_elapsedTime << std::endl;
+
+		// ベストタイムを保存 (現在のステージ番号と、クリアタイム)
+		ScoreManager::SaveBestTime(s_StageNo, m_elapsedTime);
+
+		// リザルト画面（StageinformationScene）へ遷移
+		SceneManager::ChangeScene<StageinformationScene>();
+		return;
+	}
+
 	if (IsKeyTrigger('Q') || IsButtonTriggered(BUTTON_A))
 	{
 		SceneManager::ChangeScene<GameScene>();
@@ -93,6 +128,7 @@ void GameScene::Update(float deltaTime)
 	{
 		ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_TEST");
 	}
+
 }
 
 void GameScene::Draw()

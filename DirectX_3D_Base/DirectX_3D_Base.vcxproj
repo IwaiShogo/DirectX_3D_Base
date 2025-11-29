@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -145,6 +145,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
   <ItemGroup>
     <ClCompile Include="Source\ECS\ECSInitializer.cpp" />
     <ClCompile Include="Source\ECS\EntityFactory.cpp" />
+    <ClCompile Include="Source\ECS\ScoreManager.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\AudioSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\CameraControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\GameFlowSystem.cpp" />
@@ -164,6 +165,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\Scene\GameScene.cpp" />
     <ClCompile Include="Source\Scene\ResultScene.cpp" />
     <ClCompile Include="Source\Scene\SceneManager.cpp" />
+    <ClCompile Include="Source\Scene\StageinformationScene.cpp" />
     <ClCompile Include="Source\Scene\StageSelectScene.cpp" />
     <ClCompile Include="Source\Scene\TitleScene.cpp" />
     <ClCompile Include="Source\Systems\AssetManager.cpp" />
@@ -203,6 +205,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Components\Rendering\DebugComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\ModelComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\RenderComponent.h" />
+    <ClInclude Include="Include\ECS\Components\ScoreManager.h" />
     <ClInclude Include="Include\ECS\Components\UI\UIImageComponent.h" />
     <ClInclude Include="Include\ECS\Components\UI\UIInteractableComponent.h" />
     <ClInclude Include="Include\ECS\Coordinator.h" />
@@ -233,6 +236,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\Scene\ResultScene.h" />
     <ClInclude Include="Include\Scene\Scene.h" />
     <ClInclude Include="Include\Scene\SceneManager.h" />
+    <ClInclude Include="Include\Scene\StageinformationScene.h" />
     <ClInclude Include="Include\Scene\StageSelectScene.h" />
     <ClInclude Include="Include\Scene\TitleScene.h" />
     <ClInclude Include="Include\Systems\AssetManager.h" />
