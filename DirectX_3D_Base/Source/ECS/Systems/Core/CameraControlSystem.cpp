@@ -246,6 +246,8 @@ void CameraControlSystem::Update(float deltaTime)
             isDebugMode = m_coordinator->GetComponent<DebugComponent>(controllerID).isDebugModeActive;
         }
     }
+    bool isModeChanged = (currentMode != m_lastGameMode);
+    m_lastGameMode = currentMode;
 
     // 2. 右スティック入力の取得 (アクションモードでのみ有効)
     XMFLOAT2 rightStick = GetRightStick();
@@ -331,8 +333,8 @@ void CameraControlSystem::Update(float deltaTime)
                 targetCamPosV = XMLoadFloat3(&VOID_CAMERA_POS);
                 targetLookAtV = XMLoadFloat3(&VOID_LOOKAT_POS);
 
-                m_currentCameraPos = VOID_CAMERA_POS;
-                m_currentLookAt = VOID_LOOKAT_POS;
+                /*m_currentCameraPos = VOID_CAMERA_POS;
+                m_currentLookAt = VOID_LOOKAT_POS;*/
 
                 // 【補間係数】トップビュー切り替え時は瞬時に移動
                 cameraComp.followSpeed = 1.0f;
@@ -411,6 +413,10 @@ void CameraControlSystem::Update(float deltaTime)
 
             // 通常の追従速度をセット
             float actualFollowSpeed = cameraComp.followSpeed;
+            if (isModeChanged)
+            {
+                actualFollowSpeed = 1.0f;
+            }
 
             // Lerp（線形補間）: 変更した追従速度(actualFollowSpeed)を使用する
             XMVECTOR newCamPosV = XMVectorLerp(currentCamPosV, targetCamPosV, actualFollowSpeed);
