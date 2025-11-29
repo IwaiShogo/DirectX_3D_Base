@@ -24,6 +24,7 @@
 
 #include "ECS/Systems/UI/UIInputSystem.h"
 #include "ECS/Components/UI/UIInteractableComponent.h"
+#include "ECS/Systems/Core/ResultSceneSystem.h"
 
 
 #include <iostream>
@@ -172,13 +173,20 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  UIImageComponent
     );
 
-
+    // @system UIInoutSystem
+    // @brief  マウスカーソルの判定
     REGISTER_SYSTEM_AND_INIT(
         coordinator,
         UIInputSystem,
         UIInteractableComponent, TransformComponent
     );
 
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        ResultSceneSystem,
+        TagComponent,UIInteractableComponent
+
+    );
 
     // ------------------------------------------------------------
     // 3. その他Updateが行われないシステム
@@ -191,6 +199,8 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* System       */  MapGenerationSystem,
         /* Components   */  MapComponent
     );
+
+
 
 
 

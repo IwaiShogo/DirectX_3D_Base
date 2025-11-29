@@ -22,6 +22,7 @@
 #include "Scene/SceneManager.h"
 #include "ECS/EntityFactory.h"
 
+
 void GameFlowSystem::Update(float deltaTime)
 {
     // GameController Entityを検索
@@ -38,10 +39,10 @@ void GameFlowSystem::Update(float deltaTime)
     {
         // 【ゲームオーバー時の処理】
         // ユーザー要件: 警備員に追いつかれるとゲームオーバー、その後は自動でステージリトライ。
-        state.requestRestart = true;
-
-        SceneManager::ChangeScene<GameScene>();
-        //SceneManager::ChangeScene<ResultScene>();
+        //state.requestRestart = true;
+        ResultScene::isClear = false;
+        SceneManager::ChangeScene<ResultScene>();
+        
     }
 
     // 2. クリア時の処理
@@ -51,9 +52,9 @@ void GameFlowSystem::Update(float deltaTime)
         // ユーザー要件: ステージセレクト画面に戻り、次のステージが開放される。
 
         state.requestNextStage = true;
+        ResultScene::isClear = true;
 
-        SceneManager::ChangeScene<GameScene>();
-        //SceneManager::ChangeScene<ResultScene>();
+        SceneManager::ChangeScene<ResultScene>();
     }
 
     // 【重要な注意】

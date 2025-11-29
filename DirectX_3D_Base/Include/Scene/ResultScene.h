@@ -4,6 +4,7 @@
 #include "ECS/ECS.h"
 #include "Scene/SceneManager.h"
 #include "Scene/TitleScene.h"	//‘JˆÚæ
+#include "Scene/GameScene.h"
 
 class ResultScene :public Scene
 {
@@ -13,6 +14,15 @@ public:
 	void Uninit() override;
 	void Update(float deltaTime) override;
 	void Draw() override;
+
+	static bool isClear;
+	static int finalItenCount;
+
+
 private:
+
+	std::shared_ptr<ECS::Coordinator> m_coordinator;
+
+	
 
 };

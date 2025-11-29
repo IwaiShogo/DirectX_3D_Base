@@ -109,6 +109,7 @@
     <ClCompile Include="Source\ECS\Systems\UI\UIInputSystem.cpp">
       <Filter>Source Files\ECS\Systems\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Core\ResultSceneSystem.cpp">
     <ClCompile Include="Source\ECS\Systems\Core\GameSceneSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
@@ -309,6 +310,7 @@
     <ClInclude Include="Include\ECS\Components\UI\UIInteractableComponent.h">
       <Filter>Header Files\ECS\Components\UI</Filter>
     </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\ResultSceneSystem.h">
     <ClInclude Include="Include\ECS\Components\Core\GameSceneComponent.h">
       <Filter>Header Files\ECS\Components\Core</Filter>
     </ClInclude>

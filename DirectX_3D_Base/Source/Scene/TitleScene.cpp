@@ -8,16 +8,16 @@
  * @author	
  * ------------------------------------------------------------
  *
- * @date	2025/11/08	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- 
+ * @date	2025/11/08	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- 
  *
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
+ * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- XXï¼š
  *
- * @note	iÈ—ª‰Âj
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
-// ===== ƒCƒ“ƒNƒ‹[ƒh =====
+// ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
 #include "Scene/TitleScene.h"
 #include "ECS/ECSInitializer.h"
 #include "DirectXMath.h"
@@ -37,14 +37,14 @@ using namespace DirectX;
 
 
 
-//‰¼‚Ì“ü—Íƒ`ƒFƒbƒNŠÖ”
+//ä»®ã®å…¥åŠ›ãƒã‚§ãƒƒã‚¯é–¢æ•°
 bool IsInputStart() {
-	//‚±‚±‚ÉÀÛ‚Ì“ü—Íƒ`ƒFƒbƒNƒƒWƒbƒN‚ª“ü‚é
-	//¡‰ñ‚Í‘JˆÚƒeƒXƒg‚Ì‚½‚ßAƒfƒoƒbƒO‚Åˆê“I‚Étrue‚ğ•Ô‚·‚È‚Ç‚µ‚Ä‚à‚¢‚¢
+	//ã“ã“ã«å®Ÿéš›ã®å…¥åŠ›ãƒã‚§ãƒƒã‚¯ãƒ­ã‚¸ãƒƒã‚¯ãŒå…¥ã‚‹
+	//ä»Šå›ã¯é·ç§»ãƒ†ã‚¹ãƒˆã®ãŸã‚ã€ãƒ‡ãƒãƒƒã‚°ã§ä¸€æ™‚çš„ã«trueã‚’è¿”ã™ãªã©ã—ã¦ã‚‚ã„ã„
 	return false;
 }
 
-// ===== TitleScene ƒƒ“ƒo[ŠÖ”‚ÌÀ‘•  =====
+// ===== TitleScene ãƒ¡ãƒ³ãƒãƒ¼é–¢æ•°ã®å®Ÿè£…  =====
 void TitleScene::Init()
 {
 
@@ -65,22 +65,17 @@ void TitleScene::Init()
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Scale	*/	XMFLOAT3(0.2f, 0.1f, 1.0f)
 		),
-		UIInteractableComponent(0.4f,0.6f),
+		UIInteractableComponent(-1.0f,-1.0f),
+
 		UIImageComponent(
-			"UI_TEST1"	
+
+			"UI_TEST1"
+				
 			)
 		);
 
-	
 
-	
-
-	
-	
-
-
-
-	// TitleScene‚É•K—v‚ÈƒGƒ“ƒeƒBƒeƒB‚Ìì¬ (—áFƒƒSAƒ{ƒ^ƒ“)
+	// TitleSceneã«å¿…è¦ãªã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®ä½œæˆ (ä¾‹ï¼šãƒ­ã‚´ã€ãƒœã‚¿ãƒ³)
 	//ECS::EntityFactory::CreateTitleUiEntities(ECS::ECSInitializer::GetCoordinator()):
 	std::cout << "TitleScene::Init() - TitleUiSystem Ready." << std::endl;
 
@@ -97,7 +92,7 @@ void TitleScene::Uninit()
 
 
 
-	//‚±‚ÌƒV[ƒ“‚Åì¬‚µ‚½ƒGƒ“ƒeƒBƒeƒB‚ğ”jŠü
+	//ã“ã®ã‚·ãƒ¼ãƒ³ã§ä½œæˆã—ãŸã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç ´æ£„
 	//ECS::ECSInitializer::GetCoordinator()->DestoryEntities(m_sceneEntities);
 	std::cout << "TitleScene::Uninit() - Title  Systems Destroyed." << std::endl;
 }
@@ -113,11 +108,6 @@ void TitleScene::Update(float deltaTime)
 
 	//auto comp = m_coordinator.get()->GetComponent<UIInteractableComponent>(interactable);
 
-	auto uiInputSystem = ECS::ECSInitializer::GetSystem<UIInputSystem>();
-	if (uiInputSystem)
-	{
-		uiInputSystem->Update();
-	}
 
 
 	ECS::EntityID interactableEntity = ECS::FindFirstEntityWithComponent<UIInteractableComponent>(m_coordinator.get());
@@ -129,6 +119,8 @@ void TitleScene::Update(float deltaTime)
 
 			if (comp.isClicked)
 			{
+
+
 				std::cout << "Button Clicked! -> GameScene" << std::endl;
 				SceneManager::ChangeScene<GameScene>();
 			}
@@ -144,17 +136,17 @@ void TitleScene::Update(float deltaTime)
 	
 	if (IsKeyTrigger('N'))
 	{
-		SceneManager::ChangeScene<GameScene>();//N:ƒQ[ƒ€ƒV[ƒ“‚ÉØ‚è‘Ö‚¦
+		SceneManager::ChangeScene<GameScene>();//N:ã‚²ãƒ¼ãƒ ã‚·ãƒ¼ãƒ³ã«åˆ‡ã‚Šæ›¿ãˆ
 	}
 }
 
 void TitleScene::Draw()
 {
-	//RenderSystem‚Íí‚É‘¶İ‚·‚é‚Æ‰¼’è‚µADrawˆ—‚Í‹¤—L‚·‚é
+	//RenderSystemã¯å¸¸ã«å­˜åœ¨ã™ã‚‹ã¨ä»®å®šã—ã€Drawå‡¦ç†ã¯å…±æœ‰ã™ã‚‹
 	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
 	{
 		system->DrawSetup();
-		system->DrawEntities();	//UIƒGƒ“ƒeƒBƒeƒB‚Ì•`‰æ
+		system->DrawEntities();	//UIã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®æç”»
 	}
 
 	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())

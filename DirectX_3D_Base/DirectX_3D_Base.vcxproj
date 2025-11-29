@@ -148,6 +148,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\ECS\Systems\Core\AudioSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\CameraControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\GameFlowSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\ResultSceneSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\GameSceneSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\StateSwitchSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gameplay\CollectionSystem.cpp" />
@@ -215,6 +216,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Systems\Core\AudioSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\CameraControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\GameFlowSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\ResultSceneSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\GameSceneSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\StateSwitchSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gameplay\CollectionSystem.h" />
