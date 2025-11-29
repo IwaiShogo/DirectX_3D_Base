@@ -238,14 +238,14 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
+			/* MeshType	*/	MESH_MODEL,
 			/* Color	*/	XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)
 		),
-		//ModelComponent(
-		//	/* Path		*/	"Assets/Model/AD/modelkari.fbx",
-		//	/* Scale	*/	0.1f,
-		//	/* Flip		*/	Model::None
-		//),
+		ModelComponent(
+			/* Path		*/	"GUARD",
+			/* Scale	*/	0.1f,
+			/* Flip		*/	Model::None
+		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
