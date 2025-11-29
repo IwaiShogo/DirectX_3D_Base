@@ -83,9 +83,14 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 			/* Color	*/	XMFLOAT4(0.3f, 0.3f, 1.0f, 1.0f)
 		),
 		ModelComponent(
-			/* Path		*/	"P_PLAYER",
+			/* Path		*/	"M_PLAYER",
 			/* Scale	*/	0.1f,
 			/* Flip		*/	Model::None
+		),
+		AnimationComponent(
+			{
+				"A_PLAYER_IDLE"
+			}
 		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -103,6 +108,9 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 			/* MoveSpeed	*/	9.0f
 		)
 	);
+
+	auto& anim = coordinator->GetComponent<AnimationComponent>(player);
+	anim.Play("A_PLAYER_IDLE");
 
 	// 2. プレイヤーに追従するカメラエンティティ生成（後続ステップ1-3の準備）
 	// CameraComponentは、追従ロジックをCameraControlSystemに伝える情報を保持すると仮定
@@ -230,14 +238,14 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
+			/* MeshType	*/	MESH_MODEL,
 			/* Color	*/	XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)
 		),
-		//ModelComponent(
-		//	/* Path		*/	"Assets/Model/AD/modelkari.fbx",
-		//	/* Scale	*/	0.1f,
-		//	/* Flip		*/	Model::None
-		//),
+		ModelComponent(
+			/* Path		*/	"GUARD",
+			/* Scale	*/	0.1f,
+			/* Flip		*/	Model::None
+		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -432,7 +440,8 @@ EntityID ECS::EntityFactory::CreateUITestEntity(Coordinator* coordinator, const 
 
 EntityID ECS::EntityFactory::CreateGameSceneEntity(Coordinator* coordinator)
 {
-	EntityID gamescene = coordinator->CreateEntity();
-
-	return gamescene;
+	EntityID entity = coordinator->CreateEntity(
+		GameSceneComponent{}
+	);
+	return entity;
 }

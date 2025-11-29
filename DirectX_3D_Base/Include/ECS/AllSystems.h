@@ -38,6 +38,8 @@
 #include "ECS/Systems/Rendering/RenderSystem.h"
 // @system	デバッグ
 #include "ECS/Systems/Rendering/DebugDrawSystem.h"
+// @system	アニメーション
+#include "ECS/Systems/Rendering/AnimationSystem.h"
 
 // @folder	Physics
 // @system	衝突判定

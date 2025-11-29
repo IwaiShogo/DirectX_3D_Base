@@ -210,7 +210,8 @@ int Init(HINSTANCE hInstance, int nCmdShow)
 	// CSVファイルを読み込む
 	if (!assetManager.LoadModelList("Assets/CSV/ModelList.csv") ||
 		!assetManager.LoadTextureList("Assets/CSV/TextureList.csv") ||
-		!assetManager.LoadSoundList("Assets/CSV/SoundList.csv"))
+		!assetManager.LoadSoundList("Assets/CSV/SoundList.csv") ||
+		!assetManager.LoadAnimationList("Assets/CSV/AnimationList.csv"))
 	{
 		// 読み込み失敗時はログを出力し、初期化を中断
 		MessageBox(hWnd, "アセットリストのロードに失敗しました。ファイルパスを確認してください。", "エラー", MB_OK);

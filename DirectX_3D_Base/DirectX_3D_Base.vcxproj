@@ -149,6 +149,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\ECS\Systems\Core\CameraControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\GameFlowSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\ResultSceneSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\GameSceneSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\StateSwitchSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gameplay\CollectionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gameplay\MapGenerationSystem.cpp" />
@@ -156,6 +157,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\ECS\Systems\Gimmick\GuardAISystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Physics\CollisionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Physics\PhysicsSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Rendering\AnimationSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Rendering\DebugDrawSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Rendering\RenderSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\UI\UIInputSystem.cpp" />
@@ -187,6 +189,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\ComponentManager.h" />
     <ClInclude Include="Include\ECS\ComponentRegistry.h" />
     <ClInclude Include="Include\ECS\Components\Core\CameraComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\GameSceneComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\GameStateComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\OneShotSoundComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\SoundComponent.h" />
@@ -214,6 +217,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Systems\Core\CameraControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\GameFlowSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\ResultSceneSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\GameSceneSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\StateSwitchSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gameplay\CollectionSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gameplay\MapGenerationSystem.h" />

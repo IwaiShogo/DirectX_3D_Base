@@ -25,6 +25,7 @@
 // Scene
 #include "Scene/GameScene.h" 
 #include "Main.h" // 画面サイズ定数にアクセス
+#include "ECS/Components/Core/GameStateComponent.h"
 #include <DirectXMath.h>
 
 /**
@@ -48,6 +49,8 @@ private:
 	float m_currentYaw = 0.0f;     // Y軸回転 (水平方向)
 	float m_currentPitch = 0.0f;   // X軸回転 (垂直方向)
 
+	GameMode m_lastGameMode = GameMode::ACTION_MODE;
+
 public:
 	void Init(ECS::Coordinator* coordinator) override
 	{
@@ -59,6 +62,9 @@ public:
 		// カメラ回転の初期化
 		m_currentYaw = 0.0f;
 		m_currentPitch = DirectX::XM_PIDIV4 * 0.5f; // やや見下ろし気味に初期化
+
+		// モード初期化
+		m_lastGameMode = GameMode::ACTION_MODE;
 	}
 
 	/// @brief カメラの位置を計算し、RenderSystemのカメラ設定関数を呼び出す

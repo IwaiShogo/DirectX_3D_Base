@@ -73,6 +73,12 @@ private:
     DirectX::XMINT2 FindNextTargetGridPos(DirectX::XMINT2 startGrid, DirectX::XMINT2 targetGrid, const MapComponent& mapComp);
 
     DirectX::XMINT2 GetGridPosition(const DirectX::XMFLOAT3& worldPos, const MapComponent& mapComp);
+
+    bool IsTargetInSight(
+        const TransformComponent& guardTransform,
+        const GuardComponent& guardInfo,
+        const TransformComponent& targetTransform
+    );
 public:
     void Init(ECS::Coordinator* coordinator) override
     {

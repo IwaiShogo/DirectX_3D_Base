@@ -1,2 +1,3 @@
 AssetID,AssetType,FilePath
-P_PLAYER,Model,Assets/Model/Player/lanbart.fbx
+M_PLAYER,Model,Assets/Model/Player/kaitouanimu.fbx
+GUARD,Model2,Assets/Model/Gimmick/keikan.fbx

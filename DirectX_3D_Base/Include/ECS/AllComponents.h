@@ -48,6 +48,8 @@
 #include "ECS/Components/Rendering/DebugComponent.h"
 // @component	モデル描画
 #include "ECS/Components/Rendering/ModelComponent.h"
+// @component	アニメーション
+#include "ECS/Components/Rendering/AnimationComponent.h"
 
 // @folder		Physics
 // @component	衝突判定
@@ -68,7 +70,8 @@
 #include "ECS/Components/Gameplay/ItemTrackerComponent.h"
 // @component	マップ管理
 #include "ECS/Components/Gameplay/MapComponent.h"
-
+//@component	SceneGame管理
+#include "ECS/Components/Core/GameSceneComponent.h"
 // @folder		Gimmick
 // @component	警備員AI
 #include "ECS/Components/Gimmick/GuardComponent.h"

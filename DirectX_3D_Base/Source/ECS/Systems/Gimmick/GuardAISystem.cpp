@@ -22,6 +22,7 @@
 #include "ECS/AllSystems.h"
 #include "ECS/ECSInitializer.h"
 #include "ECS/EntityFactory.h"
+#include "Systems/Geometory.h"
 
 #include <DirectXMath.h>
 #include <algorithm>
@@ -213,6 +214,52 @@ XMINT2 GuardAISystem::GetGridPosition(const XMFLOAT3& worldPos, const MapCompone
     return { x, y };
 }
 
+bool GuardAISystem::IsTargetInSight(const TransformComponent& guardTransform, const GuardComponent& guardInfo, const TransformComponent& targetTransform)
+{
+    // 1. 距離判定 (2乗距離で計算)
+    XMVECTOR guardPos = XMLoadFloat3(&guardTransform.position);
+    XMVECTOR targetPos = XMLoadFloat3(&targetTransform.position);
+    XMVECTOR toTarget = targetPos - guardPos;
+
+    // 高さを無視（XZ平面のみ）
+    toTarget = XMVectorSetY(toTarget, 0.0f);
+
+    XMVECTOR distSqVec = XMVector3LengthSq(toTarget);
+    float distSq;
+    XMStoreFloat(&distSq, distSqVec);
+
+    if (distSq > guardInfo.viewRange * guardInfo.viewRange)
+    {
+        return false; // 距離外
+    }
+
+    // 2. 角度判定 (内積)
+    XMVECTOR toTargetDir = XMVector3Normalize(toTarget);
+
+    // Guardの現在の向き（Y軸回転）から前方ベクトルを算出
+    float yawRad = XMConvertToRadians(guardTransform.rotation.y);
+    // DirectX座標系 (Z+が前方と仮定)
+    float dirX = std::sin(yawRad);
+    float dirZ = std::cos(yawRad);
+
+    XMVECTOR forwardDir = XMVectorSet(dirX, 0.0f, dirZ, 0.0f);
+
+    // 内積を計算
+    XMVECTOR dotVec = XMVector3Dot(forwardDir, toTargetDir);
+    float dot;
+    XMStoreFloat(&dot, dotVec);
+
+    // 視野角の半分と比較 (dotが大きいほど正面に近い)
+    float angleThreshold = std::cos(XMConvertToRadians(guardInfo.viewAngle * 0.5f));
+
+    if (dot >= angleThreshold)
+    {
+        return true; // 視界内
+    }
+
+    return false;
+}
+
 // --------------------------------------------------------------------------------
 // GuardAISystem::Update() の本体
 // --------------------------------------------------------------------------------
@@ -224,7 +271,7 @@ void GuardAISystem::Update(float deltaTime)
     if (mapEntity == INVALID_ENTITY_ID) return;
 
     const MapComponent& mapComp = m_coordinator->GetComponent<MapComponent>(mapEntity);
-    const GameStateComponent& gameStateComp = m_coordinator->GetComponent<GameStateComponent>(mapEntity);
+    GameStateComponent& gameStateComp = m_coordinator->GetComponent<GameStateComponent>(mapEntity);
 
     // プレイヤーエンティティの検索 (追跡目標)
     EntityID playerEntity = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
@@ -286,6 +333,90 @@ void GuardAISystem::Update(float deltaTime)
                     guardRigidBody.velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
                     continue; // 遅延中はAIロジックをスキップ
                 }
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 視界判定とゲームオーバー処理
+        // -------------------------------------------------------------
+        // 警備員がアクティブで、かつアクションモードの場合のみ判定
+        if (guardComp.isActive && gameStateComp.currentMode == GameMode::ACTION_MODE)
+        {
+#ifdef _DEBUG
+            // 1. 基本情報の準備
+            float viewRange = guardComp.viewRange;
+            float halfAngleRad = DirectX::XMConvertToRadians(guardComp.viewAngle * 0.5f);
+            float currentYawRad = DirectX::XMConvertToRadians(guardTransform.rotation.y);
+
+            // 始点（足元より少し上）
+            DirectX::XMFLOAT3 startPos = guardTransform.position;
+            startPos.y += 0.5f;
+
+            // 色の設定
+            DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 0.0f, 1.0f }; // 赤
+            if (IsTargetInSight(guardTransform, guardComp, playerTransform))
+            {
+                color = { 1.0f, 0.0f, 0.0f, 1.0f }; // 黄色
+            }
+
+            // 2. 扇の描画（分割して線を引く）
+            // 左端の角度
+            float startAngle = currentYawRad - halfAngleRad;
+            // 右端の角度
+            float endAngle = currentYawRad + halfAngleRad;
+
+            // 分割数（この数が多いほど滑らかな円になります）
+            const int SEGMENTS = 16;
+            float stepAngle = (endAngle - startAngle) / SEGMENTS;
+
+            // 左端の点を計算
+            DirectX::XMFLOAT3 prevPos = {
+                startPos.x + std::sin(startAngle) * viewRange,
+                startPos.y,
+                startPos.z + std::cos(startAngle) * viewRange
+            };
+
+            // 中心から左端への線
+            Geometory::AddLine(startPos, prevPos, color);
+
+            // 弧を描くループ
+            for (int i = 1; i <= SEGMENTS; ++i)
+            {
+                float angle = startAngle + (stepAngle * i);
+
+                // 次の点の座標
+                DirectX::XMFLOAT3 nextPos = {
+                    startPos.x + std::sin(angle) * viewRange,
+                    startPos.y,
+                    startPos.z + std::cos(angle) * viewRange
+                };
+
+                // 前の点から次の点へ線を引く（これで円弧になる）
+                Geometory::AddLine(prevPos, nextPos, color);
+
+                prevPos = nextPos;
+            }
+
+            // 右端から中心への線（最後に閉じる）
+            Geometory::AddLine(startPos, prevPos, color);
+#endif
+
+            // -------------------------------------------------------------
+            // 視界判定とゲームオーバー処理
+            // -------------------------------------------------------------
+            if (IsTargetInSight(guardTransform, guardComp, playerTransform))
+            {
+                // --- プレイヤー発見時の処理 ---
+
+                // 1. 発見音/接触音の再生
+                ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST5");
+
+                // 2. ゲームオーバーフラグを立てる (CollisionSystemと同じ処理)
+                gameStateComp.isGameOver = true;
+
+                // 3. 以降の処理を行わず、即座に関数を抜ける
+                // (これによりGameFlowSystemが次のフレームでリスタート処理を行います)
+                return;
             }
         }
 

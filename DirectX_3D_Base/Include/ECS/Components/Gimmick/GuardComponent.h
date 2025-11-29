@@ -31,6 +31,10 @@ struct GuardComponent
     float elapsedTime;          // 経過時間（内部用）
     float speed;                // ガードの移動速度
 
+    float viewRange = 10.0f;        // 視認距離（半径）
+    float viewAngle = 60.0f;        // 視野角（度数法：左右合わせて60度など）
+    bool isPlayerDetected = false;  // プレイヤーを発見しているか
+
     // 経路探索結果の次の目標セル（グリッド座標）
     DirectX::XMFLOAT2 targetGridPos = { -1.0f, -1.0f }; // -1は無効な目標を示す
 
@@ -48,13 +52,17 @@ struct GuardComponent
         float predDist = 5.0f,
         bool active = true,
         float delay = 0.0f,
-        float spd = 5.0f // ← デフォルトスピード
+        float spd = 5.0f, // ← デフォルトスピード
+        float vRange = 5.0f,
+        float vAngle = 60.0f
     )
         : predictionDistance(predDist)
         , isActive(active)
         , delayBeforeChase(delay)
         , elapsedTime(0.0f)
         , speed(spd) // ← 初期化
+        , viewRange(vRange)
+        , viewAngle(vAngle)
     {
     }
 };
