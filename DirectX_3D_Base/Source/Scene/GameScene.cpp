@@ -119,21 +119,23 @@ void GameScene::Update(float deltaTime)
     //再生すべきBGMの決定
     ECS::EntityID targetBGM = ECS::INVALID_ENTITY_ID;
 
-    if (gameState.currentMode == GameMode::SCOUTING_MODE)
-    {
-        targetBGM = m_bgmScoutID; // 偵察中
-    }
-    else // ACTION_MODE
-    {
-        if (currentItems >= 3)
-        {
-            targetBGM = m_bgmCompleteID; // コンプリート！
-        }
-        else
-        {
-            targetBGM = m_bgmActionID; // 通常アクション
-        }
-    }
+
+    // クリアまたはゲームオーバーならBGMを停止する。
+    //if (gameState.currentMode == GameMode::SCOUTING_MODE)
+    //{
+    //    targetBGM = m_bgmScoutID; // 偵察中
+    //}
+    //else // ACTION_MODE
+    //{
+    //    if (currentItems >= 3)
+    //    {
+    //        targetBGM = m_bgmCompleteID; // コンプリート！
+    //    }
+    //    else
+    //    {
+    //        targetBGM = m_bgmActionID; // 通常アクション
+    //    }
+    //}
 
     //Scout BGM
     auto& scoutSound = m_coordinator->GetComponent<SoundComponent>(m_bgmScoutID);

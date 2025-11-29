@@ -65,28 +65,14 @@ void TitleScene::Init()
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Scale	*/	XMFLOAT3(0.2f, 0.1f, 1.0f)
 		),
-		UIInteractableComponent(0.4f,0.6f),
+		UIInteractableComponent(-1.0f,-1.0f),
 
 		UIImageComponent(
 
-			"UI_TEST"
+			"UI_TEST1"
 				
 			)
-		
-
-
-			
-			
-			
 		);
-
-	
-
-	
-
-	
-	
-
 
 
 	// TitleSceneに必要なエンティティの作成 (例：ロゴ、ボタン)
@@ -122,11 +108,6 @@ void TitleScene::Update(float deltaTime)
 
 	//auto comp = m_coordinator.get()->GetComponent<UIInteractableComponent>(interactable);
 
-	auto uiInputSystem = ECS::ECSInitializer::GetSystem<UIInputSystem>();
-	if (uiInputSystem)
-	{
-		uiInputSystem->Update();
-	}
 
 
 	ECS::EntityID interactableEntity = ECS::FindFirstEntityWithComponent<UIInteractableComponent>(m_coordinator.get());
@@ -138,6 +119,8 @@ void TitleScene::Update(float deltaTime)
 
 			if (comp.isClicked)
 			{
+
+
 				std::cout << "Button Clicked! -> GameScene" << std::endl;
 				SceneManager::ChangeScene<GameScene>();
 			}

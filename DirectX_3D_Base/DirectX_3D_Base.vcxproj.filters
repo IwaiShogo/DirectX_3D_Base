@@ -109,6 +109,9 @@
     <ClCompile Include="Source\ECS\Systems\UI\UIInputSystem.cpp">
       <Filter>Source Files\ECS\Systems\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Core\ResultSceneSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Scene\GameScene.h">
@@ -305,6 +308,9 @@
     </ClInclude>
     <ClInclude Include="Include\ECS\Components\UI\UIInteractableComponent.h">
       <Filter>Header Files\ECS\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\ResultSceneSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

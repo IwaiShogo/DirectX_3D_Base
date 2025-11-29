@@ -39,7 +39,7 @@ public:
 		m_coordinator = coordinator;
 	}
 
-	void Update();
+	void Update(float delttaime)override;
 
 };
 #endif // __UI_INPUT_SYSTEM_H_
