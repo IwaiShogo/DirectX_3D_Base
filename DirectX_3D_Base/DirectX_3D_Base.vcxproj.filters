@@ -112,6 +112,9 @@
     <ClCompile Include="Source\ECS\Systems\Core\GameSceneSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
+    <ClCompile Include="TitleSceneSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Scene\GameScene.h">
@@ -313,6 +316,12 @@
       <Filter>Header Files\ECS\Components\Core</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Systems\Core\GameSceneSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Core\TitleSceneComponent.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\TitleSceneSystem.h">
       <Filter>Header Files\ECS\Systems\Core</Filter>
     </ClInclude>
   </ItemGroup>

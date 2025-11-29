@@ -429,6 +429,13 @@ EntityID ECS::EntityFactory::CreateUITestEntity(Coordinator* coordinator, const 
 	return entity;
 }
 
+EntityID ECS::EntityFactory::CreateTitleSceneEntity(Coordinator* coordinator)
+{
+	EntityID entity = coordinator->CreateEntity(
+		TitleSceneComponent{}
+	);
+	return entity;
+}
 
 EntityID ECS::EntityFactory::CreateGameSceneEntity(Coordinator* coordinator)
 {

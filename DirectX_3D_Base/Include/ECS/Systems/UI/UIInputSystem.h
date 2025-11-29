@@ -39,7 +39,7 @@ public:
 		m_coordinator = coordinator;
 	}
 
-	void Update();
+	void Update(float deltaTime);
 
 };
 #endif // __UI_INPUT_SYSTEM_H_
