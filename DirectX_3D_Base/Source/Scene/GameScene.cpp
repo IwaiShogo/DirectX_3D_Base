@@ -1,24 +1,22 @@
 /*****************************************************************//**
  * @file	GameScene.cpp
- * @brief	ゲームのメインロジックを含むシーンクラスの実装。
+ * @brief	
  * 
  * @details	
- * ECSの初期化と実行、デモEntityの作成ロジックを内包する。
  * 
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  * 
- * @date	2025/10/27	初回作成日
- * 			作業内容：	- 追加：ECSのライフサイクルとデモロジックを管理する `GameScene` クラスの実装。
+ * @date	2025/11/30	����쐬��
+ * 			��Ɠ��e�F	- �ǉ��F
  * 
- * @update	2025/xx/xx	最終更新日
- * 			作業内容：	- 警備員AIの追加：
+ * @update	2025/xx/xx	�ŏI�X�V��
+ * 			��Ɠ��e�F	- XX�F
  * 
- * @note	（省略可）
+ * @note	�i�ȗ��j
  *********************************************************************/
 
-// ===== インクルード =====
 #include "Scene/GameScene.h"
 
 #include"Scene/StageinformationScene.h"
@@ -30,21 +28,9 @@
 #include "ECS/Components/Core/GameStateComponent.h"
 #include "Systems/Input.h"
 #include "ECS/Systems/Core/GameSceneSystem.h"
-#include "ECS/Components/ScoreManager.h"
 
 #include <DirectXMath.h>
 #include <iostream>
-<<<<<<< HEAD
-#include <typeindex> // SystemManagerからのRenderSystem取得に使用
- 
-// ===== 静的メンバー変数の定義 =====
-// 他のシステムからECSにアクセスするための静的ポインタ
-ECS::Coordinator* GameScene::s_coordinator = nullptr;
-
-using namespace DirectX;
-
-// ===== GameScene メンバー関数の実装 =====
-=======
 #include <typeindex> // SystemManager�����RenderSystem�擾�Ɏg�p
 #include <sstream> 
 
@@ -55,14 +41,11 @@ ECS::Coordinator* GameScene::s_coordinator = nullptr;
 using namespace DirectX;
 int GameScene::s_StageNo = 1;
 // ===== GameScene �����o�[�֐��̎��� =====
->>>>>>> bc6b0b4fabf53592a5dfcb219b9ca5372cee877a
 
 void GameScene::Init()
 {
-	// --- 1. ECS Coordinatorの初期化 ---
 	m_coordinator = std::make_shared<ECS::Coordinator>();
 
-	// 静的ポインタに現在のCoordinatorを設定
 	s_coordinator = m_coordinator.get();
 
 	ECS::ECSInitializer::InitECS(m_coordinator);
@@ -80,9 +63,6 @@ void GameScene::Init()
 	ss << "ST_" << std::setfill('0') << std::setw(3) << s_StageNo;
 	std::string stageID = ss.str();
 
-<<<<<<< HEAD
-	// --- 4. デモ用Entityの作成 ---
-=======
 	std::cout << "Starting Stage No: " << s_StageNo << " (ID: " << stageID << ")" << std::endl;
 
 	// --- 3. JSON�R���t�B�O���g���Ĉꌂ�����I ---
@@ -91,17 +71,16 @@ void GameScene::Init()
 	ECS::EntityFactory::GenerateStageFromConfig(m_coordinator.get(), stageID);
 
 	// --- 4. ���̑��̋���Entity�̍쐬 ---
->>>>>>> bc6b0b4fabf53592a5dfcb219b9ca5372cee877a
 	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
 	ECS::EntityFactory::CreateGameSceneEntity(m_coordinator.get());
-	}
+}
 
 void GameScene::Uninit()
 {
 	// 1. ECS Systemの静的リソースを解放
 	ECS::ECSInitializer::UninitECS();
 
-	// Coordinatorの破棄（unique_ptrが自動的にdeleteを実行）
+	// Coordinatorの破棁E��Enique_ptrが�E動的にdeleteを実行！E
 	m_coordinator.reset();
 
 	// 静的ポインタをクリア
@@ -149,15 +128,12 @@ void GameScene::Update(float deltaTime)
 
 void GameScene::Draw()
 {
-	
-	// エンティティの描画
 	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
 	{
 		system->DrawSetup();
 		system->DrawEntities();
 	}
 
-	// UIの描画
 	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
 	{
 		system->Render();

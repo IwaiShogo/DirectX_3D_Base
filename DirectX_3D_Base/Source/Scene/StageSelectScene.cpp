@@ -256,7 +256,7 @@ void StageSelectScene::Update(float deltaTime)
 	auto uiInputSystem = ECS::ECSInitializer::GetSystem<UIInputSystem>();
 	if (uiInputSystem)
 	{
-		uiInputSystem->Update();
+		uiInputSystem->Update(deltaTime);
 	}
 
 	if (m_selectEntity1 != ECS::INVALID_ENTITY_ID)

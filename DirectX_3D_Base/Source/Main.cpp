@@ -230,10 +230,7 @@ int Init(HINSTANCE hInstance, int nCmdShow)
 	SceneManager::Init();
 	SceneManager::RegisterScene<TitleScene>();
 	SceneManager::RegisterScene<StageSelectScene>();
-<<<<<<< HEAD
-=======
 	SceneManager::RegisterScene<StageinformationScene>();
->>>>>>> bc6b0b4fabf53592a5dfcb219b9ca5372cee877a
 	SceneManager::RegisterScene<GameScene>();
 	SceneManager::RegisterScene<ResultScene>();
 	SceneManager::ChangeScene<TitleScene>();
