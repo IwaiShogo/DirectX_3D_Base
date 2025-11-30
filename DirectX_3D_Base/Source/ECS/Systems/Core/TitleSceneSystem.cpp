@@ -47,7 +47,7 @@ void TitleSceneSystem::Update(float deltaTime)
 					/* Color	*/	XMFLOAT4(0.3f, 0.3f, 1.0f, 1.0f)
 				),
 				ModelComponent(
-					/* Path		*/	"Titlekari",
+					/* Path		*/	"M_TITLE",
 					/* Scale	*/	0.1f,
 					/* Flip		*/	Model::None
 				)
@@ -237,7 +237,7 @@ void TitleSceneSystem::Update(float deltaTime)
 				if (comp.isClicked)
 				{
 					std::cout << "Button Clicked! -> GameScene" << std::endl;
-					SceneManager::ChangeScene<GameScene>();
+					SceneManager::ChangeScene<StageSelectScene>();
 				}
 			}
 		}
@@ -247,7 +247,7 @@ void TitleSceneSystem::Update(float deltaTime)
 	//EnterまたはコントローラーのAを押したらシーンを切り替え
 	if (IsKeyTrigger(VK_RETURN) || IsButtonTriggered(BUTTON_A))
 	{
-		SceneManager::ChangeScene<GameScene>();
+		SceneManager::ChangeScene<StageSelectScene>();
 	}
 	
 	

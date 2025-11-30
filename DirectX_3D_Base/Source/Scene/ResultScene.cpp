@@ -359,7 +359,7 @@ void ResultScene::Init()
 
 		UIImageComponent(
 
-			"UI_RESULTSCEENE_BACKGROUND"
+			"UI_RESULTSCENE_BACKGROUND"
 
 		)
 	);

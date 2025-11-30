@@ -242,7 +242,7 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* Color	*/	XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)
 		),
 		ModelComponent(
-			/* Path		*/	"GUARD",
+			/* Path		*/	"M_GUARD",
 			/* Scale	*/	0.1f,
 			/* Flip		*/	Model::None
 		),

@@ -31,11 +31,7 @@
 
 using namespace DirectX;
 
-<<<<<<< HEAD
-void UIInputSystem::Update(float deltatime)
-=======
 void UIInputSystem::Update(float deltaTime)
->>>>>>> bfe0b1f725d29f7a98e41532a19ccfc4faebd127
 {
 
 	if (!m_coordinator) return; //m_coordinator‚ª‰Šú‰»‚³‚ê‚Ä‚¢‚È‚©‚Á‚½‚ç‰½‚à‚µ‚È‚¢ 

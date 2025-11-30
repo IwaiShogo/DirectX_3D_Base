@@ -33,7 +33,7 @@
 #include <iostream>
 #include <typeindex> // SystemManagerからのRenderSystem取得に使用
  
-// ===== 静的メンバー変数の定義 =====u
+// ===== 静的メンバー変数の定義 =====
 // 他のシステムからECSにアクセスするための静的ポインタ
 ECS::Coordinator* GameScene::s_coordinator = nullptr;
 
