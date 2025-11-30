@@ -76,8 +76,38 @@ private:
 
 	ECS::EntityID m_bg = ECS::INVALID_ENTITY_ID;
 
+
+	ECS::EntityID m_selectcork = ECS::INVALID_ENTITY_ID;
+
 	// ECSのグローバルアクセス用 (SystemなどがECS操作を行うための窓口)
 	static ECS::Coordinator* s_coordinator;
-};
+	
+	//アニメーション進行時間
+	float m_animTime = 0.0f;
 
+	//アニメーション完了フラグ
+	bool m_isAnimationFinished = false;
+
+	//ヘルパー関数:線形補間(AからBへ t(0～1)の割合で移動)
+	float Lerp(float start, float end, float t)
+	{
+		return start + (end - start) * t;
+	}
+
+	// 値を0~1の範囲に収めるクランプ関数
+	float Clamp01(float value)
+	{
+		if (value < 0.0f) return 0.0f;
+		if (value > 1.0f) return 1.0f;
+		return value;
+	}
+
+	bool m_isSceneChanging = false;
+	enum class NextScene {
+		NONE,
+		GAME,
+		SELECT
+	};
+	NextScene m_nextScene = NextScene::NONE;
+};
 #endif // !___STAGE__INFORMATION_SCENE___

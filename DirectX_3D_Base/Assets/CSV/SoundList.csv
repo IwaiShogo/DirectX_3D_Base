@@ -8,3 +8,7 @@ BGM_TEST3,Sound6,Assets/Sound/bgm3.wav
 SE_TEST4,Sound7,Assets/Sound/se4.wav
 SE_TEST5,Sound8,Assets/Sound/se5.wav
 SE_TEST6,Sound9,Assets/Sound/se6.wav
+BGM_SELECT,Sound10,Assets/Sound/select.wav
+BGM_INFORMATION,Sound11,Assets/Sound/information.wav
+SE_SELECT1,Sound12,Assets/Sound/SE_select.wav
+SE_SELECT2,Sound13,Assets/Sound/SE_select2.wav

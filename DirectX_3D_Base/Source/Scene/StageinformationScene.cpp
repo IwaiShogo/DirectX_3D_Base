@@ -27,8 +27,14 @@
 #include "ECS/ECS.h"
 #include "ECS/ECSInitializer.h"
 #include "ECS/EntityFactory.h"
+#include "ECS/Systems/UI/CursorSystem.h"
+#include "ECS/Systems/Core/AudioSystem.h"
 #include <ECS/Systems/UI/UIInputSystem.h>
 #include <ECS/Components/UI/UIInteractableComponent.h>
+#include <ECS/Components/Core/SoundComponent.h>
+
+#include "ECS/Components/UI/UIAnimationComponent.h"
+
 
 #include <DirectXMath.h>
 #include <iostream>
@@ -36,202 +42,216 @@
 #include <string>
 #include <iomanip> // 桁数合わせ用
 
+// マップの初期X座標（画面左外）と目標X座標
+const float MAP_START_X = -2.5f;
+const float MAP_END_X = -0.4f;
+
+// ボタンの初期Y座標（画面下外）と目標Y座標
+const float BTN_START_Y = -2.0f;
+const float OK_END_Y = -0.55f;
+const float BACK_END_Y = -0.85f;
+
 // ===== 静的メンバー変数の定義 =====
-// 他のシステムからECSにアクセスするための静的ポインタ
 ECS::Coordinator* StageinformationScene::s_coordinator = nullptr;
-
 using namespace DirectX;
-
-//仮の入力チェック関数
-static  bool IsInputStart() {
-	//ここに実際の入力チェックロジックが入る
-	//今回は遷移テストのため、デバッグで一時的にtrueを返すなどしてもいい
-	return false;
-}
 
 void StageinformationScene::Init()
 {
-	// --- 1. ECS Coordinatorの初期化 ---
+	// 1. ECS初期化
 	m_coordinator = std::make_unique<ECS::Coordinator>();
-
-	// 静的ポインタに現在のCoordinatorを設定
 	s_coordinator = m_coordinator.get();
-
 	ECS::ECSInitializer::InitECS(m_coordinator);
 
-	// --- 4. デモ用Entityの作成 ---
-	//ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());	
+	// 変数初期化
+	m_isSceneChanging = false;
+	m_nextScene = NextScene::NONE;
 
+	// 2. システム登録
+	{
+		auto system = m_coordinator->RegisterSystem<CursorSystem>();
+		ECS::Signature signature;
+		signature.set(m_coordinator->GetComponentTypeID<TransformComponent>());
+		signature.set(m_coordinator->GetComponentTypeID<TagComponent>());
+		m_coordinator->SetSystemSignature<CursorSystem>(signature);
+		system->Init(m_coordinator.get());
+	}
+
+	// 3. UI作成
+	// 背景 (UI_BG)
 	m_bg = m_coordinator->CreateEntity(
-		TagComponent(
-			/*Tag*/   "InformationBG"
-		),
-		TransformComponent(
-			/*Position*/    XMFLOAT3(0.0f, 0.0f, -2.0f),
-			/*Rotation*/    XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/*Scale*/       XMFLOAT3(2.0f, 2.0f, 1.0f)
-		),
-		UIImageComponent(
-			"UI_BG"
-		)
+		TagComponent("InformationBG"),
+		TransformComponent(XMFLOAT3(0.0f, 0.0f, 2.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(2.0f, 2.0f, 1.0f)),
+		UIImageComponent("UI_BG")
 	);
+
+	m_selectcork = m_coordinator->CreateEntity(
+		TagComponent("SelectSceneUICORK"),
+		TransformComponent(XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.9f, 1.9f, 1.0f)),
+		UIImageComponent("UI_CORK")
+	);
+
+	// マップ画像 (移動アニメーションを追加)
+	m_MapImage = m_coordinator->CreateEntity(
+		TagComponent("SelectSceneUIMapImage"),
+		TransformComponent(XMFLOAT3(MAP_END_X, 0.25f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.9f, 1.2f, 1.0f)),
+		UIImageComponent("UI_STAGEMAP"),
+		UIAnimationComponent{
+			UIAnimationComponent::AnimType::Scale,
+			XMFLOAT3(0.0f, 0.0f, 0.0f),
+			XMFLOAT3(0.9f, 1.2f, 1.0f),
+			0.0f,
+			0.5f
+		}
+	);
+	m_coordinator->GetComponent<TransformComponent>(m_MapImage).scale = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	// トレジャーアイコン (拡大アニメーション)
+	m_Treasure = m_coordinator->CreateEntity(
+		TagComponent("SelectSceneUITREASURE"),
+		TransformComponent(XMFLOAT3(0.4f, 0.65f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f)), // Scale 0
+		UIImageComponent("UI_PAPER_1"), // 仮画像
+		UIAnimationComponent{
+		UIAnimationComponent::AnimType::Scale,
+			XMFLOAT3(0.0f, 0.0f, 0.0f),
+			XMFLOAT3(0.6f, 0.55f, 1.0f),
+			0.4f, // 0.4秒待つ
+			0.4f
+		}
+	);
+	m_coordinator->GetComponent<TransformComponent>(m_MapImage).scale = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+	// 警備員アイコン (拡大アニメーション)
+	m_Security = m_coordinator->CreateEntity(
+		TagComponent("SelectSceneUISECURITY"),
+		TransformComponent(XMFLOAT3(0.4f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f)), // Scale 0
+		UIImageComponent("UI_PAPER_2"), // 仮画像
+		UIAnimationComponent{
+			UIAnimationComponent::AnimType::Scale,
+			XMFLOAT3(0.0f, 0.0f, 0.0f),
+			XMFLOAT3(0.6f, 0.55f, 1.0f),
+			0.4f,
+			0.4f
+		}
+	);
+	m_coordinator->GetComponent<TransformComponent>(m_Treasure).scale = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+	// OKボタン (移動アニメーション)
+	{
+		float sx = 0.6f, sy = 0.2f;
+		m_OK = m_coordinator->CreateEntity(
+			TagComponent("SelectSceneUIOK"),
+			TransformComponent(XMFLOAT3(0.4f, OK_END_Y, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f)),
+			UIInteractableComponent(-1.0f, -1.0f, true),
+			UIImageComponent("UI_PAPER_1"),
+			UIAnimationComponent{
+				UIAnimationComponent::AnimType::Scale,
+				XMFLOAT3(0.0f, 0.0f, 0.0f),    // 開始サイズ
+				XMFLOAT3(sx, sy, 1.0f),        // 終了サイズ
+				0.8f,
+				0.5f
+			}
+		);
+		auto& comp = m_coordinator->GetComponent<UIInteractableComponent>(m_OK);
+		comp.baseScaleX = sx; comp.baseScaleY = sy;
+	}
+	m_coordinator->GetComponent<TransformComponent>(m_Security).scale = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+	// BACKボタン (移動アニメーション)
+	{
+		float sx = 0.6f, sy = 0.2f;
+		m_BACK = m_coordinator->CreateEntity(
+			TagComponent("SelectSceneUIBACK"),
+			TransformComponent(XMFLOAT3(0.4f, BACK_END_Y, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f)),
+			UIInteractableComponent(-1.0f, -1.0f, true),
+			UIImageComponent("UI_PAPER_2"),
+			UIAnimationComponent{
+				UIAnimationComponent::AnimType::Scale,
+				XMFLOAT3(0.0f, 0.0f, 0.0f),
+				XMFLOAT3(sx, sy, 1.0f),
+				0.8f,
+				0.5f
+			}
+		);;
+		auto& comp = m_coordinator->GetComponent<UIInteractableComponent>(m_BACK);
+		comp.baseScaleX = sx; comp.baseScaleY = sy;
+	}
+	m_coordinator->GetComponent<TransformComponent>(m_Security).scale = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 	m_cursorEntity = m_coordinator->CreateEntity(
 		TagComponent("Cursor"),
-		TransformComponent(
-			XMFLOAT3(0.0f, 0.0f, -5.0f), // Zを-5にして一番手前に表示
-			XMFLOAT3(0.0f, 0.0f, 0.0f),
-			XMFLOAT3(0.1f, 0.1f, 1.0f)   // カーソルのサイズ（適宜調整）
-		),
-		UIImageComponent(
-			"UI_TEST3_OFF"
-		)
+		TransformComponent(XMFLOAT3(0.0f, 0.0f, -5.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.1f, 0.1f, 1.0f)),
+		UIImageComponent("UI_MUSIMEGANE")
 	);
 
-	m_MapImage = m_coordinator->CreateEntity(
-		TagComponent(
-			/*Tag*/   "SelectSceneUIMapImage"
-		),
-		TransformComponent(
-			/*Position*/    XMFLOAT3(-0.5, 0.35f, 0.0f),
-			/*Rotation*/    XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/*Scale*/       XMFLOAT3(0.9f, 1.2f, 1.0f)
-		),
-		UIImageComponent(
-			"UI_STAGEMAP"
-		)
-	);
-
-
-
-	
-
-	m_Treasure = m_coordinator->CreateEntity(
-		TagComponent(
-			/*Tag*/   "SelectSceneUITREASURE"
-		),
-		TransformComponent(
-			/*Position*/    XMFLOAT3(0.4f, 0.65f, 0.0f),
-			/*Rotation*/    XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/*Scale*/       XMFLOAT3(0.6f, 0.55f, 1.0f)
-		),
-		UIImageComponent(
-			"UI_BG"
-		)
-	);
-	
-	m_Security = m_coordinator->CreateEntity(
-		TagComponent(
-			/*Tag*/   "SelectSceneUISECURITY"
-		),
-		TransformComponent(
-			/*Position*/    XMFLOAT3(0.4f, 0.0f, 0.0f),
-			/*Rotation*/    XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/*Scale*/       XMFLOAT3(0.6f, 0.55f, 1.0f)
-		),
-		UIImageComponent(
-			"UI_BG"
-		)
-	);
-
-	m_OK = m_coordinator->CreateEntity(
-		TagComponent(
-			/*Tag*/   "SelectSceneUIOK"
-		),
-		TransformComponent(
-			/*Position*/    XMFLOAT3(0.4f, -0.55f, 0.0f),
-			/*Rotation*/    XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/*Scale*/       XMFLOAT3(0.6f, 0.2f, 1.0f)
-		),
-		UIInteractableComponent(-1.0f, -1.0f),
-		UIImageComponent(
-			"UI_BG"
-		)
-	);
-
-	m_BACK = m_coordinator->CreateEntity(
-		TagComponent(
-			/*Tag*/   "SelectSceneUIBACK"
-		),
-		TransformComponent(
-			/*Position*/    XMFLOAT3(0.4f, -0.85f, 0.0f),
-			/*Rotation*/    XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/*Scale*/       XMFLOAT3(0.6f, 0.2f, 1.0f)
-		),
-		UIInteractableComponent(-1.0f, -1.0f),
-		UIImageComponent(
-			"UI_BG"
-		)
-	);
-
-	
-
-
-	// 配置座標の基準 (BestTimeラベルの横あたりに設定)
+	// 数字 (拡大アニメーション)
 	float startX = -0.7f;
 	float startY = -0.7f;
-	float stepX = 0.1f; // 数字の間隔
+	float stepX = 0.1f;
 
 	for (int i = 0; i < 5; ++i)
 	{
-		std::string initAsset = (i == 2) ? "UI_COLON" : "UI_NUM_0"; // 3番目はコロン、他は0で初期化
-
+		std::string initAsset = (i == 2) ? "UI_COLON" : "UI_NUM_0";
 		m_timeDigits[i] = m_coordinator->CreateEntity(
 			TagComponent("TimeDigit" + std::to_string(i)),
-			TransformComponent(
-				XMFLOAT3(startX + (i * stepX), startY, 0.0f),
-				XMFLOAT3(-0.5f, 0.0f, 0.0f),
-				XMFLOAT3(0.1f, 0.2f, 1.0f) // 数字のサイズ
-			),
-			UIImageComponent(initAsset)
+			TransformComponent(XMFLOAT3(startX + (i * stepX), startY, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f)), // Scale 0
+			UIImageComponent(initAsset),
+			UIAnimationComponent{
+				UIAnimationComponent::AnimType::Scale,
+				XMFLOAT3(0.0f, 0.0f, 0.0f),
+				XMFLOAT3(0.1f, 0.2f, 1.0f),
+				0.4f,
+				0.4f
+			}
 		);
 	}
 
-	// --- 保存されているベストタイムを取得して表示に反映 ---
-	// GameScene::s_StageNo で現在選択中のステージ番号が取れる前提
 	float bestTime = ScoreManager::GetBestTime(GameScene::s_StageNo);
 	UpdateTimeDisplay(bestTime);
 
+	// BGM再生
+	ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator.get(), "BGM_TEST2", 0.3f);
 }
 
 void StageinformationScene::Uninit()
 {
-	// 1. ECS Systemの静的リソースを解放
 	ECS::ECSInitializer::UninitECS();
-
-	// Coordinatorの破棄（unique_ptrが自動的にdeleteを実行）
 	m_coordinator.reset();
-
-	// 静的ポインタをクリア
 	s_coordinator = nullptr;
-
-	std::cout << "StageSelectScene::Uninit() - ECS Destroyed." << std::endl;
 }
 
 void StageinformationScene::Update(float deltaTime)
 {
 	m_coordinator->UpdateSystems(deltaTime);
 
-
-
-	//auto interactableEntity = ECS::ECSInitializer::GetSystem<UIInputSystem>();
-
-	//auto comp = m_coordinator.get()->GetComponent<UIInteractableComponent>(interactable);
-
-	auto uiInputSystem = ECS::ECSInitializer::GetSystem<UIInputSystem>();
-	if (uiInputSystem)
+	if (m_isSceneChanging)
 	{
-		uiInputSystem->Update();
+		// ここがないと、ボタンを押してもフラグが立つだけで画面が切り替わりません
+		if (m_nextScene == NextScene::GAME) {
+			SceneManager::ChangeScene<GameScene>();
+		}
+		else if (m_nextScene == NextScene::SELECT) {
+			SceneManager::ChangeScene<StageSelectScene>();
+		}
+		return;
 	}
+
+	// アニメーションが終わるまで入力をブロックする簡易タイマー
+	// ※Systemが勝手に動かしてくれるので、ここでは「待つ」判定だけで良い
+	static float sceneTimer = 0.0f;
+	// 【注意】シーン再訪時にリセットされないので、本来はメンバ変数を使うべきですが、
+	// アニメーション自体はSystemのタイマーで動くので、ここは「操作不能時間」の管理だけです。
+	sceneTimer += deltaTime;
+
+	// アニメーション時間(最大1.3秒)が終わるまでクリック無効
+	// if (sceneTimer < 1.3f) return; // これを入れるとアニメーション中操作できなくなります
 
 	if (m_OK != ECS::INVALID_ENTITY_ID)
 	{
 		const auto& comp = m_coordinator->GetComponent<UIInteractableComponent>(m_OK);
 		if (comp.isClicked)
 		{
-			std::cout << "Button OK Clicked!" << std::endl;
-			//GameScene::SetStageNo(6);
-			SceneManager::ChangeScene<GameScene>();
+			ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_TEST2", 0.5f);
+			m_isSceneChanging = true;
+			m_nextScene = NextScene::GAME;
 		}
 	}
 
@@ -240,58 +260,25 @@ void StageinformationScene::Update(float deltaTime)
 		const auto& comp = m_coordinator->GetComponent<UIInteractableComponent>(m_BACK);
 		if (comp.isClicked)
 		{
-			std::cout << "Button BACK Clicked!" << std::endl;
-			//GameScene::SetStageNo(6);
-			SceneManager::ChangeScene<StageSelectScene>();
+			ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_TEST3", 0.5f);
+			m_isSceneChanging = true;
+			m_nextScene = NextScene::SELECT;
 		}
 	}
-
-	if (m_cursorEntity != ECS::INVALID_ENTITY_ID)
-	{
-		// 1. マウス座標を取得 (Windows API)
-		POINT p;
-		GetCursorPos(&p);
-		ScreenToClient(GetActiveWindow(), &p); // スクリーン座標をウィンドウ内座標へ変換
-
-		// 2. ウィンドウサイズを取得 (本来は定数や設定クラスから取るべきですが、仮定値を入れます)
-		// ※自分のプロジェクトの画面サイズに合わせて変更してください（例: 1280x720）
-		float screenWidth = 1280.0f;
-		float screenHeight = 720.0f;
-
-		// 3. 座標変換 (ピクセル → -1.0～1.0 の座標系)
-		// X: 0～1280 → -1.0～1.0
-		float ndcX = (static_cast<float>(p.x) / screenWidth) * 2.0f - 1.0f;
-
-		// Y: 0～720 → 1.0～-1.0 (Y軸は上がプラスなので反転が必要)
-		float ndcY = -((static_cast<float>(p.y) / screenHeight) * 2.0f - 1.0f);
-
-		// 4. Transformコンポーネントを更新
-		auto& transform = m_coordinator->GetComponent<TransformComponent>(m_cursorEntity);
-
-		// 補正（画像の中心がズレる場合はここで微調整）
-		transform.position.x = ndcX;
-		transform.position.y = ndcY;
-	}
-
 }
-
 void StageinformationScene::Draw()
 {
-	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
-	{
+	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>()) {
 		system->DrawSetup();
 		system->DrawEntities();
 	}
-
-	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
-	{
+	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>()) {
 		system->Render();
 	}
 }
 
 void StageinformationScene::UpdateTimeDisplay(float time)
 {
-	// タイムが0なら 00:00 のまま
 	int minutes = 0;
 	int seconds = 0;
 
@@ -301,24 +288,13 @@ void StageinformationScene::UpdateTimeDisplay(float time)
 		seconds = static_cast<int>(time) % 60;
 	}
 
-	// 各桁の数値を計算
 	int m10 = minutes / 10;
 	int m1 = minutes % 10;
 	int s10 = seconds / 10;
 	int s1 = seconds % 10;
 
-	// 画像アセットIDを更新
-	// 配列: [0]分10, [1]分1, [2]コロン, [3]秒10, [4]秒1
-
-	// 分の10の位
-	m_coordinator->GetComponent<UIImageComponent>(m_timeDigits[0]).assetID = "UI_NUM_" + std::to_string(m10);
-	// 分の1の位
-	m_coordinator->GetComponent<UIImageComponent>(m_timeDigits[1]).assetID = "UI_NUM_" + std::to_string(m1);
-
-	// [2]はコロンなので変更なし
-
-	// 秒の10の位
-	m_coordinator->GetComponent<UIImageComponent>(m_timeDigits[3]).assetID = "UI_NUM_" + std::to_string(s10);
-	// 秒の1の位
-	m_coordinator->GetComponent<UIImageComponent>(m_timeDigits[4]).assetID = "UI_NUM_" + std::to_string(s1);
+	if (m_timeDigits[0] != ECS::INVALID_ENTITY_ID) m_coordinator->GetComponent<UIImageComponent>(m_timeDigits[0]).assetID = "UI_NUM_" + std::to_string(m10);
+	if (m_timeDigits[1] != ECS::INVALID_ENTITY_ID) m_coordinator->GetComponent<UIImageComponent>(m_timeDigits[1]).assetID = "UI_NUM_" + std::to_string(m1);
+	if (m_timeDigits[3] != ECS::INVALID_ENTITY_ID) m_coordinator->GetComponent<UIImageComponent>(m_timeDigits[3]).assetID = "UI_NUM_" + std::to_string(s10);
+	if (m_timeDigits[4] != ECS::INVALID_ENTITY_ID) m_coordinator->GetComponent<UIImageComponent>(m_timeDigits[4]).assetID = "UI_NUM_" + std::to_string(s1);
 }

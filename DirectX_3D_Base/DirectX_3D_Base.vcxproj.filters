@@ -118,6 +118,15 @@
     <ClCompile Include="Source\ECS\ScoreManager.cpp">
       <Filter>Source Files\Scene\ECS</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\UI\CursorSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\UI\UIAnimationSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\UI\ZoomTransitionSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Scene\GameScene.h">
@@ -325,6 +334,21 @@
       <Filter>Header Files\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Components\ScoreManager.h" />
+    <ClInclude Include="Include\ECS\Systems\UI\CursorSystem.h">
+      <Filter>Header Files\ECS\Systems\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\UI\UIAnimationComponent.h">
+      <Filter>Header Files\ECS\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\UI\UIAnimationSystem.h">
+      <Filter>Header Files\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\UI\ZoomTransitionComponent.h">
+      <Filter>Header Files\ECS\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\UI\ZoomTransitionSystem.h">
+      <Filter>Header Files\ECS\Systems\UI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

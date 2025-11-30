@@ -61,6 +61,13 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     // 1. Update（更新処理）
     // ------------------------------------------------------------
 
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        UIInputSystem, 
+        UIInteractableComponent,
+        TransformComponent
+    );
+
     // @system  StateSwitchSystem
     // @brief   状態の切り替え
     REGISTER_SYSTEM_AND_INIT(
@@ -135,6 +142,21 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  GuardComponent, TransformComponent, RigidBodyComponent
 	);
 
+    // @system  UIAnimationSystem
+    // @brief   UIのアニメーション制御
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        UIAnimationSystem,
+        UIAnimationComponent, TransformComponent
+    );
+    
+    // @system ZoomTransitionSystem
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        ZoomTransitionSystem,
+        ZoomTransitionComponent, TransformComponent
+    );
+
     // @system  AudioSystem
     // @brief   音声再生
     REGISTER_SYSTEM_AND_INIT(
@@ -165,11 +187,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
 
-    REGISTER_SYSTEM_AND_INIT(
-        coordinator,
-        UIInputSystem,
-        UIInteractableComponent, TransformComponent
-    );
+ 
 
 
     // ------------------------------------------------------------
