@@ -136,6 +136,21 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  GuardComponent, TransformComponent, RigidBodyComponent
 	);
 
+    // @system  UIAnimationSystem
+    // @brief   UIのアニメーション制御
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        UIAnimationSystem,
+        UIAnimationComponent, TransformComponent
+    );
+    
+    // @system ZoomTransitionSystem
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        ZoomTransitionSystem,
+        ZoomTransitionComponent, TransformComponent
+    );
+
     // @system  AudioSystem
     // @brief   音声再生
     REGISTER_SYSTEM_AND_INIT(

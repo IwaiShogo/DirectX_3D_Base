@@ -51,6 +51,11 @@
 // @folder	UI
 // @system	画像UI
 #include "ECS/Systems/UI/UIRenderSystem.h"
+// @system  アニメーションUI
+#include "ECS/Systems/UI/UIAnimationSystem.h"
+
+// @system  ズームアニメーション
+#include "ECS/Systems/UI/ZoomTransitionSystem.h"
 
 
 // @folder	Gameplay

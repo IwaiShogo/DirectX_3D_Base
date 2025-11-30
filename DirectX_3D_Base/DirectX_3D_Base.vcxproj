@@ -162,8 +162,11 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\ECS\Systems\Rendering\AnimationSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Rendering\DebugDrawSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Rendering\RenderSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\UI\CursorSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\UI\UIAnimationSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\UI\UIInputSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\UI\UIRenderSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\UI\ZoomTransitionSystem.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Scene\GameScene.cpp" />
     <ClCompile Include="Source\Scene\ResultScene.cpp" />
@@ -210,8 +213,10 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Components\Rendering\ModelComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\RenderComponent.h" />
     <ClInclude Include="Include\ECS\Components\ScoreManager.h" />
+    <ClInclude Include="Include\ECS\Components\UI\UIAnimationComponent.h" />
     <ClInclude Include="Include\ECS\Components\UI\UIImageComponent.h" />
     <ClInclude Include="Include\ECS\Components\UI\UIInteractableComponent.h" />
+    <ClInclude Include="Include\ECS\Components\UI\ZoomTransitionComponent.h" />
     <ClInclude Include="Include\ECS\Coordinator.h" />
     <ClInclude Include="Include\ECS\ECS.h" />
     <ClInclude Include="Include\ECS\ECSInitializer.h" />
@@ -233,9 +238,12 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Systems\Physics\PhysicsSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Rendering\DebugDrawSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Rendering\RenderSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\UI\CursorSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\UI\UIAnimationSystem.h" />
     <ClInclude Include="Include\ECS\Systems\UI\UIInputSystem.h" />
     <ClInclude Include="Include\ECS\Systems\UI\UIRenderSystem.h" />
     <ClInclude Include="Include\ECS\AllComponents.h" />
+    <ClInclude Include="Include\ECS\Systems\UI\ZoomTransitionSystem.h" />
     <ClInclude Include="Include\ECS\Types.h" />
     <ClInclude Include="Include\Main.h" />
     <ClInclude Include="Include\Scene\GameScene.h" />

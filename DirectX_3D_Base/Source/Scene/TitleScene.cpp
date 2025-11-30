@@ -17,7 +17,7 @@
  * @note	（省略可）
  *********************************************************************/
 
-
+ // ===== インクルード =====
 #include "Scene/TitleScene.h"
 #include "Scene/StageSelectScene.h"
 #include "ECS/ECSInitializer.h"
@@ -32,19 +32,17 @@
 #include "ECS/EntityFactory.h"
 #include <ECS/Systems/Core/TitleSceneSystem.h>
 
+
 using namespace DirectX;
 
 //仮の入力チェック関数
 static bool IsInputStart() {
-	//ここに実際の入力チェックロジックが入る
-	//今回は遷移テストのため、デバッグで一時的にtrueを返すなどしてもいい
 	return false;
 }
 
 void TitleScene::Init()
 {
 	m_coordinator = std::make_shared<ECS::Coordinator>();
-
 	ECS::ECSInitializer::InitECS(m_coordinator);
 
 	{
@@ -58,24 +56,22 @@ void TitleScene::Init()
 
 	// --- 4. デモ用Entityの作成 ---	
 	ECS::EntityFactory::CreateTitleSceneEntity(m_coordinator.get());
+
+	std::cout << "TitleScene::Init() - TitleUiSystem Ready." << std::endl;
 }
 
 void TitleScene::Uninit()
 {
 	ECS::ECSInitializer::UninitECS();
-
-	m_coordinator.reset();
-
-	//このシーンで作成したエンティティを破棄
-	//ECS::ECSInitializer::GetCoordinator()->DestoryEntities(m_sceneEntities);
-	std::cout << "TitleScene::Uninit() - Title  Systems Destroyed." << std::endl;
 }
 
 void TitleScene::Update(float deltaTime)
 {
+	// 1. システムの一括更新
+	// (ここで UIInputSystem も自動的に動くので、手動呼び出しは不要です！)
 	m_coordinator->UpdateSystems(deltaTime);
-}
 
+}
 void TitleScene::Draw()
 {
 	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())

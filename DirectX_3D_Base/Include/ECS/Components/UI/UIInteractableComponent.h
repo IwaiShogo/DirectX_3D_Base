@@ -37,12 +37,21 @@ struct UIInteractableComponent
 	// クリック時に発行するイベントＩＤ(任意)
 	string onClickEventId = "";
 
+	//アニメーション用の基本スケール
+    float baseScaleX = 1.0f;
+    float baseScaleY = 1.0f;
+    bool doHoverAnim = true; // ホバーアニメーションをするか？
+
+
 	// --- 状態 (システムが書き込む) ---
 	bool isHovered = false; // マウスが乗っているか
 	bool isClicked = false; // クリックされた瞬間か
 	bool isPressed = false; // 押され続けているか
 
-	UIInteractableComponent(float w = -1.0f, float h = -1.0f)
+	//演出進行フラグ（システムが書き込む）
+	bool isTransitionExpanding = false;
+
+	UIInteractableComponent(float w = -1.0f, float h = -1.0f, bool anim = true)
 		:width(w), height(h)
 	{
 
