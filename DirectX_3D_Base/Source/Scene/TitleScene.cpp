@@ -19,6 +19,7 @@
 
 
 #include "Scene/TitleScene.h"
+#include "Scene/StageSelectScene.h"
 #include "ECS/ECSInitializer.h"
 #include "DirectXMath.h"
 #include <iostream>
@@ -33,7 +34,10 @@
 
 using namespace DirectX;
 
-bool IsInputStart() {
+//仮の入力チェック関数
+static bool IsInputStart() {
+	//ここに実際の入力チェックロジックが入る
+	//今回は遷移テストのため、デバッグで一時的にtrueを返すなどしてもいい
 	return false;
 }
 

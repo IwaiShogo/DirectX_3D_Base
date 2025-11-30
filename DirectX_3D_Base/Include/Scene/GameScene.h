@@ -46,6 +46,8 @@ private:
 	ECS::EntityID m_completeUIEntity = ECS::INVALID_ENTITY_ID;
 	std::vector<ECS::EntityID> m_uiEntities;
 
+	float m_elapsedTime = 0.0f;
+
 	//BGM用変数
 	ECS::EntityID m_bgmScoutID = ECS::INVALID_ENTITY_ID;
 	ECS::EntityID m_bgmActionID = ECS::INVALID_ENTITY_ID;
@@ -67,6 +69,8 @@ public:
 	void Update(float deltaTime) override;
 	void Draw() override;
 
+	static int s_StageNo;
+	static void SetStageNo(int no) { s_StageNo = no; }
 	/**
 	 * @brief Coordinatorインスタンスへのポインタを取得する静的アクセサ
 	 * @return ECS::Coordinator* - 現在アクティブなシーンのCoordinator

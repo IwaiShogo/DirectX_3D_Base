@@ -1,0 +1,494 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="Source\Works\_geometory.cpp">
+      <Filter>Source Files\Works</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Works\_model.cpp">
+      <Filter>Source Files\Works</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\Geometory.cpp">
+      <Filter>Source Files\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\Input.cpp">
+      <Filter>Source Files\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\Model.cpp">
+      <Filter>Source Files\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\Sprite.cpp">
+      <Filter>Source Files\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\DirectX.cpp">
+      <Filter>Source Files\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\MeshBuffer.cpp">
+      <Filter>Source Files\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\Shader.cpp">
+      <Filter>Source Files\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\ShaderList.cpp">
+      <Filter>Source Files\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\DirectX\Texture.cpp">
+      <Filter>Source Files\Systems\DirectX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\ECSInitializer.cpp">
+      <Filter>Source Files\Scene\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\EntityFactory.cpp">
+      <Filter>Source Files\Scene\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\GameScene.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\SceneManager.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\ResultScene.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\TitleScene.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\StageSelectScene.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Core\AudioSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Core\CameraControlSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Core\GameFlowSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Core\StateSwitchSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Gameplay\CollectionSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\Gameplay</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Gameplay\MapGenerationSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\Gameplay</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Gameplay\PlayerControlSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\Gameplay</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Gimmick\GuardAISystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\Gimmick</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Physics\CollisionSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Physics\PhysicsSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Rendering\DebugDrawSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Rendering\RenderSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\AssetManager.cpp">
+      <Filter>Source Files\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\XAudio2\SoundEffect.cpp">
+      <Filter>Source Files\Systems\XAudio2</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Systems\XAudio2\SoundEngine.cpp">
+      <Filter>Source Files\Systems\XAudio2</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\UI\UIRenderSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\UI\UIInputSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Core\ResultSceneSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Core\GameSceneSystem.cpp">
+      <Filter>Source Files\Scene\ECS\Systems\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\StageinformationScene.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\ScoreManager.cpp">
+      <Filter>Source Files\Scene\ECS</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Rendering\AnimationSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\TitleSceneSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Core</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Include\Scene\GameScene.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\SceneManager.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\Scene.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\Camera.h">
+      <Filter>Header Files\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\Geometory.h">
+      <Filter>Header Files\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\Input.h">
+      <Filter>Header Files\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\Model.h">
+      <Filter>Header Files\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\Sprite.h">
+      <Filter>Header Files\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\DirectX\DirectX.h">
+      <Filter>Header Files\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\DirectX\MeshBuffer.h">
+      <Filter>Header Files\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\DirectX\Shader.h">
+      <Filter>Header Files\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\DirectX\ShaderList.h">
+      <Filter>Header Files\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\DirectX\Texture.h">
+      <Filter>Header Files\Systems\DirectX</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\TitleScene.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\ResultScene.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\StageSelectScene.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Physics\CollisionComponent.h">
+      <Filter>Header Files\ECS\Components\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Physics\RigidBodyComponent.h">
+      <Filter>Header Files\ECS\Components\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Core\TransformComponent.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Core\TagComponent.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Core\SoundComponent.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Core\CameraComponent.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Rendering\RenderComponent.h">
+      <Filter>Header Files\ECS\Components\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Rendering\DebugComponent.h">
+      <Filter>Header Files\ECS\Components\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Gimmick\GuardComponent.h">
+      <Filter>Header Files\ECS\Components\Gimmick</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Physics\CollisionSystem.h">
+      <Filter>Header Files\ECS\Systems\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Physics\PhysicsSystem.h">
+      <Filter>Header Files\ECS\Systems\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Core\GameStateComponent.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Gameplay\PlayerControlComponent.h">
+      <Filter>Header Files\ECS\Components\Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Gameplay\MapComponent.h">
+      <Filter>Header Files\ECS\Components\Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Gameplay\ItemTrackerComponent.h">
+      <Filter>Header Files\ECS\Components\Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Gameplay\CollectableComponent.h">
+      <Filter>Header Files\ECS\Components\Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\AudioSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\CameraControlSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\GameFlowSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\StateSwitchSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Rendering\RenderSystem.h">
+      <Filter>Header Files\ECS\Systems\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Rendering\DebugDrawSystem.h">
+      <Filter>Header Files\ECS\Systems\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Rendering\ModelComponent.h">
+      <Filter>Header Files\ECS\Components\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Gameplay\MapGenerationSystem.h">
+      <Filter>Header Files\ECS\Systems\Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Gameplay\CollectionSystem.h">
+      <Filter>Header Files\ECS\Systems\Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Gameplay\PlayerControlSystem.h">
+      <Filter>Header Files\ECS\Systems\Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Gimmick\GuardAISystem.h">
+      <Filter>Header Files\ECS\Systems\Gimmick</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\AllSystems.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\AllComponents.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\ComponentManager.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\ComponentRegistry.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Coordinator.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\ECS.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\ECSInitializer.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\EntityFactory.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\EntityManager.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\SystemManager.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Types.h">
+      <Filter>Header Files\ECS</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\XAudio2\SoundEngine.h">
+      <Filter>Header Files\Systems\XAudio2</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\XAudio2\SoundEffect.h">
+      <Filter>Header Files\Systems\XAudio2</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Systems\AssetManager.h">
+      <Filter>Header Files\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Utility\CSVLoader.h">
+      <Filter>Header Files\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Core\OneShotSoundComponent.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\UI\UIImageComponent.h">
+      <Filter>Header Files\ECS\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\UI\UIRenderSystem.h">
+      <Filter>Header Files\ECS\Systems\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="External\JSON\json.hpp">
+      <Filter>External\JSON</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\UI\UIInputSystem.h">
+      <Filter>Header Files\ECS\Systems\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\UI\UIInteractableComponent.h">
+      <Filter>Header Files\ECS\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\ResultSceneSystem.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Core\GameSceneComponent.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\GameSceneSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
+    </ClInclude>
+<<<<<<< HEAD
+    <ClInclude Include="Include\ECS\Components\Core\TitleSceneComponent.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\TitleSceneSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
+    </ClInclude>
+=======
+    <ClInclude Include="Include\Scene\StageinformationScene.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\ScoreManager.h" />
+>>>>>>> bc6b0b4fabf53592a5dfcb219b9ca5372cee877a
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{16ccbbb3-ccc8-443e-b303-54bb1c0a6853}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{d8ac42c7-3c35-4fd9-8bfa-6285665fb497}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{42a74dba-3165-4635-8be0-d378376688ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS">
+      <UniqueIdentifier>{b3c6721d-7025-4785-b698-01e26b407d71}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Scene">
+      <UniqueIdentifier>{bfccd14b-c2c8-4f6f-8ef9-638dc5dbd2c6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Systems">
+      <UniqueIdentifier>{9ee5ce20-e3fb-412b-960f-d2bc0ef983fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Systems">
+      <UniqueIdentifier>{3c6a471a-fe63-49b9-89d0-dddabf163ac9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Components">
+      <UniqueIdentifier>{3524d64f-d728-4d9b-acfb-3ab994c43bf7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Systems\DirectX">
+      <UniqueIdentifier>{d5c281f9-d961-4258-9eac-5903d1f65ffc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Works">
+      <UniqueIdentifier>{9f513e35-ea51-4668-8c11-16489ac98f41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Systems">
+      <UniqueIdentifier>{92dfeec3-629e-40a3-88d1-6ed38f2b30ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene">
+      <UniqueIdentifier>{7d4dd219-1558-433c-8c70-326541984262}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Systems\DirectX">
+      <UniqueIdentifier>{6750fbb7-ac09-43c2-9fff-00dce06557a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Components\Core">
+      <UniqueIdentifier>{bf25f6b0-9348-4f80-8d9e-3c2fae60c058}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Components\UI">
+      <UniqueIdentifier>{41108957-33de-4bc2-ac0c-dbdee7a2c373}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Components\Physics">
+      <UniqueIdentifier>{fb69ed9d-9699-4342-b2f0-3fdb9c4a19f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Components\Rendering">
+      <UniqueIdentifier>{16e08692-e36c-4342-9f63-b5405c745062}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Components\Gameplay">
+      <UniqueIdentifier>{169becc8-a830-43bf-b95f-cb8957f330a3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Components\Gimmick">
+      <UniqueIdentifier>{d26895e7-22ce-4cac-8242-bbadc9b37924}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Systems\Core">
+      <UniqueIdentifier>{f3158c61-d191-4da9-a43a-7723ce35c3e1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Systems\Gameplay">
+      <UniqueIdentifier>{7e8f1ec6-a73f-4476-83b0-7d02809ca542}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Systems\Gimmick">
+      <UniqueIdentifier>{6d51f781-0a9d-44d4-ba59-32966e8582a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Systems\Rendering">
+      <UniqueIdentifier>{06ea5fc2-30fe-42d6-bd11-87c8751dfe50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Systems\Physics">
+      <UniqueIdentifier>{fc49260e-97cc-43e6-94a8-323997ba1273}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ECS\Systems\UI">
+      <UniqueIdentifier>{e516dde2-4329-4a10-a77f-2b5e186944e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets">
+      <UniqueIdentifier>{0c658128-c2ff-41c6-85ce-e6d71020f9bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tools">
+      <UniqueIdentifier>{c0958990-18ee-426a-8cfe-dabd53e3a12d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\CSV">
+      <UniqueIdentifier>{9e1f6fc9-2613-4015-b024-129c6b59949b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Systems\XAudio2">
+      <UniqueIdentifier>{87a2d371-66df-49d9-91c4-04440adce4fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Utility">
+      <UniqueIdentifier>{ff9b10f1-b9ef-489a-af0f-47ddf4cd7970}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Systems\XAudio2">
+      <UniqueIdentifier>{0f598e98-9f42-4d5f-a0bb-b38345de1902}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External">
+      <UniqueIdentifier>{4bee3e7e-0b4e-4177-9113-3c801c77f2f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="External\JSON">
+      <UniqueIdentifier>{dbfa2c48-b4e0-4db5-9cc6-671c7853c4b8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets\Config">
+      <UniqueIdentifier>{cb155b88-3788-4c6c-aa61-76912b66fedf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS">
+      <UniqueIdentifier>{e792c94f-247c-452f-a846-58cffbcaa654}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS\Systems">
+      <UniqueIdentifier>{96ed9615-c337-412e-a6e5-6e0f49d2da7d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS\Systems\Core">
+      <UniqueIdentifier>{d298074e-27ff-4dfd-9743-e6e4a5cd7d78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS\Systems\Rendering">
+      <UniqueIdentifier>{1f8c3853-4e21-4e25-a362-4d9d682a942f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS\Systems\Physics">
+      <UniqueIdentifier>{50c13c6e-9abe-4d3f-969f-daec48daba47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS\Systems\UI">
+      <UniqueIdentifier>{49b8fd35-14a8-46ca-abe4-9fb4edb0119e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS\Systems\Gimmick">
+      <UniqueIdentifier>{ee674e02-dd04-4339-a727-ad150f58aa28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Scene\ECS\Systems\Gameplay">
+      <UniqueIdentifier>{4e8af539-28ec-4c78-849b-9ff662bf3f2b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Tools\Assets.xlsm">
+      <Filter>Tools</Filter>
+    </None>
+    <None Include="Assets\CSV\ModelList.csv">
+      <Filter>Assets\CSV</Filter>
+    </None>
+    <None Include="Assets\CSV\TextureList.csv">
+      <Filter>Assets\CSV</Filter>
+    </None>
+    <None Include="Assets\CSV\SoundList.csv">
+      <Filter>Assets\CSV</Filter>
+    </None>
+    <None Include="Assets\Config\map_config.json" />
+  </ItemGroup>
+</Project>

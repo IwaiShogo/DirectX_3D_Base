@@ -35,27 +35,27 @@ using namespace DirectX;
 void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
 {
 	// 1. Map Entity (Game Controller) の作成と初期化
-	ECS::EntityID mapEntityID = coordinator->CreateEntity(
-		TagComponent("game_controller"),
-		MapComponent(), // 50x50のエリアでBSP/MSTを生成
-		GameStateComponent(GameMode::SCOUTING_MODE),
-		ItemTrackerComponent(),
-		DebugComponent() // F1キーによるデバッグ機能のトグル用
-	);
+	//ECS::EntityID mapEntityID = coordinator->CreateEntity(
+	//	TagComponent("game_controller"),
+	//	MapComponent(), // 50x50のエリアでBSP/MSTを生成
+	//	GameStateComponent(GameMode::SCOUTING_MODE),
+	//	ItemTrackerComponent(),
+	//	DebugComponent() // F1キーによるデバッグ機能のトグル用
+	//);
 
-	// 2. MapGenerationSystemを呼び出し、BSP/MSTを生成
-	auto mapGenSystem = ECSInitializer::GetSystem<MapGenerationSystem>();
-	if (mapGenSystem)
-	{
-		// MapGenerationSystem::GenerateMapがBSP/MSTを実行し、MapComponent.layoutを更新する
-		mapGenSystem->CreateMap("ST_001");
-	}
-	else
-	{
-		// マップ生成システムが見つからない場合は処理を中断
-		// throw std::runtime_error("MapGenerationSystem is not registered!");
-		return;
-	}
+	//// 2. MapGenerationSystemを呼び出し、BSP/MSTを生成
+	//auto mapGenSystem = ECSInitializer::GetSystem<MapGenerationSystem>();
+	//if (mapGenSystem)
+	//{
+	//	// MapGenerationSystem::GenerateMapがBSP/MSTを実行し、MapComponent.layoutを更新する
+	//	mapGenSystem->CreateMap("ST_001");
+	//}
+	//else
+	//{
+	//	// マップ生成システムが見つからない場合は処理を中断
+	//	// throw std::runtime_error("MapGenerationSystem is not registered!");
+	//	return;
+	//}
 
 	//CreateUITestEntity(coordinator, { 0.9f, 0.0f }, { 0.5f, 1.0f }, "UI_TEST");
 }
@@ -451,4 +451,27 @@ EntityID ECS::EntityFactory::CreateGameSceneEntity(Coordinator* coordinator)
 		GameSceneComponent{}
 	);
 	return entity;
+}
+
+void ECS::EntityFactory::GenerateStageFromConfig(ECS::Coordinator* coordinator, const std::string& stageId)
+{
+	// 1. ゲームコントローラー（MapComponent持ち）を作る
+	ECS::EntityID mapEntityID = coordinator->CreateEntity(
+		TagComponent("game_controller"),
+		MapComponent(),
+		GameStateComponent(GameMode::SCOUTING_MODE),
+		ItemTrackerComponent(),
+		DebugComponent()
+	);
+
+	// 2. MapGenerationSystem を呼び出して、指定されたID (ST_006など) でマップを作る
+	auto mapGenSystem = ECSInitializer::GetSystem<MapGenerationSystem>();
+	if (mapGenSystem)
+	{
+		// ★ここで引数の stageId を使うことで、正しく難易度が変わります
+		mapGenSystem->CreateMap(stageId);
+	}
+
+	// 3. プレイヤー作成 (マップ生成側でやっていない場合)
+//	CreatePlayer(coordinator, XMFLOAT3(2.5f, 0.0f, 2.5f));
 }
