@@ -222,8 +222,6 @@ void StageinformationScene::Update(float deltaTime)
 {
 	m_coordinator->UpdateSystems(deltaTime);
 
-<<<<<<< HEAD
-=======
 	if (m_isSceneChanging)
 	{
 		// ここがないと、ボタンを押してもフラグが立つだけで画面が切り替わりません
@@ -246,7 +244,6 @@ void StageinformationScene::Update(float deltaTime)
 	// アニメーション時間(最大1.3秒)が終わるまでクリック無効
 	// if (sceneTimer < 1.3f) return; // これを入れるとアニメーション中操作できなくなります
 
->>>>>>> 86ca950fec7521f1906ef5f5fc2c83a833b2ea35
 	if (m_OK != ECS::INVALID_ENTITY_ID)
 	{
 		const auto& comp = m_coordinator->GetComponent<UIInteractableComponent>(m_OK);

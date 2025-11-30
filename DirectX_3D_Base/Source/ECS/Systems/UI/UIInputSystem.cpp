@@ -34,13 +34,11 @@
 
 using namespace DirectX;
 
-<<<<<<< HEAD
-=======
+
 static float Lerp(float start, float end, float t) {
 	return start + (end - start) * t;
 }
 
->>>>>>> 86ca950fec7521f1906ef5f5fc2c83a833b2ea35
 void UIInputSystem::Update(float deltaTime)
 {
 

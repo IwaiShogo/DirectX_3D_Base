@@ -62,13 +62,6 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     // 1. Update（更新処理）
     // ------------------------------------------------------------
 
-    REGISTER_SYSTEM_AND_INIT(
-        /* Coordinator  */  coordinator,
-        UIInputSystem, 
-        UIInteractableComponent,
-        TransformComponent
-    );
-
     // @system  StateSwitchSystem
     // @brief   状態の切り替え
     REGISTER_SYSTEM_AND_INIT(
@@ -195,7 +188,6 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  UIImageComponent
     );
 
-<<<<<<< HEAD
     // @system UIInoutSystem
     // @brief  マウスカーソルの判定
     REGISTER_SYSTEM_AND_INIT(
@@ -203,10 +195,6 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         UIInputSystem,
         UIInteractableComponent, TransformComponent
     );
-=======
-
- 
->>>>>>> 86ca950fec7521f1906ef5f5fc2c83a833b2ea35
 
     REGISTER_SYSTEM_AND_INIT(
         coordinator,

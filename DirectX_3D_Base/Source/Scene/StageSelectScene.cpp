@@ -166,12 +166,6 @@ void StageSelectScene::Update(float deltaTime)
 	// 1. システム更新
 	m_coordinator->UpdateSystems(deltaTime);
 
-<<<<<<< HEAD
-	if (m_selectEntity1 != ECS::INVALID_ENTITY_ID)
-	{
-		const auto& comp = m_coordinator->GetComponent<UIInteractableComponent>(m_selectEntity1);
-		if (comp.isClicked)
-=======
 	if (IsKeyTrigger('Q'))
 	{
 		// 音を鳴らす（必要であれば）
@@ -183,7 +177,6 @@ void StageSelectScene::Update(float deltaTime)
 
 	// 2. クリック判定
 	auto CheckClickAndStartTransition = [&](EntityID entity, int stageNo)
->>>>>>> 86ca950fec7521f1906ef5f5fc2c83a833b2ea35
 		{
 			if (entity != INVALID_ENTITY_ID)
 			{
