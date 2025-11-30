@@ -1,0 +1,10 @@
+AssetID,AssetType,FilePath
+SE_TEST,Sound,Assets/Sound/se1.wav
+SE_TEST2,Sound2,Assets/Sound/se2.wav
+SE_TEST3,Sound3,Assets/Sound/se3.wav
+BGM_TEST,Sound4,Assets/Sound/bgm1.wav
+BGM_TEST2,Sound5,Assets/Sound/bgm2.wav
+BGM_TEST3,Sound6,Assets/Sound/bgm3.wav
+SE_TEST4,Sound7,Assets/Sound/se4.wav
+SE_TEST5,Sound8,Assets/Sound/se5.wav
+SE_TEST6,Sound9,Assets/Sound/se6.wav
