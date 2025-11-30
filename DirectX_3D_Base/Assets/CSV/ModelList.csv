@@ -1,3 +1,8 @@
 AssetID,AssetType,FilePath
+<<<<<<< HEAD
 M_PLAYER,Model,Assets/Model/Player/kaitouanimu.fbx
 GUARD,Model2,Assets/Model/Gimmick/keikan.fbx
+=======
+P_PLAYER,Model,Assets/Model/Player/hadakakaihi.fbx
+Title,Model2,Assets/Model/AD/title_model.fbx
+>>>>>>> bfe0b1f725d29f7a98e41532a19ccfc4faebd127

@@ -65,6 +65,7 @@ namespace ECS
 
 		static EntityID CreateGameSceneEntity(Coordinator* coordinator);
 
+		static EntityID CreateTitleSceneEntity(Coordinator* coordinator);
 
 
 	private:

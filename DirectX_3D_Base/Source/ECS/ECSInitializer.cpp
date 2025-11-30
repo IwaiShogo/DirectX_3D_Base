@@ -162,7 +162,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  RenderSystem,
-        /* Components   */  RenderComponent, TransformComponent
+        /* Components   */  RenderComponent, TransformComponent 
     );
 
     // @system  UIRenderSystem
