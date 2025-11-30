@@ -56,6 +56,17 @@ private:
 	// ECSのグローバルアクセス用 (SystemなどがECS操作を行うための窓口)
 	static ECS::Coordinator* s_coordinator;
 
+	bool m_isTransitioning = false;             // 演出中フラグ
+	ECS::EntityID m_targetEntity = ECS::INVALID_ENTITY_ID; // 選んだボタンのID
+	int m_targetStageNo = 0;                    // 選んだステージ番号
+
+	bool m_isQuickTransition = false;
+	enum class NextScene {
+		NONE,
+		TITLE,
+		INFO
+	};
+	NextScene m_nextScene = NextScene::NONE;
 public:
 	// コンストラクタとデストラクタ（Sceneを継承しているため仮想デストラクタはScene側で定義済みと仮定）
 	StageSelectScene()

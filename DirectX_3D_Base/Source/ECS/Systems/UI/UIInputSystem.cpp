@@ -22,7 +22,7 @@
 #include "ECS/Systems/UI/UIInputSystem.h"
 
 #include "ECS/Components/UI/UIInteractableComponent.h"
-#include  "ECS/Components/Core/TransformComponent.h"
+#include "ECS/Components/Core/TransformComponent.h"
 
 #include "ECS/Components/Core/TagComponent.h"
 
@@ -30,9 +30,17 @@
 
 #include "Systems/Input.h"
 #include "Main.h" // SCREEN_WIDTH, SCREEN_HEIGHTが必要なため
+#include <algorithm>
 
 using namespace DirectX;
 
+<<<<<<< HEAD
+=======
+static float Lerp(float start, float end, float t) {
+	return start + (end - start) * t;
+}
+
+>>>>>>> 86ca950fec7521f1906ef5f5fc2c83a833b2ea35
 void UIInputSystem::Update(float deltaTime)
 {
 
@@ -53,55 +61,55 @@ void UIInputSystem::Update(float deltaTime)
 
 
 	// 全エンティティに対して判定
-	for (auto const& entity : m_entities)
-	{
-		// Coordinator経由でコンポーネントを取得
-		auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
-		auto& interactable = m_coordinator->GetComponent<UIInteractableComponent>(entity);
+    for (auto const& entity : m_entities)
+    {
+        auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
+        auto& interactable = m_coordinator->GetComponent<UIInteractableComponent>(entity);
 
-		// 判定サイズの決定(width/heightがマイナスならScaleをつかう)
-		float w = (interactable.width < 0.0f) ? transform.scale.x : interactable.width;
-		float h = (interactable.height < 0.0f) ? transform.scale.y : interactable.height;
+        // A. 遷移演出中(拡大中)の特別処理
+        if (interactable.isTransitionExpanding)
+        {
+            float expandSpeed = 150.0f;
+            transform.scale.x += expandSpeed * deltaTime;
+            transform.scale.y += expandSpeed * deltaTime;
+            transform.position.z = -4.0f; // 最前面へ
+            transform.position.x *= 0.9f; // 中心へ
+            transform.position.y *= 0.9f;
+            continue; // 演出中はクリック判定などをスキップ
+        }
 
-		// AABB当たり判定(左上基準と仮定)
-		// transform.position が 左上座標の場合
+        // B. 当たり判定
+        float w = (interactable.width < 0.0f) ? transform.scale.x : interactable.width;
+        float h = (interactable.height < 0.0f) ? transform.scale.y : interactable.height;
+        float halfW = w / 2.0f;
+        float halfH = h / 2.0f;
 
-		float halfW = w / 2.0f;
-		float halfH = h / 2.0f;
+        bool hit = (ndcMouseX >= transform.position.x - halfW && ndcMouseX <= transform.position.x + halfW) &&
+            (ndcMouseY >= transform.position.y - halfH && ndcMouseY <= transform.position.y + halfH);
 
-		bool hit = (ndcMouseX >= transform.position.x - halfW && ndcMouseX <= transform.position.x + halfW) &&
-			(ndcMouseY >= transform.position.y - halfH && ndcMouseY <= transform.position.y + halfH);
+        interactable.isHovered = hit;
+        interactable.isClicked = (hit && isTrigger);
+        interactable.isPressed = (hit && isPressed);
 
+        // C. コントローラー対応 (Tagによる上書き)
+        if (m_coordinator->HasComponent<TagComponent>(entity))
+        {
+            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity);
+            if (tag.tag == "SelectSceneUIA" && (IsKeyTrigger('A') || IsButtonTriggered(BUTTON_A))) interactable.isClicked = true;
+            if (tag.tag == "SelectSceneUIB" && (IsKeyTrigger('B') || IsButtonTriggered(BUTTON_B))) interactable.isClicked = true;
+        }
 
-		// 状態更新
-		interactable.isHovered = hit;
-		interactable.isClicked = (hit && isTrigger);
-		interactable.isPressed = (hit && isPressed);
-		// TagComponentを持っているかチェック
-		if (m_coordinator->HasComponent<TagComponent>(entity))
-		{
-			const auto& tag = m_coordinator->GetComponent<TagComponent>(entity);
+        // D. ふわっと拡大アニメーション (Systemで実行！)
+        if (interactable.doHoverAnim)
+        {
+            // 目標サイズ：ホバー中は1.2倍
+            float targetScaleX = interactable.baseScaleX * (interactable.isHovered ? 1.2f : 1.0f);
+            float targetScaleY = interactable.baseScaleY * (interactable.isHovered ? 1.2f : 1.0f);
 
-			// "SelectSceneUIA" タグなら、Aボタンでクリック判定を上書き
-			if (tag.tag == "SelectSceneUIA")
-			{
-				if (IsKeyTrigger('A') || IsButtonTriggered(BUTTON_A))
-				{
-					interactable.isClicked = true;
-				}
-			}
-
-			// "SelectSceneUIB" タグなら、Bボタンでクリック判定を上書き
-			if (tag.tag == "SelectSceneUIB")
-			{
-				if (IsKeyTrigger('B') || IsButtonTriggered(BUTTON_B))
-				{
-					interactable.isClicked = true;
-				}
-			}
-
-		
-			
-		}
-	}
+            // 補間処理
+            float speed = 10.0f * deltaTime;
+            transform.scale.x = Lerp(transform.scale.x, targetScaleX, speed);
+            transform.scale.y = Lerp(transform.scale.y, targetScaleY, speed);
+        }
+    }
 }

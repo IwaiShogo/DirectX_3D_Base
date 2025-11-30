@@ -60,6 +60,11 @@
 // @folder		UI
 // @component	画像UI
 #include "ECS/Components/UI/UIImageComponent.h"
+// @component	アニメーションUI
+#include "ECS/Components/UI/UIAnimationComponent.h"
+// @component	zoomアニメーション
+#include "ECS/Components/UI/ZoomTransitionComponent.h"
+
 
 // @folder		Gameplay
 // @component	プレイヤー入力制御

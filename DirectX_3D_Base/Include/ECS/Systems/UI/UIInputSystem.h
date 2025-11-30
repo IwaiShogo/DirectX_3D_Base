@@ -39,6 +39,11 @@ public:
 		m_coordinator = coordinator;
 	}
 
+<<<<<<< HEAD
 	void Update(float deltTime)override;
+=======
+	void Update(float deltaTime);
+
+>>>>>>> 86ca950fec7521f1906ef5f5fc2c83a833b2ea35
 };
 #endif // __UI_INPUT_SYSTEM_H_
