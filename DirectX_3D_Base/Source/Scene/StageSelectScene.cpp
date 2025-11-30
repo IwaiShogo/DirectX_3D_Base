@@ -247,18 +247,6 @@ void StageSelectScene::Update(float deltaTime)
 
 	m_coordinator->UpdateSystems(deltaTime);
 
-
-
-	//auto interactableEntity = ECS::ECSInitializer::GetSystem<UIInputSystem>();
-
-	//auto comp = m_coordinator.get()->GetComponent<UIInteractableComponent>(interactable);
-
-	auto uiInputSystem = ECS::ECSInitializer::GetSystem<UIInputSystem>();
-	if (uiInputSystem)
-	{
-		uiInputSystem->Update(deltaTime);
-	}
-
 	if (m_selectEntity1 != ECS::INVALID_ENTITY_ID)
 	{
 		const auto& comp = m_coordinator->GetComponent<UIInteractableComponent>(m_selectEntity1);
