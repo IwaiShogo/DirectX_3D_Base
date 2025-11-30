@@ -8,7 +8,7 @@
 #include <ECS/Systems/Rendering/RenderSystem.h>
 #include "ECS/ECSInitializer.h"
 #include "ECS/EntityFactory.h"
-#include "Scene/TitleScene.h"
+#include "Scene/SceneManager.h"
 #include <iostream>
 #include <vector>
 
@@ -237,7 +237,7 @@ void TitleSceneSystem::Update(float deltaTime)
 				if (comp.isClicked)
 				{
 					std::cout << "Button Clicked! -> GameScene" << std::endl;
-					SceneManager::ChangeScene<GameScene>();
+					SceneManager::ChangeScene<StageSelectScene>();
 				}
 			}
 		}
@@ -247,7 +247,7 @@ void TitleSceneSystem::Update(float deltaTime)
 	//EnterまたはコントローラーのAを押したらシーンを切り替え
 	if (IsKeyTrigger(VK_RETURN) || IsButtonTriggered(BUTTON_A))
 	{
-		SceneManager::ChangeScene<GameScene>();
+		SceneManager::ChangeScene<StageSelectScene>();
 	}
 	
 	

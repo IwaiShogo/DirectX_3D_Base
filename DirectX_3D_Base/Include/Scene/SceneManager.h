@@ -29,6 +29,7 @@
 
 #include "Scene.h"
 #include "GameScene.h"
+#include "StageSelectScene.h"
 #include "TitleScene.h"
 #include "ResultScene.h"
  /**

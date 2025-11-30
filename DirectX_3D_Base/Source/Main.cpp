@@ -227,6 +227,7 @@ int Init(HINSTANCE hInstance, int nCmdShow)
 	// シーンマネージャー
 	SceneManager::Init();
 	SceneManager::RegisterScene<TitleScene>();
+	SceneManager::RegisterScene<StageSelectScene>();
 	SceneManager::RegisterScene<GameScene>();
 	SceneManager::RegisterScene<ResultScene>();
 	SceneManager::ChangeScene<TitleScene>();

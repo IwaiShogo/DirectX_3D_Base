@@ -110,10 +110,13 @@
       <Filter>Source Files\ECS\Systems\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Core\ResultSceneSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Core</Filter>
+    </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Core\GameSceneSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
-    <ClCompile Include="TitleSceneSystem.cpp">
+    <ClCompile Include="Source\ECS\Systems\Rendering\AnimationSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\TitleSceneSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
   </ItemGroup>
@@ -314,6 +317,8 @@
       <Filter>Header Files\ECS\Components\UI</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Systems\Core\ResultSceneSystem.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
     <ClInclude Include="Include\ECS\Components\Core\GameSceneComponent.h">
       <Filter>Header Files\ECS\Components\Core</Filter>
     </ClInclude>

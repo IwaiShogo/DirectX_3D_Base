@@ -151,6 +151,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\ECS\Systems\Core\ResultSceneSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\GameSceneSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\StateSwitchSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\TitleSceneSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gameplay\CollectionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gameplay\MapGenerationSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gameplay\PlayerControlSystem.cpp" />
@@ -182,7 +183,6 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\Systems\XAudio2\SoundEngine.cpp" />
     <ClCompile Include="Source\Works\_geometory.cpp" />
     <ClCompile Include="Source\Works\_model.cpp" />
-    <ClCompile Include="TitleSceneSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\JSON\json.hpp" />
