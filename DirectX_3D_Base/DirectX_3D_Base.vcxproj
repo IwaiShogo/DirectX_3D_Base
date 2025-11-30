@@ -182,6 +182,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\Systems\XAudio2\SoundEngine.cpp" />
     <ClCompile Include="Source\Works\_geometory.cpp" />
     <ClCompile Include="Source\Works\_model.cpp" />
+    <ClCompile Include="TitleSceneSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\JSON\json.hpp" />
@@ -194,6 +195,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Components\Core\OneShotSoundComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\SoundComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\TagComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\TitleSceneComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\TransformComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gameplay\CollectableComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gameplay\ItemTrackerComponent.h" />
@@ -219,6 +221,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Systems\Core\ResultSceneSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\GameSceneSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\StateSwitchSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\TitleSceneSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gameplay\CollectionSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gameplay\MapGenerationSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gameplay\PlayerControlSystem.h" />

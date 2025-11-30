@@ -29,15 +29,18 @@
 #include <ECS/Systems/UI/UIInputSystem.h>
 #include <ECS/Systems/Rendering/RenderSystem.h>
 #include "ECS/EntityFactory.h"
-
-
+#include <ECS/Systems/Core/TitleSceneSystem.h>
 
 using namespace DirectX;
 
+<<<<<<< HEAD
 
 
 
 //仮の入力チェック関数
+=======
+//���̓��̓`�F�b�N�֐�
+>>>>>>> bfe0b1f725d29f7a98e41532a19ccfc4faebd127
 bool IsInputStart() {
 	//ここに実際の入力チェックロジックが入る
 	//今回は遷移テストのため、デバッグで一時的にtrueを返すなどしてもいい
@@ -47,13 +50,19 @@ bool IsInputStart() {
 // ===== TitleScene メンバー関数の実装  =====
 void TitleScene::Init()
 {
-
-	
 	m_coordinator = std::make_shared<ECS::Coordinator>();
 
 	ECS::ECSInitializer::InitECS(m_coordinator);
 
+	{
+		auto system = m_coordinator->RegisterSystem<TitleSceneSystem>();
+		ECS::Signature signature;
+		signature.set(m_coordinator->GetComponentTypeID<TitleSceneComponent>());
+		m_coordinator->SetSystemSignature<TitleSceneSystem>(signature);
+		system->Init(m_coordinator.get());
+	}
 
+<<<<<<< HEAD
 	//ECS::EntityFactory::CreatePlayer(m_coordinator.get(), XMFLOAT3(0.0f, 0.0f, 0.0f));
 	
 	ECS::EntityID buttonEntity = m_coordinator->CreateEntity(
@@ -79,28 +88,33 @@ void TitleScene::Init()
 	//ECS::EntityFactory::CreateTitleUiEntities(ECS::ECSInitializer::GetCoordinator()):
 	std::cout << "TitleScene::Init() - TitleUiSystem Ready." << std::endl;
 
+=======
+	// --- 4. �f���pEntity�̍쐬 ---	
+	ECS::EntityFactory::CreateTitleSceneEntity(m_coordinator.get());
+>>>>>>> bfe0b1f725d29f7a98e41532a19ccfc4faebd127
 }
 
 void TitleScene::Uninit()
 {
-
-
 	ECS::ECSInitializer::UninitECS();
 
-	
 	m_coordinator.reset();
 
+<<<<<<< HEAD
 
 
 	//このシーンで作成したエンティティを破棄
+=======
+	//���̃V�[���ō쐬�����G���e�B�e�B��j��
+>>>>>>> bfe0b1f725d29f7a98e41532a19ccfc4faebd127
 	//ECS::ECSInitializer::GetCoordinator()->DestoryEntities(m_sceneEntities);
 	std::cout << "TitleScene::Uninit() - Title  Systems Destroyed." << std::endl;
 }
 
 void TitleScene::Update(float deltaTime)
 {
-	
 	m_coordinator->UpdateSystems(deltaTime);
+<<<<<<< HEAD
 
 
 
@@ -138,6 +152,8 @@ void TitleScene::Update(float deltaTime)
 	{
 		SceneManager::ChangeScene<GameScene>();//N:ゲームシーンに切り替え
 	}
+=======
+>>>>>>> bfe0b1f725d29f7a98e41532a19ccfc4faebd127
 }
 
 void TitleScene::Draw()
