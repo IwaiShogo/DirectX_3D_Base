@@ -1,6 +1,75 @@
 {
   "ST_001": {
-    "name": "Stage1 Maze",
+    "name": "Stage 1: Beginner",
+    "gridSizeX": 15,
+    "gridSizeY": 15,
+    "tileSize": 5.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 4,
+    "itemCount": 2,
+    "guardCount": 1,
+    "minPathPercentage": 0.5,
+    "gimmicks": [
+      {
+        "type": "Teleporter",
+        "count": 0
+      },
+      {
+        "type": "TrapDoor",
+        "count": 0
+      }
+    ]
+  },
+  "ST_002": {
+    "name": "Stage 2: First Encounter",
+    "gridSizeX": 20,
+    "gridSizeY": 20,
+    "tileSize": 5.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 6,
+    "maxRoomCount": 6,
+    "itemCount": 3,
+    "guardCount": 1,
+    "minPathPercentage": 0.4,
+    "gimmicks": [
+      {
+        "type": "Teleporter",
+        "count": 0
+      },
+      {
+        "type": "TrapDoor",
+        "count": 0
+      }
+    ]
+  },
+  "ST_003": {
+    "name": "Stage 3: Maze Runner",
+    "gridSizeX": 25,
+    "gridSizeY": 25,
+    "tileSize": 5.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 4,
+    "maxRoomSize": 8,
+    "maxRoomCount": 20,
+    "itemCount": 4,
+    "guardCount": 2,
+    "minPathPercentage": 0.3,
+    "gimmicks": [
+      {
+        "type": "Teleporter",
+        "count": 0
+      },
+      {
+        "type": "TrapDoor",
+        "count": 0
+      }
+    ]
+  },
+  "ST_004": {
+    "name": "Stage 4: Confusing Labs",
     "gridSizeX": 30,
     "gridSizeY": 20,
     "tileSize": 5.0,
@@ -11,6 +80,52 @@
     "itemCount": 3,
     "guardCount": 1,
     "minPathPercentage": 0.25,
+    "gimmicks": [
+      {
+        "type": "Teleporter",
+        "count": 0
+      },
+      {
+        "type": "TrapDoor",
+        "count": 0
+      }
+    ]
+  },
+  "ST_005": {
+    "name": "Stage 5: Danger Zone",
+    "gridSizeX": 30,
+    "gridSizeY": 20,
+    "tileSize": 5.0,
+    "wallHeight": 5.0,
+    "minRoomSize": 5,
+    "maxRoomSize": 10,
+    "maxRoomCount": 12,
+    "itemCount": 6,
+    "guardCount": 4,
+    "minPathPercentage": 0.2,
+    "gimmicks": [
+      {
+        "type": "Teleporter",
+        "count": 0
+      },
+      {
+        "type": "TrapDoor",
+        "count": 0
+      }
+    ]
+  },
+  "ST_006": {
+    "name": "Stage 6: Final Challenge",
+    "gridSizeX": 30,
+    "gridSizeY": 20,
+    "tileSize": 5.0,
+    "wallHeight": 5.0,
+    "minRoomSize": 5,
+    "maxRoomSize": 12,
+    "maxRoomCount": 15,
+    "itemCount": 8,
+    "guardCount": 6,
+    "minPathPercentage": 0.15,
     "gimmicks": [
       {
         "type": "Teleporter",

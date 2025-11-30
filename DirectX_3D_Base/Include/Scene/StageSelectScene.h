@@ -37,6 +37,22 @@ private:
 	// ECSの中心となるコーディネーター (シーンがECSのライフサイクルを管理)
 	std::shared_ptr<ECS::Coordinator> m_coordinator;
 
+	ECS::EntityID m_selectEntity1 = ECS::INVALID_ENTITY_ID;
+	ECS::EntityID m_selectEntity2 = ECS::INVALID_ENTITY_ID;
+	ECS::EntityID m_selectEntity3 = ECS::INVALID_ENTITY_ID;
+	ECS::EntityID m_selectEntity4 = ECS::INVALID_ENTITY_ID;
+	ECS::EntityID m_selectEntity5 = ECS::INVALID_ENTITY_ID;
+	ECS::EntityID m_selectEntity6 = ECS::INVALID_ENTITY_ID;
+
+	ECS::EntityID m_cursorEntity = ECS::INVALID_ENTITY_ID;
+
+	ECS::EntityID m_selectA = ECS::INVALID_ENTITY_ID;
+	ECS::EntityID m_selectB = ECS::INVALID_ENTITY_ID;
+
+	ECS::EntityID m_selectbg = ECS::INVALID_ENTITY_ID;
+
+	ECS::EntityID m_selectcork = ECS::INVALID_ENTITY_ID;
+
 	// ECSのグローバルアクセス用 (SystemなどがECS操作を行うための窓口)
 	static ECS::Coordinator* s_coordinator;
 

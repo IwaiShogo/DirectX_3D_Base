@@ -19,6 +19,7 @@
 
 
 #include "Scene/TitleScene.h"
+#include "Scene/StageSelectScene.h"
 #include "ECS/ECSInitializer.h"
 #include "DirectXMath.h"
 #include <iostream>
@@ -33,7 +34,17 @@
 
 using namespace DirectX;
 
+<<<<<<< HEAD
 bool IsInputStart() {
+=======
+
+
+
+//仮の入力チェック関数
+static bool IsInputStart() {
+	//ここに実際の入力チェックロジックが入る
+	//今回は遷移テストのため、デバッグで一時的にtrueを返すなどしてもいい
+>>>>>>> bc6b0b4fabf53592a5dfcb219b9ca5372cee877a
 	return false;
 }
 
@@ -70,6 +81,37 @@ void TitleScene::Uninit()
 void TitleScene::Update(float deltaTime)
 {
 	m_coordinator->UpdateSystems(deltaTime);
+<<<<<<< HEAD
+=======
+
+
+
+	//auto interactableEntity = ECS::ECSInitializer::GetSystem<UIInputSystem>();
+
+	//auto comp = m_coordinator.get()->GetComponent<UIInteractableComponent>(interactable);
+
+	auto uiInputSystem = ECS::ECSInitializer::GetSystem<UIInputSystem>();
+	if (uiInputSystem)
+	{
+		uiInputSystem->Update();
+	}
+
+
+	ECS::EntityID interactableEntity = ECS::FindFirstEntityWithComponent<UIInteractableComponent>(m_coordinator.get());
+
+
+		if (interactableEntity != ECS::INVALID_ENTITY_ID)
+		{
+			const auto& comp = m_coordinator->GetComponent<UIInteractableComponent>(interactableEntity);
+
+			if (comp.isClicked)
+			{
+				std::cout << "Button Clicked! -> GameScene" << std::endl;
+				SceneManager::ChangeScene<StageSelectScene>();
+			}
+			
+		}
+>>>>>>> bc6b0b4fabf53592a5dfcb219b9ca5372cee877a
 }
 
 void TitleScene::Draw()

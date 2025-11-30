@@ -65,8 +65,12 @@ namespace ECS
 
 		static EntityID CreateGameSceneEntity(Coordinator* coordinator);
 
+<<<<<<< HEAD
 		static EntityID CreateTitleSceneEntity(Coordinator* coordinator);
 
+=======
+		static void GenerateStageFromConfig(ECS::Coordinator* coordinator, const std::string& stageId);
+>>>>>>> bc6b0b4fabf53592a5dfcb219b9ca5372cee877a
 
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止
