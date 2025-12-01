@@ -1,6 +1,4 @@
-<<<<<<< HEAD
 AssetID,AssetType,FilePath
-<<<<<<< HEAD
 UI_TEST1,Texture,Assets/Texture/UI_1.png
 UI_TEST2,Texture,Assets/Texture/UI_2.png
 UI_TEST3,Texture,Assets/Texture/UI_3.png
@@ -21,14 +19,6 @@ UI_BTN_RESULT_NORMAL,Texture,Assets/Texture/btn_result_normal.png
 UI_GAMEOVER,Texture,Assets/Texture/ui_gameover.png
 UI_TITLE_LOGO,Texture,Assets/Texture/logo.png
 UI_TITLE_HAZIMEKARA,Texture,Assets/Texture/hazimekara.png
-=======
-UI_TEST1,Texture1,Assets/Texture/UI_1.png
-UI_TEST2,Texture2,Assets/Texture/UI_2.png
-UI_TEST3,Texture3,Assets/Texture/UI_3.png
-UI_TEST1_OFF,Texture4,Assets/Texture/UI1_off.png
-UI_TEST2_OFF,Texture5,Assets/Texture/UI2_off.png
-UI_TEST3_OFF,Texture6,Assets/Texture/UI3_off.png
-UI_TEST4,Texture7,Assets/Texture/Complete.png
 UI_CORK,Texture8,Assets/Texture/other_back.png
 UI_BG,Texture9,Assets/Texture/stage_background.png
 UI_NUM_1,Texture10,Assets/Texture/count1.png
@@ -42,44 +32,9 @@ UI_NUM_8,Texture17,Assets/Texture/count8.png
 UI_NUM_9,Texture18,Assets/Texture/count9.png
 UI_NUM_0,Texture19,Assets/Texture/count0.png
 UI_COLON,Texture20,Assets/Texture/countcolon.png
-UI_TIME。,Texture21,Assets/Texture/count。.png
-UI_TIME-,Texture22,Assets/Texture/count-.png
 UI_PAPER_1,Texture23,Assets/Texture/paper1.png
 UI_PAPER_2,Texture24,Assets/Texture/paper2.png
 UI_PAPER_3,Texture25,Assets/Texture/paper3.png
 UI_STAGEMAP,Texture26,Assets/Texture/stagemap.png
->>>>>>> bc6b0b4fabf53592a5dfcb219b9ca5372cee877a
-=======
-AssetID,AssetType,FilePath,
-UI_TEST1,Texture1,Assets/Texture/UI_1.png,
-UI_TEST2,Texture2,Assets/Texture/UI_2.png,
-UI_TEST3,Texture3,Assets/Texture/UI_3.png,
-UI_TEST1_OFF,Texture4,Assets/Texture/UI1_off.png,
-UI_TEST2_OFF,Texture5,Assets/Texture/UI2_off.png,
-UI_TEST3_OFF,Texture6,Assets/Texture/UI3_off.png,
-UI_TEST4,Texture7,Assets/Texture/Complete.png,
-UI_CORK,Texture8,Assets/Texture/other_back.png,
-UI_BG,Texture9,Assets/Texture/stage_background.png,
-UI_NUM_1,Texture10,Assets/Texture/count1.png,
-UI_NUM_2,Texture11,Assets/Texture/count2.png,
-UI_NUM_3,Texture12,Assets/Texture/count3.png,
-UI_NUM_4,Texture13,Assets/Texture/count4.png,
-UI_NUM_5,Texture14,Assets/Texture/count5.png,
-UI_NUM_6,Texture15,Assets/Texture/count6.png,
-UI_NUM_7,Texture16,Assets/Texture/count7.png,
-UI_NUM_8,Texture17,Assets/Texture/count8.png,
-UI_NUM_9,Texture18,Assets/Texture/count9.png,
-UI_NUM_0,Texture19,Assets/Texture/count0.png,
-UI_COLON,Texture20,Assets/Texture/countcolon.png,
-UI_TIME。,Texture21,Assets/Texture/count。.png,
-UI_TIME-,Texture22,Assets/Texture/count-.png,
-UI_PAPER_1,Texture23,Assets/Texture/paper1.png,
-UI_PAPER_2,Texture24,Assets/Texture/paper2.png,
-UI_PAPER_3,Texture25,Assets/Texture/paper3.png,
-UI_STAGEMAP,Texture26,Assets/Texture/stagemap.png,
-UI_PEN,Texture27,Assets/Texture/mannenhitu.png,
-UI_MUSIMEGANE,Texture28,Assets/Texture/musimegane.png,
-,,,
-,,,
-,,,0
->>>>>>> 86ca950fec7521f1906ef5f5fc2c83a833b2ea35
+UI_PEN,Texture27,Assets/Texture/mannenhitu.png
+UI_MUSIMEGANE,Texture28,Assets/Texture/musimegane.png
