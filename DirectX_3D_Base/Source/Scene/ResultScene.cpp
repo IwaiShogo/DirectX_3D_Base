@@ -107,6 +107,115 @@ void ResultScene::Init()
 
 	}
 
+	// 警備員から逃げ切った
+	ECS::EntityID keibiinn = m_coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"keibiinn"
+		),
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(-0.3f, 0.48f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(0.5f, 0.12f, 1.0f)
+		),
+
+		UIImageComponent(
+
+			"UI_TEST3"
+
+		)
+	);
+	// 宝全取得
+	ECS::EntityID complete = m_coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"complete"
+		),
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(-0.3f, 0.28f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(0.5f, 0.12f, 1.0f)
+		),
+
+		UIImageComponent(
+
+			"UI_TEST3"
+
+		)
+	);
+
+	// ギミック引っかかる
+	ECS::EntityID gimmick = m_coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"gimmick"
+		),
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(-0.3f, 0.1f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(0.5f, 0.12f, 1.0f)
+		),
+
+		UIImageComponent(
+
+			"UI_TEST3"
+
+		)
+	);
+
+
+	// 警備員から逃げ切った星
+	ECS::EntityID keibiinnhosi = m_coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"keibiinnhosi"
+		),
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(0.0f, 0.48f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(0.1f, 0.1f, 1.0f)
+		),
+
+		UIImageComponent(
+
+			"UI_STAR"
+
+		)
+	);
+	// 宝全取得星
+	ECS::EntityID completehosi = m_coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"completehosi"
+		),
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(0.0f, 0.28f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(0.1f, 0.1f, 1.0f)
+		),
+
+		UIImageComponent(
+
+			"UI_STAR"
+
+		)
+	);
+
+	// ギミック引っかかる星
+	ECS::EntityID gimmickhosi = m_coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"gimmickhosi"
+		),
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(0.0f, 0.1f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(0.1f, 0.1f, 1.0f)
+		),
+
+		UIImageComponent(
+
+			"UI_STAR"
+
+		)
+	);
+
+
+
 	// クリア内容詳細
 	ECS::EntityID ResultTime = m_coordinator->CreateEntity(
 		TagComponent(
@@ -120,10 +229,12 @@ void ResultScene::Init()
 
 		UIImageComponent(
 
-			"UI_TEST3"
+			"UI_TEST1"
 
 		)
 	);
+
+	
 
 	
 
@@ -278,8 +389,6 @@ void ResultScene::Init()
 
 		
 	);
-
-
 	
 
 	// リトライボタン
@@ -345,6 +454,8 @@ void ResultScene::Init()
 
 	);
 	
+	
+	
 
 	// リザルトシーン背景
 	ECS::EntityID ResultSceneBuckground = m_coordinator->CreateEntity(
@@ -366,8 +477,23 @@ void ResultScene::Init()
 
 	
 
-	
-	
+	// お宝を全て獲得
+	//ECS::EntityID TreasureAcquired = m_coordinator->CreateEntity(
+	//	TagComponent(
+	//		/* Tag	*/	"TreasureAcquired"
+	//	),
+	//	TransformComponent(
+	//		/* Position	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+	//		/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+	//		/* Scale	*/	XMFLOAT3(2.0f, 2.0f, 1.0f)
+	//	),
+
+	//	UIImageComponent(
+
+	//		"UI_TEST3"
+
+	//	)
+	//);
 	//m_coordinator = std::make_shared<ECS::Coordinator>();
 
 	//ECS::ECSInitializer::InitECS(m_coordinator);
