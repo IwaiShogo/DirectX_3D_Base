@@ -28,8 +28,7 @@ namespace ECS {
 
 } // namespace ECS
 
-// エイリアス登録
-using ZoomTransComp = ECS::ZoomTransitionComponent;
-REGISTER_COMPONENT_TYPE(ZoomTransComp)
-
+namespace ECS {
+    REGISTER_COMPONENT_TYPE(ZoomTransitionComponent)
+}
 #endif

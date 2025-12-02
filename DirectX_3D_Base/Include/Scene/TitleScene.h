@@ -22,5 +22,7 @@ public:
 
 private:
 	std::shared_ptr<ECS::Coordinator> m_coordinator;
+	ECS::EntityID m_StartButton = ECS::INVALID_ENTITY_ID;
+	ECS::EntityID m_ExitButton = ECS::INVALID_ENTITY_ID;
 };
 #endif //!___TitleScene_H___

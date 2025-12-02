@@ -24,6 +24,8 @@
 #include "DirectXMath.h"
 #include <iostream>
 
+#include "ECS/Components/Rendering/RenderComponent.h"
+#include "ECS/Components/Rendering/ModelComponent.h"
 #include <ECS/Components/Core/TransformComponent.h>
 #include <ECS/Components/UI/UIImageComponent.h>
 #include <ECS/Components/UI/UIInteractableComponent.h>
@@ -34,30 +36,29 @@
 
 
 using namespace DirectX;
-
-//仮の入力チェック関数
-static bool IsInputStart() {
-	return false;
-}
+using namespace ECS;
 
 void TitleScene::Init()
 {
+	// 1. ECS初期化
 	m_coordinator = std::make_shared<ECS::Coordinator>();
 	ECS::ECSInitializer::InitECS(m_coordinator);
 
+	// 2. TitleSceneSystem の登録
 	{
 		auto system = m_coordinator->RegisterSystem<TitleSceneSystem>();
 		ECS::Signature signature;
+		// このシステムは TitleSceneComponent を持つエンティティだけを管理する
 		signature.set(m_coordinator->GetComponentTypeID<TitleSceneComponent>());
 		m_coordinator->SetSystemSignature<TitleSceneSystem>(signature);
 		system->Init(m_coordinator.get());
 	}
 
-
-	// --- 4. デモ用Entityの作成 ---	
+	// 3. 管理用エンティティの生成
+	// これを作ると TitleSceneSystem が動き出し、自動的にボタンなどが生成される
 	ECS::EntityFactory::CreateTitleSceneEntity(m_coordinator.get());
 
-	std::cout << "TitleScene::Init() - TitleUiSystem Ready." << std::endl;
+	std::cout << "TitleScene::Init() - System Started." << std::endl;
 }
 
 void TitleScene::Uninit()
@@ -67,13 +68,13 @@ void TitleScene::Uninit()
 
 void TitleScene::Update(float deltaTime)
 {
-	// 1. システムの一括更新
-	// (ここで UIInputSystem も自動的に動くので、手動呼び出しは不要です！)
+	// ロジックは全て System に任せる
 	m_coordinator->UpdateSystems(deltaTime);
-
 }
+
 void TitleScene::Draw()
 {
+	// 描画も System に任せる
 	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
 	{
 		system->DrawSetup();

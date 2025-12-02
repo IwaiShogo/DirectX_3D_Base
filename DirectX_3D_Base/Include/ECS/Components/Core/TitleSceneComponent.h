@@ -7,7 +7,7 @@ struct TitleSceneComponent
 {
 	ECS::EntityID TitleBackGroundEntity = ECS::INVALID_ENTITY_ID;
 	ECS::EntityID TitleLogoEntity = ECS::INVALID_ENTITY_ID;			// タイトルロゴエンティティ
-
+	
 	ECS::EntityID ButtonTitleStartEntity = ECS::INVALID_ENTITY_ID;	// スタートボタンエンティティ
 	ECS::EntityID ButtonTitleExitEntity = ECS::INVALID_ENTITY_ID;	// 終了ボタンエンティティ
 	

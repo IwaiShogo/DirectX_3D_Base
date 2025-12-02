@@ -92,6 +92,15 @@ void GameScene::Uninit()
 void GameScene::Update(float deltaTime)
 {
 
+	if (IsKeyTrigger('R'))
+	{
+		// 音を鳴らす（必要であれば）
+		// ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_CANCEL", 0.5f);
+
+		SceneManager::ChangeScene<StageSelectScene>();
+		return; // シーンが変わるので、これ以降の処理はスキップ
+	}
+
 	m_elapsedTime += deltaTime;
 
 	// 2. ゴール判定（とりあえずデバッグ用に 'G' キーでゴール扱いにします）
@@ -101,11 +110,17 @@ void GameScene::Update(float deltaTime)
 	// 3. ゴールした時の処理
 	if (isGoal)
 	{
-		std::cout << "GOAL! Time: " << m_elapsedTime << std::endl;
+		// ★詳細ログを追加
+		std::cout << "========== GOAL DEBUG ==========" << std::endl;
+		std::cout << "[GameScene] Current Stage No: " << s_StageNo << std::endl;
+		std::cout << "[GameScene] Elapsed Time: " << m_elapsedTime << std::endl;
 
 		// ベストタイムを保存 (現在のステージ番号と、クリアタイム)
 		ScoreManager::SaveBestTime(s_StageNo, m_elapsedTime);
 
+		float saveTime = ScoreManager::GetBestTime(s_StageNo);
+		std::cout << "[GameScene] Saved Time Check:" << saveTime << std::endl;
+		std::cout << "================================" << std::endl;
 		// リザルト画面（StageinformationScene）へ遷移
 		SceneManager::ChangeScene<StageinformationScene>();
 		return;
@@ -116,7 +131,7 @@ void GameScene::Update(float deltaTime)
 		SceneManager::ChangeScene<GameScene>();
 	}
 
-	// ECS縺ｮ譖ｴ譁ｰ
+
 	m_coordinator->UpdateSystems(deltaTime);
 
 	if (IsKeyTrigger(VK_SPACE))

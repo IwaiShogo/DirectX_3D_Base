@@ -40,7 +40,6 @@
 #include "ECS/Components/Core/SoundComponent.h"
 // @conponent	単発サウンド
 #include "ECS/Components/Core/OneShotSoundComponent.h"
-
 // @folder		Rendering
 // @component	描画
 #include "ECS/Components/Rendering/RenderComponent.h"

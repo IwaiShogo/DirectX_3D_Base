@@ -20,72 +20,26 @@
 #ifndef ___STAGE_SELECT_SCENE_H___
 #define ___STAGE_SELECT_SCENE_H___
 
-// ===== インクルード =====
 #include "Scene/Scene.h"
 #include "ECS/Coordinator.h"
-
 #include <memory>
 
-/**
- * @class	StageSelectScene
- * @brief	ステージセレクトロジックとECSを管理するシーン
- */
-class StageSelectScene
-	: public Scene
+class StageSelectScene : public Scene
 {
 private:
-	// ECSの中心となるコーディネーター (シーンがECSのライフサイクルを管理)
-	std::shared_ptr<ECS::Coordinator> m_coordinator;
+    std::shared_ptr<ECS::Coordinator> m_coordinator;
+    static ECS::Coordinator* s_coordinator;
 
-	ECS::EntityID m_selectEntity1 = ECS::INVALID_ENTITY_ID;
-	ECS::EntityID m_selectEntity2 = ECS::INVALID_ENTITY_ID;
-	ECS::EntityID m_selectEntity3 = ECS::INVALID_ENTITY_ID;
-	ECS::EntityID m_selectEntity4 = ECS::INVALID_ENTITY_ID;
-	ECS::EntityID m_selectEntity5 = ECS::INVALID_ENTITY_ID;
-	ECS::EntityID m_selectEntity6 = ECS::INVALID_ENTITY_ID;
-
-	ECS::EntityID m_cursorEntity = ECS::INVALID_ENTITY_ID;
-
-	ECS::EntityID m_selectA = ECS::INVALID_ENTITY_ID;
-	ECS::EntityID m_selectB = ECS::INVALID_ENTITY_ID;
-
-	ECS::EntityID m_selectbg = ECS::INVALID_ENTITY_ID;
-
-	ECS::EntityID m_selectcork = ECS::INVALID_ENTITY_ID;
-
-	// ECSのグローバルアクセス用 (SystemなどがECS操作を行うための窓口)
-	static ECS::Coordinator* s_coordinator;
-
-	bool m_isTransitioning = false;             // 演出中フラグ
-	ECS::EntityID m_targetEntity = ECS::INVALID_ENTITY_ID; // 選んだボタンのID
-	int m_targetStageNo = 0;                    // 選んだステージ番号
-
-	bool m_isQuickTransition = false;
-	enum class NextScene {
-		NONE,
-		TITLE,
-		INFO
-	};
-	NextScene m_nextScene = NextScene::NONE;
 public:
-	// コンストラクタとデストラクタ（Sceneを継承しているため仮想デストラクタはScene側で定義済みと仮定）
-	StageSelectScene()
-		: m_coordinator(nullptr)
-	{
-	}
-	~StageSelectScene() override {} // 仮想デストラクタを実装
+    StageSelectScene() : m_coordinator(nullptr) {}
+    ~StageSelectScene() override {}
 
-	// Sceneインターフェースの実装
-	void Init() override;
-	void Uninit() override;
-	void Update(float deltaTime) override;
-	void Draw() override;
+    void Init() override;
+    void Uninit() override;
+    void Update(float deltaTime) override;
+    void Draw() override;
 
-	/**
-	 * @brief Coordinatorインスタンスへのポインタを取得する静的アクセサ
-	 * @return ECS::Coordinator* - 現在アクティブなシーンのCoordinator
-	 */
-	static ECS::Coordinator* GetCoordinator() { return s_coordinator; }
+    static ECS::Coordinator* GetCoordinator() { return s_coordinator; }
 };
 
-#endif // !___STAGE_SELECT_SCENE_H___
+#endif

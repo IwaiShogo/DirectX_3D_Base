@@ -2,3 +2,4 @@ AssetID,AssetType,FilePath
 M_PLAYER,Model,Assets/Model/Player/kaitouanimu.fbx
 M_GUARD,Model,Assets/Model/Gimmick/keikan.fbx
 M_TITLE,Model,Assets/Model/Prop/obj_title.fbx
+M_TITLE_BACKGROUND,Model,Assets/Model/AD/title_modelkannsei.fbx

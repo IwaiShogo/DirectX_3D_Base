@@ -32,8 +32,6 @@
 #include "ECS/Systems/Core/GameFlowSystem.h"
 // @system	オーディオ
 #include "ECS/Systems/Core/AudioSystem.h"
-
-
 // @folder	Rendering
 // @system	描画
 #include "ECS/Systems/Rendering/RenderSystem.h"

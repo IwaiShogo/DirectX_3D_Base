@@ -119,6 +119,17 @@
     <ClCompile Include="Source\ECS\Systems\Core\TitleSceneSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\ScoreManager.cpp" />
+    <ClCompile Include="Source\ECS\Systems\UI\CursorSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\UI\UIAnimationSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\UI\ZoomTransitionSystem.cpp" />
+    <ClCompile Include="Source\Scene\StageinformationScene.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\StageSelectSceneSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Core\StageInfoSceneSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Scene\GameScene.h">
@@ -329,6 +340,25 @@
       <Filter>Header Files\ECS\Components\Core</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Systems\Core\TitleSceneSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\ScoreManager.h" />
+    <ClInclude Include="Include\ECS\Components\UI\UIAnimationComponent.h" />
+    <ClInclude Include="Include\ECS\Components\UI\ZoomTransitionComponent.h" />
+    <ClInclude Include="Include\ECS\Systems\UI\CursorSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\UI\UIAnimationSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\UI\ZoomTransitionSystem.h" />
+    <ClInclude Include="Include\Scene\StageinformationScene.h" />
+    <ClInclude Include="Include\ECS\Components\Core\StageSelectSceneComponent.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\StageSelectSceneSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Core\StageInfoSceneComponent.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\StageInfoSceneSystem.h">
       <Filter>Header Files\ECS\Systems\Core</Filter>
     </ClInclude>
   </ItemGroup>

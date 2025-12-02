@@ -32,393 +32,155 @@
 
 using namespace DirectX;
 using namespace std;
+using namespace ECS; // 追加
 
-//仮の入力チェック関数
-bool IsInputTitle() { return false; }
 bool ResultScene::isClear = false;
 int ResultScene::finalItenCount = 0;
 
-
-//===== ResultScene メンバー関数の実装 =====
-
 void ResultScene::Init()
 {
-
 	m_coordinator = std::make_shared<ECS::Coordinator>();
-
 	ECS::ECSInitializer::InitECS(m_coordinator);
 
-
-
-	
-
-	if (ResultScene::isClear)
-	{
-		// リザルト成功ロゴ
-		ECS::EntityID ResultClearLogo = m_coordinator->CreateEntity(
-			TagComponent(
-				/* Tag	*/	"ResultClearLogo"
-			),
-			TransformComponent(
-				/* Position	*/	XMFLOAT3(0.0f, 0.8f, 0.0f),
-				/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-				/* Scale	*/	XMFLOAT3(0.8f, 0.2f, 1.0f)
-			),
-
-			UIImageComponent(
-
-				"UI_GAMEOVER"
-
-			)
-		);
-	}
-	
-	if (ResultScene::isClear == false)
-	{
-		// リザルト失敗ロゴ
-		ECS::EntityID ResultOutLogo = m_coordinator->CreateEntity(
-			TagComponent(
-				/* Tag	*/	"ResultOutLogo"
-			),
-			TransformComponent(
-				/* Position	*/	XMFLOAT3(0.0f, 0.8f, 0.0f),
-				/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-				/* Scale	*/	XMFLOAT3(0.8f, 0.2f, 1.0f)
-			),
-
-			UIImageComponent(
-
-				"UI_GAMEOVER"
-
-			)
-		);
-	}
-
-	const std::vector<std::string> onIDs = { "UI_TEST1", "UI_TEST2","UI_TEST3" };
-	const std::vector<std::string> offIDs = { "UI_TEST1_OFF", "UI_TEST2_OFF", "UI_TEST3_OFF" };
-
-	// 3つの宝箱スロットについてループ処理
-	for (int i = 0; i < 3; ++i)
-	{
-		std::string assetID;
-
-		// 現在のインデックス(i)が獲得数未満なら「獲得済み(ON)」、それ以外は「未獲得(OFF)」
-
-
-	}
-
-	// クリア内容詳細
-	ECS::EntityID ResultTime = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultTime"
-		),
+	// 背景
+	m_coordinator->CreateEntity(
+		TagComponent("ResultSceneBuckground"),
 		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.0f, 0.3f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(1.1f, 0.6f, 1.0f)
+			XMFLOAT3(0.0f, 0.0f, 2.0f), // 奥
+			XMFLOAT3(0.0f, 0.0f, 0.0f),
+			XMFLOAT3(2.0f, 2.0f, 1.0f)
 		),
-
-		UIImageComponent(
-
-			"UI_TEST3"
-
-		)
-	);
-
-	
-
-	// 獲得した宝1
-	ECS::EntityID ResultTakara1 = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultTakara1"
-		),
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(-0.35f, -0.4f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(0.3f, 0.3f, 1.0f)
-		),
-
-		UIImageComponent(
-
-			"UI_TEST1"
-
-		)
-	);
-
-	// 獲得した宝2
-	ECS::EntityID ResultTakara2 = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultTakara2"
-		),
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.0f, -0.4f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(0.3f, 0.3f, 1.0f)
-		),
-
-		UIImageComponent(
-
-			"UI_TEST2"
-
-		)
-	);
-
-	// 獲得した宝3
-	ECS::EntityID ResultTakara3 = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultTakara3"
-		),
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.35f, -0.4f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(0.3f, 0.3f, 1.0f)
-		),
-
-		UIImageComponent(
-
-			"UI_TEST3"
-
-		)
-	);
-
-	// 未獲得の宝1
-	ECS::EntityID ResultNotTakara1 = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultNotTakara1"
-		),
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(-0.35f, -0.4f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(0.3f, 0.3f, 1.0f)
-		),
-
-		UIImageComponent(
-
-			"UI_TEST1_OFF"
-
-		)
-	);
-
-	// 未獲得の宝2
-	ECS::EntityID ResultNotTakara2 = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultNotTakara2"
-		),
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.0f, -0.4f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(0.3f, 0.3f, 1.0f)
-		),
-
-		UIImageComponent(
-
-			"UI_TEST2_OFF"
-
-		)
-	);
-
-	// 未獲得の宝3
-	ECS::EntityID ResultNotTakara3 = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultNotTakara3"
-		),
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.35f, -0.4f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(0.3f, 0.3f, 1.0f)
-		),
-
-		UIImageComponent(
-
-			"UI_TEST3_OFF"
-
-		)
-	);
-
-	// 獲得した宝背景
-	ECS::EntityID ResultTakara = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultTakara"
-		),
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.0f, -0.4f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(1.1f, 0.6f, 1.0f)
-		),
-
-		UIImageComponent(
-
-			"UI_TEST5"
-
-		)
+		UIImageComponent("UI_RESULTSCENE_BACKGROUND")
 	);
 
 
-	
+	// クリア/失敗ロゴ
+	std::string logoID = ResultScene::isClear ? "UI_GAMEOVER" : "UI_GAMEOVER"; // 必要ならID変える
+	m_coordinator->CreateEntity(
+		TagComponent("ResultLogo"),
+		TransformComponent(
+			XMFLOAT3(0.0f, 0.6f, 0.0f),
+			XMFLOAT3(0.0f, 0.0f, 0.0f),
+			XMFLOAT3(0.8f, 0.2f, 1.0f)
+		),
+		UIImageComponent(logoID)
+	);
+
+	// ===================================================
+	// ボタン配置の調整 (ここがメインの修正)
+	// ===================================================
+	float buttonY = -0.6f;       // Y座標 (下の方)
+	float buttonScaleX = 0.15f;  // 幅 (小さめに)
+	float buttonScaleY = 0.15f;  // 高さ
+	float buttonSpacing = 0.35f; // 間隔
 
 
-	// ステージセレクトボタン
+
+	// 1. ステージセレクトボタン (左)
 	ECS::EntityID ResultSelect = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultSelect"
-		),
+		TagComponent("ResultSelect"),
 		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.3f, -0.85f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(0.2f, 0.2f, 1.0f)
+			XMFLOAT3(-buttonSpacing, buttonY, 0.0f),
+			XMFLOAT3(0.0f, 0.0f, 0.0f),
+			XMFLOAT3(buttonScaleX, buttonScaleY, 1.0f)
 		),
-
 		UIInteractableComponent(-1.0f, -1.0f),
-
-		UIImageComponent(
-
-			"UI_RESULT_SELECT"
-
-		)
-
-		
+		UIImageComponent("UI_RESULT_SELECT")
 	);
+	// ★baseScale更新
+	{
+		auto& interact = m_coordinator->GetComponent<UIInteractableComponent>(ResultSelect);
+		interact.baseScaleX = buttonScaleX;
+		interact.baseScaleY = buttonScaleY;
+	}
 
-
-	
-
-	// リトライボタン
+	// 2. リトライボタン (中央)
 	ECS::EntityID ResultRetry = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultRetry"
-		),
+		TagComponent("ResultRetry"),
 		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.55f, -0.85f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(0.2f, 0.2f, 1.0f)
+			XMFLOAT3(0.0f, buttonY, 0.0f),
+			XMFLOAT3(0.0f, 0.0f, 0.0f),
+			XMFLOAT3(buttonScaleX, buttonScaleY, 1.0f)
 		),
-
 		UIInteractableComponent(-1.0f, -1.0f),
-
-		UIImageComponent(
-
-			"UI_RESULT_RETORY"
-
-		)
+		UIImageComponent("UI_RESULT_RETORY")
 	);
-	
+	// ★baseScale更新
+	{
+		auto& interact = m_coordinator->GetComponent<UIInteractableComponent>(ResultRetry);
+		interact.baseScaleX = buttonScaleX;
+		interact.baseScaleY = buttonScaleY;
+	}
 
-	// タイトルボタン
+	// 3. タイトルボタン (右)
 	ECS::EntityID ResultTitle = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultTitle"
-		),
+		TagComponent("ResultTitle"),
 		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.8f, -0.85f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(0.2f, 0.2f, 1.0f)
+			XMFLOAT3(buttonSpacing, buttonY, 0.0f),
+			XMFLOAT3(0.0f, 0.0f, 0.0f),
+			XMFLOAT3(buttonScaleX, buttonScaleY, 1.0f)
 		),
-
 		UIInteractableComponent(-1.0f, -1.0f),
-
-		UIImageComponent(
-
-			"UI_RESULT_TITLE"
-
-		)
+		UIImageComponent("UI_RESULT_TITLE")
 	);
+	// ★baseScale更新
+	{
+		auto& interact = m_coordinator->GetComponent<UIInteractableComponent>(ResultTitle);
+		interact.baseScaleX = buttonScaleX;
+		interact.baseScaleY = buttonScaleY;
+	}
 
-	// シーン切り替えボタン背景
-	ECS::EntityID btonresultnormal = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"btnresultnormal"
-		),
+	// 4. ボタン背景 (Interactableなし)
+	m_coordinator->CreateEntity(
+		TagComponent("btnresultnormal"),
 		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.5f, -0.85f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(1.0f, 0.3f, 1.0f)
+			XMFLOAT3(0.0f, buttonY, 0.1f), // ボタンより少し奥
+			XMFLOAT3(0.0f, 0.0f, 0.0f),
+			XMFLOAT3(0.8f, 0.25f, 1.0f)    // 全体を覆うサイズ
 		),
-
-		UIInteractableComponent(-1.0f, -1.0f),
-
-		UIImageComponent(
-
-			"UI_BTN_RESULT_NORMAL"
-
-		)
-
-
-	);
-	
-
-	// リザルトシーン背景
-	ECS::EntityID ResultSceneBuckground = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultSceneBuckground"
-		),
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(2.0f, 2.0f, 1.0f)
-		),
-
-		UIImageComponent(
-
-			"UI_RESULTSCENE_BACKGROUND"
-
-		)
+		UIImageComponent("UI_BTN_RESULT_NORMAL")
 	);
 
-	
 
-	
-	
-	//m_coordinator = std::make_shared<ECS::Coordinator>();
-
-	//ECS::ECSInitializer::InitECS(m_coordinator);
-
-
-	//ECS::EntityFactory::CreateResultUIEntities(ECS::ECSInitializer::GetCoordinator());
-	std::cout << "ResultScene::Init() - ResultUISystem Ready." << std::endl;
+	std::cout << "ResultScene::Init() - UI Adjusted." << std::endl;
 }
 
 void ResultScene::Uninit()
 {
-	//このシーンで作成したエンティティを破棄
-	//ECS::ECSInitializer::GetCoordinator()->DestoryEntities(m_sceneEntities);
-	//m_buttons.clear();
-	std::cout << "ResultScene::Uninit() - Result Scene Systems Destroyed." << std::endl;
+	ECS::ECSInitializer::UninitECS();
+	std::cout << "ResultScene::Uninit()" << std::endl;
 }
 
 void ResultScene::Update(float deltaTime)
 {
 	m_coordinator->UpdateSystems(deltaTime);
-
-	/*ECS::EntityID interactableEntity = ECS::FindFirstEntityWithComponent<UIInteractableComponent>(m_coordinator.get());*/
-
-
-	/*auto uiInput = ECS::ECSInitializer::GetSystem<UIInputSystem>();
-	if (uiInput)
-	{
-		uiInput->Update(deltaTime);
-	}*/
-
-	// ボタンのクリック判定
-	
-
-
-
-	
-	
 }
 
 void ResultScene::Draw()
 {
-	//RenderSystemは常に存在すると仮定し、Draw処理は共有する
-	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
+	if (auto renderSystem = ECS::ECSInitializer::GetSystem<RenderSystem>())
+
 	{
-		system->DrawSetup();
-		system->DrawEntities();	//UIエンティティの描画
+
+		renderSystem->DrawSetup();
+
+		renderSystem->DrawEntities();
+
 	}
 
-	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
+
+
+	if (auto uiSystem = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
+
 	{
-		system->Render();
+
+		::SetDepthTest(false);
+
+		::SetBlendMode(BLEND_ALPHA);
+
+		uiSystem->Render();
+
+		::SetDepthTest(true);
+
 	}
-	
 }
