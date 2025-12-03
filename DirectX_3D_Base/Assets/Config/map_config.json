@@ -8,9 +8,10 @@
     "minRoomSize": 3,
     "maxRoomSize": 3,
     "maxRoomCount": 4,
-    "itemCount": 2,
+    "itemCount": 3,
     "guardCount": 1,
     "minPathPercentage": 0.5,
+    "useOrderedCollection": true,
     "gimmicks": [
       {
         "type": "Teleporter",
@@ -34,6 +35,7 @@
     "itemCount": 3,
     "guardCount": 1,
     "minPathPercentage": 0.4,
+    "useOrderedCollection": false,
     "gimmicks": [
       {
         "type": "Teleporter",
@@ -57,6 +59,7 @@
     "itemCount": 4,
     "guardCount": 2,
     "minPathPercentage": 0.3,
+    "useOrderedCollection": true,
     "gimmicks": [
       {
         "type": "Teleporter",
@@ -80,6 +83,7 @@
     "itemCount": 3,
     "guardCount": 1,
     "minPathPercentage": 0.25,
+    "useOrderedCollection": false,
     "gimmicks": [
       {
         "type": "Teleporter",
@@ -103,6 +107,7 @@
     "itemCount": 6,
     "guardCount": 4,
     "minPathPercentage": 0.2,
+    "useOrderedCollection": true,
     "gimmicks": [
       {
         "type": "Teleporter",
@@ -126,6 +131,7 @@
     "itemCount": 8,
     "guardCount": 6,
     "minPathPercentage": 0.15,
+    "useOrderedCollection": false,
     "gimmicks": [
       {
         "type": "Teleporter",

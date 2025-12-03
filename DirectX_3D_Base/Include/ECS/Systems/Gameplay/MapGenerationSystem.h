@@ -49,6 +49,9 @@ struct MapStageConfig
 	int guardCount = 1;			// 配置する警備員の総数
     int taserCount = 3;         // 配置するテーザーの総数
 
+    //アイテム順序モードオン/オフ
+    bool useOrderedCollection = false;
+
 	std::map<CellType, int> gimmickCounts;
 
 	float minPathPercentage = 0.25f;
@@ -103,6 +106,7 @@ public:
                 if (stageData.contains("guardCount")) config.guardCount = stageData["guardCount"];
                 if (stageData.contains("taserCount")) config.taserCount = stageData["taserCount"];
                 if (stageData.contains("minPathPercentage")) config.minPathPercentage = stageData["minPathPercentage"];
+                if (stageData.contains("useOrderedCollection")) config.useOrderedCollection = stageData["useOrderedCollection"];
 
                 // ギミック情報の読み込み (拡張用)
                 if (stageData.contains("gimmicks"))

@@ -116,7 +116,7 @@ void GameScene::Update(float deltaTime)
 		SceneManager::ChangeScene<GameScene>();
 	}
 
-	// ECSの更新
+	
 	m_coordinator->UpdateSystems(deltaTime);
 
 	if (IsKeyTrigger(VK_SPACE))

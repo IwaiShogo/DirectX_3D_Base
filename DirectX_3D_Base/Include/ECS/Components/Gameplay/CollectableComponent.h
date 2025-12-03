@@ -31,9 +31,10 @@ struct CollectableComponent
 {
 	bool isCollected = false;
 	float collectionRadius = 0.5f;
+	int orderIndex = 0;//0‚È‚ç‡˜–³‚µ1ˆÈã‚È‚ç‡˜‚ ‚è
 
-	CollectableComponent(float radius)
-		: collectionRadius(radius){}
+	CollectableComponent(float radius, int order = 0)
+		: collectionRadius(radius), orderIndex(order){}
 };
 
 // Component“o˜^
