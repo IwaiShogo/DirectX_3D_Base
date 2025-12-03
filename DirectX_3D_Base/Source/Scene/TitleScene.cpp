@@ -26,11 +26,11 @@
 
 #include <ECS/Components/Core/TransformComponent.h>
 #include <ECS/Components/UI/UIImageComponent.h>
-#include <ECS/Components/UI/UIInteractableComponent.h>
+#include <ECS/Components/UI/UIButtonComponent.h>
 #include <ECS/Systems/UI/UIInputSystem.h>
 #include <ECS/Systems/Rendering/RenderSystem.h>
 #include "ECS/EntityFactory.h"
-#include <ECS/Systems/Core/TitleSceneSystem.h>
+#include "ECS/Systems/Core/TitleControlSystem.h"
 
 
 using namespace DirectX;
@@ -45,17 +45,116 @@ void TitleScene::Init()
 	m_coordinator = std::make_shared<ECS::Coordinator>();
 	ECS::ECSInitializer::InitECS(m_coordinator);
 
+	// コントローラー
+	TitleControllerComponent titleCtrl;
+	titleCtrl.camStartPos = XMFLOAT3(0.0f, 3.0f, -14.0f);
+	titleCtrl.camEndPos = XMFLOAT3(0.0f, 2.0f, -4.0f);
+
+	// 固定カメラ
+	ECS::EntityID cam = ECS::EntityFactory::CreateBasicCamera(m_coordinator.get(), titleCtrl.camStartPos);
+	titleCtrl.cameraEntityID = cam;
+
+	// 背景モデル
+	ECS::EntityID museum = m_coordinator->CreateEntity(
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
+		),
+		RenderComponent(
+			/* MeshType	*/	MESH_MODEL, // MESH_BOXで仮描画
+			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
+		),
+		ModelComponent(
+			/* Path		*/	"M_TITLE_MUSEUM",
+			/* Scale	*/	0.1f,
+			/* Flip		*/	Model::ZFlip
+		)
+	);
+
+	// UI作成
 	{
-		auto system = m_coordinator->RegisterSystem<TitleSceneSystem>();
-		ECS::Signature signature;
-		signature.set(m_coordinator->GetComponentTypeID<TitleSceneComponent>());
-		m_coordinator->SetSystemSignature<TitleSceneSystem>(signature);
-		system->Init(m_coordinator.get());
+		ECS::EntityID ent = m_coordinator->CreateEntity(
+			TransformComponent(
+				/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.8f, 0.0f),
+				/* Rotation	*/	XMFLOAT3(3.0f, 0.0f, 0.0f),
+				/* Scale	*/	XMFLOAT3(400, 50, 1)
+			),
+			UIImageComponent(
+				/* AssetID		*/	"UI_PRESS_START",
+				/* Depth		*/	0.0f,
+				/* IsVisible	*/	true
+			)
+		);
+		titleCtrl.pressStartUIEntities.push_back(ent);
 	}
 
+	// メニューUI
+	{
+		// New Game
+		ECS::EntityID newGame = m_coordinator->CreateEntity(
+			TransformComponent(
+				/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.6f, 0.0f),
+				/* Rotation	*/	XMFLOAT3(3.0f, 0.0f, 0.0f),
+				/* Scale	*/	XMFLOAT3(300, 80, 1)
+			),
+			UIImageComponent(
+				/* AssetID		*/	"BTN_NEW_GAME",
+				/* Depth		*/	0.0f,
+				/* IsVisible	*/	false
+			),
+			UIButtonComponent(
+				/* State		*/	ButtonState::Normal,
+				/* IsVisible	*/	false,
+				/* OnClick		*/	[]() { SceneManager::ChangeScene<StageSelectScene>(); }
+			)
+		);
+
+		// Continue
+		ECS::EntityID cont = m_coordinator->CreateEntity(
+			TransformComponent(
+				/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.75f, 0.0f),
+				/* Rotation	*/	XMFLOAT3(3.0f, 0.0f, 0.0f),
+				/* Scale	*/	XMFLOAT3(300, 80, 1)
+			),
+			UIImageComponent(
+				/* AssetID	*/	"BTN_CONTINUE",
+				/* Depth		*/	0.0f,
+				/* IsVisible	*/	false
+			),
+			UIButtonComponent(
+				/* State		*/	ButtonState::Normal,
+				/* IsVisible	*/	false,
+				/* OnClick		*/	[]() { SceneManager::ChangeScene<StageSelectScene>(); }
+			)
+		);
+
+		// 登録
+		titleCtrl.menuUIEntities.push_back(newGame);
+		titleCtrl.menuUIEntities.push_back(cont);
+	}
+
+	// カーソル
+	{
+		m_coordinator->CreateEntity(
+			TransformComponent(
+				/* Position	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+				/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+				/* Scale	*/	XMFLOAT3(64.0f, 64.0f, 1.0f)
+			),
+			UIImageComponent(
+				/* AssetID	*/	"ICO_CURSOR",
+				/* Depth	*/	1.0f
+			),
+			UICursorComponent()
+		);
+	}
 
 	// --- 4. デモ用Entityの作成 ---	
-	ECS::EntityFactory::CreateTitleSceneEntity(m_coordinator.get());
+	//ECS::EntityFactory::CreateTitleSceneEntity(m_coordinator.get());
+	ECS::EntityID controller = m_coordinator->CreateEntity(
+		TitleControllerComponent(titleCtrl)
+	);
 
 	std::cout << "TitleScene::Init() - TitleUiSystem Ready." << std::endl;
 }

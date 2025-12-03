@@ -39,7 +39,7 @@
 ECS::Coordinator* GameScene::s_coordinator = nullptr;
 
 using namespace DirectX;
-int GameScene::s_StageNo = 1;
+std::string GameScene::s_StageNo = "";
 // ===== GameScene メンバー関数の実装 =====
 
 void GameScene::Init()
@@ -57,18 +57,11 @@ void GameScene::Init()
         m_coordinator->SetSystemSignature<GameSceneSystem>(signature);
         system->Init(m_coordinator.get());
     }
-	// --- 2. ステージIDの作成 ---
-	// 例: s_StageNo が 1 なら "ST_001"、 6 なら "ST_006" という文字列を作る
-	std::stringstream ss;
-	ss << "ST_" << std::setfill('0') << std::setw(3) << s_StageNo;
-	std::string stageID = ss.str();
-
-	std::cout << "Starting Stage No: " << s_StageNo << " (ID: " << stageID << ")" << std::endl;
 
 	// --- 3. JSONコンフィグを使って一撃生成！ ---
 	// あなたが作った「一撃関数」に、IDとCoordinatorを渡します
 	// ※関数名は実際のコードに合わせて書き換えてください
-	ECS::EntityFactory::GenerateStageFromConfig(m_coordinator.get(), stageID);
+	ECS::EntityFactory::GenerateStageFromConfig(m_coordinator.get(), s_StageNo);
 
 	// --- 4. その他の共通Entityの作成 ---
 	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
@@ -104,7 +97,7 @@ void GameScene::Update(float deltaTime)
 		std::cout << "GOAL! Time: " << m_elapsedTime << std::endl;
 
 		// ベストタイムを保存 (現在のステージ番号と、クリアタイム)
-		ScoreManager::SaveBestTime(s_StageNo, m_elapsedTime);
+		//ScoreManager::SaveBestTime(s_StageNo, m_elapsedTime);
 
 		// リザルト画面（StageinformationScene）へ遷移
 		SceneManager::ChangeScene<StageinformationScene>();

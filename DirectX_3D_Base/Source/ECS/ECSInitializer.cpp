@@ -23,7 +23,7 @@
 #include "ECS/AllSystems.h"
 
 #include "ECS/Systems/UI/UIInputSystem.h"
-#include "ECS/Components/UI/UIInteractableComponent.h"
+#include "ECS/Components/UI/UIButtonComponent.h"
 #include "ECS/Systems/Core/ResultSceneSystem.h"
 
 
@@ -118,6 +118,14 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  CameraComponent
     );
 
+    // @system  BasicCameraSystem
+    // @brief   固定カメラ
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  BasicCameraSystem,
+        /* Components   */  BasicCameraComponent, TransformComponent
+    );
+
 #ifdef _DEBUG
     // @system  DebugDrawSystem
     // @brief   デバッグ描画システム
@@ -143,7 +151,23 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         UIAnimationSystem,
         UIAnimationComponent, TransformComponent
     );
+
+    // @system UIInoutSystem
+    // @brief  マウスカーソルの判定
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        UIInputSystem,
+        UIButtonComponent, TransformComponent
+    );
     
+    // @system  CursorSystem
+    // @brief   カーソルUI
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        CursorSystem,
+        UICursorComponent, TransformComponent
+    );
+
     // @system ZoomTransitionSystem
     REGISTER_SYSTEM_AND_INIT(
         coordinator,
@@ -167,6 +191,13 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  ModelComponent, AnimationComponent
     );
 
+    // @system  TitleControlSystem
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  TitleControlSystem,
+        /* Components   */  TitleControllerComponent
+    );
+
     // ------------------------------------------------------------
     // 2. Draw（描画処理）
     // ------------------------------------------------------------
@@ -188,18 +219,10 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  UIImageComponent
     );
 
-    // @system UIInoutSystem
-    // @brief  マウスカーソルの判定
-    REGISTER_SYSTEM_AND_INIT(
-        coordinator,
-        UIInputSystem,
-        UIInteractableComponent, TransformComponent
-    );
-
     REGISTER_SYSTEM_AND_INIT(
         coordinator,
         ResultSceneSystem,
-        TagComponent,UIInteractableComponent
+        TagComponent,UIButtonComponent
 
     );
 

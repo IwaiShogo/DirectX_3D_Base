@@ -1,7 +1,8 @@
 AssetID,AssetType,FilePath
 M_PLAYER,Model,Assets/Model/Player/kaitouanimu.fbx
 M_GUARD,Model,Assets/Model/Gimmick/keikan.fbx
-M_TITLE,Model,Assets/Model/Prop/obj_title.fbx
+,,
 M_FLOOR,Model,Assets/Model/Floor/aoiyuka_honki4.fbx
 M_WALL,Model,Assets/Model/Wall/wall.fbx
 M_TEZER,Model,Assets/Model/Gimmick/tezer.fbx
+M_TITLE_MUSEUM,Model,Assets/Model/Prop/obj_title.fbx

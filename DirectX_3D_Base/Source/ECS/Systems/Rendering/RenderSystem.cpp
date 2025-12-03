@@ -116,13 +116,36 @@ void RenderSystem::DrawSetup()
 void RenderSystem::DrawEntities()
 {
 	// 1. CameraComponentを持つEntityを検索し、カメラ座標と行列を取得
-	ECS::EntityID cameraID = ECS::FindFirstEntityWithComponent<CameraComponent>(m_coordinator);
+	// 1. まず通常のCameraComponentを探す
+	DirectX::XMFLOAT4X4 viewMat;
+	DirectX::XMFLOAT4X4 projMat;
+	bool cameraFound = false;
 
-    if (cameraID == ECS::INVALID_ENTITY_ID)  
-    {  
+	ECS::EntityID cameraID = ECS::FindFirstEntityWithComponent<CameraComponent>(m_coordinator);
+	if (cameraID != ECS::INVALID_ENTITY_ID)
+	{
+		auto& cam = m_coordinator->GetComponent<CameraComponent>(cameraID);
+		viewMat = cam.viewMatrix;
+		projMat = cam.projectionMatrix;
+		cameraFound = true;
+	}
+	else
+	{
+		// 2. なければBasicCameraComponentを探す
+		cameraID = ECS::FindFirstEntityWithComponent<BasicCameraComponent>(m_coordinator);
+		if (cameraID != ECS::INVALID_ENTITY_ID)
+		{
+			auto& cam = m_coordinator->GetComponent<BasicCameraComponent>(cameraID);
+			viewMat = cam.viewMatrix;
+			projMat = cam.projectionMatrix;
+			cameraFound = true;
+		}
+	}
+
+	if (!cameraFound)
+	{
 		return;
-    }
-	auto& cameraComp = m_coordinator->GetComponent<CameraComponent>(cameraID);
+	}
 
 	RenderTarget* pRTV = GetDefaultRTV();   // デフォルトのRenderTargetViewを取得
 	DepthStencil* pDSV = GetDefaultDSV();	// デフォルトのDepthStencilViewを取得
@@ -152,8 +175,8 @@ void RenderSystem::DrawEntities()
 		// ビュー行列
 
 		XMStoreFloat4x4(&wvp[0], XMMatrixTranspose(world));
-		wvp[1] = cameraComp.viewMatrix;
-		wvp[2] = cameraComp.projectionMatrix;
+		wvp[1] = viewMat;
+		wvp[2] = projMat;
 
 		// シェーダーへの変換行列を設定
 		Geometory::SetWorld(wvp[0]);

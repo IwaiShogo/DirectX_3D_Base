@@ -2,7 +2,7 @@
 #define ___RESULT_SCENE_SYSTEM_H___
 
 #include "ECS/ECS.h"
-#include <ECS/Components/UI/UIInteractableComponent.h>
+#include <ECS/Components/UI/UIButtonComponent.h>
 #include "ECS/SystemManager.h"
 
 class ResultSceneSystem : public ECS::System

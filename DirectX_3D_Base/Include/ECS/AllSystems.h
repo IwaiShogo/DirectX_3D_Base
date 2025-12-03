@@ -26,12 +26,16 @@
 // @folder	Core
 // @system	カメラ操作
 #include "ECS/Systems/Core/CameraControlSystem.h"
+// @system	固定カメラ
+#include "ECS/Systems/Core/BasicCameraSystem.h"
 // @system	カメラ切り替え
 #include "ECS/Systems/Core/StateSwitchSystem.h"
 // @system	ゲーム終了時の処理
 #include "ECS/Systems/Core/GameFlowSystem.h"
 // @system	オーディオ
 #include "ECS/Systems/Core/AudioSystem.h"
+// @system	タイトルコントローラー
+#include "ECS/Systems/Core/TitleControlSystem.h"
 
 
 // @folder	Rendering
@@ -51,6 +55,10 @@
 // @folder	UI
 // @system	画像UI
 #include "ECS/Systems/UI/UIRenderSystem.h"
+// @system	UI入力
+#include "ECS/Systems/UI/UIInputSystem.h"
+// @system	カーソルUI
+#include "ECS/Systems/UI/CursorSystem.h"
 // @system  アニメーションUI
 #include "ECS/Systems/UI/UIAnimationSystem.h"
 

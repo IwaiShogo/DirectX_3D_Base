@@ -37,7 +37,7 @@ namespace ECS {
                 zoom.isFinished = true;
 
                 if (zoom.targetStageNo > 0) {
-                    GameScene::SetStageNo(zoom.targetStageNo);
+                    //GameScene::SetStageNo(zoom.targetStageNo);
                 }
 
                 switch (zoom.nextScene)

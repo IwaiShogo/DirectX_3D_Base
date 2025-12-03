@@ -30,6 +30,8 @@
 // @folder		Core
 // @component	カメラ
 #include "ECS/Components/Core/CameraComponent.h"
+// @component	固定カメラ
+#include "ECS/Components/Core/BasicCameraComponent.h"
 // @component	位置・回転・スケール
 #include "ECS/Components/Core/TransformComponent.h"
 // @component	カメラ切り替え
@@ -60,6 +62,10 @@
 // @folder		UI
 // @component	画像UI
 #include "ECS/Components/UI/UIImageComponent.h"
+// @component	UIカーソル識別用
+#include "ECS/Components/UI/UICursorComponent.h"
+// @component
+#include "ECS/Components/UI/UIButtonComponent.h"
 // @component	アニメーションUI
 #include "ECS/Components/UI/UIAnimationComponent.h"
 // @component	zoomアニメーション
@@ -76,7 +82,7 @@
 // @component	マップ管理
 #include "ECS/Components/Gameplay/MapComponent.h"
 // @component	SceneTitle管理
-#include "ECS/Components/Core/TitleSceneComponent.h"	//ついか
+#include "ECS/Components/Core/TitleControllerComponent.h"	//ついか
 //@component	SceneGame管理
 #include "ECS/Components/Core/GameSceneComponent.h"
 // @folder		Gimmick

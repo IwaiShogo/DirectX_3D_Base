@@ -456,7 +456,7 @@ EntityID ECS::EntityFactory::CreateUITestEntity(Coordinator* coordinator, const 
 EntityID ECS::EntityFactory::CreateTitleSceneEntity(Coordinator* coordinator)
 {
 	EntityID entity = coordinator->CreateEntity(
-		TitleSceneComponent{}
+		TitleControllerComponent{}
 	);
 	return entity;
 }
@@ -490,4 +490,18 @@ void ECS::EntityFactory::GenerateStageFromConfig(ECS::Coordinator* coordinator, 
 
 	// 3. プレイヤー作成 (マップ生成側でやっていない場合)
 //	CreatePlayer(coordinator, XMFLOAT3(2.5f, 0.0f, 2.5f));
+}
+
+EntityID ECS::EntityFactory::CreateBasicCamera(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+{
+	EntityID entity = coordinator->CreateEntity(
+		TransformComponent(
+			/* Position	*/	position,
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
+		),
+		BasicCameraComponent()
+	);
+
+	return entity;
 }

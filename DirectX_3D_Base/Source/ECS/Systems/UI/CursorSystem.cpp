@@ -1,42 +1,48 @@
 #include "ECS/Systems/UI/CursorSystem.h" 
-#include "ECS/Components/Core/TransformComponent.h"
-#include "ECS/Components/Core/TagComponent.h"
-#include "ECS/Coordinator.h"
-#include "Main.h" 
-#include <Windows.h>
-
-void CursorSystem::Init(ECS::Coordinator* coordinator)
-{
-    m_coordinator = coordinator;
-}
+#include "ECS/ECS.h"
+#include "Systems/Input.h"
+#include "Main.h"
 
 void CursorSystem::Update(float deltaTime)
 {
     if (!m_coordinator) return;
 
-    // 1. マウス座標取得 (Windows API)
-    POINT p;
-    GetCursorPos(&p);
-    ScreenToClient(GetActiveWindow(), &p);
-
-    // 2. 座標変換 (ピクセル → NDC -1.0~1.0)
-    // 画面サイズ定数 SCREEN_WIDTH / SCREEN_HEIGHT が Main.h にある前提
-    float ndcX = (static_cast<float>(p.x) / SCREEN_WIDTH) * 2.0f - 1.0f;
-    float ndcY = -((static_cast<float>(p.y) / SCREEN_HEIGHT) * 2.0f - 1.0f);
-
-    // 3. "Cursor" タグを持つエンティティを探して移動させる
     for (auto const& entity : m_entities)
     {
-        // TagComponentを持っているか確認
-        if (m_coordinator->HasComponent<TagComponent>(entity)) {
-            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity);
+        auto& cursor = m_coordinator->GetComponent<UICursorComponent>(entity);
+        auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
 
-            // "Cursor" タグがついているものだけ動かす
-            if (tag.tag == "Cursor") {
-                auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
-                transform.position.x = ndcX;
-                transform.position.y = ndcY;
-            }
+        // --- 1. トリガー状態の更新 ---
+        // マウス左クリック(0) または パッドのAボタン
+        // ※Inputクラスの仕様に合わせて調整してください
+        bool isMouseClick = IsMousePress(0);
+        bool isPadClick = false;
+        isPadClick = IsButtonTriggered(BUTTON_A); 
+
+        cursor.isTriggered = isMouseClick || isPadClick;
+
+        // --- 2. 位置の更新 (ピクセル座標) ---
+
+        // マウス位置の適用
+        DirectX::XMFLOAT2 mousePos = GetMousePosition();
+
+        // 直前のフレームとマウスが動いているか判定するロジックがあれば尚良いですが、
+        // ここでは簡易的にマウス位置を適用します
+        transform.position.x = (float)mousePos.x;
+        transform.position.y = (float)mousePos.y;
+
+        // パッド移動 (マウス操作と競合する場合は「入力があった方」を優先する処理が必要です)
+        auto stick = GetLeftStick();
+        if (std::abs(stick.x) > 0.1f || std::abs(stick.y) > 0.1f)
+        {
+            transform.position.x += stick.x * cursor.moveSpeed;
+            transform.position.y -= stick.y * cursor.moveSpeed; // Y軸反転注意
         }
+
+        // 画面外に出ないようにクランプ
+        if (transform.position.x < 0.0f) transform.position.x = 0.0f;
+        if (transform.position.x > SCREEN_WIDTH) transform.position.x = (float)SCREEN_WIDTH;
+        if (transform.position.y < 0.0f) transform.position.y = 0.0f;
+        if (transform.position.y > SCREEN_HEIGHT) transform.position.y = (float)SCREEN_HEIGHT;
     }
 }

@@ -46,6 +46,8 @@ struct UIImageComponent
 	// UIRenderSystemがこの値で描画順序をソートします。
 	float depth = 0.5f;
 
+	bool isVisible;
+
 	// ----------------------------------------
 	// コンストラクタ
 	// ----------------------------------------
@@ -56,8 +58,8 @@ struct UIImageComponent
 	 * @param	[in] id アセットID
 	 * @param	[in] c 描画色 (デフォルトは白、不透明)
 	 */
-	UIImageComponent(const std::string& id, const DirectX::XMFLOAT4& c = { 1.0f, 1.0f, 1.0f, 1.0f })
-		: assetID(id), color(c)
+	UIImageComponent(const std::string& id, float d = 0.5f, bool v = true, const DirectX::XMFLOAT4& c = { 1.0f, 1.0f, 1.0f, 1.0f })
+		: assetID(id), depth(d), isVisible(v), color(c)
 	{
 	}
 };

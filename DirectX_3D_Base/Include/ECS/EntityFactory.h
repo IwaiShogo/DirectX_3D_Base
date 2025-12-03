@@ -69,6 +69,8 @@ namespace ECS
 
 		static void GenerateStageFromConfig(ECS::Coordinator* coordinator, const std::string& stageId);
 
+		static EntityID CreateBasicCamera(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
+
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止
 		EntityFactory() = delete;

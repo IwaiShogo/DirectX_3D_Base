@@ -6,7 +6,11 @@
 class CursorSystem : public ECS::System
 {
 public:
-    void Init(ECS::Coordinator* coordinator);
+    void Init(ECS::Coordinator* coordinator)
+    {
+        m_coordinator = coordinator;
+    }
+
     void Update(float deltaTime);
 private:
     ECS::Coordinator* m_coordinator = nullptr;

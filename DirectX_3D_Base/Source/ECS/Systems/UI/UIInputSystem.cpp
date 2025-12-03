@@ -20,94 +20,81 @@
  *********************************************************************/
 
 #include "ECS/Systems/UI/UIInputSystem.h"
-
-#include "ECS/Components/UI/UIInteractableComponent.h"
-#include "ECS/Components/Core/TransformComponent.h"
-
-#include "ECS/Components/Core/TagComponent.h"
-
-#include "ECS/Coordinator.h"
-
 #include "Systems/Input.h"
 #include "Main.h" // SCREEN_WIDTH, SCREEN_HEIGHTが必要なため
-#include <algorithm>
 
-using namespace DirectX;
-
-
-static float Lerp(float start, float end, float t) {
-	return start + (end - start) * t;
-}
+using namespace ECS;
 
 void UIInputSystem::Update(float deltaTime)
 {
-
 	if (!m_coordinator) return; //m_coordinatorが初期化されていなかったら何もしない 
+	
+	// 1. カーソルとボタンのリストアップ
+	EntityID cursorEntity = FindFirstEntityWithComponent<UICursorComponent>(m_coordinator);
+	if (cursorEntity == INVALID_ENTITY_ID) return;
 
-	// マウス情報の取得
-	XMFLOAT2 mousePos = GetMousePosition();
+	// 2. 当たり判定ロジック
+	auto& cursorComp = m_coordinator->GetComponent<UICursorComponent>(cursorEntity);
+	auto& cursorTrans = m_coordinator->GetComponent<TransformComponent>(cursorEntity);
 
-	// クリック判定(押された瞬間)の簡易ロジック
-	static bool wasPressed = false;
-	bool isPressed = IsMousePress(0); // 左クリック
-	bool isTrigger = isPressed && !wasPressed;
-	wasPressed = isPressed;
+	for (auto const& entity : m_entities)
+	{
+		auto& button = m_coordinator->GetComponent<UIButtonComponent>(entity);
+		const auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
 
-	// マウス座標の正規化(0.0～1.0に変更)
-	float ndcMouseX = (mousePos.x / (float)SCREEN_WIDTH) * 2.0f - 1.0f;
-	float ndcMouseY = 1.0f - (mousePos.y / (float)SCREEN_HEIGHT) * 2.0f;
+		if (!button.isVisible) continue;
 
+		// AABB判定 (ピクセル座標系)
+		// Transform.scale を「サイズ(幅・高さ)」として扱います
+		if (IsOverlapping(cursorTrans.position, cursorTrans.scale, trans.position, trans.scale))
+		{
+			// 重なっている
+			if (cursorComp.isTriggered)
+			{
+				button.state = ButtonState::Pressed;
+				if (button.onClick) button.onClick();
+			}
+			else
+			{
+				button.state = ButtonState::Hover;
+			}
+		}
+		else
+		{
+			button.state = ButtonState::Normal;
+		}
+	}
+}
 
-	// 全エンティティに対して判定
-    for (auto const& entity : m_entities)
-    {
-        auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
-        auto& interactable = m_coordinator->GetComponent<UIInteractableComponent>(entity);
+bool UIInputSystem::IsOverlapping(const DirectX::XMFLOAT3& posA, const DirectX::XMFLOAT3& scaleA, const DirectX::XMFLOAT3& posB, const DirectX::XMFLOAT3& scaleB)
+{
+	// 簡易的なAABB判定 (原点が左上か中心かによりますが、ここでは中心基準または左上基準で相対的に判定)
+	// UIのTransformが「左上座標」かつ「Scaleがサイズ(幅・高さ)」である場合を想定した実装例:
 
-        // A. 遷移演出中(拡大中)の特別処理
-        if (interactable.isTransitionExpanding)
-        {
-            float expandSpeed = 150.0f;
-            transform.scale.x += expandSpeed * deltaTime;
-            transform.scale.y += expandSpeed * deltaTime;
-            transform.position.z = -4.0f; // 最前面へ
-            transform.position.x *= 0.9f; // 中心へ
-            transform.position.y *= 0.9f;
-            continue; // 演出中はクリック判定などをスキップ
-        }
+	/*
+	// 左上基準の場合:
+	float leftA = posA.x;
+	float rightA = posA.x + scaleA.x;
+	float topA = posA.y;
+	float bottomA = posA.y + scaleA.y;
 
-        // B. 当たり判定
-        float w = (interactable.width < 0.0f) ? transform.scale.x : interactable.width;
-        float h = (interactable.height < 0.0f) ? transform.scale.y : interactable.height;
-        float halfW = w / 2.0f;
-        float halfH = h / 2.0f;
+	float leftB = posB.x;
+	float rightB = posB.x + scaleB.x;
+	float topB = posB.y;
+	float bottomB = posB.y + scaleB.y;
+	*/
 
-        bool hit = (ndcMouseX >= transform.position.x - halfW && ndcMouseX <= transform.position.x + halfW) &&
-            (ndcMouseY >= transform.position.y - halfH && ndcMouseY <= transform.position.y + halfH);
+	// 中心基準の場合（スプライト描画の実装に合わせる）:
+	// ここではSpriteクラスが中心基準か左上基準かによりますが、一般的な「中心座標±半径」で判定します
+	float halfWA = scaleA.x * 0.5f;
+	float halfHA = scaleA.y * 0.5f;
+	float halfWB = scaleB.x * 0.5f;
+	float halfHB = scaleB.y * 0.5f;
 
-        interactable.isHovered = hit;
-        interactable.isClicked = (hit && isTrigger);
-        interactable.isPressed = (hit && isPressed);
+	// X軸の重なり
+	bool xOverlap = std::abs(posA.x - posB.x) < (halfWA + halfWB);
+	// Y軸の重なり
+	bool yOverlap = std::abs(posA.y - posB.y) < (halfHA + halfHB);
 
-        // C. コントローラー対応 (Tagによる上書き)
-        if (m_coordinator->HasComponent<TagComponent>(entity))
-        {
-            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity);
-            if (tag.tag == "SelectSceneUIA" && (IsKeyTrigger('A') || IsButtonTriggered(BUTTON_A))) interactable.isClicked = true;
-            if (tag.tag == "SelectSceneUIB" && (IsKeyTrigger('B') || IsButtonTriggered(BUTTON_B))) interactable.isClicked = true;
-        }
-
-        // D. ふわっと拡大アニメーション (Systemで実行！)
-        if (interactable.doHoverAnim)
-        {
-            // 目標サイズ：ホバー中は1.2倍
-            float targetScaleX = interactable.baseScaleX * (interactable.isHovered ? 1.2f : 1.0f);
-            float targetScaleY = interactable.baseScaleY * (interactable.isHovered ? 1.2f : 1.0f);
-
-            // 補間処理
-            float speed = 10.0f * deltaTime;
-            transform.scale.x = Lerp(transform.scale.x, targetScaleX, speed);
-            transform.scale.y = Lerp(transform.scale.y, targetScaleY, speed);
-        }
-    }
+	return xOverlap && yOverlap;
 }

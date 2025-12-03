@@ -22,6 +22,7 @@
 #ifndef __UI_INPUT_SYSTEM_H__
 #define __UI_INPUT_SYSTEM_H__
 
+#include "ECS/ECS.h"
 #include "ECS/SystemManager.h"
 
 class UIInputSystem : public ECS::System
@@ -41,5 +42,18 @@ public:
 
 
 	void Update(float deltTime)override;
+
+private:
+	/**
+	 * @brief 2つの矩形のオーバーラップ判定 (AABB)
+	 * @param posA Aの位置
+	 * @param scaleA Aのサイズ
+	 * @param posB Bの位置
+	 * @param scaleB Bのサイズ
+	 * @return true: 重なっている
+	 */
+	bool IsOverlapping(
+		const DirectX::XMFLOAT3& posA, const DirectX::XMFLOAT3& scaleA,
+		const DirectX::XMFLOAT3& posB, const DirectX::XMFLOAT3& scaleB);
 };
 #endif // __UI_INPUT_SYSTEM_H_
