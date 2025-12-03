@@ -32,9 +32,13 @@ struct ItemTrackerComponent
 	uint32_t totalItems = 0;		// アイテムの総数
 	uint32_t collectedItems = 0;	// 集めたアイテム
 
+	bool useOrderedCollection = false;//このステージで順序モードが有効かどうか
+	int currentTargetOrder = 1;//次に取るアイテム番号
+
+
 	// コンストラクタ
-	ItemTrackerComponent(uint32_t total = 0)
-		: totalItems(total) {}
+	ItemTrackerComponent(uint32_t total = 0, bool ordered = false)
+		: totalItems(total), useOrderedCollection(ordered), currentTargetOrder(1) {}
 };
 
 // Component登録

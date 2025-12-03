@@ -749,6 +749,10 @@ void MapGenerationSystem::CreateMap(const std::string& stageID)
     mapComp.wallHeight = config.wallHeight;
     mapComp.startPos = { 1, 1 };
     mapComp.goalPos = { config.gridSizeX - 2, config.gridSizeY - 2 };
+    trackerComp.useOrderedCollection = config.useOrderedCollection;
+    trackerComp.currentTargetOrder = 1;
+    trackerComp.collectedItems = 0;
+    trackerComp.totalItems = 0;
 
     MazeGenerator::Generate(mapComp, trackerComp, config);
 
@@ -1065,7 +1069,19 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                     //EntityFactory::CreateGoal(m_coordinator, cellCenter);
                 }
                 else if (cell.type == CellType::Item) {
-                    EntityFactory::CreateCollectable(m_coordinator, cellCenter);
+                    //配列itemPositions内でインデックスを探して順序番号を決める
+                    int orderIndex = 0;
+                    //設定で順序モードが有効な時番号を振る
+                    if (config.useOrderedCollection){
+                        for (size_t i = 0; i < mapComp.itemPositions.size(); ++i){
+                            //座標が一致するものを探す
+                            if (mapComp.itemPositions[i].x == x && mapComp.itemPositions[i].y == y){
+                                orderIndex = static_cast<int>(i) + 1;//1始まり
+                                break;
+                            }
+                        }
+                    }
+                    EntityFactory::CreateCollectable(m_coordinator, cellCenter, orderIndex);
                 }
                 else if (cell.type == CellType::Guard) {
                     //EntityFactory::CreateGuard(m_coordinator, cellCenter);

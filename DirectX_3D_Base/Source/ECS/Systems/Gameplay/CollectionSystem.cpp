@@ -63,16 +63,29 @@ void CollectionSystem::Update(float deltaTime)
 		if (distanceSq <= requiredDistanceSq)
 		{
 			// 回収処理
+			//順序チェック
+			if (tracker.useOrderedCollection)
+			{
+				if (collectable.orderIndex > 0 && collectable.orderIndex != tracker.currentTargetOrder)
+				{
+					//順番違いなので回収できない
+					//回収できなかった時のSE鳴らすならここ
+					continue;
+				}
+			}
 
-			// 3-a. トラッカーの更新
+			//回収成功処理
 			tracker.collectedItems++;
 			collectable.isCollected = true;
 			ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST3");
+			//次のターゲットへ
+			if (tracker.useOrderedCollection)
+			{
+				tracker.currentTargetOrder++;
+			}
 
-			// 3-b. アイテムエンティティの破棄
+			//アイテムエンティティの破棄
 			entitiesToDestroy.push_back(itemEntity);	// リストに追加
-
-			// TODO: 回収エフェクト、サウンド再生などのロジックを追加
 		}
 	}
 

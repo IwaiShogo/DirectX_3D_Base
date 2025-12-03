@@ -160,8 +160,14 @@ EntityID EntityFactory::CreateGameController(Coordinator* coordinator)
  * @param	[in] position
  * @return	¶¬‚³‚ê‚½EntityID
  */
-EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position, int orderIndex)
 {
+	DirectX::XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	if (orderIndex == 1)      color = XMFLOAT4(0.5f, 0.0f, 0.5f, 1.0f);//Ž‡
+	else if (orderIndex == 2) color = XMFLOAT4(0.7f, 1.0f, 0.2f, 1.0f);//‰©—Î
+	else if (orderIndex == 3) color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);//”’
+	else                      color = XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f);
+
 	ECS::EntityID entity = coordinator->CreateEntity(
 		TagComponent(
 			/* Tag	*/	"item"
@@ -173,9 +179,9 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 		),
 		RenderComponent(
 			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f)
+			/* Color	*/	color
 		),
-		CollectableComponent(1.0f)
+		CollectableComponent(1.0f, orderIndex)
 	);
 
 	return entity;
@@ -198,8 +204,13 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
 			/* Scale	*/	scale
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f)
+			/* MeshType	*/	MESH_MODEL,
+			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
+		),
+		ModelComponent(
+				/* Path		*/	"M_FLOOR",
+				/* Scale	*/	0.25f,
+				/* Flip		*/	Model::None
 		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -282,7 +293,7 @@ EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX:
 {
 	ECS::EntityID entity = coordinator->CreateEntity(
 		TagComponent(
-			/* Tag	*/	"wall"
+			/* Tag	*/	"WALL"
 		),
 		TransformComponent(
 			/* Position	*/	position,
@@ -290,8 +301,13 @@ EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX:
 			/* Scale	*/	scale
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_BOX, // MESH_BOX‚Å‰¼•`‰æ
+			/* MeshType	*/	MESH_MODEL, // MESH_BOX‚Å‰¼•`‰æ
 			/* Color	*/	XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f)
+		),
+		ModelComponent(
+			/* Path		*/	"M_WALL",
+			/* Scale	*/	0.25f,
+			/* Flip		*/	Model::None
 		),
 		RigidBodyComponent(
 			/* Velocity	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -365,7 +381,7 @@ EntityID ECS::EntityFactory::CreateTaser(Coordinator* coordinator, const DirectX
 		TransformComponent(
 			/* Position	*/	position,
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
+			/* Scale	*/	XMFLOAT3(3.0f, 3.0f, 3.0f)
 		),
 		RenderComponent(
 			/* MeshType	*/	MESH_BOX,                   // —§•û‘Ì‚ðŽw’è
@@ -379,7 +395,7 @@ EntityID ECS::EntityFactory::CreateTaser(Coordinator* coordinator, const DirectX
 			/* Restitution	*/	0.1f
 		),
 		CollisionComponent(
-			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f), // Scale 1.0‚Ì”¼•ª
+			/* Size			*/	XMFLOAT3(2.5f, 2.5f, 2.5f), // Scale 1.0‚Ì”¼•ª
 			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* ColliderType	*/	COLLIDER_DYNAMIC
 		)
