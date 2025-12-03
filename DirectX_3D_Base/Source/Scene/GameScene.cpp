@@ -77,13 +77,12 @@ void GameScene::Init()
 
 void GameScene::Uninit()
 {
-	// 1. ECS Systemの静的リソースを解放
-	ECS::ECSInitializer::UninitECS();
+	
 
-	// Coordinatorの破棁E��Enique_ptrが�E動的にdeleteを実行！E
+	
 	m_coordinator.reset();
 
-	// 静的ポインタをクリア
+	
 	s_coordinator = nullptr;
 
 	std::cout << "GameScene::Uninit() - ECS Destroyed." << std::endl;
@@ -116,7 +115,7 @@ void GameScene::Update(float deltaTime)
 		SceneManager::ChangeScene<GameScene>();
 	}
 
-	// ECSの更新
+	
 	m_coordinator->UpdateSystems(deltaTime);
 
 	if (IsKeyTrigger(VK_SPACE))

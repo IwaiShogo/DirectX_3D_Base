@@ -29,6 +29,12 @@
 #include <ECS/Systems/UI/UIInputSystem.h>
 #include <ECS/Systems/Rendering/RenderSystem.h>
 #include <ECS/Systems/Core/ResultSceneSystem.h>
+#include "ECS/Components/Core/TransformComponent.h"
+#include "ECS/Components/Core/CameraComponent.h"
+
+#include "Systems/DirectX/DirectX.h"
+#include "ECS/Systems/Rendering/RenderSystem.h"
+
 
 using namespace DirectX;
 using namespace std;
@@ -36,20 +42,93 @@ using namespace std;
 //仮の入力チェック関数
 bool IsInputTitle() { return false; }
 bool ResultScene::isClear = false;
+bool ResultScene::isCaught = false;
 int ResultScene::finalItenCount = 0;
 
 
 //===== ResultScene メンバー関数の実装 =====
 
+ECS::Coordinator* ResultScene::s_coordinator = nullptr;
+
 void ResultScene::Init()
 {
 
+
 	m_coordinator = std::make_shared<ECS::Coordinator>();
+	//s_coordinator = m_coordinator.get();
 
 	ECS::ECSInitializer::InitECS(m_coordinator);
 
+	//ECS::EntityID Camera = m_coordinator->CreateEntity(
+	//	CameraComponent(
+	//		ECS::INVALID_ENTITY_ID,
+	//		DirectX::XMFLOAT3(0.0f,0.0f,0.0f)
+	//	),
+	//	TransformComponent(
+	//		/* Position	*/	XMFLOAT3(0.0f, 0.0f, -10.0f),
+	//		/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+	//		/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
+	//	)
+
+	//);
+
+	// リザルトシーン背景
+	//ECS::EntityID ResultSceneBuckground = m_coordinator->CreateEntity(
+	//	TagComponent(
+	//		/* Tag	*/	"ResultSceneBuckground"
+	//	),
+	//	TransformComponent(
+	//		/* Position	*/	XMFLOAT3(0.0f, 0.0f, 2.0f),
+	//		/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+	//		/* Scale	*/	XMFLOAT3(2.0f, 2.0f, 1.0f)
+	//	),
+
+	//	UIImageComponent(
+
+	//		"UI_RESULTSCENE_BACKGROUND"
+
+	//	)
+	//);
+
+	// シーン切り替えボタン背景
+	ECS::EntityID btonresultnormal = m_coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"btnresultnormal"
+		),
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(0.5f, -0.85f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(1.0f, 0.3f, 1.0f)
+		),
 
 
+		UIImageComponent(
+
+			"UI_BTN_RESULT_NORMAL"
+
+		)
+
+
+	);
+
+	//// クリア内容詳細背景
+	//ECS::EntityID ResultTime = m_coordinator->CreateEntity(
+	//	TagComponent(
+	//		/* Tag	*/	"ResultTime"
+	//	),
+	//	TransformComponent(
+	//		/* Position	*/	XMFLOAT3(0.0f, 0.3f, 0.0f),
+	//		/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+	//		/* Scale	*/	XMFLOAT3(1.1f, 0.6f, 1.0f)
+	//	),
+
+	//	UIImageComponent(
+
+	//		"UI_TEST3"
+
+	//	)
+	//);
+	
 	
 
 	if (ResultScene::isClear)
@@ -60,20 +139,19 @@ void ResultScene::Init()
 				/* Tag	*/	"ResultClearLogo"
 			),
 			TransformComponent(
-				/* Position	*/	XMFLOAT3(0.0f, 0.8f, 0.0f),
+				/* Position	*/	XMFLOAT3(0.0f, 0.8f, 0.1f),
 				/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 				/* Scale	*/	XMFLOAT3(0.8f, 0.2f, 1.0f)
 			),
 
 			UIImageComponent(
 
-				"UI_GAMEOVER"
+				"UI_RESULT_CLEAR_LOGO"
 
 			)
 		);
 	}
-	
-	if (ResultScene::isClear == false)
+	else
 	{
 		// リザルト失敗ロゴ
 		ECS::EntityID ResultOutLogo = m_coordinator->CreateEntity(
@@ -81,18 +159,40 @@ void ResultScene::Init()
 				/* Tag	*/	"ResultOutLogo"
 			),
 			TransformComponent(
-				/* Position	*/	XMFLOAT3(0.0f, 0.8f, 0.0f),
+				/* Position	*/	XMFLOAT3(0.0f, 0.8f, 0.2f),
 				/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 				/* Scale	*/	XMFLOAT3(0.8f, 0.2f, 1.0f)
 			),
 
 			UIImageComponent(
 
-				"UI_GAMEOVER"
+				"UI_RESULT_OUT_LOGO"
 
 			)
 		);
+
+
 	}
+
+			
+	// 警備員から逃げる星あり
+	ECS::EntityID bigstar = m_coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"bigstar"
+		),
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(-0.35f, 0.5f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(0.5f, 0.6f, 1.0f)
+		),
+
+		UIImageComponent(
+
+			"UI_BIGSTAR"
+
+		)
+	);
+	
 
 	const std::vector<std::string> onIDs = { "UI_TEST1", "UI_TEST2","UI_TEST3" };
 	const std::vector<std::string> offIDs = { "UI_TEST1_OFF", "UI_TEST2_OFF", "UI_TEST3_OFF" };
@@ -107,20 +207,69 @@ void ResultScene::Init()
 
 	}
 
-	// クリア内容詳細
-	ECS::EntityID ResultTime = m_coordinator->CreateEntity(
+	
+	
+	
+	
+	if (ResultScene::isCaught)
+	{
+
+		// 警備員から逃げる
+		ECS::EntityID keibi = m_coordinator->CreateEntity(
+			TagComponent(
+				/* Tag	*/	"keibi"
+			),
+			TransformComponent(
+				/* Position	*/	XMFLOAT3(-0.35f, 0.5f, 0.0f),
+				/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+				/* Scale	*/	XMFLOAT3(0.5f, 0.6f, 1.0f)
+			),
+
+			UIImageComponent(
+
+				"UI_KEIBIINKARANIGERU"
+
+			)
+		);
+
+	}
+
+
+
+	
+	// お宝を順番以内に盗む
+	ECS::EntityID zyunnbann = m_coordinator->CreateEntity(
 		TagComponent(
-			/* Tag	*/	"ResultTime"
+			/* Tag	*/	"zyunnbann"
 		),
 		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.0f, 0.3f, 0.0f),
+			/* Position	*/	XMFLOAT3(-0.31f, 0.3f, 0.0f),
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(1.1f, 0.6f, 1.0f)
+			/* Scale	*/	XMFLOAT3(0.5f, 0.6f, 1.0f)
 		),
 
 		UIImageComponent(
 
-			"UI_TEST3"
+			"UI_TAKARAZYUNNBANN"
+
+		)
+	);
+	 // ●分以内にクリア
+	ECS::EntityID hunninai = m_coordinator->CreateEntity(
+		TagComponent(
+			/* Tag	*/	"hunninai"
+		),
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(-0.32f, 0.1f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(0.5f, 0.6f, 1.0f)
+		),
+
+		
+
+		UIImageComponent(
+
+			"UI_HUNNINAI"
 
 		)
 	);
@@ -133,7 +282,7 @@ void ResultScene::Init()
 			/* Tag	*/	"ResultTakara1"
 		),
 		TransformComponent(
-			/* Position	*/	XMFLOAT3(-0.35f, -0.4f, 0.0f),
+			/* Position	*/	XMFLOAT3(-0.25f, -0.4f, 0.0f),
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Scale	*/	XMFLOAT3(0.3f, 0.3f, 1.0f)
 		),
@@ -257,112 +406,76 @@ void ResultScene::Init()
 	
 
 
-	// ステージセレクトボタン
-	ECS::EntityID ResultSelect = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultSelect"
-		),
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.3f, -0.85f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(0.2f, 0.2f, 1.0f)
-		),
+	//// ステージセレクトボタン
+	//ECS::EntityID ResultSelect = m_coordinator->CreateEntity(
+	//	TagComponent(
+	//		/* Tag	*/	"ResultSelect"
+	//	),
+	//	TransformComponent(
+	//		/* Position	*/	XMFLOAT3(0.3f, -0.85f, 0.0f),
+	//		/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+	//		/* Scale	*/	XMFLOAT3(0.2f, 0.2f, 1.0f)
+	//	),
 
-		UIInteractableComponent(-1.0f, -1.0f),
+	//	UIInteractableComponent(-1.0f, -1.0f),
 
-		UIImageComponent(
+	//	UIImageComponent(
 
-			"UI_RESULT_SELECT"
+	//		"UI_RESULT_SELECT"
 
-		)
+	//	)
 
 		
-	);
+	//);
 
 
 	
 
 	// リトライボタン
-	ECS::EntityID ResultRetry = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultRetry"
-		),
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.55f, -0.85f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(0.2f, 0.2f, 1.0f)
-		),
+	//ECS::EntityID ResultRetry = m_coordinator->CreateEntity(
+	//	TagComponent(
+	//		/* Tag	*/	"ResultRetry"
+	//	),
+	//	TransformComponent(
+	//		/* Position	*/	XMFLOAT3(0.55f, -0.85f, 0.0f),
+	//		/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+	//		/* Scale	*/	XMFLOAT3(0.01f, 0.01f, 1.0f)
+	//	),
 
-		UIInteractableComponent(-1.0f, -1.0f),
+	//	UIInteractableComponent(-1.0f, -1.0f),
 
-		UIImageComponent(
+	//	UIImageComponent(
 
-			"UI_RESULT_RETORY"
+	//		"UI_RESULT_RETORY"
 
-		)
-	);
+	//	)
+	//);
+	//
+
+	//// タイトルボタン
+	//ECS::EntityID ResultTitle = m_coordinator->CreateEntity(
+	//	TagComponent(
+	//		/* Tag	*/	"ResultTitle"
+	//	),
+	//	TransformComponent(
+	//		/* Position	*/	XMFLOAT3(0.8f, -0.85f, 0.0f),
+	//		/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+	//		/* Scale	*/	XMFLOAT3(0.2f, 0.2f, 1.0f)
+	//	),
+
+	//	UIInteractableComponent(-1.0f, -1.0f),
+
+	//	UIImageComponent(
+
+	//		"UI_RESULT_TITLE"
+
+	//	)
+	//);
+
 	
-
-	// タイトルボタン
-	ECS::EntityID ResultTitle = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultTitle"
-		),
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.8f, -0.85f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(0.2f, 0.2f, 1.0f)
-		),
-
-		UIInteractableComponent(-1.0f, -1.0f),
-
-		UIImageComponent(
-
-			"UI_RESULT_TITLE"
-
-		)
-	);
-
-	// シーン切り替えボタン背景
-	ECS::EntityID btonresultnormal = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"btnresultnormal"
-		),
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.5f, -0.85f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(1.0f, 0.3f, 1.0f)
-		),
-
-		UIInteractableComponent(-1.0f, -1.0f),
-
-		UIImageComponent(
-
-			"UI_BTN_RESULT_NORMAL"
-
-		)
-
-
-	);
 	
-
-	// リザルトシーン背景
-	ECS::EntityID ResultSceneBuckground = m_coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ResultSceneBuckground"
-		),
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(2.0f, 2.0f, 1.0f)
-		),
-
-		UIImageComponent(
-
-			"UI_RESULTSCENE_BACKGROUND"
-
-		)
-	);
+	
+	
 
 	
 
@@ -382,6 +495,11 @@ void ResultScene::Uninit()
 	//このシーンで作成したエンティティを破棄
 	//ECS::ECSInitializer::GetCoordinator()->DestoryEntities(m_sceneEntities);
 	//m_buttons.clear();
+
+	ECS::ECSInitializer::UninitECS();
+	m_coordinator.reset();
+	s_coordinator = nullptr;
+
 	std::cout << "ResultScene::Uninit() - Result Scene Systems Destroyed." << std::endl;
 }
 
@@ -389,36 +507,35 @@ void ResultScene::Update(float deltaTime)
 {
 	m_coordinator->UpdateSystems(deltaTime);
 
-	/*ECS::EntityID interactableEntity = ECS::FindFirstEntityWithComponent<UIInteractableComponent>(m_coordinator.get());*/
-
-
-	/*auto uiInput = ECS::ECSInitializer::GetSystem<UIInputSystem>();
-	if (uiInput)
-	{
-		uiInput->Update(deltaTime);
-	}*/
-
-	// ボタンのクリック判定
-	
-
-
-
 	
 	
 }
 
 void ResultScene::Draw()
 {
-	//RenderSystemは常に存在すると仮定し、Draw処理は共有する
+
+	if (auto uiSystem = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
+	{
+		::SetDepthTest(false);
+		::SetBlendMode(BLEND_ALPHA);
+		uiSystem->Render();
+		::SetDepthTest(true);
+	}
+
 	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
 	{
 		system->DrawSetup();
-		system->DrawEntities();	//UIエンティティの描画
+		system->DrawEntities();
 	}
 
-	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
+	/*if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
 	{
 		system->Render();
-	}
+	}*/
+
+
+
+
+	
 	
 }
