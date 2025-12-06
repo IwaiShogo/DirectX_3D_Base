@@ -79,7 +79,7 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_MODEL,
+			/* MeshType	*/	MESH_NONE,
 			/* Color	*/	XMFLOAT4(0.3f, 0.3f, 1.0f, 1.0f)
 		),
 		ModelComponent(
@@ -160,13 +160,17 @@ EntityID EntityFactory::CreateGameController(Coordinator* coordinator)
  * @param	[in] position
  * @return	生成されたEntityID
  */
-EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position, int orderIndex)
+EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position, int orderIndex, const std::string& itemID)
 {
+	std::string modelPath = "M_TREASURE1";
 	DirectX::XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	if (orderIndex == 1)      color = XMFLOAT4(0.5f, 0.0f, 0.5f, 1.0f);//紫
-	else if (orderIndex == 2) color = XMFLOAT4(0.7f, 1.0f, 0.2f, 1.0f);//黄緑
-	else if (orderIndex == 3) color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);//白
-	else                      color = XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f);
+
+	if (itemID == "Takara_Daiya") { modelPath = "M_TREASURE1"; }
+	else if (itemID == "Takara_Crystal") { modelPath = "M_TREASURE2"; }
+	else if (itemID == "Takara_Yubiwa") { modelPath = "M_TREASURE3"; }
+	else if (itemID == "Takara_Kaiga1") { modelPath = "M_TREASURE4"; }
+	else if (itemID == "Takara_Kaiga2") { modelPath = "M_TREASURE5"; }
+	else if (itemID == "Takara_Kaiga3") { modelPath = "M_TREASURE6"; }
 
 	ECS::EntityID entity = coordinator->CreateEntity(
 		TagComponent(
@@ -178,10 +182,15 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
+			/* MeshType	*/	MESH_NONE,
 			/* Color	*/	color
 		),
-		CollectableComponent(1.0f, orderIndex)
+		ModelComponent(
+			/* Path		*/	modelPath,
+			/* Scale	*/	0.1f,
+			/* Flip		*/	Model::None
+		),
+		CollectableComponent(1.0f, orderIndex, itemID)
 	);
 
 	return entity;
@@ -198,17 +207,18 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
 {
 	// GameScene::CreateDemoEntities()から地面のロジックを移動
 	ECS::EntityID ground = coordinator->CreateEntity(
+		TagComponent("ground"),
 		TransformComponent(
 			/* Position	*/	position,
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Scale	*/	scale
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_MODEL,
-			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
+			/* MeshType	*/	MESH_BOX,
+			/* Color	*/	XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f)
 		),
 		ModelComponent(
-				/* Path		*/	"M_FLOOR",
+				/* Path		*/	"M_CORRIDOR",
 				/* Scale	*/	0.25f,
 				/* Flip		*/	Model::None
 		),
@@ -249,7 +259,7 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_MODEL,
+			/* MeshType	*/	MESH_NONE,
 			/* Color	*/	XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)
 		),
 		ModelComponent(
@@ -293,7 +303,7 @@ EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX:
 {
 	ECS::EntityID entity = coordinator->CreateEntity(
 		TagComponent(
-			/* Tag	*/	"WALL"
+			/* Tag	*/	"wall"
 		),
 		TransformComponent(
 			/* Position	*/	position,
@@ -301,7 +311,7 @@ EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX:
 			/* Scale	*/	scale
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_MODEL, // MESH_BOXで仮描画
+			/* MeshType	*/	MESH_BOX, // MESH_BOXで仮描画
 			/* Color	*/	XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f)
 		),
 		ModelComponent(
@@ -384,7 +394,7 @@ EntityID ECS::EntityFactory::CreateTaser(Coordinator* coordinator, const DirectX
 			/* Scale	*/	XMFLOAT3(3.0f, 3.0f, 3.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_BOX,                   // 立方体を指定
+			/* MeshType	*/	MESH_NONE,                   // 立方体を指定
 			/* Color	*/	XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) // 青色 (R,G,B,A)
 		),
 		RigidBodyComponent(
@@ -461,13 +471,7 @@ EntityID ECS::EntityFactory::CreateTitleSceneEntity(Coordinator* coordinator)
 	return entity;
 }
 
-EntityID ECS::EntityFactory::CreateGameSceneEntity(Coordinator* coordinator)
-{
-	EntityID entity = coordinator->CreateEntity(
-		GameSceneComponent{}
-	);
-	return entity;
-}
+
 
 void ECS::EntityFactory::GenerateStageFromConfig(ECS::Coordinator* coordinator, const std::string& stageId)
 {

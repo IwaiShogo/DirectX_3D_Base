@@ -47,8 +47,8 @@ void TitleScene::Init()
 
 	// コントローラー
 	TitleControllerComponent titleCtrl;
-	titleCtrl.camStartPos = XMFLOAT3(0.0f, 3.0f, -14.0f);
-	titleCtrl.camEndPos = XMFLOAT3(0.0f, 2.0f, -4.0f);
+	titleCtrl.camStartPos = XMFLOAT3(0.0f, 2.0f, -14.3f);
+	titleCtrl.camEndPos = XMFLOAT3(0.0f, 1.6f, -5.0f);
 
 	// 固定カメラ
 	ECS::EntityID cam = ECS::EntityFactory::CreateBasicCamera(m_coordinator.get(), titleCtrl.camStartPos);
@@ -74,10 +74,24 @@ void TitleScene::Init()
 
 	// UI作成
 	{
+		ECS::EntityID logo = m_coordinator->CreateEntity(
+			TransformComponent(
+				/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.3f, 0.0f),
+				/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+				/* Scale	*/	XMFLOAT3(550, 410, 1)
+			),
+			UIImageComponent(
+				/* AssetID		*/	"UI_TITLE_LOGO",
+				/* Depth		*/	0.0f,
+				/* IsVisible	*/	true
+			)
+		);
+		titleCtrl.pressStartUIEntities.push_back(logo);
+
 		ECS::EntityID ent = m_coordinator->CreateEntity(
 			TransformComponent(
 				/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.8f, 0.0f),
-				/* Rotation	*/	XMFLOAT3(3.0f, 0.0f, 0.0f),
+				/* Rotation	*/	XMFLOAT3(1.0f, 0.0f, 0.0f),
 				/* Scale	*/	XMFLOAT3(400, 50, 1)
 			),
 			UIImageComponent(
@@ -173,6 +187,11 @@ void TitleScene::Update(float deltaTime)
 }
 void TitleScene::Draw()
 {
+	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
+	{
+		system->Render(true);
+	}
+
 	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
 	{
 		system->DrawSetup();
@@ -181,6 +200,6 @@ void TitleScene::Draw()
 
 	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
 	{
-		system->Render();
+		system->Render(false);
 	}
 }

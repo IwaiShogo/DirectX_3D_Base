@@ -71,6 +71,8 @@ public:
 
 	static std::string s_StageNo;
 	static void SetStageNo(std::string no) { s_StageNo = no; }
+	static std::string GetStageNo() { return s_StageNo; }
+
 	/**
 	 * @brief Coordinatorインスタンスへのポインタを取得する静的アクセサ
 	 * @return ECS::Coordinator* - 現在アクティブなシーンのCoordinator

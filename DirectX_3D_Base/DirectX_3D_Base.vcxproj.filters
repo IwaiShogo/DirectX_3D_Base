@@ -64,10 +64,7 @@
     <ClCompile Include="Source\ECS\Systems\Core\CameraControlSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\Core\GameFlowSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\Core\StateSwitchSystem.cpp">
+    <ClCompile Include="Source\ECS\Systems\Core\GameControlSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\Gameplay\CollectionSystem.cpp">
@@ -109,25 +106,22 @@
     <ClCompile Include="Source\ECS\Systems\UI\UIInputSystem.cpp">
       <Filter>Source Files\ECS\Systems\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\Core\ResultSceneSystem.cpp">
+    <ClCompile Include="Source\ECS\Systems\Core\ResultControlSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\Core\GameSceneSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\ECS\Systems\Rendering\AnimationSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\TitleControlSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\ScoreManager.cpp" />
     <ClCompile Include="Source\ECS\Systems\UI\UIAnimationSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\UI\ZoomTransitionSystem.cpp" />
-    <ClCompile Include="Source\Scene\StageinformationScene.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\BasicCameraSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\Systems\UI\CursorSystem.cpp">
       <Filter>Source Files\ECS\Systems\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Rendering\AnimationSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -236,10 +230,7 @@
     <ClInclude Include="Include\ECS\Systems\Core\CameraControlSystem.h">
       <Filter>Header Files\ECS\Systems\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\Core\GameFlowSystem.h">
-      <Filter>Header Files\ECS\Systems\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\Core\StateSwitchSystem.h">
+    <ClInclude Include="Include\ECS\Systems\Core\GameControlSystem.h">
       <Filter>Header Files\ECS\Systems\Core</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Systems\Rendering\RenderSystem.h">
@@ -326,15 +317,6 @@
     <ClInclude Include="Include\ECS\Components\UI\UIButtonComponent.h">
       <Filter>Header Files\ECS\Components\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\Core\ResultSceneSystem.h">
-      <Filter>Header Files\ECS\Components\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Components\Core\GameSceneComponent.h">
-      <Filter>Header Files\ECS\Components\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\ECS\Systems\Core\GameSceneSystem.h">
-      <Filter>Header Files\ECS\Systems\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Include\ECS\Components\Core\TitleControllerComponent.h">
       <Filter>Header Files\ECS\Components\Core</Filter>
     </ClInclude>
@@ -343,10 +325,7 @@
     </ClInclude>
     <ClInclude Include="Include\ECS\Components\ScoreManager.h" />
     <ClInclude Include="Include\ECS\Components\UI\UIAnimationComponent.h" />
-    <ClInclude Include="Include\ECS\Components\UI\ZoomTransitionComponent.h" />
     <ClInclude Include="Include\ECS\Systems\UI\UIAnimationSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\UI\ZoomTransitionSystem.h" />
-    <ClInclude Include="Include\Scene\StageinformationScene.h" />
     <ClInclude Include="Include\ECS\Components\Core\BasicCameraComponent.h">
       <Filter>Header Files\ECS\Components\Core</Filter>
     </ClInclude>
@@ -358,6 +337,15 @@
     </ClInclude>
     <ClInclude Include="Include\ECS\Components\UI\UICursorComponent.h">
       <Filter>Header Files\ECS\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\UI\ScanLineComponent.h">
+      <Filter>Header Files\ECS\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\UI\SonarComponent.h">
+      <Filter>Header Files\ECS\Components\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\ResultControlSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

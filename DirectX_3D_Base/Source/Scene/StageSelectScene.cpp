@@ -93,42 +93,49 @@ void StageSelectScene::Init()
 	// --- A. マップ画像 (左側) ---
 	// 位置: 画面左寄り, サイズ: 大きめ
 	ECS::EntityID mapImg = m_coordinator->CreateEntity(
-		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.3f, SCREEN_HEIGHT * 0.45f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(500, 350, 1)),
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.38f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(400, 400, 1)),
 		UIImageComponent("UI_STAGE_MAP", 1.0f)
 	);
 	m_detailUIEntities.push_back(mapImg);
 
 	// --- B. 情報パネル (右側) ---
-	float infoX = SCREEN_WIDTH * 0.7f;
-	float infoY_Base = SCREEN_HEIGHT * 0.3f;
-	float infoGap = 80.0f;
+	// ベストタイムフレーム
+	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.8f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(550, 160, 1)),
+		UIImageComponent("UI_FRAME", 1.0f)
+	));
+
+	// ベストタイム（アイコン）
+	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.15f, SCREEN_HEIGHT * 0.8f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 100, 1)),
+		UIImageComponent("UI_BEST_TIME", 2.0f)
+	));
 
 	// お宝情報 (アイコン)
 	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
-		TransformComponent(XMFLOAT3(infoX, infoY_Base, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(64, 64, 1)),
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.75f, SCREEN_HEIGHT * 0.25f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(500, 200, 1)),
 		UIImageComponent("UI_TRESURE", 1.0f)
 	));
 	// お宝数 (本来は数字画像を表示するが、ここではログ出力で代用)
 
 	// 警備情報 (アイコン)
 	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
-		TransformComponent(XMFLOAT3(infoX, infoY_Base + infoGap, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(64, 64, 1)),
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.75f, SCREEN_HEIGHT * 0.6f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(500, 260, 1)),
 		UIImageComponent("UI_STAGE_ENEMY", 1.0f)
-	));
-
-	// ベストタイム (アイコン)
-	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
-		TransformComponent(XMFLOAT3(infoX, infoY_Base + infoGap * 2, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(64, 64, 1)),
-		UIImageComponent("UI_BEST_TIME", 1.0f)
 	));
 
 
 	// --- C. ボタン類 ---
 
 	// [決定] ボタン (右下)
+	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.65f, SCREEN_HEIGHT * 0.86f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 100, 1)),
+		UIImageComponent("UI_START_NORMAL", 1.0f)
+	));
+
 	ECS::EntityID startBtn = m_coordinator->CreateEntity(
-		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.85f, SCREEN_HEIGHT * 0.85f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 80, 1)),
-		UIImageComponent("BTN_DECISION", 1.0f),
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.65f, SCREEN_HEIGHT * 0.86f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 80, 1)),
+		UIImageComponent("BTN_DECISION", 2.0f),
 		UIButtonComponent(
 			ButtonState::Normal,
 			false, // Detailモード用なので最初は非表示
@@ -143,9 +150,14 @@ void StageSelectScene::Init()
 
 	// [戻る] ボタン (決定ボタンの左隣、あるいは左下)
 	// 「戻る」ボタン
+	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.85f, SCREEN_HEIGHT * 0.86f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 100, 1)),
+		UIImageComponent("UI_FINISH_NORMAL", 1.0f)
+	));
+
 	ECS::EntityID backBtn = m_coordinator->CreateEntity(
-		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.15f, SCREEN_HEIGHT * 0.85f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 80, 1)),
-		UIImageComponent("BTN_REBERSE", 1.0f),
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.85f, SCREEN_HEIGHT * 0.86f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(160, 80, 1)),
+		UIImageComponent("BTN_REBERSE", 2.0f),
 		UIButtonComponent(
 			ButtonState::Normal,
 			false, // Detailモード用
@@ -167,11 +179,12 @@ void StageSelectScene::Init()
 			),
 			UIImageComponent(
 				/* AssetID	*/	"ICO_CURSOR",
-				/* Depth	*/	1.0f
+				/* Depth	*/	10.0f
 			),
 			UICursorComponent()
 		);
 	}
+	SwitchState(false);
 
 	std::cout << "StageSelectScene::Init() - ECS Initialized." << std::endl;
 }
@@ -191,14 +204,20 @@ void StageSelectScene::Update(float deltaTime)
 
 void StageSelectScene::Draw()
 {
-	if (auto system = ECSInitializer::GetSystem<RenderSystem>())
+	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
+	{
+		system->Render(true);
+	}
+
+	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
 	{
 		system->DrawSetup();
 		system->DrawEntities();
 	}
-	if (auto system = ECSInitializer::GetSystem<UIRenderSystem>())
+
+	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
 	{
-		system->Render();
+		system->Render(false);
 	}
 }
 

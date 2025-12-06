@@ -44,7 +44,7 @@ public:
 	 *
 	 * @note	TransformComponentとUIImageComponentを持つエンティティのみを処理する。
 	 */
-	void Render();
+	void Render(bool drawBackground);
 
 private:
 	ECS::Coordinator* m_coordinator = nullptr;

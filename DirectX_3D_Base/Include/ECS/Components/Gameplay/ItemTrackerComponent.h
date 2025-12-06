@@ -22,6 +22,8 @@
 
 // ===== インクルード =====
 #include <cstdint>
+#include <vector>
+#include <string>
 
 /**
  * @struct	ItemTrackerComponent
@@ -35,6 +37,7 @@ struct ItemTrackerComponent
 	bool useOrderedCollection = false;//このステージで順序モードが有効かどうか
 	int currentTargetOrder = 1;//次に取るアイテム番号
 
+	std::vector<std::string> targetItemIDs;
 
 	// コンストラクタ
 	ItemTrackerComponent(uint32_t total = 0, bool ordered = false)

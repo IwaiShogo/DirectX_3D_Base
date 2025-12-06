@@ -34,6 +34,8 @@
 #include "ECS/Components/Core/BasicCameraComponent.h"
 // @component	位置・回転・スケール
 #include "ECS/Components/Core/TransformComponent.h"
+// @component	SceneTitle管理
+#include "ECS/Components/Core/TitleControllerComponent.h"
 // @component	カメラ切り替え
 #include "ECS/Components/Core/GameStateComponent.h"
 // @component	タグ
@@ -68,9 +70,10 @@
 #include "ECS/Components/UI/UIButtonComponent.h"
 // @component	アニメーションUI
 #include "ECS/Components/UI/UIAnimationComponent.h"
-// @component	zoomアニメーション
-#include "ECS/Components/UI/ZoomTransitionComponent.h"
-
+// @component	スキャンライン
+#include "ECS/Components/UI/ScanLineComponent.h"
+// @component	ソナー
+#include "ECS/Components/UI/SonarComponent.h"
 
 // @folder		Gameplay
 // @component	プレイヤー入力制御
@@ -81,10 +84,7 @@
 #include "ECS/Components/Gameplay/ItemTrackerComponent.h"
 // @component	マップ管理
 #include "ECS/Components/Gameplay/MapComponent.h"
-// @component	SceneTitle管理
-#include "ECS/Components/Core/TitleControllerComponent.h"	//ついか
-//@component	SceneGame管理
-#include "ECS/Components/Core/GameSceneComponent.h"
+
 // @folder		Gimmick
 // @component	警備員AI
 #include "ECS/Components/Gimmick/GuardComponent.h"

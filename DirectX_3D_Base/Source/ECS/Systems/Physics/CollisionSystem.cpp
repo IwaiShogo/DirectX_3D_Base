@@ -223,7 +223,7 @@ void CollisionSystem::Update(float deltaTime)
 	GameStateComponent& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
 	// ゲームが既に終了していたら、衝突チェックをスキップ
-	if (state.isGameOver || state.isCleared) return;
+	if (state.isGameOver || state.isGameClear) return;
 
 	// Deferred destruction list (アイテム回収による破壊の遅延)
 	std::vector<ECS::EntityID> entitiesToDestroy;
@@ -306,7 +306,7 @@ void CollisionSystem::Update(float deltaTime)
 				{
 					ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST4");
 
-					state.isCleared = true;
+					state.isGameClear = true;
 				}
 			}
 			if (tagB.tag == "taser")

@@ -28,10 +28,8 @@
 #include "ECS/Systems/Core/CameraControlSystem.h"
 // @system	固定カメラ
 #include "ECS/Systems/Core/BasicCameraSystem.h"
-// @system	カメラ切り替え
-#include "ECS/Systems/Core/StateSwitchSystem.h"
 // @system	ゲーム終了時の処理
-#include "ECS/Systems/Core/GameFlowSystem.h"
+#include "ECS/Systems/Core/GameControlSystem.h"
 // @system	オーディオ
 #include "ECS/Systems/Core/AudioSystem.h"
 // @system	タイトルコントローラー
@@ -61,10 +59,6 @@
 #include "ECS/Systems/UI/CursorSystem.h"
 // @system  アニメーションUI
 #include "ECS/Systems/UI/UIAnimationSystem.h"
-
-// @system  ズームアニメーション
-#include "ECS/Systems/UI/ZoomTransitionSystem.h"
-
 
 // @folder	Gameplay
 // @system	プレイヤー入力制御

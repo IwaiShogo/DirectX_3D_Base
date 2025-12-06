@@ -1,6 +1,7 @@
 {
   "ST_001": {
-    "name": "Stage 1: Beginner",
+    "name": "Stage 1",
+    "image": "UI_ST_001",
     "gridSizeX": 15,
     "gridSizeY": 15,
     "tileSize": 5.0,
@@ -8,139 +9,138 @@
     "minRoomSize": 3,
     "maxRoomSize": 3,
     "maxRoomCount": 4,
-    "itemCount": 3,
-    "guardCount": 1,
+    "timeLimitStar": 60.0,
     "minPathPercentage": 0.5,
-    "useOrderedCollection": true,
-    "gimmicks": [
-      {
-        "type": "Teleporter",
-        "count": 0
-      },
-      {
-        "type": "TrapDoor",
-        "count": 0
-      }
-    ]
+    "useOrderedCollection": false,
+    "items": [
+      "Takara_Yubiwa",
+      "Takara_Daiya",
+      "Takara_Crystal",
+      "Takara_Kaiga1",
+      "Takara_Kaiga2",
+      "Takara_Kaiga3"
+    ],
+    "guardCount": 1,
+    "gimmicks": []
   },
   "ST_002": {
-    "name": "Stage 2: First Encounter",
-    "gridSizeX": 20,
-    "gridSizeY": 20,
-    "tileSize": 5.0,
-    "wallHeight": 20.0,
-    "minRoomSize": 3,
-    "maxRoomSize": 6,
-    "maxRoomCount": 6,
-    "itemCount": 3,
-    "guardCount": 1,
-    "minPathPercentage": 0.4,
-    "useOrderedCollection": false,
-    "gimmicks": [
-      {
-        "type": "Teleporter",
-        "count": 0
-      },
-      {
-        "type": "TrapDoor",
-        "count": 0
-      }
-    ]
-  },
-  "ST_003": {
-    "name": "Stage 3: Maze Runner",
-    "gridSizeX": 25,
-    "gridSizeY": 25,
-    "tileSize": 5.0,
-    "wallHeight": 20.0,
-    "minRoomSize": 4,
-    "maxRoomSize": 8,
-    "maxRoomCount": 20,
-    "itemCount": 4,
-    "guardCount": 2,
-    "minPathPercentage": 0.3,
-    "useOrderedCollection": true,
-    "gimmicks": [
-      {
-        "type": "Teleporter",
-        "count": 0
-      },
-      {
-        "type": "TrapDoor",
-        "count": 0
-      }
-    ]
-  },
-  "ST_004": {
-    "name": "Stage 4: Confusing Labs",
-    "gridSizeX": 30,
-    "gridSizeY": 20,
+    "name": "Stage 2",
+    "image": "UI_ST_002",
+    "gridSizeX": 15,
+    "gridSizeY": 15,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
     "maxRoomSize": 3,
-    "maxRoomCount": 5,
-    "itemCount": 3,
+    "maxRoomCount": 4,
+    "timeLimitStar": 60.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": true,
+    "items": [
+      "Takara_Yubiwa",
+      "Takara_Daiya",
+      "Takara_Crystal",
+      "Takara_Kaiga1",
+      "Takara_Kaiga2",
+      "Takara_Kaiga3"
+    ],
     "guardCount": 1,
-    "minPathPercentage": 0.25,
+    "gimmicks": []
+  },
+  "ST_003": {
+    "name": "Stage 3",
+    "image": "UI_ST_003",
+    "gridSizeX": 15,
+    "gridSizeY": 15,
+    "tileSize": 5.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 4,
+    "timeLimitStar": 60.0,
+    "minPathPercentage": 0.5,
     "useOrderedCollection": false,
-    "gimmicks": [
-      {
-        "type": "Teleporter",
-        "count": 0
-      },
-      {
-        "type": "TrapDoor",
-        "count": 0
-      }
-    ]
+    "items": [
+      "Takara_Yubiwa",
+      "Takara_Daiya",
+      "Takara_Crystal",
+      "Takara_Kaiga1",
+      "Takara_Kaiga2",
+      "Takara_Kaiga3"
+    ],
+    "guardCount": 1,
+    "gimmicks": []
+  },
+  "ST_004": {
+    "name": "Stage 4",
+    "image": "UI_ST_004",
+    "gridSizeX": 15,
+    "gridSizeY": 15,
+    "tileSize": 5.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 4,
+    "timeLimitStar": 60.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": false,
+    "items": [
+      "Takara_Yubiwa",
+      "Takara_Daiya",
+      "Takara_Crystal",
+      "Takara_Kaiga1",
+      "Takara_Kaiga2",
+      "Takara_Kaiga3"
+    ],
+    "guardCount": 1,
+    "gimmicks": []
   },
   "ST_005": {
-    "name": "Stage 5: Danger Zone",
-    "gridSizeX": 30,
-    "gridSizeY": 20,
+    "name": "Stage 5",
+    "image": "UI_ST_005",
+    "gridSizeX": 15,
+    "gridSizeY": 15,
     "tileSize": 5.0,
-    "wallHeight": 5.0,
-    "minRoomSize": 5,
-    "maxRoomSize": 10,
-    "maxRoomCount": 12,
-    "itemCount": 6,
-    "guardCount": 4,
-    "minPathPercentage": 0.2,
-    "useOrderedCollection": true,
-    "gimmicks": [
-      {
-        "type": "Teleporter",
-        "count": 0
-      },
-      {
-        "type": "TrapDoor",
-        "count": 0
-      }
-    ]
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 4,
+    "timeLimitStar": 60.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": false,
+    "items": [
+      "Takara_Yubiwa",
+      "Takara_Daiya",
+      "Takara_Crystal",
+      "Takara_Kaiga1",
+      "Takara_Kaiga2",
+      "Takara_Kaiga3"
+    ],
+    "guardCount": 1,
+    "gimmicks": []
   },
   "ST_006": {
-    "name": "Stage 6: Final Challenge",
-    "gridSizeX": 30,
-    "gridSizeY": 20,
+    "name": "Stage 6",
+    "image": "UI_ST_006",
+    "gridSizeX": 15,
+    "gridSizeY": 15,
     "tileSize": 5.0,
-    "wallHeight": 5.0,
-    "minRoomSize": 5,
-    "maxRoomSize": 12,
-    "maxRoomCount": 15,
-    "itemCount": 8,
-    "guardCount": 6,
-    "minPathPercentage": 0.15,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 4,
+    "timeLimitStar": 60.0,
+    "minPathPercentage": 0.5,
     "useOrderedCollection": false,
-    "gimmicks": [
-      {
-        "type": "Teleporter",
-        "count": 0
-      },
-      {
-        "type": "TrapDoor",
-        "count": 0
-      }
-    ]
+    "items": [
+      "Takara_Yubiwa",
+      "Takara_Daiya",
+      "Takara_Crystal",
+      "Takara_Kaiga1",
+      "Takara_Kaiga2",
+      "Takara_Kaiga3"
+    ],
+    "guardCount": 1,
+    "gimmicks": []
   }
 }

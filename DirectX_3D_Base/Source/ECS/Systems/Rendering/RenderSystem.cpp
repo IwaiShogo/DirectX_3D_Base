@@ -142,9 +142,23 @@ void RenderSystem::DrawEntities()
 		}
 	}
 
-	if (!cameraFound)
+	if (!cameraFound) return;
+
 	{
-		return;
+		// View行列をロード
+		XMMATRIX matView = XMLoadFloat4x4(&viewMat);
+
+		// View行列の逆行列を計算（= カメラのワールド行列）
+		XMMATRIX matInvView = XMMatrixInverse(nullptr, matView);
+
+		// 逆行列のZ軸（3行目）がカメラの前方ベクトル
+		XMFLOAT3 cameraForward;
+		XMStoreFloat3(&cameraForward, matInvView.r[2]);
+
+		// ライトを設定（色は白、方向はカメラの向き）
+		// ※SetLight関数がstaticでない場合はインスタンス経由で呼ぶ必要がありますが、
+		//   ここではShaderList::SetLightとして呼び出します。
+		ShaderList::SetLight(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), cameraForward);
 	}
 
 	RenderTarget* pRTV = GetDefaultRTV();   // デフォルトのRenderTargetViewを取得

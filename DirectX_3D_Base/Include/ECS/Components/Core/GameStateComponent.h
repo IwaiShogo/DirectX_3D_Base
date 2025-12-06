@@ -41,11 +41,17 @@ struct GameStateComponent
 {
 	GameMode currentMode = GameMode::SCOUTING_MODE; ///< 現在のゲームモード
 
+	// --- 時間管理 ---
+	float timeLimit = 180.0f;	// 制限時間
+	float timeLimitStar = 60.0f;	// 評価用目標タイム
+	float elapsedTime = 0.0f;	// 経過時間
+
 	// ゲームの終了状態を保持
 	bool isGameOver = false;		// 警備員に追いつかれた
-	bool isCleared = false;			// アイテム全回収後に脱出地点に到達
+	bool isGameClear = false;		// アイテム全回収後に脱出地点に到達
 	bool requestRestart = false;	// 次のフレームでリトライを要求
 	bool requestNextStage = false;	// 次のフレームで次のステージへ遷移を要求
+	bool wasSpotted = false;		// 警備員に見つかったか
 
 	// コンストラクタ
 	GameStateComponent(GameMode initialMode = GameMode::SCOUTING_MODE)

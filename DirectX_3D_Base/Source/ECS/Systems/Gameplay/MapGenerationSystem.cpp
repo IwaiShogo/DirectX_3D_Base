@@ -599,7 +599,7 @@ end_generate_loop:;
     std::shuffle(availablePathPositions.begin(), availablePathPositions.end(), s_generator);
 
     // 1. アイテム (config.itemCount) の配置
-    const int ITEMS_TO_PLACE = config.itemCount;
+    const int ITEMS_TO_PLACE = config.items.size();
     trackerComp.totalItems = ITEMS_TO_PLACE;
 
     // 配置可能な数が足りない場合は、リストのサイズを上限とする
@@ -642,21 +642,21 @@ end_generate_loop:;
     // 3. その他のギミック配置 (config.gimmickCounts を利用)
     // NOTE: CellType::Gimmick の処理はMapComponent.hにCellTypeを追加した後で実装
 
-    for (const auto& pair : config.gimmickCounts)
-    {
-        CellType gimmickType = pair.first;
-        int count = pair.second;
+    //for (const auto& pair : config.gimmicks.size())
+    //{
+    //    CellType gimmickType = pair.first;
+    //    int count = pair.second;
 
-        // availablePathPositionsが空になるまで、配置を試みる
-        for (int i = 0; i < count && !availablePathPositions.empty(); ++i)
-        {
-            XMINT2 pos = availablePathPositions.back();
-            availablePathPositions.pop_back();
+    //    // availablePathPositionsが空になるまで、配置を試みる
+    //    for (int i = 0; i < count && !availablePathPositions.empty(); ++i)
+    //    {
+    //        XMINT2 pos = availablePathPositions.back();
+    //        availablePathPositions.pop_back();
 
-            mapComp.grid[pos.y][pos.x].type = gimmickType;
-            // 必要に応じて、追加のギミック位置リストをMapComponentに追加可能
-        }
-    }
+    //        mapComp.grid[pos.y][pos.x].type = gimmickType;
+    //        // 必要に応じて、追加のギミック位置リストをMapComponentに追加可能
+    //    }
+    //}
 }
 
 /**
@@ -740,6 +740,10 @@ void MapGenerationSystem::CreateMap(const std::string& stageID)
 
     auto& mapComp = m_coordinator->GetComponent<MapComponent>(mapEntity);
     auto& trackerComp = m_coordinator->GetComponent<ItemTrackerComponent>(mapEntity);
+    auto& stateComp = m_coordinator->GetComponent<GameStateComponent>(mapEntity);
+
+    stateComp.timeLimitStar = config.timeLimitStar;
+    trackerComp.targetItemIDs.clear();
 
     // 2. 迷路データの生成
     // MapComponent内に設定情報がコピーされる
@@ -755,6 +759,8 @@ void MapGenerationSystem::CreateMap(const std::string& stageID)
     trackerComp.totalItems = 0;
 
     MazeGenerator::Generate(mapComp, trackerComp, config);
+
+    m_itemSpawnIndex = 0;
 
     // 3. 3D空間へのEntity配置
     SpawnMapEntities(mapComp, config);
@@ -907,6 +913,9 @@ void MapGenerationSystem::DrawDebugLines()
  */
 void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStageConfig& config)
 {
+    EntityID tracker = FindFirstEntityWithComponent<ItemTrackerComponent>(m_coordinator);
+    auto& trackerComp = m_coordinator->GetComponent<ItemTrackerComponent>(tracker);
+
     // configから動的な定数を取得
     const int GRID_SIZE_X = config.gridSizeX;
     const int GRID_SIZE_Y = config.gridSizeY;
@@ -1032,8 +1041,6 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
     // --------------------------------------------------------------------
     // 3. 特殊 Entityの配置（単独セル）
     // --------------------------------------------------------------------
-  
-    int itemSpawnCount = 0;
 
     for (int y = 0; y < GRID_SIZE_Y; ++y) // GRID_SIZE_Y を使用
     {
@@ -1069,19 +1076,30 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                     //EntityFactory::CreateGoal(m_coordinator, cellCenter);
                 }
                 else if (cell.type == CellType::Item) {
+
+                    // configからアイテムリストを取得
+                    std::string itemID = "Unknown";
+                    if (m_itemSpawnIndex < config.items.size()) {
+                        itemID = config.items[m_itemSpawnIndex];
+                    }
+                    else
+                    {
+                        if (!config.items.empty()) itemID = config.items.back();
+                    }
+
+                    trackerComp.targetItemIDs.push_back(itemID);
+
                     //配列itemPositions内でインデックスを探して順序番号を決める
                     int orderIndex = 0;
                     //設定で順序モードが有効な時番号を振る
-                    if (config.useOrderedCollection){
-                        for (size_t i = 0; i < mapComp.itemPositions.size(); ++i){
-                            //座標が一致するものを探す
-                            if (mapComp.itemPositions[i].x == x && mapComp.itemPositions[i].y == y){
-                                orderIndex = static_cast<int>(i) + 1;//1始まり
-                                break;
-                            }
-                        }
+                    if (config.useOrderedCollection)
+                    {
+                        orderIndex = m_itemSpawnIndex + 1;
                     }
-                    EntityFactory::CreateCollectable(m_coordinator, cellCenter, orderIndex);
+
+                    EntityFactory::CreateCollectable(m_coordinator, cellCenter, orderIndex, itemID);
+
+                    m_itemSpawnIndex++;
                 }
                 else if (cell.type == CellType::Guard) {
                     //EntityFactory::CreateGuard(m_coordinator, cellCenter);

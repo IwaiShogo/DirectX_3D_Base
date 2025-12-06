@@ -24,7 +24,7 @@
 
 #include "ECS/Systems/UI/UIInputSystem.h"
 #include "ECS/Components/UI/UIButtonComponent.h"
-#include "ECS/Systems/Core/ResultSceneSystem.h"
+#include "ECS/Systems/Core/ResultControlSystem.h"
 
 
 #include <iostream>
@@ -62,14 +62,6 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     // 1. Update（更新処理）
     // ------------------------------------------------------------
 
-    // @system  StateSwitchSystem
-    // @brief   状態の切り替え
-    REGISTER_SYSTEM_AND_INIT(
-        /* Coordinator  */  coordinator,
-        /* System       */  StateSwitchSystem,
-        /* Components   */  GameStateComponent
-    );
-
     // @system  PlayerControlSystem
     // @brief   キー入力、コントローラー入力
     REGISTER_SYSTEM_AND_INIT(
@@ -102,11 +94,11 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  CollisionComponent, TransformComponent, RigidBodyComponent
     );
 
-    // @system  GameFlowSystem
+    // @system  GameControlSystem
     // @brief   ゲームステート
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
-        /* System       */  GameFlowSystem,
+        /* System       */  GameControlSystem,
         /* Components   */  GameStateComponent
     );
 
@@ -168,13 +160,6 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         UICursorComponent, TransformComponent
     );
 
-    // @system ZoomTransitionSystem
-    REGISTER_SYSTEM_AND_INIT(
-        coordinator,
-        ZoomTransitionSystem,
-        ZoomTransitionComponent, TransformComponent
-    );
-
     // @system  AudioSystem
     // @brief   音声再生
     REGISTER_SYSTEM_AND_INIT(
@@ -221,7 +206,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
 
     REGISTER_SYSTEM_AND_INIT(
         coordinator,
-        ResultSceneSystem,
+        ResultControlSystem,
         TagComponent,UIButtonComponent
 
     );

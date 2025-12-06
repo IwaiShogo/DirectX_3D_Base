@@ -31,7 +31,7 @@ using namespace DirectX;
  * [void - Render]
  * @brief 描画処理。Depthに基づきソートしてから描画します。
  */
-void UIRenderSystem::Render()
+void UIRenderSystem::Render(bool drawBackground)
 {
 	if (m_entities.empty())
 	{
@@ -47,6 +47,17 @@ void UIRenderSystem::Render()
 		// ECSのシグネチャによって、UIImageComponentを持つことが保証されているが、念のためDepthを取得
 		const auto& uiComp = m_coordinator->GetComponent<UIImageComponent>(entity);
 		if (!uiComp.isVisible) continue;
+
+		if (drawBackground)
+		{
+			// 背景モード: depthが 0 以上ならスキップ（手前のものは描かない）
+			if (uiComp.depth >= 0.0f) continue;
+		}
+		else
+		{
+			// 前景モード: depthが 0 未満ならスキップ（奥のものは描かない）
+			if (uiComp.depth < 0.0f) continue;
+		}
 
 		renderList.push_back({ entity, uiComp.depth });
 	}
