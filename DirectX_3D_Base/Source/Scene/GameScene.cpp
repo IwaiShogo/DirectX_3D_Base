@@ -19,12 +19,9 @@
 
 #include "Scene/GameScene.h"
 
-#include "Ecs/Components/ScoreManager.h"
 #include "ECS/ECS.h"
 #include "ECS/ECSInitializer.h"
 #include "ECS/EntityFactory.h"
-#include "ECS/Systems/Gameplay/CollectionSystem.h"
-#include "ECS/Components/Core/GameStateComponent.h"
 #include "Systems/Input.h"
 
 #include <DirectXMath.h>

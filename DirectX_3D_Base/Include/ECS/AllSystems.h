@@ -57,8 +57,6 @@
 #include "ECS/Systems/UI/UIInputSystem.h"
 // @system	カーソルUI
 #include "ECS/Systems/UI/CursorSystem.h"
-// @system  アニメーションUI
-#include "ECS/Systems/UI/UIAnimationSystem.h"
 
 // @folder	Gameplay
 // @system	プレイヤー入力制御

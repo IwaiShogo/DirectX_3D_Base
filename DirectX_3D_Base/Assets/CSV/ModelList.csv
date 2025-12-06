@@ -1,7 +1,6 @@
 AssetID,AssetType,FilePath
 M_PLAYER,Model,Assets/Model/Player/kaitouanimu.fbx
 M_GUARD,Model,Assets/Model/Gimmick/keikan.fbx
-,,
 M_CORRIDOR,Model,Assets/Model/Stage/corridor.fbx
 M_WALL,Model,Assets/Model/Stage/wall.fbx
 M_TEZER,Model,Assets/Model/Gimmick/tezer.fbx

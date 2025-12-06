@@ -112,8 +112,6 @@
     <ClCompile Include="Source\ECS\Systems\Core\TitleControlSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ECS\ScoreManager.cpp" />
-    <ClCompile Include="Source\ECS\Systems\UI\UIAnimationSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\BasicCameraSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
@@ -323,9 +321,6 @@
     <ClInclude Include="Include\ECS\Systems\Core\TitleControlSystem.h">
       <Filter>Header Files\ECS\Systems\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Include\ECS\Components\ScoreManager.h" />
-    <ClInclude Include="Include\ECS\Components\UI\UIAnimationComponent.h" />
-    <ClInclude Include="Include\ECS\Systems\UI\UIAnimationSystem.h" />
     <ClInclude Include="Include\ECS\Components\Core\BasicCameraComponent.h">
       <Filter>Header Files\ECS\Components\Core</Filter>
     </ClInclude>

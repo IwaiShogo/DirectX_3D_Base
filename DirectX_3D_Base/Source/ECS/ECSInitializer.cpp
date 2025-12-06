@@ -136,14 +136,6 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  GuardComponent, TransformComponent, RigidBodyComponent
 	);
 
-    // @system  UIAnimationSystem
-    // @brief   UIのアニメーション制御
-    REGISTER_SYSTEM_AND_INIT(
-        coordinator,
-        UIAnimationSystem,
-        UIAnimationComponent, TransformComponent
-    );
-
     // @system UIInoutSystem
     // @brief  マウスカーソルの判定
     REGISTER_SYSTEM_AND_INIT(

@@ -68,8 +68,6 @@
 #include "ECS/Components/UI/UICursorComponent.h"
 // @component
 #include "ECS/Components/UI/UIButtonComponent.h"
-// @component	アニメーションUI
-#include "ECS/Components/UI/UIAnimationComponent.h"
 // @component	スキャンライン
 #include "ECS/Components/UI/ScanLineComponent.h"
 // @component	ソナー
