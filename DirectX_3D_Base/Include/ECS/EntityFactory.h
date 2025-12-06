@@ -45,7 +45,7 @@ namespace ECS
 
 		static EntityID CreateGameController(Coordinator* coordinator);
 
-		static EntityID CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position, int orderIndex = 0);
+		static EntityID CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position, int orderIndex = 0, const std::string& itemID = "");
 
 		static EntityID CreateGround(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale);
 
@@ -63,11 +63,11 @@ namespace ECS
 
 		static EntityID CreateUITestEntity(Coordinator* coordinator, const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size, const std::string& assetID);
 
-		static EntityID CreateGameSceneEntity(Coordinator* coordinator);
-
 		static EntityID CreateTitleSceneEntity(Coordinator* coordinator);
 
 		static void GenerateStageFromConfig(ECS::Coordinator* coordinator, const std::string& stageId);
+
+		static EntityID CreateBasicCamera(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止

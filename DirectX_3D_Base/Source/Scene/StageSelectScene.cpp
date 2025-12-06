@@ -13,21 +13,11 @@
  *********************************************************************/
 
  // ===== インクルード =====
-#include "Scene/StageSelectScene.h"
-#include "Scene/TitleScene.h"
-#include "Scene/GameScene.h"
-#include "Scene/StageinformationScene.h"
+#include "Scene/SceneManager.h"
 #include "Systems/Input.h"
 #include "ECS/ECS.h"
 #include "ECS/ECSInitializer.h"
 #include "ECS/EntityFactory.h"
-#include "ECS/Systems/UI/CursorSystem.h"
-#include "ECS/Systems/Core/AudioSystem.h"
-#include "ECS/Components/UI/ZoomTransitionComponent.h"
-#include <ECS/Systems/UI/UIInputSystem.h>
-#include <ECS/Components/UI/UIInteractableComponent.h>
-#include <ECS/Components/Core/SoundComponent.h>
-#include "ECS/Components/UI/UIAnimationComponent.h"
 
 #include <DirectXMath.h>
 #include <iostream>
@@ -46,110 +36,155 @@ void StageSelectScene::Init()
 	s_coordinator = m_coordinator.get();
 	ECSInitializer::InitECS(m_coordinator);
 
-	// 変数初期化（不要なメンバ変数は削除した前提ですが、もし残っていれば初期化してください）
-	// m_isTransitioning = false;
+	LoadStageData();
 
-	// 2. System登録
+	// 固定カメラ
+	ECS::EntityID cam = ECS::EntityFactory::CreateBasicCamera(m_coordinator.get(), { 0, 0, 0 });
+
+	// 背景
+	m_coordinator->CreateEntity(
+		TransformComponent(
+			/* Position */ XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f),
+			/* Rotation */ XMFLOAT3(0, 0, 0),
+			/* Scale    */ XMFLOAT3(SCREEN_WIDTH, SCREEN_HEIGHT, 1.0f)
+		),
+		UIImageComponent(
+			/* AssetID	*/	"BG_STAGE_SELECT",
+			/* Depth	*/	0.0f
+		)
+	);
+
+	// ==========================================
+	// 1. 一覧画面 (List) UI構築
+	// ==========================================
+	std::vector<std::string> stageIDs = { "ST_001", "ST_002", "ST_003", "ST_004", "ST_005", "ST_006" };
+	float startX = SCREEN_WIDTH * 0.2f;
+	float startY = SCREEN_HEIGHT * 0.3f;
+	float gapX = 350.0f;
+	float gapY = 250.0f;
+
+	for (int i = 0; i < 6; ++i)
 	{
-		auto system = m_coordinator->RegisterSystem<CursorSystem>();
-		Signature signature;
-		signature.set(m_coordinator->GetComponentTypeID<TransformComponent>());
-		signature.set(m_coordinator->GetComponentTypeID<TagComponent>());
-		m_coordinator->SetSystemSignature<CursorSystem>(signature);
-		system->Init(m_coordinator.get());
+		std::string id = (i < stageIDs.size()) ? stageIDs[i] : "ST_001";
+		float x = startX + (i % 3) * gapX;
+		float y = startY + (i / 3) * gapY;
+
+		// ステージ選択ボタン
+		ECS::EntityID btn = m_coordinator->CreateEntity(
+			TransformComponent(XMFLOAT3(x, y, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(250, 150, 1)),
+			UIImageComponent("BTN_STAGE_SELECT", 1.0f),
+			UIButtonComponent(
+				ButtonState::Normal,
+				true, // Listモードなので最初は表示
+				[this, id]() {
+					// 詳細モードへ遷移
+					this->m_selectedStageID = id;
+					this->SwitchState(true);
+				}
+			)
+		);
+		m_listUIEntities.push_back(btn);
 	}
 
-	// 3. 背景
-	m_selectbg = m_coordinator->CreateEntity(
-		TagComponent("SelectSceneUIBG"),
-		TransformComponent(XMFLOAT3(0.0f, 0.0f, 2.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(2.0f, 2.0f, 1.0f)),
-		UIImageComponent("UI_BG")
-	);
-	m_selectcork = m_coordinator->CreateEntity(
-		TagComponent("SelectSceneUICORK"),
-		TransformComponent(XMFLOAT3(0.0f, 0.0f, 1.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(1.9f, 1.9f, 1.0f)),
-		UIImageComponent("UI_CORK")
-	);
+	// ==========================================
+	// 2. 詳細画面 (Detail) UI構築
+	// ==========================================
 
-	// 4. ボタン作成
-	// ★修正箇所：DirectX:: を削除し、シンプルな記述に戻しました
-	auto CreateButton = [&](EntityID& entity, std::string tag, std::string img, float x, float y, float sx, float sy, float delay) {
-		entity = m_coordinator->CreateEntity(
-			TagComponent(tag),
-			TransformComponent(XMFLOAT3(x, y, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f)),
-			UIInteractableComponent(-1.0f, -1.0f, true),
-			UIImageComponent(img),
-			UIAnimationComponent{
-				UIAnimationComponent::AnimType::Scale,
-				XMFLOAT3(0.0f, 0.0f, 0.0f),
-				XMFLOAT3(sx, sy, 1.0f),
-				delay,
-				0.5f
-			},
-			ZoomTransitionComponent{
-				false,   // isActive
-				150.0f,  // speed
-				20.0f,   // threshold
-				TransitionTarget::ToInfo, // 行き先
-				0,       // ステージNo (後で設定)
-				false    // isFinished
+	// --- A. マップ画像 (左側) ---
+	// 位置: 画面左寄り, サイズ: 大きめ
+	ECS::EntityID mapImg = m_coordinator->CreateEntity(
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.38f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(400, 400, 1)),
+		UIImageComponent("UI_STAGE_MAP", 1.0f)
+	);
+	m_detailUIEntities.push_back(mapImg);
+
+	// --- B. 情報パネル (右側) ---
+	// ベストタイムフレーム
+	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.8f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(550, 160, 1)),
+		UIImageComponent("UI_FRAME", 1.0f)
+	));
+
+	// ベストタイム（アイコン）
+	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.15f, SCREEN_HEIGHT * 0.8f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 100, 1)),
+		UIImageComponent("UI_BEST_TIME", 2.0f)
+	));
+
+	// お宝情報 (アイコン)
+	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.75f, SCREEN_HEIGHT * 0.25f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(500, 200, 1)),
+		UIImageComponent("UI_TRESURE", 1.0f)
+	));
+	// お宝数 (本来は数字画像を表示するが、ここではログ出力で代用)
+
+	// 警備情報 (アイコン)
+	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.75f, SCREEN_HEIGHT * 0.6f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(500, 260, 1)),
+		UIImageComponent("UI_STAGE_ENEMY", 1.0f)
+	));
+
+
+	// --- C. ボタン類 ---
+
+	// [決定] ボタン (右下)
+	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.65f, SCREEN_HEIGHT * 0.86f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 100, 1)),
+		UIImageComponent("UI_START_NORMAL", 1.0f)
+	));
+
+	ECS::EntityID startBtn = m_coordinator->CreateEntity(
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.65f, SCREEN_HEIGHT * 0.86f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 80, 1)),
+		UIImageComponent("BTN_DECISION", 2.0f),
+		UIButtonComponent(
+			ButtonState::Normal,
+			false, // Detailモード用なので最初は非表示
+			[this]() {
+				std::cout << "Game Start: " << m_selectedStageID << std::endl;
+				GameScene::SetStageNo(m_selectedStageID);
+				SceneManager::ChangeScene<GameScene>();
 			}
-		);
-		// 強制上書き
-		m_coordinator->GetComponent<TransformComponent>(entity).scale = XMFLOAT3(0.0f, 0.0f, 0.0f);
-
-		auto& comp = m_coordinator->GetComponent<UIInteractableComponent>(entity);
-		comp.baseScaleX = sx; comp.baseScaleY = sy;
-		};
-
-	CreateButton(m_selectEntity1, "SelectSceneUI1", "UI_PAPER_1", -0.6f, 0.45f, 0.7f, 0.7f, 0.0f);
-	CreateButton(m_selectEntity2, "SelectSceneUI2", "UI_PAPER_2", 0.0f, 0.6f, 0.4f, 0.3f, 0.1f);
-	CreateButton(m_selectEntity3, "SelectSceneUI3", "UI_PAPER_3", 0.0f, 0.0f, 0.5f, 0.35f, 0.2f);
-	CreateButton(m_selectEntity4, "SelectSceneUI4", "UI_PAPER_1", 0.6f, 0.4f, 0.55f, 0.7f, 0.3f);
-	CreateButton(m_selectEntity5, "SelectSceneUI5", "UI_PAPER_2", -0.55f, -0.45f, 0.6f, 0.6f, 0.4f);
-	CreateButton(m_selectEntity6, "SelectSceneUI6", "UI_PAPER_3", 0.5f, -0.5f, 0.8f, 0.8f, 0.5f);
-
-	// 5. カーソル
-	m_cursorEntity = m_coordinator->CreateEntity(
-		TagComponent("Cursor"),
-		TransformComponent(XMFLOAT3(0.0f, 0.0f, -5.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.1f, 0.1f, 1.0f)),
-		UIImageComponent("UI_MUSIMEGANE")
+		)
 	);
+	m_detailUIEntities.push_back(startBtn);
 
-	// 6. A/Bボタン
+	// [戻る] ボタン (決定ボタンの左隣、あるいは左下)
+	// 「戻る」ボタン
+	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.85f, SCREEN_HEIGHT * 0.86f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 100, 1)),
+		UIImageComponent("UI_FINISH_NORMAL", 1.0f)
+	));
+
+	ECS::EntityID backBtn = m_coordinator->CreateEntity(
+		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.85f, SCREEN_HEIGHT * 0.86f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(160, 80, 1)),
+		UIImageComponent("BTN_REBERSE", 2.0f),
+		UIButtonComponent(
+			ButtonState::Normal,
+			false, // Detailモード用
+			[this]() {
+				// 一覧へ戻る
+				this->SwitchState(false);
+			}
+		)
+	);
+	m_detailUIEntities.push_back(backBtn);
+
+	// 5. カーソル作成
 	{
-		m_selectA = m_coordinator->CreateEntity(
-			TagComponent("SelectSceneUIA"),
-			TransformComponent(XMFLOAT3(0.4f, -0.9f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f)),
-			UIImageComponent("UI_TEST2"),
-			UIAnimationComponent{
-				UIAnimationComponent::AnimType::Scale,
-				XMFLOAT3(0.0f, 0.0f, 0.0f),
-				XMFLOAT3(0.3f, 0.1f, 1.0f),
-				0.8f,
-				0.5f
-			}
-			// ※A/Bボタンにはズーム遷移(ZoomTransitionComponent)は不要なので付けません
+		m_coordinator->CreateEntity(
+			TransformComponent(
+				/* Position	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+				/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+				/* Scale	*/	XMFLOAT3(64.0f, 64.0f, 1.0f)
+			),
+			UIImageComponent(
+				/* AssetID	*/	"ICO_CURSOR",
+				/* Depth	*/	10.0f
+			),
+			UICursorComponent()
 		);
-		m_coordinator->GetComponent<TransformComponent>(m_selectA).scale = XMFLOAT3(0.0f, 0.0f, 0.0f);
-
-		m_selectB = m_coordinator->CreateEntity(
-			TagComponent("SelectSceneUIB"),
-			TransformComponent(XMFLOAT3(0.8f, -0.9f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 1.0f)),
-			UIImageComponent("UI_TEST2"),
-			UIAnimationComponent{
-				UIAnimationComponent::AnimType::Scale,
-				XMFLOAT3(0.0f, 0.0f, 0.0f),
-				XMFLOAT3(0.3f, 0.1f, 1.0f),
-				0.9f,
-				0.5f
-			}
-		);
-		m_coordinator->GetComponent<TransformComponent>(m_selectB).scale = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	}
-
-	// BGM再生
-	EntityFactory::CreateLoopSoundEntity(m_coordinator.get(), "BGM_TEST", 0.3f);
+	SwitchState(false);
 
 	std::cout << "StageSelectScene::Init() - ECS Initialized." << std::endl;
 }
@@ -165,57 +200,79 @@ void StageSelectScene::Update(float deltaTime)
 {
 	// 1. システム更新
 	m_coordinator->UpdateSystems(deltaTime);
-
-	if (IsKeyTrigger('Q'))
-	{
-		// 音を鳴らす（必要であれば）
-		// ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_CANCEL", 0.5f);
-
-		SceneManager::ChangeScene<TitleScene>();
-		return; // シーンが変わるので、これ以降の処理はスキップ
-	}
-
-	// 2. クリック判定
-	auto CheckClickAndStartTransition = [&](EntityID entity, int stageNo)
-		{
-			if (entity != INVALID_ENTITY_ID)
-			{
-				if (m_coordinator->HasComponent<UIInteractableComponent>(entity))
-				{
-					const auto& comp = m_coordinator->GetComponent<UIInteractableComponent>(entity);
-					if (comp.isClicked)
-					{
-						EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_TEST", 0.5f);
-
-						auto& zoom = m_coordinator->GetComponent<ZoomTransitionComponent>(entity);
-						zoom.isActive = true;
-						zoom.targetStageNo = stageNo;
-						zoom.nextScene = TransitionTarget::ToInfo;
-
-						// UIInputSystemの干渉を防ぐためコンポーネント削除
-						m_coordinator->RemoveComponent<UIInteractableComponent>(entity);
-					}
-				}
-			}
-		};
-
-	CheckClickAndStartTransition(m_selectEntity1, 1);
-	CheckClickAndStartTransition(m_selectEntity2, 2);
-	CheckClickAndStartTransition(m_selectEntity3, 3);
-	CheckClickAndStartTransition(m_selectEntity4, 4);
-	CheckClickAndStartTransition(m_selectEntity5, 5);
-	CheckClickAndStartTransition(m_selectEntity6, 6);
 }
 
 void StageSelectScene::Draw()
 {
-	if (auto system = ECSInitializer::GetSystem<RenderSystem>())
+	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
+	{
+		system->Render(true);
+	}
+
+	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
 	{
 		system->DrawSetup();
 		system->DrawEntities();
 	}
-	if (auto system = ECSInitializer::GetSystem<UIRenderSystem>())
+
+	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
 	{
-		system->Render();
+		system->Render(false);
+	}
+}
+
+void StageSelectScene::LoadStageData()
+{
+	std::ifstream i("Assets/Config/map_config.json");
+	if (i.is_open())
+	{
+		json j;
+		i >> j;
+		for (auto& el : j.items())
+		{
+			StageData d;
+			d.name = el.value().value("name", "Unknown");
+			d.itemCount = el.value().value("itemCount", 0);
+			d.guardCount = el.value().value("guardCount", 0);
+			m_stageDataMap[el.key()] = d;
+		}
+	}
+}
+
+void StageSelectScene::SwitchState(bool toDetail)
+{
+	// 一覧画面UIの制御
+	for (auto id : m_listUIEntities)
+	{
+		// 画像の表示切替
+		if (m_coordinator->HasComponent<UIImageComponent>(id)) {
+			m_coordinator->GetComponent<UIImageComponent>(id).isVisible = !toDetail;
+		}
+		// ボタンの有効化切替
+		if (m_coordinator->HasComponent<UIButtonComponent>(id)) {
+			m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = !toDetail;
+		}
+	}
+
+	// 詳細画面UIの制御
+	for (auto id : m_detailUIEntities)
+	{
+		if (m_coordinator->HasComponent<UIImageComponent>(id)) {
+			m_coordinator->GetComponent<UIImageComponent>(id).isVisible = toDetail;
+		}
+		if (m_coordinator->HasComponent<UIButtonComponent>(id)) {
+			m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = toDetail;
+		}
+	}
+
+	// 詳細表示時、コンソールに情報を出力（テキスト表示の代わり）
+	if (toDetail && m_stageDataMap.count(m_selectedStageID))
+	{
+		const auto& data = m_stageDataMap[m_selectedStageID];
+		std::cout << "=== Detail View ===" << std::endl;
+		std::cout << "Stage: " << data.name << std::endl;
+		std::cout << "Items: " << data.itemCount << std::endl;
+		std::cout << "Guards: " << data.guardCount << std::endl;
+		// ここで本来は、数字画像のEntityのテクスチャを差し替える等の処理を行う
 	}
 }

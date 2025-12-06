@@ -34,8 +34,6 @@
 
 // Scene
 #include "Scene/SceneManager.h"
-#include "Scene/StageSelectScene.h"
-#include "Scene/StageinformationScene.h"
 
 #include <stdio.h>
 #include <iostream>
@@ -161,7 +159,7 @@ int Init(HINSTANCE hInstance, int nCmdShow)
 	wcex.cbSize = sizeof(WNDCLASSEX);
 	wcex.hIcon = LoadIcon(NULL, IDI_APPLICATION);				// アプリのアイコン設定
 	wcex.hIconSm = wcex.hIcon;
-	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);					// マウスのアイコン設定
+	wcex.hCursor = LoadCursor(NULL, IDC_NO);					// マウスのアイコン設定
 	wcex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);	// 背景の色
 
 	/* ウィンドウクラス情報の登録 */
@@ -230,7 +228,6 @@ int Init(HINSTANCE hInstance, int nCmdShow)
 	SceneManager::Init();
 	SceneManager::RegisterScene<TitleScene>();
 	SceneManager::RegisterScene<StageSelectScene>();
-	SceneManager::RegisterScene<StageinformationScene>();
 	SceneManager::RegisterScene<GameScene>();
 	SceneManager::RegisterScene<ResultScene>();
 	SceneManager::ChangeScene<TitleScene>();

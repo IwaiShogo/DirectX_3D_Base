@@ -25,6 +25,14 @@
 #include "ECS/Coordinator.h"
 
 #include <memory>
+#include <map>
+
+// ステージ情報の構造体
+struct StageData {
+	std::string name;
+	int itemCount;
+	int guardCount;
+};
 
 /**
  * @class	StageSelectScene
@@ -37,36 +45,9 @@ private:
 	// ECSの中心となるコーディネーター (シーンがECSのライフサイクルを管理)
 	std::shared_ptr<ECS::Coordinator> m_coordinator;
 
-	ECS::EntityID m_selectEntity1 = ECS::INVALID_ENTITY_ID;
-	ECS::EntityID m_selectEntity2 = ECS::INVALID_ENTITY_ID;
-	ECS::EntityID m_selectEntity3 = ECS::INVALID_ENTITY_ID;
-	ECS::EntityID m_selectEntity4 = ECS::INVALID_ENTITY_ID;
-	ECS::EntityID m_selectEntity5 = ECS::INVALID_ENTITY_ID;
-	ECS::EntityID m_selectEntity6 = ECS::INVALID_ENTITY_ID;
-
-	ECS::EntityID m_cursorEntity = ECS::INVALID_ENTITY_ID;
-
-	ECS::EntityID m_selectA = ECS::INVALID_ENTITY_ID;
-	ECS::EntityID m_selectB = ECS::INVALID_ENTITY_ID;
-
-	ECS::EntityID m_selectbg = ECS::INVALID_ENTITY_ID;
-
-	ECS::EntityID m_selectcork = ECS::INVALID_ENTITY_ID;
-
 	// ECSのグローバルアクセス用 (SystemなどがECS操作を行うための窓口)
 	static ECS::Coordinator* s_coordinator;
 
-	bool m_isTransitioning = false;             // 演出中フラグ
-	ECS::EntityID m_targetEntity = ECS::INVALID_ENTITY_ID; // 選んだボタンのID
-	int m_targetStageNo = 0;                    // 選んだステージ番号
-
-	bool m_isQuickTransition = false;
-	enum class NextScene {
-		NONE,
-		TITLE,
-		INFO
-	};
-	NextScene m_nextScene = NextScene::NONE;
 public:
 	// コンストラクタとデストラクタ（Sceneを継承しているため仮想デストラクタはScene側で定義済みと仮定）
 	StageSelectScene()
@@ -86,6 +67,20 @@ public:
 	 * @return ECS::Coordinator* - 現在アクティブなシーンのCoordinator
 	 */
 	static ECS::Coordinator* GetCoordinator() { return s_coordinator; }
+
+private:
+	// JSONデータの読み込み
+	void LoadStageData();
+	// UIの表示切り替え
+	void SwitchState(bool toDetail);
+
+	// データ
+	std::map<std::string, StageData> m_stageDataMap;
+	std::string m_selectedStageID;
+
+	// エンティティ管理
+	std::vector<ECS::EntityID> m_listUIEntities;   // 一覧画面のボタン等
+	std::vector<ECS::EntityID> m_detailUIEntities; // 詳細画面の表示物
 };
 
 #endif // !___STAGE_SELECT_SCENE_H___

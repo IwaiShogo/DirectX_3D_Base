@@ -23,6 +23,7 @@
 #include "Systems/AssetManager.h"
 #include "Systems/DirectX/Texture.h"
 #include "Systems/Sprite.h"
+#include "Systems/DirectX/DirectX.h"
 
 using namespace DirectX;
 
@@ -30,7 +31,7 @@ using namespace DirectX;
  * [void - Render]
  * @brief 描画処理。Depthに基づきソートしてから描画します。
  */
-void UIRenderSystem::Render()
+void UIRenderSystem::Render(bool drawBackground)
 {
 	if (m_entities.empty())
 	{
@@ -45,11 +46,27 @@ void UIRenderSystem::Render()
 	{
 		// ECSのシグネチャによって、UIImageComponentを持つことが保証されているが、念のためDepthを取得
 		const auto& uiComp = m_coordinator->GetComponent<UIImageComponent>(entity);
+		if (!uiComp.isVisible) continue;
+
+		if (drawBackground)
+		{
+			// 背景モード: depthが 0 以上ならスキップ（手前のものは描かない）
+			if (uiComp.depth >= 0.0f) continue;
+		}
+		else
+		{
+			// 前景モード: depthが 0 未満ならスキップ（奥のものは描かない）
+			if (uiComp.depth < 0.0f) continue;
+		}
+
 		renderList.push_back({ entity, uiComp.depth });
 	}
 
 	// 2. Depthに基づいてソート (値が小さいものが奥、大きいものが手前)
 	std::sort(renderList.begin(), renderList.end());
+
+	SetDepthTest(false);
+	SetBlendMode(BLEND_ALPHA);
 
 	// 3. ソートされた順に描画を実行
 	for (const auto& data : renderList)
@@ -57,7 +74,7 @@ void UIRenderSystem::Render()
 		ECS::EntityID entity = data.entityID;
 
 		// コンポーネントの取得
-		const auto& transformComp = m_coordinator->GetComponent<TransformComponent>(entity);
+		const auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
 		const auto& uiComp = m_coordinator->GetComponent<UIImageComponent>(entity);
 
 		// AssetManagerからテクスチャリソースを取得
@@ -70,27 +87,36 @@ void UIRenderSystem::Render()
 
 		Texture* texture = static_cast<Texture*>(info->pResource);
 
+		// 1. サイズの変換 (ピクセル -> 0.0?2.0の範囲)
+		// Scale.x / ScreenWidth * 2.0
+		float ndcScaleX = (transform.scale.x / (float)SCREEN_WIDTH) * 2.0f;
+		float ndcScaleY = (transform.scale.y / (float)SCREEN_HEIGHT) * 2.0f;
+
+		// 2. 位置の変換 (ピクセル -> -1.0?1.0の範囲)
+		// 左上が原点のピクセル座標を、中心原点のNDCへ変換
+		// X: (Pos / Width) * 2 - 1
+		// Y: 1 - (Pos / Height) * 2  (Y軸は反転する)
+		float ndcPosX = (transform.position.x / (float)SCREEN_WIDTH) * 2.0f - 1.0f;
+		float ndcPosY = 1.0f - (transform.position.y / (float)SCREEN_HEIGHT) * 2.0f;
+
 		// ----------------------------------------
 		// Sprite クラスを使用した描画
 		// ----------------------------------------
 
-		// 1. テクスチャを設定
+		// Sprite設定
 		Sprite::SetTexture(texture);
 
-		// 2. 位置とサイズを設定
-		// TransformComponentのpos.xyとscale.xyを使用
-		Sprite::SetOffset({ transformComp.position.x, transformComp.position.y });
-		Sprite::SetSize({ transformComp.scale.x, transformComp.scale.y });
+		// 変換後の座標をセット
+		Sprite::SetOffset({ ndcPosX, ndcPosY });
+		Sprite::SetSize({ ndcScaleX, ndcScaleY });
 
-		// 3. UVと色を設定
 		Sprite::SetUVPos(uiComp.uvPos);
 		Sprite::SetUVScale(uiComp.uvScale);
 		Sprite::SetColor(uiComp.color);
 
-		// 4. 描画
 		Sprite::Draw();
-
-		// 描画後は次の描画に影響が出ないようテクスチャを解除（Sprite::Draw()内で解除されない場合）
 		Sprite::SetTexture(nullptr);
 	}
+
+	SetDepthTest(true);
 }

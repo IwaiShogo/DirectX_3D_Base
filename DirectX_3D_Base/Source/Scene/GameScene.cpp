@@ -19,74 +19,99 @@
 
 #include "Scene/GameScene.h"
 
-#include"Scene/StageinformationScene.h"
-#include "Ecs/Components/ScoreManager.h"
 #include "ECS/ECS.h"
 #include "ECS/ECSInitializer.h"
 #include "ECS/EntityFactory.h"
-#include "ECS/Systems/Gameplay/CollectionSystem.h"
-#include "ECS/Components/Core/GameStateComponent.h"
 #include "Systems/Input.h"
-#include "ECS/Systems/Core/GameSceneSystem.h"
 
 #include <DirectXMath.h>
 #include <iostream>
 #include <typeindex> // SystemManagerからのRenderSystem取得に使用
 #include <sstream> 
 
+using namespace DirectX;
+
 // ===== 静的メンバー変数の定義 =====u
 // 他のシステムからECSにアクセスするための静的ポインタ
 ECS::Coordinator* GameScene::s_coordinator = nullptr;
-
-using namespace DirectX;
-int GameScene::s_StageNo = 1;
-// ===== GameScene メンバー関数の実装 =====
+std::string GameScene::s_StageNo = "";
 
 void GameScene::Init()
 {
+	// ECS初期化
 	m_coordinator = std::make_shared<ECS::Coordinator>();
-
 	s_coordinator = m_coordinator.get();
-
 	ECS::ECSInitializer::InitECS(m_coordinator);
-
-    {
-        auto system = m_coordinator->RegisterSystem<GameSceneSystem>();
-        ECS::Signature signature;
-        signature.set(m_coordinator->GetComponentTypeID<GameSceneComponent>());
-        m_coordinator->SetSystemSignature<GameSceneSystem>(signature);
-        system->Init(m_coordinator.get());
-    }
-	// --- 2. ステージIDの作成 ---
-	// 例: s_StageNo が 1 なら "ST_001"、 6 なら "ST_006" という文字列を作る
-	std::stringstream ss;
-	ss << "ST_" << std::setfill('0') << std::setw(3) << s_StageNo;
-	std::string stageID = ss.str();
-
-	std::cout << "Starting Stage No: " << s_StageNo << " (ID: " << stageID << ")" << std::endl;
 
 	// --- 3. JSONコンフィグを使って一撃生成！ ---
 	// あなたが作った「一撃関数」に、IDとCoordinatorを渡します
 	// ※関数名は実際のコードに合わせて書き換えてください
-	ECS::EntityFactory::GenerateStageFromConfig(m_coordinator.get(), stageID);
+	ECS::EntityFactory::GenerateStageFromConfig(m_coordinator.get(), s_StageNo);
 
 	// --- 4. その他の共通Entityの作成 ---
 	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
-	ECS::EntityFactory::CreateGameSceneEntity(m_coordinator.get());
+
+	ECS::EntityID cont = m_coordinator->CreateEntity(
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(SCREEN_WIDTH, SCREEN_HEIGHT, 1)
+		),
+		UIImageComponent(
+			/* AssetID	*/	"BG_TOPVIEW",
+			/* Depth		*/	-1.0f,
+			/* IsVisible	*/	true
+		)
+	);
+
+	// 画面幅いっぱいの細長い棒を作る
+	float lineWidth = (float)SCREEN_WIDTH;
+	float lineHeight = 5.0f; // 線の太さ
+
+	// スキャンライン
+	ECS::EntityID scanLine = m_coordinator->CreateEntity(
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(lineWidth, lineHeight, 1)
+		),
+		UIImageComponent(
+			/* AssetID		*/	"UI_SCAN_LINE",
+			/* Depth		*/	2.0f,
+			/* IsVisible	*/	true,
+			/* Color		*/	XMFLOAT4(0.0f, 1.0f, 0.0f, 0.5f)
+		),
+		ScanLineComponent(
+			/* Speed	*/	300.0f,
+			/* Start	*/	0.0f,
+			/* End		*/	(float)SCREEN_HEIGHT
+		)
+	);
+
+	// デジタルグリッド
+	ECS::EntityID grid = m_coordinator->CreateEntity(
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(SCREEN_WIDTH, SCREEN_HEIGHT, 1)
+		),
+		UIImageComponent(
+			/* AssetID		*/	"UI_SCAN_LINE",
+			/* Depth		*/	5.0f,
+			/* IsVisible	*/	true,
+			/* Color		*/	XMFLOAT4(0.0f, 1.0f, 1.0f, 0.1f)
+		)
+	);
 }
 
 void GameScene::Uninit()
 {
-	// 1. ECS System縺ｮ髱咏噪繝ｪ繧ｽ繝ｼ繧ｹ繧定ｧ｣謾ｾ
+
 	ECS::ECSInitializer::UninitECS();
 
-	// Coordinator縺ｮ遐ｴ譽・ｼ・nique_ptr縺瑚・蜍慕噪縺ｫdelete繧貞ｮ溯｡鯉ｼ・
 	m_coordinator.reset();
 
-	// 髱咏噪繝昴う繝ｳ繧ｿ繧偵け繝ｪ繧｢
 	s_coordinator = nullptr;
-
-	std::cout << "GameScene::Uninit() - ECS Destroyed." << std::endl;
 }
 
 void GameScene::Update(float deltaTime)
@@ -94,40 +119,22 @@ void GameScene::Update(float deltaTime)
 
 	m_elapsedTime += deltaTime;
 
-	// 2. ゴール判定（とりあえずデバッグ用に 'G' キーでゴール扱いにします）
-	// ※後で「プレイヤーがゴールに当たったら true」になるように書き換えてください
-	bool isGoal = IsKeyTrigger('G');
-
-	// 3. ゴールした時の処理
-	if (isGoal)
-	{
-		std::cout << "GOAL! Time: " << m_elapsedTime << std::endl;
-
-		// ベストタイムを保存 (現在のステージ番号と、クリアタイム)
-		ScoreManager::SaveBestTime(s_StageNo, m_elapsedTime);
-
-		// リザルト画面（StageinformationScene）へ遷移
-		SceneManager::ChangeScene<StageinformationScene>();
-		return;
-	}
-
 	if (IsKeyTrigger('Q') || IsButtonTriggered(BUTTON_A))
 	{
 		SceneManager::ChangeScene<GameScene>();
 	}
-
 	
 	m_coordinator->UpdateSystems(deltaTime);
-
-	if (IsKeyTrigger(VK_SPACE))
-	{
-		ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_TEST");
-	}
 
 }
 
 void GameScene::Draw()
 {
+	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
+	{
+		system->Render(true);
+	}
+
 	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
 	{
 		system->DrawSetup();
@@ -136,6 +143,6 @@ void GameScene::Draw()
 
 	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
 	{
-		system->Render();
+		system->Render(false);
 	}
 }

@@ -69,8 +69,10 @@ public:
 	void Update(float deltaTime) override;
 	void Draw() override;
 
-	static int s_StageNo;
-	static void SetStageNo(int no) { s_StageNo = no; }
+	static std::string s_StageNo;
+	static void SetStageNo(std::string no) { s_StageNo = no; }
+	static std::string GetStageNo() { return s_StageNo; }
+
 	/**
 	 * @brief Coordinatorインスタンスへのポインタを取得する静的アクセサ
 	 * @return ECS::Coordinator* - 現在アクティブなシーンのCoordinator

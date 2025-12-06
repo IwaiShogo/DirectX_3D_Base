@@ -415,7 +415,7 @@ void GuardAISystem::Update(float deltaTime)
                 gameStateComp.isGameOver = true;
 
                 // 3. 以降の処理を行わず、即座に関数を抜ける
-                // (これによりGameFlowSystemが次のフレームでリスタート処理を行います)
+                // (これによりGameControlSystemが次のフレームでリスタート処理を行います)
                 return;
             }
         }
