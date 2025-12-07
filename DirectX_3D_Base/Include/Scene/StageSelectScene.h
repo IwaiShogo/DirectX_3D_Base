@@ -30,8 +30,16 @@
 // ステージ情報の構造体
 struct StageData {
 	std::string name;
-	int itemCount;
-	int guardCount;
+	std::string imageID;      // ステージイメージ画像のID
+	float timeLimitStar;      // 目標タイム
+
+	std::vector<std::string> items; // アイテムIDリスト
+
+	struct GimmickInfo {
+		std::string type;
+		int count;
+	};
+	std::vector<GimmickInfo> gimmicks; // ギミック情報
 };
 
 /**
@@ -73,6 +81,7 @@ private:
 	void LoadStageData();
 	// UIの表示切り替え
 	void SwitchState(bool toDetail);
+	void CreateDetailUI();
 
 	// データ
 	std::map<std::string, StageData> m_stageDataMap;

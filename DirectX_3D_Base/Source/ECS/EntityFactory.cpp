@@ -278,7 +278,7 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* predictionDistance	*/	1.0f,
 			/* isActive				*/	false,
 			/* delayBeforeChase		*/	3.0f,
-			/* chaseSpeed			*/	9.0f
+			/* chaseSpeed			*/	25.0f
 		),
 		CollisionComponent(
 			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),

@@ -15,7 +15,7 @@ void CursorSystem::Update(float deltaTime)
         // --- 1. トリガー状態の更新 ---
         // マウス左クリック(0) または パッドのAボタン
         // ※Inputクラスの仕様に合わせて調整してください
-        bool isMouseClick = IsMousePress(0);
+        bool isMouseClick = IsMouseTrigger(0);
         bool isPadClick = false;
         isPadClick = IsButtonTriggered(BUTTON_A); 
 
@@ -23,15 +23,13 @@ void CursorSystem::Update(float deltaTime)
 
         // --- 2. 位置の更新 (ピクセル座標) ---
 
-        // マウス位置の適用
-        DirectX::XMFLOAT2 mousePos = GetMousePosition();
+        DirectX::XMFLOAT2 mouseDelta = GetMouseDelta();
 
-        // 直前のフレームとマウスが動いているか判定するロジックがあれば尚良いですが、
-        // ここでは簡易的にマウス位置を適用します
-        transform.position.x = (float)mousePos.x;
-        transform.position.y = (float)mousePos.y;
+        // マウスによる移動 (感度は適宜調整してください、例えば 1.0f)
+        transform.position.x += mouseDelta.x * 1.0f;
+        transform.position.y += mouseDelta.y * 1.0f;
 
-        // パッド移動 (マウス操作と競合する場合は「入力があった方」を優先する処理が必要です)
+        // パッド(スティック)による移動
         auto stick = GetLeftStick();
         if (std::abs(stick.x) > 0.1f || std::abs(stick.y) > 0.1f)
         {
@@ -40,6 +38,7 @@ void CursorSystem::Update(float deltaTime)
         }
 
         // 画面外に出ないようにクランプ
+        // UIカーソルのホットスポットが左上(0,0)だと仮定した場合のクランプ
         if (transform.position.x < 0.0f) transform.position.x = 0.0f;
         if (transform.position.x > SCREEN_WIDTH) transform.position.x = (float)SCREEN_WIDTH;
         if (transform.position.y < 0.0f) transform.position.y = 0.0f;

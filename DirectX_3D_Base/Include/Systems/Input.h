@@ -41,6 +41,7 @@ bool IsKeyRepeat(BYTE key);
 // ƒ}ƒEƒX“ü—Íˆ—
 DirectX::XMFLOAT2 GetMouseDelta();
 bool IsMousePress(int mouseButton);
+bool IsMouseTrigger(int mouseButton);
 
 DirectX::XMFLOAT2 GetMousePosition();
 

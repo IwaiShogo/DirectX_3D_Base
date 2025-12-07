@@ -116,16 +116,7 @@ void GameScene::Uninit()
 
 void GameScene::Update(float deltaTime)
 {
-
-	m_elapsedTime += deltaTime;
-
-	if (IsKeyTrigger('Q') || IsButtonTriggered(BUTTON_A))
-	{
-		SceneManager::ChangeScene<GameScene>();
-	}
-	
 	m_coordinator->UpdateSystems(deltaTime);
-
 }
 
 void GameScene::Draw()

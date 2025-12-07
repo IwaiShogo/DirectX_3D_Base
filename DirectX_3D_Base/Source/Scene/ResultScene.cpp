@@ -134,7 +134,7 @@ void ResultScene::Init()
 		{
 			m_coordinator->CreateEntity(
 				TransformComponent({ SCREEN_WIDTH * 0.8f, SCREEN_HEIGHT * 0.4f, 0 }, { 0,0,0 }, { 500, 500, 1 }), // ‰Šú‹‘å
-				UIImageComponent("ICO_STAMP", 3.0f, true, { 1,1,1,0 }), // Å‰‚Í“§–¾
+				UIImageComponent("ICO_STAMP1", 3.0f, true, { 1,1,1,0 }), // Å‰‚Í“§–¾
 				TagComponent("AnimStamp")
 			);
 		}

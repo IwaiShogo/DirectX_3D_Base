@@ -46,15 +46,10 @@ private:
 	ECS::EntityID m_completeUIEntity = ECS::INVALID_ENTITY_ID;
 	std::vector<ECS::EntityID> m_uiEntities;
 
-	float m_elapsedTime = 0.0f;
-
 	//BGM用変数
 	ECS::EntityID m_bgmScoutID = ECS::INVALID_ENTITY_ID;
 	ECS::EntityID m_bgmActionID = ECS::INVALID_ENTITY_ID;
 	ECS::EntityID m_bgmCompleteID = ECS::INVALID_ENTITY_ID;
-	bool m_isScoutPlaying = false;
-	bool m_isActionPlaying = false;
-	bool m_isCompletePlaying = false;
 
 public:
 	// コンストラクタとデストラクタ（Sceneを継承しているため仮想デストラクタはScene側で定義済みと仮定）

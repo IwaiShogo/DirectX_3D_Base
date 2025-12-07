@@ -35,24 +35,20 @@ struct GuardComponent
     float viewAngle = 60.0f;        // 視野角（度数法：左右合わせて60度など）
     bool isPlayerDetected = false;  // プレイヤーを発見しているか
 
-    // 経路探索結果の次の目標セル（グリッド座標）
-    DirectX::XMFLOAT2 targetGridPos = { -1.0f, -1.0f }; // -1は無効な目標を示す
+    // 変更: 単一のターゲットではなく、経路リストを持つ
+    std::vector<DirectX::XMFLOAT3> path; // スムージング済みのワールド座標経路
+    int currentPathIndex = 0;            // 現在目指している経路のインデックス
 
-    // 現在の目標座標に到達したか
-    bool isPathCalculated = false;
-
-    // 経路探索結果の次の目標セル（グリッド座標）
-    DirectX::XMINT2 nextTargetGridPos = { -1, -1 }; // -1は無効な目標を指す
-
-    // 次のパスが計算が必要がどうかのフラグ
-    bool needsPathRecalc = true;
+    // 経路再計算用タイマー（毎フレームA*は重いため）
+    float pathRecalcTimer = 0.0f;
+    static constexpr float PATH_RECALC_INTERVAL = 0.5f; // 0.5秒ごとに経路更新
 
     // コンストラクタで初期値を設定可能
     GuardComponent(
         float predDist = 5.0f,
         bool active = true,
         float delay = 0.0f,
-        float spd = 5.0f, // ← デフォルトスピード
+        float spd = 4.0f,
         float vRange = 5.0f,
         float vAngle = 60.0f
     )
@@ -60,9 +56,11 @@ struct GuardComponent
         , isActive(active)
         , delayBeforeChase(delay)
         , elapsedTime(0.0f)
-        , speed(spd) // ← 初期化
+        , speed(spd)
         , viewRange(vRange)
         , viewAngle(vAngle)
+        , currentPathIndex(0)
+        , pathRecalcTimer(0.0f)
     {
     }
 };

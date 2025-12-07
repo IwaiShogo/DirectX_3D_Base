@@ -29,6 +29,19 @@ using namespace ECS;
 // ===== 静的メンバー変数の定義 =====
 ECS::Coordinator* StageSelectScene::s_coordinator = nullptr;
 
+std::string GetStageItemIconPath(const std::string& itemID)
+{
+	if (itemID == "Takara_Daiya")   return "ICO_TREASURE1";
+	if (itemID == "Takara_Crystal") return "ICO_TREASURE2";
+	if (itemID == "Takara_Yubiwa")  return "ICO_TREASURE3";
+	if (itemID == "Takara_Kaiga1")  return "ICO_TREASURE4";
+	if (itemID == "Takara_Kaiga2")  return "ICO_TREASURE5";
+	if (itemID == "Takara_Kaiga3")  return "ICO_TREASURE6";
+
+	// デフォルト
+	return "ICO_TREASURE";
+}
+
 void StageSelectScene::Init()
 {
 	// 1. 初期化
@@ -230,10 +243,29 @@ void StageSelectScene::LoadStageData()
 		i >> j;
 		for (auto& el : j.items())
 		{
+			auto& val = el.value();
 			StageData d;
-			d.name = el.value().value("name", "Unknown");
-			d.itemCount = el.value().value("itemCount", 0);
-			d.guardCount = el.value().value("guardCount", 0);
+			d.name = val.value("name", "Unknown Stage");
+			d.imageID = val.value("image", "default"); // デフォルト画像
+			d.timeLimitStar = val.value("timeLimitStar", 180.0f);
+
+			// アイテムリスト
+			if (val.contains("items") && val["items"].is_array()) {
+				for (const auto& item : val["items"]) d.items.push_back(item.get<std::string>());
+			}
+
+			// ギミック情報
+			if (val.contains("gimmicks") && val["gimmicks"].is_array()) {
+				for (const auto& gim : val["gimmicks"]) {
+					d.gimmicks.push_back({ gim.value("type", "Unknown"), gim.value("count", 0) });
+				}
+			}
+			else {
+				// 互換性: guardCountがあればギミックとして追加
+				int guards = val.value("guardCount", 0);
+				if (guards > 0) d.gimmicks.push_back({ "Guard", guards });
+			}
+
 			m_stageDataMap[el.key()] = d;
 		}
 	}
@@ -264,15 +296,91 @@ void StageSelectScene::SwitchState(bool toDetail)
 			m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = toDetail;
 		}
 	}
-
-	// 詳細表示時、コンソールに情報を出力（テキスト表示の代わり）
-	if (toDetail && m_stageDataMap.count(m_selectedStageID))
-	{
-		const auto& data = m_stageDataMap[m_selectedStageID];
-		std::cout << "=== Detail View ===" << std::endl;
-		std::cout << "Stage: " << data.name << std::endl;
-		std::cout << "Items: " << data.itemCount << std::endl;
-		std::cout << "Guards: " << data.guardCount << std::endl;
-		// ここで本来は、数字画像のEntityのテクスチャを差し替える等の処理を行う
-	}
 }
+
+//void StageSelectScene::CreateDetailUI()
+//{
+//	// 既存のUIを削除
+//	for (auto id : m_detailUIEntities) m_coordinator->DestroyEntity(id);
+//	m_detailUIEntities.clear();
+//
+//	if (m_stageDataMap.find(m_selectedStageID) == m_stageDataMap.end()) return;
+//	const auto& data = m_stageDataMap[m_selectedStageID];
+//
+//	// A. ステージイメージ (左側)
+//	ECS::EntityID mapImg = m_coordinator->CreateEntity(
+//		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.3f, SCREEN_HEIGHT * 0.45f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(500, 350, 1)),
+//		UIImageComponent(data.imageID) // JSONのimageIDを使用
+//	);
+//	m_detailUIEntities.push_back(mapImg);
+//
+//	// B. 情報パネル (右側)
+//	float infoX = SCREEN_WIDTH * 0.7f;
+//	float startY = SCREEN_HEIGHT * 0.3f;
+//
+//	// B-1. 目標タイム表示
+//	// (本来はフォント描画ですが、ここでは概念的にアイコンと枠を表示)
+//	// 「TARGET TIME: 03:00」のような表示が必要
+//	// ... (フォント描画ロジックを入れるか、簡易アイコンのみ) ...
+//
+//	// B-2. 出現アイテム一覧
+//	float itemSize = 50.0f;
+//	for (size_t i = 0; i < data.items.size(); ++i) {
+//		std::string path = GetStageItemIconPath(data.items[i]);
+//		ECS::EntityID itemIcon = m_coordinator->CreateEntity(
+//			TransformComponent(
+//				XMFLOAT3(infoX + (i % 3) * (itemSize + 10), startY + (i / 3) * (itemSize + 10), 0),
+//				XMFLOAT3(0, 0, 0), XMFLOAT3(itemSize, itemSize, 1)
+//			),
+//			UIImageComponent(path)
+//		);
+//		m_detailUIEntities.push_back(itemIcon);
+//	}
+//
+//	// B-3. ギミック情報 (Guardアイコン x 個数 など)
+//	float gimY = startY + 150.0f;
+//	for (size_t i = 0; i < data.gimmicks.size(); ++i) {
+//		auto& gim = data.gimmicks[i];
+//		std::string path = "ICO_TASER"; // 仮
+//		if (gim.type == "Guard") path = "ICO_TASER";
+//
+//		// アイコン
+//		ECS::EntityID gimIcon = m_coordinator->CreateEntity(
+//			TransformComponent(XMFLOAT3(infoX, gimY + i * 60, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(50, 50, 1)),
+//			UIImageComponent(path)
+//		);
+//		m_detailUIEntities.push_back(gimIcon);
+//
+//		// 個数表示 (簡易的にアイコンを並べるか、本来は数字フォント)
+//		// ここではアイコンを個数分並べる簡易実装
+//		for (int k = 1; k < gim.count && k < 5; ++k) {
+//			ECS::EntityID subIcon = m_coordinator->CreateEntity(
+//				TransformComponent(XMFLOAT3(infoX + k * 40, gimY + i * 60, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(40, 40, 1)),
+//				UIImageComponent(path)
+//			);
+//			m_detailUIEntities.push_back(subIcon);
+//		}
+//	}
+//
+//	// C. ボタン類
+//	// [Start]
+//	ECS::EntityID startBtn = m_coordinator->CreateEntity(
+//		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.85f, SCREEN_HEIGHT * 0.85f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 80, 1)),
+//		UIImageComponent("BTN_DECISION"),
+//		UIButtonComponent(ButtonState::Normal, true, [this]() {
+//			GameScene::SetStageNo(m_selectedStageID);
+//			SceneManager::ChangeScene<GameScene>();
+//			})
+//	);
+//	m_detailUIEntities.push_back(startBtn);
+//
+//	// [Back]
+//	ECS::EntityID backBtn = m_coordinator->CreateEntity(
+//		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.15f, SCREEN_HEIGHT * 0.85f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 80, 1)),
+//		UIImageComponent("BTN_REBERSE"),
+//		UIButtonComponent(ButtonState::Normal, true, [this]() {
+//			this->SwitchState(false);
+//			})
+//	);
+//	m_detailUIEntities.push_back(backBtn);
+//}

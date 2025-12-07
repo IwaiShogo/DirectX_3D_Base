@@ -39,6 +39,8 @@ namespace
 	POINT g_prevMousePos = { 0, 0 };
 	POINT g_currentMousePos = { 0, 0 };
 	XMFLOAT2 g_mouseDelta = { 0.0f, 0.0f };
+	
+	bool g_isMouseLocked = true;
 
 	// コールバック関数: 最初に見つかったジョイスティックをセットアップする
 	BOOL CALLBACK EnumJoysticksCallback(const DIDEVICEINSTANCE* pdidInstance, VOID* pContext)
@@ -56,12 +58,27 @@ namespace
 BYTE g_keyTable[256];
 BYTE g_oldTable[256];
 
+void SetMouseLocked(bool locked)
+{
+	g_isMouseLocked = locked;
+	if (locked) {
+		// ロック時はカーソルを消す
+		while (ShowCursor(FALSE) >= 0);
+	}
+	else {
+		// 解除時はカーソルを出す
+		while (ShowCursor(TRUE) < 0);
+	}
+}
+
 HRESULT InitInput()
 {
 	// 1. キーボード・マウス初期化
 	GetKeyboardState(g_keyTable);
 	GetCursorPos(&g_prevMousePos);
 	g_currentMousePos = g_prevMousePos;
+
+	SetMouseLocked(true);
 
 	// 2. DirectInputの初期化
 	// インスタンス作成
@@ -97,6 +114,9 @@ HRESULT InitInput()
 }
 void UninitInput()
 {
+	// 終了時はカーソルを非表示に戻す
+	SetMouseLocked(false);
+
 	if (g_pJoystick) {
 		g_pJoystick->Unacquire();
 		g_pJoystick->Release();
@@ -113,33 +133,57 @@ void UpdateInput()
 	memcpy_s(g_oldTable, sizeof(g_oldTable), g_keyTable, sizeof(g_keyTable));
 	GetKeyboardState(g_keyTable);
 
-	// 2. マウス
-	g_prevMousePos = g_currentMousePos;
-	GetCursorPos(&g_currentMousePos);
-	g_mouseDelta.x = static_cast<float>(g_currentMousePos.x - g_prevMousePos.x);
-	g_mouseDelta.y = static_cast<float>(g_currentMousePos.y - g_prevMousePos.y);
+	// 2. マウス処理 (ロック＆デルタ計算)
+	HWND hWnd = GetActiveWindow();
+	if (g_isMouseLocked && hWnd)
+	{
+		// ウィンドウの中心座標を計算
+		RECT rect;
+		GetClientRect(hWnd, &rect);
+		POINT center = { (rect.right - rect.left) / 2, (rect.bottom - rect.top) / 2 };
+		ClientToScreen(hWnd, &center);
 
-	// 3. XInput (Xbox) 更新
+		// 現在のカーソル位置を取得
+		POINT currentPos;
+		GetCursorPos(&currentPos);
+
+		// 中心からの移動量を計算 (これがDeltaになる)
+		g_mouseDelta.x = static_cast<float>(currentPos.x - center.x);
+		g_mouseDelta.y = static_cast<float>(currentPos.y - center.y);
+
+		// カーソルを中心に強制リセット
+		SetCursorPos(center.x, center.y);
+
+		// 現在位置等は中心として記録
+		g_currentMousePos = center;
+		g_prevMousePos = center;
+	}
+	else
+	{
+		// ロックされていない場合は通常計測
+		g_prevMousePos = g_currentMousePos;
+		GetCursorPos(&g_currentMousePos);
+		g_mouseDelta.x = static_cast<float>(g_currentMousePos.x - g_prevMousePos.x);
+		g_mouseDelta.y = static_cast<float>(g_currentMousePos.y - g_prevMousePos.y);
+	}
+
+	// 3. XInput
 	g_prevControllerState[0] = g_controllerState[0];
 	DWORD dwResult = XInputGetState(0, &g_controllerState[0]);
 	g_isXInputConnected = (dwResult == ERROR_SUCCESS);
 
-	// 4. DirectInput (PS/Other) 更新
+	// 4. DirectInput
 	if (g_pJoystick)
 	{
 		g_prevDiState = g_diState;
 		HRESULT hr = g_pJoystick->GetDeviceState(sizeof(DIJOYSTATE2), &g_diState);
-
 		if (FAILED(hr)) {
-			// 取得失敗時は再取得を試みる
 			hr = g_pJoystick->Acquire();
 			while (hr == DIERR_INPUTLOST) hr = g_pJoystick->Acquire();
-
 			if (SUCCEEDED(hr)) {
 				g_pJoystick->GetDeviceState(sizeof(DIJOYSTATE2), &g_diState);
 			}
 			else {
-				// 切断されたとみなす（簡易）
 				ZeroMemory(&g_diState, sizeof(g_diState));
 			}
 		}
@@ -180,6 +224,16 @@ bool IsMousePress(int mouseButton) // 0:Left, 1:Right, 2:Middle
 	if (mouseButton == 1) key = VK_RBUTTON;
 	if (mouseButton == 2) key = VK_MBUTTON;
 	return IsKeyPress(static_cast<BYTE>(key));
+}
+
+bool IsMouseTrigger(int mouseButton)
+{
+	int key = VK_LBUTTON;
+	if (mouseButton == 1) key = VK_RBUTTON;
+	if (mouseButton == 2) key = VK_MBUTTON;
+
+	// 既存の IsKeyTrigger を利用して判定
+	return IsKeyTrigger(static_cast<BYTE>(key));
 }
 
 DirectX::XMFLOAT2 GetMousePosition()
