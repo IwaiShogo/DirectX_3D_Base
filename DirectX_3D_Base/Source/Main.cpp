@@ -31,6 +31,7 @@
 #include "Systems/Input.h"
 #include "Systems/AssetManager.h"
 #include "Systems/XAudio2/SoundEngine.h"
+#include "ECS/Systems/Rendering/EffectSystem.h"
 
 // Scene
 #include "Scene/SceneManager.h"
@@ -42,6 +43,8 @@
 
 // timeGetTime周りの使用
 #pragma comment(lib, "winmm.lib")
+#pragma comment(lib, "Effekseer.lib")
+#pragma comment(lib, "EffekseerRendererDX11.lib")
 
 // ===== プロトタイプ宣言 =====
 int Init(HINSTANCE hInstance, int nCmdShow);	// 初期化
@@ -62,7 +65,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
  */
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	//_CrtSetBreakAlloc();	// 割り当て番号を設定
+	//_CrtSetBreakAlloc(408851);	// 割り当て番号を設定
 
 	/* メモリリークチェック */
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -211,7 +214,8 @@ int Init(HINSTANCE hInstance, int nCmdShow)
 	if (!assetManager.LoadModelList("Assets/CSV/ModelList.csv") ||
 		!assetManager.LoadTextureList("Assets/CSV/TextureList.csv") ||
 		!assetManager.LoadSoundList("Assets/CSV/SoundList.csv") ||
-		!assetManager.LoadAnimationList("Assets/CSV/AnimationList.csv"))
+		!assetManager.LoadAnimationList("Assets/CSV/AnimationList.csv") ||
+		!assetManager.LoadEffectList("Assets/CSV/EffectList.csv"))
 	{
 		// 読み込み失敗時はログを出力し、初期化を中断
 		MessageBox(hWnd, "アセットリストのロードに失敗しました。ファイルパスを確認してください。", "エラー", MB_OK);

@@ -119,6 +119,11 @@ namespace Asset
 		return LoadAssetListInternal(csvPath, m_animationMap, AssetType::Animation);
 	}
 
+	bool AssetManager::LoadEffectList(const std::string& csvPath)
+	{
+		return LoadAssetListInternal(csvPath, m_effectMap, AssetType::Effect);
+	}
+
 	// ----------------------------------------
 	// アセットパス取得インターフェス
 	// ----------------------------------------
@@ -163,6 +168,17 @@ namespace Asset
 			return it->second.filePath;
 		}
 		std::cerr << "Error: Animation Asset ID '" << assetID << "' not found." << std::endl;
+		return "";
+	}
+
+	std::string AssetManager::GetEffectPath(const std::string& assetID) const
+	{
+		auto it = m_effectMap.find(assetID);
+		if (it != m_effectMap.end())
+		{
+			return it->second.filePath;
+		}
+		std::cerr << "Error: Effect Asset ID '" << assetID << "' not found." << std::endl;
 		return "";
 	}
 	
@@ -283,6 +299,49 @@ namespace Asset
 		}
 	}
 
+	Effekseer::EffectRef AssetManager::LoadEffect(const std::string& assetID)
+	{
+		// 1. 既にロード済みならマップから返す
+		auto it = m_effectRefMap.find(assetID);
+		if (it != m_effectRefMap.end())
+		{
+			return it->second;
+		}
+
+		// 2. CSV情報からパスを取得
+		auto infoIt = m_effectMap.find(assetID); // ファイルパス用マップ
+		if (infoIt == m_effectMap.end())
+		{
+			std::cerr << "Error: Effect Asset ID '" << assetID << "' not registered." << std::endl;
+			return nullptr;
+		}
+
+		if (m_effekseerManager == nullptr)
+		{
+			return nullptr;
+		}
+
+		const std::string& filePath = infoIt->second.filePath;
+		std::wstring wFilePath(filePath.begin(), filePath.end());
+
+		// 3. ロード (スマートポインタが返る)
+		Effekseer::EffectRef effect = Effekseer::Effect::Create(m_effekseerManager, (const char16_t*)wFilePath.c_str());
+
+		if (effect != nullptr)
+		{
+			// 4. マップに保存 (参照カウント+1)
+			m_effectRefMap[assetID] = effect;
+
+			// AssetInfoのpResourceは使わない (nullptrのままにするか、目印を入れる)
+			infoIt->second.pResource = (void*)1;
+
+			std::cout << "Effect '" << assetID << "' loaded." << std::endl;
+			return effect;
+		}
+
+		return nullptr;
+	}
+
 	// ----------------------------------------
 	// キャッシュ解放関数
 	// ----------------------------------------
@@ -324,11 +383,34 @@ namespace Asset
 			assetMap.clear(); // マップから全てのエントリを削除
 			};
 
+		m_effectRefMap.clear();
+
+		// pResourceフラグのリセット
+		for (auto& pair : m_effectMap) pair.second.pResource = nullptr;
+
+		std::cout << "AssetManager: Effects unloaded." << std::endl;
+
 		// 実際には型安全を確保する必要がありますが、Modelについては new/delete が確実なため実装します。
 		unloadMap(m_modelMap, "Model");
 		unloadMap(m_textureMap, "Texture");
 		unloadMap(m_soundMap, "Sound");
 
 		std::cout << "AssetManager: Resource unloading completed." << std::endl;
+	}
+
+	void AssetManager::UnloadEffects()
+	{
+		// スマートポインタ(EffectRef)のマップをクリアするだけで、
+		// 参照カウントが減り、自動的にリソースが解放されます。
+		size_t count = m_effectRefMap.size();
+		m_effectRefMap.clear();
+
+		// AssetInfo側のダミーフラグもリセット（念のため）
+		for (auto& pair : m_effectMap)
+		{
+			pair.second.pResource = nullptr;
+		}
+
+		std::cout << "AssetManager: Unloaded " << count << " Effect resources." << std::endl;
 	}
 }

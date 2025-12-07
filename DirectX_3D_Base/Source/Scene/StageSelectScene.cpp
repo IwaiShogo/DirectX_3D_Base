@@ -204,6 +204,12 @@ void StageSelectScene::Init()
 
 void StageSelectScene::Uninit()
 {
+	auto effectSystem = ECS::ECSInitializer::GetSystem<EffectSystem>();
+	if (effectSystem)
+	{
+		effectSystem->Uninit();
+	}
+
 	ECSInitializer::UninitECS();
 	m_coordinator.reset();
 	s_coordinator = nullptr;
@@ -226,6 +232,11 @@ void StageSelectScene::Draw()
 	{
 		system->DrawSetup();
 		system->DrawEntities();
+	}
+
+	if (auto system = ECS::ECSInitializer::GetSystem<EffectSystem>())
+	{
+		system->Render();
 	}
 
 	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())

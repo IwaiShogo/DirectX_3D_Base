@@ -133,6 +133,22 @@ void UpdateInput()
 	memcpy_s(g_oldTable, sizeof(g_oldTable), g_keyTable, sizeof(g_keyTable));
 	GetKeyboardState(g_keyTable);
 
+	// ESCキーが押されたらロック状態を反転（解除/ロック）
+	if (IsKeyTrigger(VK_ESCAPE))
+	{
+		SetMouseLocked(!g_isMouseLocked);
+	}
+
+	// ロックが解除されている状態で、左クリックされたらゲームに復帰（再ロック）
+	if (!g_isMouseLocked)
+	{
+		// IsMouseTrigger(0) でも良いですが、キー情報更新直後なので直接判定
+		if (g_keyTable[VK_LBUTTON] & 0x80)
+		{
+			SetMouseLocked(true);
+		}
+	}
+
 	// 2. マウス処理 (ロック＆デルタ計算)
 	HWND hWnd = GetActiveWindow();
 	if (g_isMouseLocked && hWnd)

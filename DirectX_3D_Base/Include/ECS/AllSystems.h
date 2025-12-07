@@ -34,6 +34,8 @@
 #include "ECS/Systems/Core/AudioSystem.h"
 // @system	タイトルコントローラー
 #include "ECS/Systems/Core/TitleControlSystem.h"
+// @system	生存時間
+#include "ECS/Systems/Core/LifeTimeSystem.h"
 
 
 // @folder	Rendering
@@ -43,6 +45,8 @@
 #include "ECS/Systems/Rendering/DebugDrawSystem.h"
 // @system	アニメーション
 #include "ECS/Systems/Rendering/AnimationSystem.h"
+// @system	エフェクト
+#include "ECS/Systems/Rendering/EffectSystem.h"
 
 // @folder	Physics
 // @system	衝突判定

@@ -69,6 +69,8 @@ namespace ECS
 
 		static EntityID CreateBasicCamera(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
+		static EntityID CreateOneShotEffect(Coordinator* coordinator, const std::string& assetID, const DirectX::XMFLOAT3& position, float duration, float scale = 1.0f);
+
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止
 		EntityFactory() = delete;

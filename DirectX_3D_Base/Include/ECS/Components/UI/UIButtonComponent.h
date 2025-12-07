@@ -59,6 +59,10 @@ struct UIButtonComponent
 		, isVisible(initialVisible)
 		, onClick(callback)
 	{
+		if (!this->onClick)
+		{
+			this->onClick = []() {};
+		}
 	}
 };
 

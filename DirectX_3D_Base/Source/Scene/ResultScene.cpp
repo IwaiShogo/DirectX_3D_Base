@@ -221,8 +221,15 @@ void ResultScene::Init()
 
 void ResultScene::Uninit()
 {
-	//このシーンで作成したエンティティを破棄
-	std::cout << "ResultScene::Uninit() - Result Scene Systems Destroyed." << std::endl;
+	auto effectSystem = ECS::ECSInitializer::GetSystem<EffectSystem>();
+	if (effectSystem)
+	{
+		effectSystem->Uninit();
+	}
+
+	ECS::ECSInitializer::UninitECS();
+
+	m_coordinator.reset();
 }
 
 void ResultScene::Update(float deltaTime)
@@ -241,6 +248,11 @@ void ResultScene::Draw()
 	{
 		system->DrawSetup();
 		system->DrawEntities();
+	}
+
+	if (auto system = ECS::ECSInitializer::GetSystem<EffectSystem>())
+	{
+		system->Render();
 	}
 
 	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())

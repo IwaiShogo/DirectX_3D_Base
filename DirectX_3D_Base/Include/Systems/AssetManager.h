@@ -29,6 +29,8 @@
 #include "Systems/Model.h"
 #include "Systems/DirectX/Texture.h"
 #include "Systems/XAudio2/SoundEffect.h"
+#include <Effekseer/Effekseer.h>
+#include <Effekseer/EffekseerRendererDX11.h>
 
 namespace Asset
 {
@@ -42,6 +44,7 @@ namespace Asset
 		Texture,
 		Sound,
 		Animation,
+		Effect,
 		Unknown	// 不明な種類
 	};
 
@@ -76,6 +79,7 @@ namespace Asset
 		std::map<std::string, AssetInfo> m_textureMap;
 		std::map<std::string, AssetInfo> m_soundMap;
 		std::map<std::string, AssetInfo> m_animationMap;
+		std::map<std::string, AssetInfo> m_effectMap;
 
 	private:
 		// 外部からのインスタンス化を禁止
@@ -85,6 +89,9 @@ namespace Asset
 		AssetManager& operator=(const AssetManager&) = delete;
 		AssetManager(AssetManager&&) = delete;
 		AssetManager& operator=(AssetManager&&) = delete;
+
+		Effekseer::ManagerRef m_effekseerManager = nullptr;
+		std::map<std::string, Effekseer::EffectRef> m_effectRefMap;
 
 	public:
 		/**
@@ -115,6 +122,8 @@ namespace Asset
 			}
 		}
 
+		void SetEffekseerManager(Effekseer::ManagerRef manager) { m_effekseerManager = manager; }
+
 		// ----------------------------------------
 		// ヘルパー関数
 		// ----------------------------------------
@@ -127,6 +136,7 @@ namespace Asset
 		bool LoadTextureList(const std::string& csvPath);
 		bool LoadSoundList(const std::string& csvPath);
 		bool LoadAnimationList(const std::string& csvPath);
+		bool LoadEffectList(const std::string& csvPath);
 
 		// ----------------------------------------
 		// アセットパス取得インターフェス
@@ -135,6 +145,7 @@ namespace Asset
 		std::string GetTexturePath(const std::string& assetID) const;
 		std::string GetSoundPath(const std::string& assetID) const;
 		std::string GetAnimationPath(const std::string& assetID) const;
+		std::string GetEffectPath(const std::string& assetID) const;
 
 		// ----------------------------------------
 		// リソースロードインタフェース
@@ -143,9 +154,11 @@ namespace Asset
 		AssetInfo* LoadModel(const std::string& assetID, float scale, Model::Flip flip);
 		AssetInfo* LoadTexture(const std::string& assetID);
 		AssetInfo* LoadSound(const std::string& assetID);
+		Effekseer::EffectRef LoadEffect(const std::string& assetID);
 
 		// キャッシュ解放関数 (後のステップで実装)
 		void UnloadAll();
+		void UnloadEffects();
 	};
 }
 

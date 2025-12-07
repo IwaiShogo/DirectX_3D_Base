@@ -175,7 +175,15 @@ void TitleScene::Init()
 
 void TitleScene::Uninit()
 {
+	auto effectSystem = ECS::ECSInitializer::GetSystem<EffectSystem>();
+	if (effectSystem)
+	{
+		effectSystem->Uninit();
+	}
+
 	ECS::ECSInitializer::UninitECS();
+
+	m_coordinator.reset();
 }
 
 void TitleScene::Update(float deltaTime)
@@ -196,6 +204,11 @@ void TitleScene::Draw()
 	{
 		system->DrawSetup();
 		system->DrawEntities();
+	}
+
+	if (auto system = ECS::ECSInitializer::GetSystem<EffectSystem>())
+	{
+		system->Render();
 	}
 
 	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())

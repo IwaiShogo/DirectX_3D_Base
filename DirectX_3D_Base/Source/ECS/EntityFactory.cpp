@@ -509,3 +509,27 @@ EntityID ECS::EntityFactory::CreateBasicCamera(Coordinator* coordinator, const D
 
 	return entity;
 }
+
+EntityID EntityFactory::CreateOneShotEffect(Coordinator* coordinator, const std::string& assetID, const DirectX::XMFLOAT3& position, float duration, float scale)
+{
+	EntityID entity = coordinator->CreateEntity(
+		TagComponent("Effect"),
+		TransformComponent(
+			position,
+			{ 0.0f, 0.0f, 0.0f },
+			{ 1.0f, 1.0f, 1.0f }
+		),
+		// エフェクト再生コンポーネント
+		EffectComponent(
+			assetID,
+			false,  // ループなし
+			true,   // 生成時に即再生
+			{ 0,0,0 },
+			scale
+		),
+		// 寿命コンポーネント (時間が来たらEntityごと消滅)
+		LifeTimeComponent(duration)
+	);
+
+	return entity;
+}

@@ -44,6 +44,8 @@
 #include "ECS/Components/Core/SoundComponent.h"
 // @conponent	単発サウンド
 #include "ECS/Components/Core/OneShotSoundComponent.h"
+// @component	生存時間
+#include "ECS/Components/Core/LifeTimeComponent.h"
 
 // @folder		Rendering
 // @component	描画
@@ -54,6 +56,8 @@
 #include "ECS/Components/Rendering/ModelComponent.h"
 // @component	アニメーション
 #include "ECS/Components/Rendering/AnimationComponent.h"
+// @component	エフェクト
+#include "ECS/Components/Rendering/EffectComponent.h"
 
 // @folder		Physics
 // @component	衝突判定

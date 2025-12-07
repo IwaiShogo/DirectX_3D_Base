@@ -168,11 +168,26 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  ModelComponent, AnimationComponent
     );
 
+    // @system  LifeTimeSystem
+    // @brief   生存時間
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  LifeTimeSystem,
+        /* Components   */  LifeTimeComponent
+    );
+
     // @system  TitleControlSystem
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  TitleControlSystem,
         /* Components   */  TitleControllerComponent
+    );
+
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        ResultControlSystem,
+        TagComponent,UIButtonComponent
+
     );
 
     // ------------------------------------------------------------
@@ -188,19 +203,20 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  RenderComponent, TransformComponent 
     );
 
+    // @system  EffectSystem
+    // @brief   エフェクト
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  EffectSystem,
+        /* Components   */  EffectComponent, TransformComponent
+    );
+
     // @system  UIRenderSystem
     // @brief   UIの描画
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  UIRenderSystem,
         /* Components   */  UIImageComponent
-    );
-
-    REGISTER_SYSTEM_AND_INIT(
-        coordinator,
-        ResultControlSystem,
-        TagComponent,UIButtonComponent
-
     );
 
     // ------------------------------------------------------------

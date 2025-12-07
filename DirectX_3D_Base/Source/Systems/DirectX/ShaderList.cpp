@@ -239,7 +239,7 @@ float4 main(PS_IN pin) : SV_TARGET
 		color = tex.Sample(samp, pin.uv);
 	float3 N = normalize(pin.normal);
 	float3 L = normalize(-lightDir);
-	float dotNL = saturate((dot(N, L) + 0.5f) / 1.5f);
+	float dotNL = saturate(dot(N, L) * 0.5f + 0.5f);
 	float3 diffuse = objDiffuse.rgb * lightDiffuse.rgb;
 	float3 ambient = objAmbient.rgb * lightDiffuse.rgb;
 	float3 specular = objSpecular.rgb * lightDiffuse.rgb;

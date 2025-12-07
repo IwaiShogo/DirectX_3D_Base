@@ -21,7 +21,7 @@
 #include "ECS/ECSInitializer.h"
 #include "ECS/Systems/Gameplay/PlayerControlSystem.h"
 #include "ECS/ECS.h"
-#include "Scene/ResultScene.h"
+#include "ECS/EntityFactory.h"
 #include <iostream>
 
 using namespace DirectX;
@@ -108,6 +108,11 @@ void PlayerControlSystem::Update(float deltaTime)
 		auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
 		auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(entity);
 		auto& playerControl = m_coordinator->GetComponent<PlayerControlComponent>(entity);
+
+		if (IsKeyPress('E'))
+		{
+			ECS::EntityFactory::CreateOneShotEffect(m_coordinator, "EFK_TEST", transform.position, 6.0f);
+		}
 
 		// =====================================
 		// 1. ˆÚ“® (ƒJƒƒ‰Šî€‚Å‚ÌˆÚ“®)

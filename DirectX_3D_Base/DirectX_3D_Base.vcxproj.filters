@@ -121,6 +121,12 @@
     <ClCompile Include="Source\ECS\Systems\Rendering\AnimationSystem.cpp">
       <Filter>Source Files\ECS\Systems\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Rendering\EffectSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Core\LifeTimeSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Scene\GameScene.h">
@@ -340,6 +346,18 @@
       <Filter>Header Files\ECS\Components\UI</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Systems\Core\ResultControlSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Rendering\EffectComponent.h">
+      <Filter>Header Files\ECS\Components\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Rendering\EffectSystem.h">
+      <Filter>Header Files\ECS\Systems\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Core\LifeTimeComponent.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\LifeTimeSystem.h">
       <Filter>Header Files\ECS\Systems\Core</Filter>
     </ClInclude>
   </ItemGroup>

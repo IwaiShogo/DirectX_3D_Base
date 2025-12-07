@@ -65,41 +65,6 @@ void RenderSystem::DrawSetup()
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(-size, 0, 0), XMFLOAT4(0, 0, 0, 1));
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, -size), XMFLOAT4(0, 0, 0, 1));
 
-	// カメラの値
-	//static bool camAutoSwitch = false;
-	//static bool camUpDownSwitch = true;
-	//static float camAutoRotate = 1.0f;
-	//if (IsKeyTrigger(VK_RETURN)) {
-	//	camAutoSwitch ^= true;
-	//}
-	//if (IsKeyTrigger(VK_SPACE)) {
-	//	camUpDownSwitch ^= true;
-	//}
-
-	//XMVECTOR camPos;
-	//if (camAutoSwitch) {
-	//	camAutoRotate += 0.01f;
-	//}
-	//camPos = XMVectorSet(
-	//	cosf(camAutoRotate) * 5.0f,
-	//	3.5f * (camUpDownSwitch ? 1.0f : -1.0f),
-	//	sinf(camAutoRotate) * 5.0f,
-	//	0.0f);
-
-	//// ジオメトリ用カメラ初期化
-	//XMFLOAT4X4 mat[2];
-	//XMStoreFloat4x4(&mat[0], XMMatrixTranspose(
-	//	XMMatrixLookAtLH(
-	//		camPos,
-	//		XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f),
-	//		XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)
-	//	)));
-	//XMStoreFloat4x4(&mat[1], XMMatrixTranspose(
-	//	XMMatrixPerspectiveFovLH(
-	//		XMConvertToRadians(60.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1f, 1000.0f)
-	//));
-	//Geometory::SetView(mat[0]);
-	//Geometory::SetProjection(mat[1]);
 #endif
 	auto mapGenSystem = ECS::ECSInitializer::GetSystem<MapGenerationSystem>();
 	if (mapGenSystem)
@@ -151,13 +116,18 @@ void RenderSystem::DrawEntities()
 		// View行列の逆行列を計算（= カメラのワールド行列）
 		XMMATRIX matInvView = XMMatrixInverse(nullptr, matView);
 
-		// 逆行列のZ軸（3行目）がカメラの前方ベクトル
+		// 逆行列のZ軸（3行目）がカメラの前方ベクトル（視線方向）
 		XMFLOAT3 cameraForward;
 		XMStoreFloat3(&cameraForward, matInvView.r[2]);
 
-		// ライトを設定（色は白、方向はカメラの向き）
-		// ※SetLight関数がstaticでない場合はインスタンス経由で呼ぶ必要がありますが、
-		//   ここではShaderList::SetLightとして呼び出します。
+		// 【重要】ベクトルの正規化（長さを1.0にする）
+		// これをしないと、計算誤差で光の強さが不安定になることがあります
+		XMVECTOR vLight = XMLoadFloat3(&cameraForward);
+		vLight = XMVector3Normalize(vLight);
+		XMStoreFloat3(&cameraForward, vLight);
+
+		// ライトを設定 (色は白)
+		// これにより、カメラがどこを向いても、画面中央の物体は常に正面から照らされます
 		ShaderList::SetLight(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), cameraForward);
 	}
 
