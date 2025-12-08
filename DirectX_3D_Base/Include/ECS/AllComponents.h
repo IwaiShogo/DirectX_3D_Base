@@ -47,6 +47,8 @@
 // @component	¶‘¶ŠÔ
 #include "ECS/Components/Core/LifeTimeComponent.h"
 
+#include "ECS/Components/Core/PlayerControlComponent.h"
+
 // @folder		Rendering
 // @component	•`‰æ
 #include "ECS/Components/Rendering/RenderComponent.h"

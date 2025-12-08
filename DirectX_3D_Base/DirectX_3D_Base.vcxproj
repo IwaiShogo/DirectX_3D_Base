@@ -197,6 +197,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Components\Core\GameStateComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\LifeTimeComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\OneShotSoundComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\PlayerControlComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\SoundComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\TagComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\TitleControllerComponent.h" />

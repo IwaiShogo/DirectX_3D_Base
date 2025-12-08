@@ -21,6 +21,9 @@
 #define ___GUARD_AI_SYSTEM_H___
 
 #include "ECS/ECS.h"
+#include "ECS/Components/Gameplay/MapComponent.h"
+#include "ECS/Components/Core/TransformComponent.h"
+#include "ECS/Components/Gimmick/GuardComponent.h"
 
 /**
  * struct   AStarNode

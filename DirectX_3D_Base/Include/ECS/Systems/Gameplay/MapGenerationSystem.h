@@ -28,6 +28,9 @@
 #include <iostream>
 #include "External/JSON/json.hpp"
 
+#include "ECS/Components/Gameplay/MapComponent.h"
+#include "ECS/Components/Gameplay/ItemTrackerComponent.h"
+
 using json = nlohmann::json;
 
 /**
