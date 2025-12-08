@@ -43,6 +43,26 @@ void GameControlSystem::Update(float deltaTime)
     // 1. コントローラー（GameStateを持つEntity）を取得
     EntityID controllerID = FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
     if (controllerID == INVALID_ENTITY_ID) return;
+    auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+
+    // モード切替検知 (TopView -> Action)
+    if (state.currentMode == GameMode::ACTION_MODE && state.sequenceState == GameSequenceState::None)
+    {
+        // アクションモードに入った瞬間、入場演出を開始
+        StartEntranceSequence(controllerID);
+    }
+
+    // シーケンス処理
+    if (state.sequenceState == GameSequenceState::Entering)
+    {
+        UpdateEntranceSequence(deltaTime, controllerID);
+        return; // 演出中はゲームロジックを止める
+    }
+    else if (state.sequenceState == GameSequenceState::Exiting)
+    {
+        UpdateExitSequence(deltaTime, controllerID);
+        return;
+    }
 
     if (!m_uiInitialized)
     {
@@ -58,12 +78,37 @@ void GameControlSystem::Update(float deltaTime)
     CheckSceneTransition(controllerID);      // ゲーム終了ならシーン遷移
 
     // シーン遷移が起きていなければUI更新
-    auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
     if (!state.isGameOver && !state.isGameClear) {
         UpdateTopViewUI(controllerID);
         UpdateScanLine(deltaTime, controllerID);
         UpdateSonarEffect(deltaTime, controllerID);
         UpdateGameUI(deltaTime, controllerID);
+        CheckDoorUnlock(controllerID);
+    }
+
+    // もしプレイ中ならゴール判定
+    if (state.sequenceState == GameSequenceState::Playing && !state.isGameOver)
+    {
+        EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+        EntityID exitDoorID = FindExitDoor();
+
+        if (playerID != INVALID_ENTITY_ID && exitDoorID != INVALID_ENTITY_ID)
+        {
+            // 出口ドアが開いていて、かつプレイヤーが十分近づいたら脱出演出へ
+            auto& door = m_coordinator->GetComponent<DoorComponent>(exitDoorID);
+            if (door.state == DoorState::Open)
+            {
+                auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
+                auto& dTrans = m_coordinator->GetComponent<TransformComponent>(exitDoorID);
+
+                float distSq = XMVectorGetX(XMVector3LengthSq(XMLoadFloat3(&pTrans.position) - XMLoadFloat3(&dTrans.position)));
+                if (distSq < 2.0f * 2.0f) // 2m以内
+                {
+                    state.sequenceState = GameSequenceState::Exiting;
+                    state.sequenceTimer = 0.0f;
+                }
+            }
+        }
     }
 }
 
@@ -140,7 +185,7 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
                 isTarget = true;
                 restoreType = MESH_MODEL;
             }
-            if (tag == "ground" || tag == "wall")
+            if (tag == "ground" || tag == "wall" || tag == "door")
             {
                 isTarget = true;
                 restoreType = MESH_MODEL;
@@ -661,4 +706,179 @@ void GameControlSystem::SpawnSmallSonar(const XMFLOAT3& screenPos, XMFLOAT4 colo
             200.0f
         )
     );
+}
+
+// ---------------------------------------------------------
+// 入場演出 (StartEntranceSequence / UpdateEntranceSequence)
+// ---------------------------------------------------------
+void GameControlSystem::StartEntranceSequence(EntityID controllerID)
+{
+    auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+    state.sequenceState = GameSequenceState::Entering;
+    state.sequenceTimer = 0.0f;
+
+    // 1. プレイヤーをドアの外（またはドア位置）に配置
+    EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+    EntityID doorID = FindEntranceDoor(); // タグなどで入口ドアを探す関数
+
+    if (playerID != INVALID_ENTITY_ID && doorID != INVALID_ENTITY_ID)
+    {
+        auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
+        auto& dTrans = m_coordinator->GetComponent<TransformComponent>(doorID);
+
+        // ドアの回転(Y軸)を取得
+        float rad = dTrans.rotation.y;
+
+        // ★重要: ドアの「後ろ（外側）」へのベクトル
+        // モデルの向きによりますが、通常ドアの正面(Z+)が部屋の内側なら、
+        // 「外」は -Z 方向（つまり前方ベクトルの逆）になります。
+        // もし逆なら + を - に調整してください。
+
+        // ドアの外 5.0m の位置
+        float startDist = 5.0f;
+        float startX = dTrans.position.x - sin(rad) * startDist;
+        float startZ = dTrans.position.z - cos(rad) * startDist;
+
+        // プレイヤー配置
+        pTrans.position.x = startX;
+        pTrans.position.z = startZ;
+
+        // プレイヤーの向きをドアと同じにする（部屋の方を向く）
+        pTrans.rotation.y = dTrans.rotation.y;
+
+        // --- 2. ドアを開ける ---
+        if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
+            m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE");
+        }
+
+        // 通れるようにコリジョンをトリガー化
+        if (m_coordinator->HasComponent<CollisionComponent>(doorID)) {
+            m_coordinator->GetComponent<CollisionComponent>(doorID).type = COLLIDER_TRIGGER;
+        }
+
+        // ドアが開く音
+        EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_DOOR_OPEN");
+    }
+}
+
+void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID controllerID)
+{
+    auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+    state.sequenceTimer += deltaTime;
+
+    EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+    if (playerID == INVALID_ENTITY_ID) return;
+
+    auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
+
+    // アニメーション再生 (歩き)
+    if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
+        m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_WALK");
+    }
+
+    // --- 0.0s ~ 2.0s: 直進して部屋に入る ---
+    if (state.sequenceTimer < 2.0f)
+    {
+        // プレイヤーが向いている方向(回転)に進む
+        float speed = 4.0f * deltaTime; // 少し速めに
+        float rad = pTrans.rotation.y;
+
+        pTrans.position.x += sin(rad) * speed;
+        pTrans.position.z += cos(rad) * speed;
+    }
+    // --- 2.0s: 演出終了 ---
+    else
+    {
+        // 待機モーションに戻す
+        if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
+            m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_IDLE");
+        }
+
+        // ドアを閉める
+        EntityID doorID = FindEntranceDoor();
+        if (doorID != INVALID_ENTITY_ID) {
+            if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
+                m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE");
+            }
+            // コリジョンを壁に戻す (閉じ込める)
+            if (m_coordinator->HasComponent<CollisionComponent>(doorID)) {
+                m_coordinator->GetComponent<CollisionComponent>(doorID).type = COLLIDER_STATIC;
+            }
+            // 閉まる音
+            EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_DOOR_CLOSE");
+        }
+
+        // ゲーム状態をプレイ中に変更
+        state.sequenceState = GameSequenceState::Playing;
+    }
+}
+
+// ---------------------------------------------------------
+// アイテムコンプ時のドア開放
+// ---------------------------------------------------------
+void GameControlSystem::CheckDoorUnlock(EntityID controllerID)
+{
+    auto& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(controllerID);
+
+    // 全回収したら
+    if (tracker.collectedItems >= tracker.totalItems)
+    {
+        // 出口ドアを探して開ける
+        EntityID exitDoor = FindExitDoor();
+        if (exitDoor != INVALID_ENTITY_ID)
+        {
+            auto& door = m_coordinator->GetComponent<DoorComponent>(exitDoor);
+            if (door.isLocked) // まだ開いてなければ
+            {
+                door.isLocked = false;
+                 door.state = DoorState::Open;
+
+                m_coordinator->GetComponent<AnimationComponent>(exitDoor).Play("A_DOOR_OPEN");
+                m_coordinator->GetComponent<CollisionComponent>(exitDoor).type = COLLIDER_TRIGGER;
+
+                // 音やメッセージ「脱出せよ！」などを出す
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------
+// 脱出演出 (ゴール接触時に呼ばれる)
+// ---------------------------------------------------------
+void GameControlSystem::UpdateExitSequence(float deltaTime, EntityID controllerID)
+{
+    auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+    state.sequenceTimer += deltaTime;
+
+    EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+    auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
+
+    // 光の方へ歩いていく
+    float speed = 3.0f * deltaTime;
+    float rad = pTrans.rotation.y;
+    pTrans.position.x += sin(rad) * speed;
+    pTrans.position.z += cos(rad) * speed;
+
+    // フェードアウトなどをかけて、一定時間後にリザルトへ
+    if (state.sequenceTimer > 2.0f)
+    {
+        state.isGameClear = true;
+        CheckSceneTransition(controllerID); // リザルトへ遷移
+    }
+}
+
+EntityID GameControlSystem::FindEntranceDoor()
+{
+    for (auto const& entity : m_coordinator->GetActiveEntities()) {
+        if (m_coordinator->HasComponent<DoorComponent>(entity)) {
+            if (m_coordinator->GetComponent<DoorComponent>(entity).isEntrance) return entity;
+        }
+    }
+    return INVALID_ENTITY_ID;
+}
+
+EntityID GameControlSystem::FindExitDoor()
+{
+    // 入力ドアを出口としても使うため、Entranceと同じものを探す
+    return FindEntranceDoor();
 }

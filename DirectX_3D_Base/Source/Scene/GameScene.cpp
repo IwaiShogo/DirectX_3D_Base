@@ -23,7 +23,6 @@
 #include "ECS/ECSInitializer.h"
 #include "ECS/EntityFactory.h"
 #include "Systems/Input.h"
-
 #include <DirectXMath.h>
 #include <iostream>
 #include <typeindex> // SystemManager‚©‚ç‚ÌRenderSystemŽæ“¾‚ÉŽg—p

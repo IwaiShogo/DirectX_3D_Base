@@ -3,7 +3,7 @@ M_PLAYER,Model,Assets/Model/Player/kaitouanimu.fbx
 M_GUARD,Model,Assets/Model/Gimmick/keikan.fbx
 M_CORRIDOR,Model,Assets/Model/Stage/corridor.fbx
 M_WALL,Model,Assets/Model/Stage/wall.fbx
-M_TEZER,Model,Assets/Model/Gimmick/tezer.fbx
+M_TASER,Model,Assets/Model/Gimmick/tezer.fbx
 M_TITLE_MUSEUM,Model,Assets/Model/Prop/std_title_back3.fbx
 M_TREASURE1,Model,Assets/Model/Item/obj_daiya.fbx
 M_TREASURE2,Model,Assets/Model/Item/obj_crystal.fbx
@@ -11,3 +11,4 @@ M_TREASURE3,Model,Assets/Model/Item/obj_yubiwa.fbx
 M_TREASURE4,Model,Assets/Model/Item/treasure_painting_girl.fbx
 M_TREASURE5,Model,Assets/Model/Item/treasure_painting_sunflower.fbx
 M_TREASURE6,Model,Assets/Model/Item/treasure_painting_waterlily.fbx
+M_DOOR,Model,Assets/Model/Stage/obj_door.fbx

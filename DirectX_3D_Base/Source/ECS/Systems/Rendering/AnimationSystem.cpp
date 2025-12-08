@@ -70,5 +70,27 @@ void AnimationSystem::Update(float deltaTime)
         // 3. アニメーションの更新ステップ実行
         // ----------------------------------------------------
         modelComp.pModel->Step(deltaTime);
+
+        // ========================================================================
+        // ★追加: [解決策2] ノードアニメーション（ボーンなし）の適用処理
+        // ========================================================================
+
+        // TransformComponentを取得
+        // (SignatureにTransformComponentが含まれている前提)
+        auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
+
+        DirectX::XMFLOAT3 animPos;
+        DirectX::XMFLOAT3 animRot; // 度数法 (Degree)
+        DirectX::XMFLOAT3 animScale;
+
+        // モデルクラスに「現在のアニメーション変形値を取得する関数」を追加して呼び出す
+        // 戻り値が true なら「ボーンなしアニメーション」として Transform を更新する
+        if (modelComp.pModel->GetAnimatedTransform(animPos, animRot, animScale))
+        {
+            // エンティティのTransformをアニメーションの結果で上書き
+            transform.position = animPos;
+            transform.rotation = animRot;
+            transform.scale = animScale;
+        }
     }
 }

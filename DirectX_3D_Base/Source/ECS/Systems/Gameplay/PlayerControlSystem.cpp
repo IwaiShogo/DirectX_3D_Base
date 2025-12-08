@@ -45,11 +45,27 @@ void PlayerControlSystem::Update(float deltaTime)
 	
 	if (gameControllerID != ECS::INVALID_ENTITY_ID)
 	{
-		if (m_coordinator->GetComponent<GameStateComponent>(gameControllerID).currentMode == GameMode::SCOUTING_MODE)
+		auto& state = m_coordinator->GetComponent<GameStateComponent>(gameControllerID);
+
+		// 条件: 
+		// 1. 偵察モード (SCOUTING_MODE) の場合
+		// 2. プレイ中 (Playing) ではない場合 (Entering:入場演出, Exiting:脱出演出)
+		bool isScouting = (state.currentMode == GameMode::SCOUTING_MODE);
+		bool isCutscene = (state.sequenceState != GameSequenceState::Playing);
+
+		if (isScouting || isCutscene)
 		{
-			auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(gameControllerID);
-			rigidBody.velocity.x = 0.0f;
-			rigidBody.velocity.y = 0.0f;
+			// プレイヤーエンティティ全ての動きを止める
+			for (auto const& entity : m_entities)
+			{
+				auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(entity);
+				// 慣性で滑らないように速度をゼロにする
+				rigidBody.velocity.x = 0.0f;
+				rigidBody.velocity.z = 0.0f;
+				// rigidBody.velocity.y = 0.0f; // 重力落下はさせたい場合はYは触らない
+			}
+
+			// ここでリターンして、以降のキー入力処理を行わない
 			return;
 		}
 	}
