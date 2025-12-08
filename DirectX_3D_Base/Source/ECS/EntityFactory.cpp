@@ -89,7 +89,8 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 		),
 		AnimationComponent(
 			{
-				"A_PLAYER_IDLE"
+				"A_PLAYER_IDLE",
+				"A_PLAYER_RUN"
 			}
 		),
 		RigidBodyComponent(
@@ -111,6 +112,10 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 
 	auto& anim = coordinator->GetComponent<AnimationComponent>(player);
 	anim.Play("A_PLAYER_IDLE");
+
+	auto& ctrl = coordinator->GetComponent<PlayerControlComponent>(player);
+	ctrl.animState = PlayerAnimState::Idle; 
+
 
 	// 2. プレイヤーに追従するカメラエンティティ生成（後続ステップ1-3の準備）
 	// CameraComponentは、追従ロジックをCameraControlSystemに伝える情報を保持すると仮定

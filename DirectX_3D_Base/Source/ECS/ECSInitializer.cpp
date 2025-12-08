@@ -67,7 +67,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  PlayerControlSystem,
-        /* Components   */  PlayerControlComponent, TransformComponent, RigidBodyComponent
+        /* Components   */  PlayerControlComponent, TransformComponent, RigidBodyComponent,AnimationComponent
     );
 
     // @system  PhysicsSystem
