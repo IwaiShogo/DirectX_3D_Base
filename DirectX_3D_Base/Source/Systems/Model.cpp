@@ -1231,3 +1231,72 @@ void Model::LerpTransform(Transform* pOut, const Transform& a, const Transform& 
 	DirectX::XMStoreFloat4(&pOut->quaternion, vec[1][0]);
 	DirectX::XMStoreFloat3(&pOut->scale, vec[2][0]);
 }
+
+bool Model::GetAnimatedTransform(DirectX::XMFLOAT3& outPos, DirectX::XMFLOAT3& outRot, DirectX::XMFLOAT3& outScale)
+{
+	// 1. スキニングモデル（ボーンがある）かチェック
+	// ボーンがある場合はシェーダー(VS_ANIME)で動かすため、ここではfalseを返して処理しない
+	for (const auto& mesh : m_meshes)
+	{
+		if (!mesh.bones.empty()) return false;
+	}
+
+	// 2. アニメーションが再生されているかチェック
+	if (m_playNo == ANIME_NONE && m_blendNo == ANIME_NONE)
+	{
+		return false;
+	}
+
+	// 3. ルートノード(Index 0)の行列を取得
+	// Step()関数内で m_nodes[0].mat が更新されている前提です
+	if (m_nodes.empty()) return false;
+
+	DirectX::XMMATRIX rootMat = m_nodes[0].mat;
+
+	// 4. 行列を分解 (Scale, Rotation, Translation)
+	DirectX::XMVECTOR s, r, t;
+	if (!DirectX::XMMatrixDecompose(&s, &r, &t, rootMat))
+	{
+		return false;
+	}
+
+	// 5. 値の格納
+	DirectX::XMStoreFloat3(&outScale, s);
+	DirectX::XMStoreFloat3(&outPos, t);
+
+	// 6. クォータニオン -> オイラー角(度数) 変換
+	// TransformComponentは「度数法」で角度を持っているので変換が必要です
+	DirectX::XMFLOAT4 q;
+	DirectX::XMStoreFloat4(&q, r);
+
+	// 一般的な変換式 (Singularity対策込み)
+	float sqw = q.w * q.w;
+	float sqx = q.x * q.x;
+	float sqy = q.y * q.y;
+	float sqz = q.z * q.z;
+	float unit = sqx + sqy + sqz + sqw;
+	float test = q.x * q.w - q.y * q.z;
+
+	if (test > 0.4995f * unit) { // 北極 (特異点)
+		outRot.y = 2.0f * atan2f(q.y, q.x);
+		outRot.x = DirectX::XM_PIDIV2;
+		outRot.z = 0;
+	}
+	else if (test < -0.4995f * unit) { // 南極 (特異点)
+		outRot.y = -2.0f * atan2f(q.y, q.x);
+		outRot.x = -DirectX::XM_PIDIV2;
+		outRot.z = 0;
+	}
+	else {
+		outRot.y = atan2f(2.0f * q.w * q.y + 2.0f * q.z * q.x, 1 - 2.0f * (sqx + sqy));
+		outRot.x = asinf(2.0f * (q.w * q.x - q.y * q.z));
+		outRot.z = atan2f(2.0f * q.w * q.z + 2.0f * q.x * q.y, 1 - 2.0f * (sqz + sqx));
+	}
+
+	// ラジアン -> 度数へ変換
+	outRot.x = DirectX::XMConvertToDegrees(outRot.x);
+	outRot.y = DirectX::XMConvertToDegrees(outRot.y);
+	outRot.z = DirectX::XMConvertToDegrees(outRot.z);
+
+	return true;
+}

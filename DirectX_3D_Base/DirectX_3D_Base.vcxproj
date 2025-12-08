@@ -118,6 +118,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)External\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(ProjectDir)External\dll\*.dll" "$(OutDir)" /Y /I /D</Command>
@@ -137,6 +138,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)External\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(ProjectDir)External\dll\*.dll" "$(OutDir)" /Y /I /D
@@ -206,6 +208,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Components\Gameplay\ItemTrackerComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gameplay\MapComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gameplay\PlayerControlComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Gimmick\DoorComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gimmick\GuardComponent.h" />
     <ClInclude Include="Include\ECS\Components\Physics\CollisionComponent.h" />
     <ClInclude Include="Include\ECS\Components\Physics\RigidBodyComponent.h" />

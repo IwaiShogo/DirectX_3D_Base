@@ -33,6 +33,13 @@ enum class GameMode
 	ACTION_MODE,   // アクションフェーズ: 三人称視点
 };
 
+enum class GameSequenceState
+{
+	None,
+	Entering, // スタート演出
+	Playing,  // 通常プレイ
+	Exiting   // 脱出演出
+};
 /**
  * @struct GameStateComponent
  * @brief ゲーム全体の状態を保持する
@@ -52,6 +59,9 @@ struct GameStateComponent
 	bool requestRestart = false;	// 次のフレームでリトライを要求
 	bool requestNextStage = false;	// 次のフレームで次のステージへ遷移を要求
 	bool wasSpotted = false;		// 警備員に見つかったか
+
+	GameSequenceState sequenceState = GameSequenceState::None;
+	float sequenceTimer = 0.0f;
 
 	// コンストラクタ
 	GameStateComponent(GameMode initialMode = GameMode::SCOUTING_MODE)
