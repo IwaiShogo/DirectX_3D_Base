@@ -296,7 +296,7 @@ bool GuardAISystem::IsTargetInSight(
 
     // 2. 角度判定
     XMVECTOR toTargetDir = XMVector3Normalize(toTarget);
-    float yawRad = XMConvertToRadians(guardTransform.rotation.y);
+    float yawRad = guardTransform.rotation.y;
     float dirX = std::sin(yawRad);
     float dirZ = std::cos(yawRad);
     XMVECTOR forwardDir = XMVectorSet(dirX, 0.0f, dirZ, 0.0f);
@@ -413,7 +413,7 @@ void GuardAISystem::Update(float deltaTime)
             // 1. 基本情報の準備
             float viewRange = guardComp.viewRange;
             float halfAngleRad = DirectX::XMConvertToRadians(guardComp.viewAngle * 0.5f);
-            float currentYawRad = DirectX::XMConvertToRadians(guardTransform.rotation.y);
+            float currentYawRad = guardTransform.rotation.y;
 
             // 始点（足元より少し上）
             DirectX::XMFLOAT3 startPos = guardTransform.position;
@@ -554,23 +554,36 @@ void GuardAISystem::Update(float deltaTime)
 
                     // --- 向きの更新 ---
                     // 移動方向を向く
-                    if (XMVectorGetX(XMVector3LengthSq(newVel)) > 0.1f)
+                    if (distSq > 0.01f)
                     {
-                        XMVECTOR velNorm = XMVector3Normalize(newVel);
-                        float targetAngle = std::atan2(XMVectorGetX(velNorm), XMVectorGetZ(velNorm));
+                        XMVECTOR dirVec = XMLoadFloat3(&targetPos) - XMLoadFloat3(&guardTransform.position);
+                        dirVec = XMVectorSetY(dirVec, 0.0f);
+                        dirVec = XMVector3Normalize(dirVec);
 
-                        // 角度補間 (最短回転)
-                        float currentAngle = DirectX::XMConvertToRadians(guardTransform.rotation.y);
+                        // atan2 の結果はラジアン
+                        float targetAngle = std::atan2(XMVectorGetX(dirVec), XMVectorGetZ(dirVec));
+
+                        // ★修正: Transformにはラジアンが入っているので、変換せずそのまま使う
+                        float currentAngle = guardTransform.rotation.y;
+
                         float diff = targetAngle - currentAngle;
+
                         while (diff <= -XM_PI) diff += XM_2PI;
                         while (diff > XM_PI) diff -= XM_2PI;
 
-                        // 少しずつ回転
                         float rotSpeed = 5.0f * deltaTime;
-                        if (std::abs(diff) < rotSpeed) currentAngle = targetAngle;
-                        else currentAngle += (diff > 0) ? rotSpeed : -rotSpeed;
 
-                        guardTransform.rotation.y = DirectX::XMConvertToDegrees(currentAngle);
+                        if (std::abs(diff) > 0.001f)
+                        {
+                            if (std::abs(diff) < rotSpeed) {
+                                currentAngle = targetAngle;
+                            }
+                            else {
+                                currentAngle += (diff > 0) ? rotSpeed : -rotSpeed;
+                            }
+                            // ★修正: ラジアンのまま保存する (ConvertToDegreesを削除)
+                            guardTransform.rotation.y = currentAngle;
+                        }
                     }
                 }
             }

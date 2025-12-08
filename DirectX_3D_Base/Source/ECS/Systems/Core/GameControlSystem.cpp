@@ -134,15 +134,11 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
             restoreType = MESH_MODEL; // アイテムは箱表示
         }
         // 敵 (GuardComponent または TagがGuard/Taser)
-        else if (m_coordinator->HasComponent<GuardComponent>(entity)) {
-            isTarget = true;
-            restoreType = MESH_BOX; // 敵は箱表示
-        }
         else if (m_coordinator->HasComponent<TagComponent>(entity)) {
             const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
             if (tag == "taser" || tag == "guard") {
                 isTarget = true;
-                restoreType = MESH_BOX;
+                restoreType = MESH_MODEL;
             }
             if (tag == "ground" || tag == "wall")
             {
