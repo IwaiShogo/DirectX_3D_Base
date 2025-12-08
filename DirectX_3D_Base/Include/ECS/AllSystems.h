@@ -45,6 +45,7 @@
 #include "ECS/Systems/Rendering/DebugDrawSystem.h"
 // @system	アニメーション
 #include "ECS/Systems/Rendering/AnimationSystem.h"
+#include "ECS/Systems/Gameplay/PlayerControlSystem.h"
 // @system	エフェクト
 #include "ECS/Systems/Rendering/EffectSystem.h"
 

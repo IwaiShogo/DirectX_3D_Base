@@ -1,2 +1,3 @@
 AssetID,AssetType,FilePath
-A_PLAYER_IDLE,Animation,Assets/Model/Player/kaitouanimu.fbx
+A_PLAYER_IDLE,Animation,Assets/Model/Player/anim_player_Idle.fbx
+A_PLAYER_RUN,Animation,Assets/Model/Player/anim_player_run.fbx
