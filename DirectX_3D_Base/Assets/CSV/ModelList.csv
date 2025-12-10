@@ -4,7 +4,7 @@ M_GUARD,Model,Assets/Model/Guard/anim_enemy_run.fbx
 M_CORRIDOR,Model,Assets/Model/Stage/std_floare.fbx
 M_WALL,Model,Assets/Model/Stage/wall.fbx
 M_TASER,Model,Assets/Model/Gimmick/tezer.fbx
-M_TITLE_MUSEUM,Model,Assets/Model/Prop/std_title_back2.fbx
+M_TITLE_MUSEUM,Model,Assets/Model/Prop/std_title_back4.fbx
 M_TREASURE1,Model,Assets/Model/Item/obj_daiya.fbx
 M_TREASURE2,Model,Assets/Model/Item/obj_crystal.fbx
 M_TREASURE3,Model,Assets/Model/Item/obj_yubiwa.fbx
