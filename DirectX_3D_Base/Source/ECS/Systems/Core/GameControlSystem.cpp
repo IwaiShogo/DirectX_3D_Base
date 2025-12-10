@@ -169,6 +169,27 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
         ? GameMode::SCOUTING_MODE
         : GameMode::ACTION_MODE;
 
+    // 背景画像の切り替え
+    if (state.topviewBgID != INVALID_ENTITY_ID && state.tpsBgID != INVALID_ENTITY_ID)
+    {
+        auto& normalUI = m_coordinator->GetComponent<UIImageComponent>(state.topviewBgID);
+        auto& tpsUI = m_coordinator->GetComponent<UIImageComponent>(state.tpsBgID);
+
+        if (state.currentMode == GameMode::SCOUTING_MODE)
+        {
+            // スカウティング（トップビュー）モード: 通常背景ON, TPS背景OFF
+            // ※あなたの既存コードでは SCOUTING_MODE がトップビュー（BG_TOPVIEWが表示されるべき状態）だと推測されます
+            normalUI.isVisible = true;
+            tpsUI.isVisible = false;
+        }
+        else
+        {
+            // アクション（TPS）モード: 通常背景OFF, TPS背景ON
+            normalUI.isVisible = false;
+            tpsUI.isVisible = true;
+        }
+    }
+
     bool isScouting = (state.currentMode == GameMode::SCOUTING_MODE);
     for (auto const& entity : m_coordinator->GetActiveEntities())
     {

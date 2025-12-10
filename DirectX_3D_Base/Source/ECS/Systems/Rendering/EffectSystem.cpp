@@ -49,6 +49,11 @@ void EffectSystem::Init(ECS::Coordinator* coordinator)
     m_manager->SetTrackRenderer(m_renderer->CreateTrackRenderer());
     m_manager->SetModelRenderer(m_renderer->CreateModelRenderer());
 
+    // テクスチャ・モデル・マテリアルのローダーを設定
+    m_manager->SetTextureLoader(m_renderer->CreateTextureLoader());
+    m_manager->SetModelLoader(m_renderer->CreateModelLoader());
+    m_manager->SetMaterialLoader(m_renderer->CreateMaterialLoader());
+
     // 4. AssetManagerにマネージャーを登録
     Asset::AssetManager::GetInstance().SetEffekseerManager(m_manager);
 }
