@@ -22,6 +22,13 @@
 #include "Scene/SceneManager.h"
 #include "ECS/EntityFactory.h"
 
+#include "ECS/Components/Core/GameStateComponent.h"
+#include "ECS/Components/Gameplay/CollectableComponent.h"   
+#include "ECS/Components/Gameplay/ItemTrackerComponent.h"  
+#include "Scene/ResultScene.h"                          
+
+#include <cmath>
+
 using namespace DirectX;
 using namespace ECS;
 
@@ -110,6 +117,9 @@ void GameControlSystem::Update(float deltaTime)
             }
         }
     }
+
+   
+
 }
 
 // ---------------------------------------------------------
@@ -179,11 +189,15 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
             restoreType = MESH_MODEL; // アイテムは箱表示
         }
         // 敵 (GuardComponent または TagがGuard/Taser)
+        else if (m_coordinator->HasComponent<GuardComponent>(entity)) {
+            isTarget = true;
+            restoreType = MESH_BOX; // 敵は箱表示
+        }
         else if (m_coordinator->HasComponent<TagComponent>(entity)) {
             const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
             if (tag == "taser" || tag == "guard") {
                 isTarget = true;
-                restoreType = MESH_MODEL;
+                restoreType = MESH_BOX;
             }
             if (tag == "ground" || tag == "wall" || tag == "door")
             {
@@ -214,7 +228,7 @@ void GameControlSystem::CheckSceneTransition(ECS::EntityID controllerID)
 
     if (state.isGameOver || state.isGameClear)
     {
-        // リザルトデータの構築
+        // リザルト用データを作成
         ResultData data;
         data.isCleared = state.isGameClear;
         data.clearTime = state.elapsedTime;
@@ -222,14 +236,67 @@ void GameControlSystem::CheckSceneTransition(ECS::EntityID controllerID)
         data.wasSpotted = state.wasSpotted;
         data.stageID = GameScene::GetStageNo();
 
-        if (m_coordinator->HasComponent<ItemTrackerComponent>(controllerID)) {
+        // ItemTracker から回収状況をまとめて ResultData に詰める
+        if (m_coordinator->HasComponent<ItemTrackerComponent>(controllerID))
+        {
             auto& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(controllerID);
+
             data.collectedCount = tracker.collectedItems;
             data.totalItems = tracker.totalItems;
             data.collectedAllOrdered = tracker.useOrderedCollection;
+
+            // いったん全部クリア
+            data.collectedItemIcons.clear();
+            data.orderedItemIcons.clear();
+            data.orderedItemCollected.clear();
+
+            // ステージに用意されているお宝を「順番どおり」に走査
+            for (const auto& targetID : tracker.targetItemIDs)
+            {
+                bool isCollected = true;
+
+                // シーン上の Collectable を探して回収状況を調べる
+                for (auto const& entity : m_coordinator->GetActiveEntities())
+                {
+                    if (!m_coordinator->HasComponent<CollectableComponent>(entity))
+                        continue;
+
+                    auto& col = m_coordinator->GetComponent<CollectableComponent>(entity);
+                    if (col.itemID != targetID)
+                        continue;
+
+                    // 残っていて isCollected == false なら「未回収」
+                    if (!col.isCollected)
+                        isCollected = false;
+
+                    break;
+                }
+
+                // アイコン名に変換
+                std::string iconName = GetItemIconPath(targetID);
+
+                // クリア画面用：取れたお宝だけ
+                if (isCollected)
+                {
+                    data.collectedItemIcons.push_back(iconName);
+                }
+
+                // ゲームオーバー用：全部 + 取れたかどうか
+                data.orderedItemIcons.push_back(iconName);
+                data.orderedItemCollected.push_back(isCollected);
+            }
+        }
+        else
+        {
+            data.collectedItemIcons.clear();
+            data.orderedItemIcons.clear();
+            data.orderedItemCollected.clear();
         }
 
-        // 遷移実行
+
+
+
+        // リザルトシーンへ渡して遷移
         ResultScene::SetResultData(data);
         SceneManager::ChangeScene<ResultScene>();
     }
