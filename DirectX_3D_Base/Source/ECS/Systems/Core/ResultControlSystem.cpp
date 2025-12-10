@@ -97,7 +97,7 @@ void ResultControlSystem::Update(float deltaTime)
 
                 auto& tag = m_coordinator->GetComponent<TagComponent>(entity);
                 if (tag.tag != "AnimStarText") continue;
-                aa
+
                 auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
 
                 const float baseW = 320.0f;

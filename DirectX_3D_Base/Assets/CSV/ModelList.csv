@@ -1,7 +1,7 @@
 AssetID,AssetType,FilePath
 M_PLAYER,Model,Assets/Model/Player/kaitouanimu.fbx
 M_GUARD,Model,Assets/Model/Gimmick/keikan.fbx
-M_CORRIDOR,Model,Assets/Model/Stage/corridor.fbx
+M_CORRIDOR,Model,Assets/Model/Stage/std_floare.fbx
 M_WALL,Model,Assets/Model/Stage/wall.fbx
 M_TASER,Model,Assets/Model/Gimmick/tezer.fbx
 M_TITLE_MUSEUM,Model,Assets/Model/Prop/std_title_back2.fbx
