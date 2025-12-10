@@ -192,6 +192,12 @@ void TitleScene::Update(float deltaTime)
 	// (ここで UIInputSystem も自動的に動くので、手動呼び出しは不要です！)
 	m_coordinator->UpdateSystems(deltaTime);
 
+#ifdef _DEBUG
+	if (IsKeyTrigger('E'))
+	{
+		ECS::EntityFactory::CreateOneShotEffect(m_coordinator.get(), "EFK_TITLE_SHINE", { 0, 0, 0 }, 6.0f);
+	}
+#endif // _DEBUG
 }
 void TitleScene::Draw()
 {

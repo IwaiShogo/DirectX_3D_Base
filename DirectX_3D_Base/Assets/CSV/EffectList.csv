@@ -1,2 +1,3 @@
 AssetID,AssetType,FilePath
 EFK_TEST,Effect,Assets/Effect/effect_shine.efkefc
+EFK_TITLE_SHINE,Effect,Assets/Effect/effect_title_shine.efkefc

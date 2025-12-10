@@ -183,7 +183,7 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 		),
 		TransformComponent(
 			/* Position	*/	position,
-			/* Rotation	*/	XMFLOAT3(45.0f, 45.0f, 45.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
