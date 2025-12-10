@@ -63,6 +63,8 @@
 #include "ECS/Systems/UI/CursorSystem.h"
 
 #include "ECS/Systems/UI/FloatingSystem.h"
+
+#include "ECS/Systems/UI/RotatorSystem.h"
 // @folder	Gameplay
 // @system	ƒvƒŒƒCƒ„[“ü—Í§Œä
 #include "ECS/Systems/Gameplay/PlayerControlSystem.h"

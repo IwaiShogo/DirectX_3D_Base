@@ -45,7 +45,7 @@ namespace ECS
 
 		static EntityID CreateGameController(Coordinator* coordinator);
 
-		static EntityID CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position, int orderIndex = 0, const std::string& itemID = "");
+		static EntityID CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position, int orderIndex = 0, const std::string& itemID = "", float rotationY_Radian = 0.0f);
 
 		static EntityID CreateGround(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale);
 

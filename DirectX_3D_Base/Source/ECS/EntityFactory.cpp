@@ -165,7 +165,7 @@ EntityID EntityFactory::CreateGameController(Coordinator* coordinator)
  * @param	[in] position
  * @return	生成されたEntityID
  */
-EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position, int orderIndex, const std::string& itemID)
+EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position, int orderIndex, const std::string& itemID, float rotationY_Radian)
 {
 	std::string modelPath = "M_TREASURE1";
 	DirectX::XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -201,7 +201,9 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 		/* Amplitude */ 0.5f,     // 上下 0.5 の範囲で揺れる
 		/* Speed     */ 2.0f,     // 速度
 		/* InitialY  */ position.y // 基準となる高さ（配置位置）
-	)
+
+	),
+		RotatorComponent(0.0f, 2.0f, 0.0f)
 	);
 	
 		

@@ -80,6 +80,8 @@
 #include "ECS/Components/UI/SonarComponent.h"
 
 #include "ECS/Components/UI/FloatingComponent.h"
+
+#include "ECS/Components/UI/RotatorComponent.h"
 // @folder		Gameplay
 // @component	ƒvƒŒƒCƒ„[“ü—Í§Œä
 #include "ECS/Components/Gameplay/PlayerControlComponent.h"
