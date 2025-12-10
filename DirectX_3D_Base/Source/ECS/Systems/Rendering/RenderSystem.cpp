@@ -202,16 +202,15 @@ void RenderSystem::DrawEntities()
 
 	// 2. ライト設定 (カメラ方向からの平行光源)
 	{
-		XMMATRIX matView = XMLoadFloat4x4(&viewMat);
-		XMMATRIX matInvView = XMMatrixInverse(nullptr, matView);
-		XMFLOAT3 cameraForward;
-		XMStoreFloat3(&cameraForward, matInvView.r[2]);
+		DirectX::XMFLOAT3 lightDir = { -0.5f, -1.0f, 0.5f };
 
-		XMVECTOR vLight = XMLoadFloat3(&cameraForward);
+		// 正規化（長さを1にする）
+		XMVECTOR vLight = XMLoadFloat3(&lightDir);
 		vLight = XMVector3Normalize(vLight);
-		XMStoreFloat3(&cameraForward, vLight);
+		XMStoreFloat3(&lightDir, vLight);
 
-		ShaderList::SetLight(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), cameraForward);
+		// セット (色は真っ白: 1,1,1,1)
+		ShaderList::SetLight(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), lightDir);
 	}
 
 	// 3. 描画ターゲット設定
