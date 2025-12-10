@@ -76,12 +76,104 @@ void RenderSystem::DrawSetup()
 }
 
 /**
+ * @brief 1つのエンティティを描画する内部関数
+ */
+void RenderSystem::DrawEntityInternal(ECS::EntityID entity, const DirectX::XMFLOAT4X4& viewMat, const DirectX::XMFLOAT4X4& projMat, bool isTransparentPass)
+{
+	TransformComponent& transform = m_coordinator->GetComponent<TransformComponent>(entity);
+	RenderComponent& render = m_coordinator->GetComponent<RenderComponent>(entity);
+
+	DirectX::XMFLOAT4X4 wvp[3];
+	DirectX::XMMATRIX world;
+
+	// 1. ワールド行列の計算
+	XMMATRIX S = XMMatrixScaling(transform.scale.x, transform.scale.y, transform.scale.z);
+	XMMATRIX Rx = XMMatrixRotationX(transform.rotation.x);
+	XMMATRIX Ry = XMMatrixRotationY(transform.rotation.y);
+	XMMATRIX Rz = XMMatrixRotationZ(transform.rotation.z);
+	XMMATRIX R = Rz * Rx * Ry;
+	XMMATRIX T = XMMatrixTranslation(transform.position.x, transform.position.y, transform.position.z);
+	world = S * R * T;
+
+	XMStoreFloat4x4(&wvp[0], XMMatrixTranspose(world));
+	wvp[1] = viewMat;
+	wvp[2] = projMat;
+
+	// シェーダーへの変換行列を設定
+	Geometory::SetWorld(wvp[0]);
+	Geometory::SetView(wvp[1]);
+	Geometory::SetProjection(wvp[2]);
+	ShaderList::SetWVP(wvp);
+
+	// 色設定
+	Geometory::SetColor(render.color);
+
+	switch (render.type)
+	{
+	case MESH_BOX:
+	case MESH_SPHERE:
+		// プリミティブはマテリアルがないので、エンティティ全体の透明度で判断
+		// 透明パスなのに不透明(1.0)ならスキップ、不透明パスなのに透明(<1.0)ならスキップ
+		if (isTransparentPass != (render.color.w < 1.0f)) return;
+
+		Geometory::DrawBox();
+		break;
+
+	case MESH_MODEL:
+	{
+		ModelComponent& model = m_coordinator->GetComponent<ModelComponent>(entity);
+		if (model.pModel)
+		{
+			// シェーダー設定 (変更なし)
+			if (m_coordinator->HasComponent<AnimationComponent>(entity))
+				model.pModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_ANIME));
+			else
+				model.pModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_WORLD));
+
+			model.pModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
+
+			// ★修正: メッシュごとのループ内で選別を行う
+			for (uint32_t i = 0; i < model.pModel->GetMeshNum(); ++i)
+			{
+				const Model::Mesh* pMesh = model.pModel->GetMesh(i);
+				Model::Material material = *model.pModel->GetMaterial(pMesh->materialID);
+
+				// 最終的なアルファ値 = マテリアルのAlpha * RenderComponentのAlpha
+				float finalAlpha = material.diffuse.w * render.color.w;
+
+				// このメッシュは透明か？ (0.99f以下なら透明とみなす)
+				bool isMeshTransparent = (finalAlpha < 0.99f);
+
+				// ★判定: 今の描画パスと、メッシュの性質が合致しなければスキップ
+				if (isTransparentPass)
+				{
+					// 透明パス中: 「不透明なメッシュ」は描かない
+					if (!isMeshTransparent) continue;
+				}
+				else
+				{
+					// 不透明パス中: 「透明なメッシュ」は描かない
+					if (isMeshTransparent) continue;
+				}
+
+				// 描画採用！
+				// 計算したアルファ値を適用して描画
+				material.diffuse.w = finalAlpha;
+				ShaderList::SetMaterial(material);
+				model.pModel->Draw(i);
+			}
+		}
+	}
+	break;
+	}
+}
+
+/**
  * @brief TransformComponentとRenderComponentを持つ全てのEntityを描画する
  */
 void RenderSystem::DrawEntities()
 {
-	// 1. CameraComponentを持つEntityを検索し、カメラ座標と行列を取得
-	// 1. まず通常のCameraComponentを探す
+	// 1. カメラ取得
 	DirectX::XMFLOAT4X4 viewMat;
 	DirectX::XMFLOAT4X4 projMat;
 	bool cameraFound = false;
@@ -96,7 +188,6 @@ void RenderSystem::DrawEntities()
 	}
 	else
 	{
-		// 2. なければBasicCameraComponentを探す
 		cameraID = ECS::FindFirstEntityWithComponent<BasicCameraComponent>(m_coordinator);
 		if (cameraID != ECS::INVALID_ENTITY_ID)
 		{
@@ -109,119 +200,74 @@ void RenderSystem::DrawEntities()
 
 	if (!cameraFound) return;
 
+	// 2. ライト設定 (カメラ方向からの平行光源)
 	{
-		// View行列をロード
 		XMMATRIX matView = XMLoadFloat4x4(&viewMat);
-
-		// View行列の逆行列を計算（= カメラのワールド行列）
 		XMMATRIX matInvView = XMMatrixInverse(nullptr, matView);
-
-		// 逆行列のZ軸（3行目）がカメラの前方ベクトル（視線方向）
 		XMFLOAT3 cameraForward;
 		XMStoreFloat3(&cameraForward, matInvView.r[2]);
 
-		// 【重要】ベクトルの正規化（長さを1.0にする）
-		// これをしないと、計算誤差で光の強さが不安定になることがあります
 		XMVECTOR vLight = XMLoadFloat3(&cameraForward);
 		vLight = XMVector3Normalize(vLight);
 		XMStoreFloat3(&cameraForward, vLight);
 
-		// ライトを設定 (色は白)
-		// これにより、カメラがどこを向いても、画面中央の物体は常に正面から照らされます
 		ShaderList::SetLight(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), cameraForward);
 	}
 
-	RenderTarget* pRTV = GetDefaultRTV();   // デフォルトのRenderTargetViewを取得
-	DepthStencil* pDSV = GetDefaultDSV();	// デフォルトのDepthStencilViewを取得
-	SetRenderTargets(1, &pRTV, pDSV);		// 第3引数がnullの場合、2D表示となる
+	// 3. 描画ターゲット設定
+	RenderTarget* pRTV = GetDefaultRTV();
+	DepthStencil* pDSV = GetDefaultDSV();
+	SetRenderTargets(1, &pRTV, pDSV);
 
-	SetDepthTest(true); // デプス・テストが有効化されていることを確認
+	SetDepthTest(true);
 
-	// Systemが保持するEntityセットをイテレート
+	// ========================================================================
+	// パス1: 不透明 (Opaque) オブジェクトの描画
+	// ========================================================================
+	SetBlendMode(BLEND_NONE);
+
 	for (auto const& entity : m_entities)
 	{
-		// Componentを高速に取得
-		TransformComponent& transform = m_coordinator->GetComponent<TransformComponent>(entity);
 		RenderComponent& render = m_coordinator->GetComponent<RenderComponent>(entity);
 
-		DirectX::XMFLOAT4X4 wvp[3];
-		DirectX::XMMATRIX world;
+		// エンティティ全体が半透明設定(0.5など)なら、不透明パスでは描かない
+		// ただし、モデルの場合は「部分的に不透明」な場合もあるが、
+		// 通常RenderComponentのAlphaは「全体フェード」に使うため、ここではスキップでOKとします。
+		// もし「半透明な幽霊の中に不透明な骨がある」表現をしたい場合は条件を緩める必要がありますが、
+		// 今回のケース（ガラス）ならこのままで大丈夫です。
+		if (render.type != MESH_MODEL && render.color.w < 1.0f) continue;
 
-		// 1. ワールド行列の計算 (TransformComponent -> XMMATRIX -> XMFLOAT4X4)
-		XMMATRIX S = XMMatrixScaling(transform.scale.x, transform.scale.y, transform.scale.z);
-		XMMATRIX Rx = XMMatrixRotationX(transform.rotation.x);
-		XMMATRIX Ry = XMMatrixRotationY(transform.rotation.y);
-		XMMATRIX Rz = XMMatrixRotationZ(transform.rotation.z);
-		XMMATRIX R = Rz * Rx * Ry;
-		XMMATRIX T = XMMatrixTranslation(transform.position.x, transform.position.y, transform.position.z);
-		world = S * R * T;
+		// モデルの場合、RenderComponentが透明(0.5)ならここでスキップさせても良いが、
+		// 安全のため「モデルならとりあえず通す」か、上記の通り「色が透明ならスキップ」のままで進めます。
+		if (render.color.w < 1.0f) continue;
 
-		// ビュー行列
-
-		XMStoreFloat4x4(&wvp[0], XMMatrixTranspose(world));
-		wvp[1] = viewMat;
-		wvp[2] = projMat;
-
-		// シェーダーへの変換行列を設定
-		Geometory::SetWorld(wvp[0]);
-		Geometory::SetView(wvp[1]);
-		Geometory::SetProjection(wvp[2]);
-
-		ShaderList::SetWVP(wvp);
-		// 2. 描画処理 (RenderComponent)
-		
-		Geometory::SetColor(render.color);
-
-		// 形状に応じて描画
-		switch (render.type)
-		{
-		case MESH_BOX:
-			Geometory::DrawBox();
-			break;
-		case MESH_SPHERE:
-			Geometory::DrawBox(); // 代替としてBoxを描画
-			break;
-		case MESH_MODEL:
-		{
-			// ModelComponentを取得し、Model::Draw()を呼び出す
-			// RenderSystemのシグネチャにModelComponentが含まれている前提
-			ModelComponent& model = m_coordinator->GetComponent<ModelComponent>(entity);
-			if (model.pModel)
-			{
-				bool isAnimated = false;
-				if (m_coordinator->HasComponent<AnimationComponent>(entity))
-				{
-					// アニメーション用のシェーダーを設定 (VS_SKIN がある前提)
-					// ShaderListに VS_SKIN が定義されていない場合は、追加するか既存のボーン対応シェーダーを指定してください
-					model.pModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_ANIME));
-					isAnimated = true;
-				}
-				else
-				{
-					// 通常のシェーダー
-					model.pModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_WORLD));
-				}
-
-				model.pModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
-
-				// 描画処理
-				for (uint32_t i = 0; i < model.pModel->GetMeshNum(); ++i) {
-					// モデルのメッシュを取得
-					Model::Mesh mesh = *model.pModel->GetMesh(i);
-					// メッシュに割り当てられているマテリアルを取得
-					Model::Material	material = *model.pModel->GetMaterial(mesh.materialID);
-					// シェーダーへマテリアルを設定
-					ShaderList::SetMaterial(material);
-					// モデルの描画
-					model.pModel->Draw(i);
-				}
-
-			}
-		}
-			break;
-		case MESH_NONE:
-			// 何もしない
-			break;
-		}
+		// モデルの場合は「一部だけ不透明」かもしれないので、ここを通す
+		// 第4引数: false (不透明パス)
+		DrawEntityInternal(entity, viewMat, projMat, false);
 	}
+
+	// ========================================================================
+	// パス2: 半透明 (Transparent) オブジェクトの描画
+	// ========================================================================
+	SetBlendMode(BLEND_ALPHA);
+	
+	// ★ガラスなどが綺麗に見えるよう、デプス書き込みをOFFにする場合もありますが、
+	//  複雑なモデルの場合はONのままでも構いません（お好みで調整してください）
+	// SetDepthWrite(false); 
+
+	for (auto const& entity : m_entities)
+	{
+		RenderComponent& render = m_coordinator->GetComponent<RenderComponent>(entity);
+
+		bool isModel = (render.type == MESH_MODEL);
+
+		if (!isModel && render.color.w >= 1.0f) continue;
+
+		// モデルの場合は「一部だけ透明」かもしれないので、ここを通す
+		// 第4引数: true (透明パス)
+		DrawEntityInternal(entity, viewMat, projMat, true);
+	}
+
+	// SetDepthWrite(true);
+	SetBlendMode(BLEND_NONE);
 }
