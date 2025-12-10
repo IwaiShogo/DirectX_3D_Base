@@ -76,6 +76,18 @@ private:
         DirectX::XMFLOAT4 color
     );
 
+    void StartEntranceSequence(ECS::EntityID controllerID);
+
+    void UpdateEntranceSequence(float deltaTime, ECS::EntityID controllerID);
+
+    void CheckDoorUnlock(ECS::EntityID controllerID);
+
+    void UpdateExitSequence(float deltaTime, ECS::EntityID controllerID);
+
+    ECS::EntityID FindEntranceDoor();
+
+    ECS::EntityID FindExitDoor();
+
     // UIアイコン管理用マップ (対象EntityID -> アイコンEntityID)
     std::unordered_map<ECS::EntityID, ECS::EntityID> m_iconMap;
     // グリッドなどのエフェクト用Entity管理

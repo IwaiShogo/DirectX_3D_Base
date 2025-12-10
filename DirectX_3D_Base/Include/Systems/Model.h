@@ -212,6 +212,7 @@ public:
 	void DrawBone();
 #endif
 
+	bool GetAnimatedTransform(DirectX::XMFLOAT3& outPos, DirectX::XMFLOAT3& outRot, DirectX::XMFLOAT3& outScale);
 
 private:
 	// 各種生成
@@ -227,6 +228,7 @@ private:
 	void UpdateAnime(AnimeNo no, float tick);
 	void CalcBones(NodeIndex node, const DirectX::XMMATRIX parent);
 	void LerpTransform(Transform* pOut, const Transform& a, const Transform& b, float rate);
+
 
 private:
 	static VertexShader* m_pDefVS;		// デフォルト頂点シェーダー

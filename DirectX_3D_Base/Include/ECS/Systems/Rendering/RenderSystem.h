@@ -58,6 +58,9 @@ public:
 
 	/// @brief RenderComponent‚ğ‚ÂEntity‚ğ‘S‚Ä•`‰æ‚·‚é
 	void DrawEntities();
+
+private:
+	void DrawEntityInternal(ECS::EntityID entity, const DirectX::XMFLOAT4X4& viewMat, const DirectX::XMFLOAT4X4& projMat, bool isTransparentPass);
 };
 
 #endif // !___RENDER_SYSTEM_H___

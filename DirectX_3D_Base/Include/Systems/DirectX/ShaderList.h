@@ -17,10 +17,13 @@ public:
 	};
 	enum PSKind
 	{
-		PS_LAMBERT, //SetMaterial, SetLight
-		PS_SPECULAR, //SetMaterial, SetLight, SetCameraPos
-		PS_TOON, // SetMaterial, SetLight
-		PS_FOG, // SetMaterial, SetLight,SetFog
+		PS_UNLIT,			// SetMaterial
+		PS_LAMBERT,			//SetMaterial, SetLight
+		PS_SPECULAR,		//SetMaterial, SetLight, SetCameraPos
+		PS_CUSTOM_LAMBERT,	// SetMaterial, SetLight
+		PS_CUSTOM_SPECULAR,	// SetMaterial, SetLight, SetCameraPos
+		PS_TOON,			// SetMaterial, SetLight
+		PS_FOG,				// SetMaterial, SetLight,SetFog
 		PS_KIND_MAX
 	};
 
@@ -47,9 +50,12 @@ public:
 private:
 	static void MakeWorldVS();
 	static void MakeAnimeVS();
+	static void MakeUnlitPS();
 	static void MakeLambertPS();
 	static void MakeSpecularPS();
 	static void MakeToonPS();
+	static void MakeCustomLambertPS();
+	static void MakeCustomSpecularPS();
 	static void MakeFogPS();
 
 private:

@@ -927,6 +927,81 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
     // --------------------------------------------------------------------------------
     // グリッドサイズを動的に変更
     std::vector<std::vector<bool>> processed(GRID_SIZE_Y, std::vector<bool>(GRID_SIZE_X, false));
+    XMINT2 doorGridPos = { -1, -1 };
+
+    // ====================================================================
+    // 0. ドアの生成 (壁より先に配置し、壁生成をブロックする)
+    // ====================================================================
+    auto SpawnDoorAt = [&](XMINT2 targetPos) {
+        int dx[] = { -1, 1, 0, 0 };
+        int dy[] = { 0, 0, -1, 1 };
+        float angles[] = { 90.0f, -90.0f, 0.0f, 180.0f };
+
+        for (int i = 0; i < 4; ++i)
+        {
+            int nx = targetPos.x + dx[i];
+            int ny = targetPos.y + dy[i];
+
+            // グリッド範囲内チェック
+            if (nx >= 0 && nx < GRID_SIZE_X && ny >= 0 && ny < GRID_SIZE_Y)
+            {
+                // 外周かつ壁である場所を探す
+                bool isOuter = (nx == 0 || nx == GRID_SIZE_X - 1 || ny == 0 || ny == GRID_SIZE_Y - 1);
+
+                // ★修正: 外周でなくても、スタート地点の隣接壁ならOKにする（条件緩和）
+                // ただし、部屋の壁ではなく「迷路の外壁」であることを確認したい場合は isOuter を維持
+                // ここではデバッグのため「壁ならOK」としつつ、外周優先にするロジックも考えられるが、
+                // まずは isOuter && Wall で見つかるはず。見つからないなら nx, ny の計算か Wall 判定が怪しい。
+
+                if (isOuter && mapComp.grid[ny][nx].type == CellType::Wall)
+                {
+                    // 座標計算
+                    XMFLOAT3 basePos = GetWorldPosition(nx, ny, config);
+                    XMFLOAT3 centerPos = basePos;
+                    centerPos.x += TILE_SIZE / 2.0f;
+                    centerPos.z += TILE_SIZE / 2.0f;
+
+                    // 1. ドア生成
+                    XMFLOAT3 doorPos = centerPos;
+                    doorPos.y = TILE_SIZE / 2.0f;
+
+                    float radianAngle = DirectX::XMConvertToRadians(angles[i]);
+                    EntityFactory::CreateDoor(m_coordinator, doorPos, radianAngle, true);
+
+                    // 2. ドア直下の床
+                    XMFLOAT3 groundPos = centerPos;
+                    groundPos.y = -0.01f;
+                    EntityFactory::CreateGround(m_coordinator, groundPos, XMFLOAT3(TILE_SIZE, TILE_SIZE, TILE_SIZE));
+
+                    // 3. 外側の花道 (進入路)
+                    for (int k = 1; k <= 3; ++k)
+                    {
+                        XMFLOAT3 outPos = centerPos;
+                        // 方向ベクトルを加算 (dx, dy は -1, 0, 1 なので、TILE_SIZE を掛ける)
+                        outPos.x += (dx[i] * TILE_SIZE) * k;
+                        outPos.z += (dy[i] * TILE_SIZE) * k;
+                        outPos.y = -0.01f;
+                        EntityFactory::CreateGround(m_coordinator, outPos, XMFLOAT3(TILE_SIZE, TILE_SIZE, TILE_SIZE));
+                    }
+
+                    // フラグ更新
+                    processed[ny][nx] = true;
+                    doorGridPos = { nx, ny }; // ★重要: 座標を記憶
+
+                    return; // 生成完了
+                }
+            }
+        }
+        // ループを抜けてもここに来る＝ドア生成失敗
+        printf("Error: Failed to spawn door adjacent to Start(%d, %d)\n", targetPos.x, targetPos.y);
+        };
+
+    // スタート地点の隣接する「外周」にドアを作る
+    // このドアを入場・脱出兼用とする
+    SpawnDoorAt(mapComp.startPos);
+
+    // ゴール地点のドア生成は削除 (兼用するため)
+    // SpawnDoorAt(mapComp.goalPos, false);
 
     // --------------------------------------------------------------------
     // 1. 床Entityの生成
@@ -989,6 +1064,11 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
     // --------------------------------------------------------------------
     // 処理済みフラグをリセットして壁の結合に再利用
     processed.assign(GRID_SIZE_Y, std::vector<bool>(GRID_SIZE_X, false));
+
+    if (doorGridPos.x != -1 && doorGridPos.y != -1)
+    {
+        processed[doorGridPos.y][doorGridPos.x] = true;
+    }
 
     for (int y = 0; y < GRID_SIZE_Y; ++y)
     {
@@ -1069,7 +1149,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
 
                 if (cell.type == CellType::Start) {
                     EntityFactory::CreatePlayer(m_coordinator, cellCenter);
-                    EntityFactory::CreateGoal(m_coordinator, cellCenter);
+                    //EntityFactory::CreateGoal(m_coordinator, cellCenter);
                     EntityFactory::CreateGuard(m_coordinator, cellCenter);
                 }
                 else if (cell.type == CellType::Goal) {

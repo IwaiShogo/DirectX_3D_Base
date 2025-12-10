@@ -92,5 +92,7 @@
 // @folder		Gimmick
 // @component	Œx”õˆõAI
 #include "ECS/Components/Gimmick/GuardComponent.h"
+// @component	ƒhƒA
+#include "ECS/Components/Gimmick/DoorComponent.h"
 
 #endif // !___ALL_COMPONENTS_H___

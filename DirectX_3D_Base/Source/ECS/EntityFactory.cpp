@@ -282,7 +282,7 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 		GuardComponent(
 			/* predictionDistance	*/	1.0f,
 			/* isActive				*/	false,
-			/* delayBeforeChase		*/	3.0f,
+			/* delayBeforeChase		*/	7.0f,
 			/* chaseSpeed			*/	25.0f
 		),
 		CollisionComponent(
@@ -401,6 +401,11 @@ EntityID ECS::EntityFactory::CreateTaser(Coordinator* coordinator, const DirectX
 		RenderComponent(
 			/* MeshType	*/	MESH_NONE,                   // 立方体を指定
 			/* Color	*/	XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) // 青色 (R,G,B,A)
+		),
+		ModelComponent(
+			/* Path		*/	"M_TASER",
+			/* Scale	*/	0.25f,
+			/* Flip		*/	Model::None
 		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -537,4 +542,31 @@ EntityID EntityFactory::CreateOneShotEffect(Coordinator* coordinator, const std:
 	);
 
 	return entity;
+}
+
+EntityID ECS::EntityFactory::CreateDoor(Coordinator* coordinator, const DirectX::XMFLOAT3& position, float rotationY, bool isEntrance)
+{
+	EntityID door = coordinator->CreateEntity(
+		TagComponent("door"),
+		TransformComponent(
+			position,
+			XMFLOAT3(0.0f, rotationY, 0.0f),
+			XMFLOAT3(1.0f, 1.0f, 1.0f) // モデルに合わせてスケール調整
+		),
+		RenderComponent(MESH_MODEL, XMFLOAT4(1, 1, 1, 1)),
+		ModelComponent("M_DOOR", 0.50f, Model::None), // "M_DOOR"はロード済みとする
+		AnimationComponent({ "A_DOOR_OPEN", "A_DOOR_CLOSE" }), // アニメーション名
+		DoorComponent(isEntrance, isEntrance), // 入口ならロックなし、出口ならロックあり
+		CollisionComponent(
+			XMFLOAT3(2.5f, 5.0f, 0.5f), // 壁と同じくらいのサイズ
+			XMFLOAT3(0.0f, 0.0f, 0.0f),
+			COLLIDER_STATIC // 閉まっている時は壁扱い
+		)
+	);
+
+	// 初期アニメーション（閉じた状態）
+	auto& anim = coordinator->GetComponent<AnimationComponent>(door);
+	anim.Play("A_DOOR_CLOSE"); 
+
+	return door;
 }
