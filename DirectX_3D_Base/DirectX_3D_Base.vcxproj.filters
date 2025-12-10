@@ -363,6 +363,9 @@
     <ClInclude Include="Include\ECS\Components\Core\PlayerControlComponent.h">
       <Filter>Header Files\ECS\Components\Core</Filter>
     </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Gimmick\DoorComponent.h">
+      <Filter>Header Files\ECS\Components\Gimmick</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -510,6 +513,12 @@
     </None>
     <None Include="Assets\Config\map_config.json">
       <Filter>Assets\Config</Filter>
+    </None>
+    <None Include="Assets\CSV\AnimationList.csv">
+      <Filter>Assets\CSV</Filter>
+    </None>
+    <None Include="Assets\CSV\EffectList.csv">
+      <Filter>Assets\CSV</Filter>
     </None>
   </ItemGroup>
 </Project>

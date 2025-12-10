@@ -815,7 +815,7 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
 
         // --- 2. ドアを開ける ---
         if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
-            m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE");
+            m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_OPEN", false);
         }
 
         // 通れるようにコリジョンをトリガー化
@@ -865,7 +865,7 @@ void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID control
         EntityID doorID = FindEntranceDoor();
         if (doorID != INVALID_ENTITY_ID) {
             if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
-                m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE");
+                m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE", false);
             }
             // コリジョンを壁に戻す (閉じ込める)
             if (m_coordinator->HasComponent<CollisionComponent>(doorID)) {
@@ -900,7 +900,7 @@ void GameControlSystem::CheckDoorUnlock(EntityID controllerID)
                 door.isLocked = false;
                  door.state = DoorState::Open;
 
-                m_coordinator->GetComponent<AnimationComponent>(exitDoor).Play("A_DOOR_OPEN");
+                m_coordinator->GetComponent<AnimationComponent>(exitDoor).Play("A_DOOR_OPEN", false);
                 m_coordinator->GetComponent<CollisionComponent>(exitDoor).type = COLLIDER_TRIGGER;
 
                 // 音やメッセージ「脱出せよ！」などを出す
@@ -925,6 +925,13 @@ void GameControlSystem::UpdateExitSequence(float deltaTime, EntityID controllerI
     float rad = pTrans.rotation.y;
     pTrans.position.x += sin(rad) * speed;
     pTrans.position.z += cos(rad) * speed;
+
+    EntityID doorID = FindEntranceDoor();
+    if (doorID != INVALID_ENTITY_ID) {
+        if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
+            m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE", false);
+        }
+    }
 
     // フェードアウトなどをかけて、一定時間後にリザルトへ
     if (state.sequenceTimer > 2.0f)

@@ -1017,44 +1017,22 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                 continue;
             }
 
-            // X軸方向への結合を試みる (Path/特殊セルは全て床として結合)
-            int endX = x;
-            while (endX + 1 < GRID_SIZE_X && // GRID_SIZE_X を使用
-                !processed[y][endX + 1] &&
-                mapComp.grid[y][endX + 1].type != CellType::Wall &&
-                mapComp.grid[y][endX + 1].type != CellType::Unvisited)
-            {
-                endX++;
-            }
+            // 座標計算
+            XMFLOAT3 basePos = GetWorldPosition(x, y, config);
+            XMFLOAT3 centerPos = basePos;
+            centerPos.x += TILE_SIZE / 2.0f; // マスの中心へ
+            centerPos.z += TILE_SIZE / 2.0f;
+            centerPos.y = -0.01f;
 
-            // 結合 Entityの生成
-            int segmentLength = endX - x + 1;
-            float worldLength = (float)segmentLength * TILE_SIZE;
-
-            // グリッドの左下隅の座標を取得
-            XMFLOAT3 segmentStartPos = GetWorldPosition(x, y, config); // <--- configを渡す
-
-            // Entityの中心座標を計算
-            XMFLOAT3 segmentCenterPos = segmentStartPos;
-            segmentCenterPos.x += worldLength / 2.0f; // Entityの長さの半分をオフセット
-            segmentCenterPos.z += TILE_SIZE / 2.0f;
-
-            // Y座標のオフセット 
-            segmentCenterPos.y = -0.01f;
-
-            // 床 Entityの生成
+            // 床 Entityの生成 (サイズは常に 1x1タイル分)
             EntityFactory::CreateGround(
                 m_coordinator,
-                segmentCenterPos,
-                XMFLOAT3(worldLength, TILE_SIZE, TILE_SIZE) // X: 長さ, Y: TILE_SIZE (厚さ), Z: TILE_SIZE (幅)
+                centerPos,
+                XMFLOAT3(TILE_SIZE, TILE_SIZE, TILE_SIZE) // X, Z ともに TILE_SIZE 固定
             );
 
-            // 処理済みフラグの更新
-            for (int i = x; i <= endX; ++i)
-            {
-                processed[y][i] = true;
-            }
-            x = endX;
+            // このマスを処理済みにする
+            processed[y][x] = true;
         }
     }
 
@@ -1076,45 +1054,23 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
         {
             if (mapComp.grid[y][x].type != CellType::Wall || processed[y][x]) continue;
 
-            // X軸方向への結合を試みる (Wallセルのみ)
-            int endX = x;
-            while (endX + 1 < GRID_SIZE_X && // GRID_SIZE_X を使用
-                !processed[y][endX + 1] &&
-                mapComp.grid[y][endX + 1].type == CellType::Wall)
-            {
-                endX++;
-            }
-
-            // 壁 Entityの生成
-            int segmentLength = endX - x + 1;
-            float worldLength = (float)segmentLength * TILE_SIZE;
-
-            // グリッドの左下隅の座標を取得
-            XMFLOAT3 segmentStartPos = GetWorldPosition(x, y, config); // <--- configを渡す
-
-            // Entityの中心座標を計算
-            XMFLOAT3 segmentCenterPos = segmentStartPos;
-            segmentCenterPos.x += worldLength / 2.0f; // Entityの長さの半分をオフセット
-
-            segmentCenterPos.z += TILE_SIZE / 2.0f;
-
-            // Y座標のオフセット 
-            segmentCenterPos.y = WALL_HEIGHT / 2.0f;
+            // 座標計算
+            XMFLOAT3 basePos = GetWorldPosition(x, y, config);
+            XMFLOAT3 centerPos = basePos;
+            centerPos.x += TILE_SIZE / 2.0f;
+            centerPos.z += TILE_SIZE / 2.0f;
+            centerPos.y = WALL_HEIGHT / 2.0f;
 
             // 壁 Entityの生成
             EntityFactory::CreateWall(
                 m_coordinator,
-                segmentCenterPos,
-                XMFLOAT3(worldLength, WALL_HEIGHT, TILE_SIZE), // X: 長さ, Y: 高さ, Z: TILE_SIZE (厚さ)
-                0.0f // 回転なし
+                centerPos,
+                XMFLOAT3(TILE_SIZE, WALL_HEIGHT, TILE_SIZE), // X, Z ともに TILE_SIZE 固定
+                0.0f
             );
 
-            // 処理済みフラグの更新
-            for (int i = x; i <= endX; ++i)
-            {
-                processed[y][i] = true;
-            }
-            x = endX;
+            // このマスを処理済みにする
+            processed[y][x] = true;
         }
     }
 

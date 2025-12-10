@@ -1,5 +1,5 @@
 AssetID,AssetType,FilePath
-A_PLAYER_IDLE,Animation,Assets/Model/Player/kaitouanimu.fbx
+A_PLAYER_IDLE,Animation,Assets/Model/Player/anim_player_idle.fbx
+A_PLAYER_RUN,Animation,Assets/Model/Player/anim_player_run.fbx
 A_DOOR_OPEN,Animation,Assets/Model/Stage/anim_door_open.fbx
 A_DOOR_CLOSE,Animation,Assets/Model/Stage/anim_door_close.fbx
-A_PLAYER_RUN,Animation,Assets/Model/Player/anim_player_run.fbx
