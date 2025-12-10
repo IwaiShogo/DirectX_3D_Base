@@ -272,6 +272,12 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* Scale	*/	0.1f,
 			/* Flip		*/	Model::None
 		),
+		AnimationComponent(
+			{
+				"A_GUARD_RUN",
+				"A_GUARD_WALK"
+			}
+		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -291,6 +297,9 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* ColliderType	*/	COLLIDER_DYNAMIC
 		)
 	);
+
+	auto& anim = coordinator->GetComponent<AnimationComponent>(guard);
+	anim.Play("A_GUARD_RUN");
 
 	return guard;
 }

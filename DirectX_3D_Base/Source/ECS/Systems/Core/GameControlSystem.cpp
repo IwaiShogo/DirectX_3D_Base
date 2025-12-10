@@ -188,16 +188,20 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
             isTarget = true;
             restoreType = MESH_MODEL; // アイテムは箱表示
         }
-        // 敵 (GuardComponent または TagがGuard/Taser)
-        else if (m_coordinator->HasComponent<GuardComponent>(entity)) {
-            isTarget = true;
-            restoreType = MESH_BOX; // 敵は箱表示
-        }
         else if (m_coordinator->HasComponent<TagComponent>(entity)) {
             const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
-            if (tag == "taser" || tag == "guard") {
+            if (tag == "guard") {
                 isTarget = true;
+                restoreType = MESH_MODEL;
+            }
+            if (tag == "taser")
+            {
+                isTarget = true;
+#ifdef _DEBUG
                 restoreType = MESH_BOX;
+#elif defined(NDEBUG)
+                restoreType = MESH_NONE;
+#endif
             }
             if (tag == "ground" || tag == "wall" || tag == "door")
             {
@@ -840,7 +844,7 @@ void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID control
 
     // アニメーション再生 (歩き)
     if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
-        m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_WALK");
+        m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_RUN");
     }
 
     // --- 0.0s ~ 2.0s: 直進して部屋に入る ---
@@ -858,7 +862,7 @@ void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID control
     {
         // 待機モーションに戻す
         if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
-            m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_IDLE");
+            m_coordinator->GetComponent<AnimationComponent>(playerID).PlayBlend("A_PLAYER_IDLE", 0.5f);
         }
 
         // ドアを閉める
