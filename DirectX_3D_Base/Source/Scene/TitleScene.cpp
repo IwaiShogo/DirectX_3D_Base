@@ -63,7 +63,7 @@ void TitleScene::Init()
 		),
 		RenderComponent(
 			/* MeshType	*/	MESH_MODEL, // MESH_BOX‚Å‰¼•`‰æ
-			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 1.0f, 0.2f)
+			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
 		),
 		ModelComponent(
 			/* Path		*/	"M_TITLE_MUSEUM",

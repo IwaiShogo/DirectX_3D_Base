@@ -34,7 +34,7 @@ void ShaderList::Init()
 
 	Model::Material material = {
 		DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
-		DirectX::XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f),
+		DirectX::XMFLOAT4(1.5f, 0.5f, 0.5f, 1.0f),
 		DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
 		nullptr
 	};
