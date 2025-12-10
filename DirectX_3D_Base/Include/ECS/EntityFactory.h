@@ -65,7 +65,7 @@ namespace ECS
 
 		static EntityID CreateTitleSceneEntity(Coordinator* coordinator);
 
-		static void GenerateStageFromConfig(ECS::Coordinator* coordinator, const std::string& stageId);
+		static void GenerateStageFromConfig(Coordinator* coordinator, const std::string& stageId);
 
 		static EntityID CreateBasicCamera(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 

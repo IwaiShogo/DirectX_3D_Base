@@ -14,7 +14,7 @@ void ResultControlSystem::Update(float deltaTime)
     m_timer += deltaTime;
 
     // ---------------------------------------------------------
-    // 1. ¯‚ÌƒAƒjƒ[ƒVƒ‡ƒ“ (0.5•bŠÔŠu‚Å 1‚Â‚¸‚Âƒ|ƒbƒv)
+    // 1. æ˜Ÿã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ (0.5ç§’é–“éš”ã§ 1ã¤ãšã¤ãƒãƒƒãƒ—)
     //    Tag: "AnimStar"
     // ---------------------------------------------------------
     int starIndex = 0;
@@ -23,14 +23,14 @@ void ResultControlSystem::Update(float deltaTime)
         if (m_coordinator->HasComponent<TagComponent>(entity) &&
             m_coordinator->GetComponent<TagComponent>(entity).tag == "AnimStar")
         {
-            // oŒ»ƒ^ƒCƒ~ƒ“ƒO: 0.5s, 1.0s, 1.5s ...
+            // å‡ºç¾ã‚¿ã‚¤ãƒŸãƒ³ã‚°: 0.5s, 1.0s, 1.5s ...
             float appearTime = 0.5f + starIndex * 0.5f;
 
             if (m_timer >= appearTime)
             {
                 auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
 
-                // oŒ»‚©‚ç‚ÌŒo‰ßŽžŠÔ‚ÅƒXƒP[ƒ‹‚ð 0 -> 1.2 -> 1.0 ‚É•Ï‰»
+                // å‡ºç¾ã‹ã‚‰ã®çµŒéŽæ™‚é–“ã§ã‚¹ã‚±ãƒ¼ãƒ«ã‚’ 0 -> 1.2 -> 1.0 ã«å¤‰åŒ–
                 float t = (m_timer - appearTime) * 3.0f;
                 float scale = 0.0f;
 
@@ -46,7 +46,7 @@ void ResultControlSystem::Update(float deltaTime)
     }
 
     // ---------------------------------------------------------
-    // 2. ƒXƒ^ƒ“ƒv‚ÌƒAƒjƒ[ƒVƒ‡ƒ“ (‘S¯oŒ»Œã‚Ì 2.0•b‚ ‚½‚è‚Åƒhƒ“I)
+    // 2. ã‚¹ã‚¿ãƒ³ãƒ—ã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ (å…¨æ˜Ÿå‡ºç¾å¾Œã® 2.0ç§’ã‚ãŸã‚Šã§ãƒ‰ãƒ³ï¼)
     //    Tag: "AnimStamp"
     // ---------------------------------------------------------
     for (auto const& entity : m_coordinator->GetActiveEntities())
@@ -62,7 +62,7 @@ void ResultControlSystem::Update(float deltaTime)
 
             float t = (m_timer - appearTime) * 5.0f;
 
-            // Å‰‚Í 5”{•“§–¾ ¨ 1”{••s“§–¾‚Ö
+            // æœ€åˆã¯ 5å€ï¼†é€æ˜Ž â†’ 1å€ï¼†ä¸é€æ˜Žã¸
             float scale = 1.0f;
             float alpha = 1.0f;
 
@@ -82,7 +82,7 @@ void ResultControlSystem::Update(float deltaTime)
         }
     }
 
-    // 3) š‚ðŽæ‚Á‚½s‚Ì STAR_TEXT ‚ð”g‘Å‚½‚¹‚é
+    // 3) â˜…ã‚’å–ã£ãŸè¡Œã® STAR_TEXT ã‚’æ³¢æ‰“ãŸã›ã‚‹
     {
         const float waveStartTime = 0.8f;
 
@@ -97,7 +97,7 @@ void ResultControlSystem::Update(float deltaTime)
 
                 auto& tag = m_coordinator->GetComponent<TagComponent>(entity);
                 if (tag.tag != "AnimStarText") continue;
-                
+
                 auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
 
                 const float baseW = 320.0f;

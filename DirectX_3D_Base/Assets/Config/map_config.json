@@ -11,7 +11,7 @@
     "maxRoomCount": 4,
     "timeLimitStar": 180.0,
     "minPathPercentage": 0.5,
-    "useOrderedCollection": false,
+    "useOrderedCollection": true,
     "items": [
       "Takara_Yubiwa"
     ],

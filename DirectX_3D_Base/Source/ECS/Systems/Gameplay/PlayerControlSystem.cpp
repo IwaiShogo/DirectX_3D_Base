@@ -220,12 +220,12 @@ void PlayerControlSystem::Update(float deltaTime)
 			if (desiredState == PlayerAnimState::Run)
 			{
 				// 走りアニメへ
-				animComp.Play("A_PLAYER_RUN");
+				animComp.PlayBlend("A_PLAYER_RUN", 0.3f);
 			}
 			else
 			{
 				// 待機アニメへ
-				animComp.Play("A_PLAYER_IDLE");
+				animComp.PlayBlend("A_PLAYER_IDLE", 0.3f);
 			}
 		}
 	}

@@ -49,20 +49,38 @@ void GameScene::Init()
 
 
 	// --- 4. ÇªÇÃëºÇÃã§í EntityÇÃçÏê¨ ---
-	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
+	//ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
 
-	ECS::EntityID cont = m_coordinator->CreateEntity(
+	ECS::EntityID gameController = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator.get());
+	auto& gameState = m_coordinator->GetComponent<GameStateComponent>(gameController);
+
+	ECS::EntityID topviewBG = m_coordinator->CreateEntity(
 		TransformComponent(
 			/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f),
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Scale	*/	XMFLOAT3(SCREEN_WIDTH, SCREEN_HEIGHT, 1)
 		),
 		UIImageComponent(
-			/* AssetID	*/	"BG_TOPVIEW",
+			/* AssetID		*/	"BG_TOPVIEW",
 			/* Depth		*/	-1.0f,
 			/* IsVisible	*/	true
 		)
 	);
+	gameState.topviewBgID = topviewBG;
+
+	ECS::EntityID tpsBG = m_coordinator->CreateEntity(
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(SCREEN_WIDTH, SCREEN_HEIGHT, 1)
+		),
+		UIImageComponent(
+			/* AssetID		*/	"UI_SCAN_LINE",
+			/* Depth		*/	-1.0f,
+			/* IsVisible	*/	false
+		)
+	);
+	gameState.tpsBgID = tpsBG;
 
 	// âÊñ ïùÇ¢Ç¡ÇœÇ¢ÇÃç◊í∑Ç¢ñ_ÇçÏÇÈ
 	float lineWidth = (float)SCREEN_WIDTH;

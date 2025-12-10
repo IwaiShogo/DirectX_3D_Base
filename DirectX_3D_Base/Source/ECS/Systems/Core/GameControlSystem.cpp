@@ -169,6 +169,27 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
         ? GameMode::SCOUTING_MODE
         : GameMode::ACTION_MODE;
 
+    // 背景画像の切り替え
+    if (state.topviewBgID != INVALID_ENTITY_ID && state.tpsBgID != INVALID_ENTITY_ID)
+    {
+        auto& normalUI = m_coordinator->GetComponent<UIImageComponent>(state.topviewBgID);
+        auto& tpsUI = m_coordinator->GetComponent<UIImageComponent>(state.tpsBgID);
+
+        if (state.currentMode == GameMode::SCOUTING_MODE)
+        {
+            // スカウティング（トップビュー）モード: 通常背景ON, TPS背景OFF
+            // ※あなたの既存コードでは SCOUTING_MODE がトップビュー（BG_TOPVIEWが表示されるべき状態）だと推測されます
+            normalUI.isVisible = true;
+            tpsUI.isVisible = false;
+        }
+        else
+        {
+            // アクション（TPS）モード: 通常背景OFF, TPS背景ON
+            normalUI.isVisible = false;
+            tpsUI.isVisible = true;
+        }
+    }
+
     bool isScouting = (state.currentMode == GameMode::SCOUTING_MODE);
     for (auto const& entity : m_coordinator->GetActiveEntities())
     {
@@ -188,16 +209,20 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
             isTarget = true;
             restoreType = MESH_MODEL; // アイテムは箱表示
         }
-        // 敵 (GuardComponent または TagがGuard/Taser)
-        else if (m_coordinator->HasComponent<GuardComponent>(entity)) {
-            isTarget = true;
-            restoreType = MESH_BOX; // 敵は箱表示
-        }
         else if (m_coordinator->HasComponent<TagComponent>(entity)) {
             const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
-            if (tag == "taser" || tag == "guard") {
+            if (tag == "guard") {
                 isTarget = true;
+                restoreType = MESH_MODEL;
+            }
+            if (tag == "taser")
+            {
+                isTarget = true;
+#ifdef _DEBUG
                 restoreType = MESH_BOX;
+#elif defined(NDEBUG)
+                restoreType = MESH_NONE;
+#endif
             }
             if (tag == "ground" || tag == "wall" || tag == "door")
             {
@@ -815,7 +840,7 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
 
         // --- 2. ドアを開ける ---
         if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
-            m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE");
+            m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_OPEN", false);
         }
 
         // 通れるようにコリジョンをトリガー化
@@ -840,7 +865,7 @@ void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID control
 
     // アニメーション再生 (歩き)
     if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
-        m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_WALK");
+        m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_RUN");
     }
 
     // --- 0.0s ~ 2.0s: 直進して部屋に入る ---
@@ -858,14 +883,14 @@ void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID control
     {
         // 待機モーションに戻す
         if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
-            m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_IDLE");
+            m_coordinator->GetComponent<AnimationComponent>(playerID).PlayBlend("A_PLAYER_IDLE", 0.5f);
         }
 
         // ドアを閉める
         EntityID doorID = FindEntranceDoor();
         if (doorID != INVALID_ENTITY_ID) {
             if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
-                m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE");
+                m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE", false);
             }
             // コリジョンを壁に戻す (閉じ込める)
             if (m_coordinator->HasComponent<CollisionComponent>(doorID)) {
@@ -900,7 +925,7 @@ void GameControlSystem::CheckDoorUnlock(EntityID controllerID)
                 door.isLocked = false;
                  door.state = DoorState::Open;
 
-                m_coordinator->GetComponent<AnimationComponent>(exitDoor).Play("A_DOOR_OPEN");
+                m_coordinator->GetComponent<AnimationComponent>(exitDoor).Play("A_DOOR_OPEN", false);
                 m_coordinator->GetComponent<CollisionComponent>(exitDoor).type = COLLIDER_TRIGGER;
 
                 // 音やメッセージ「脱出せよ！」などを出す
@@ -925,6 +950,13 @@ void GameControlSystem::UpdateExitSequence(float deltaTime, EntityID controllerI
     float rad = pTrans.rotation.y;
     pTrans.position.x += sin(rad) * speed;
     pTrans.position.z += cos(rad) * speed;
+
+    EntityID doorID = FindEntranceDoor();
+    if (doorID != INVALID_ENTITY_ID) {
+        if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
+            m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE", false);
+        }
+    }
 
     // フェードアウトなどをかけて、一定時間後にリザルトへ
     if (state.sequenceTimer > 2.0f)
