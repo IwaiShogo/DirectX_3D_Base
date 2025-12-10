@@ -190,6 +190,12 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
 
     );
 
+    // 2. システム登録とシグネチャ設定
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        FloatingSystem,
+        TransformComponent, FloatingComponent
+    );
     // ------------------------------------------------------------
     // 2. Draw（描画処理）
     // ------------------------------------------------------------

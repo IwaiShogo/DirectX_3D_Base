@@ -1101,7 +1101,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                 cellCenter.z += TILE_SIZE / 2.0f;
 
                 // 特殊オブジェクトのY座標を床の表面に合わせる (TILE_SIZE / 2.0f = プレイヤー/アイテムの中心)
-                cellCenter.y = TILE_SIZE / 2.0f;
+                cellCenter.y = TILE_SIZE / 1.3f;
 
                 if (cell.type == CellType::Start) {
                     EntityFactory::CreatePlayer(m_coordinator, cellCenter);

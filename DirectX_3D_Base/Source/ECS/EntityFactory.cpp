@@ -183,7 +183,7 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 		),
 		TransformComponent(
 			/* Position	*/	position,
-			/* Rotation	*/	XMFLOAT3(45.0f, 45.0f, 45.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
@@ -195,9 +195,16 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 			/* Scale	*/	0.1f,
 			/* Flip		*/	Model::None
 		),
-		CollectableComponent(1.0f, orderIndex, itemID)
+		CollectableComponent(1.0f, orderIndex, itemID),
+		//浮遊コンポーネント
+	    FloatingComponent(
+		/* Amplitude */ 0.5f,     // 上下 0.5 の範囲で揺れる
+		/* Speed     */ 2.0f,     // 速度
+		/* InitialY  */ position.y // 基準となる高さ（配置位置）
+	)
 	);
-
+	
+		
 	return entity;
 }
 

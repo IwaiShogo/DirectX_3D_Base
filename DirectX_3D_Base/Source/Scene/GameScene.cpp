@@ -47,6 +47,7 @@ void GameScene::Init()
 	// ¦ŠÖ”–¼‚ÍÀÛ‚ÌƒR[ƒh‚É‡‚í‚¹‚Ä‘‚«Š·‚¦‚Ä‚­‚¾‚³‚¢
 	ECS::EntityFactory::GenerateStageFromConfig(m_coordinator.get(), s_StageNo);
 
+
 	// --- 4. ‚»‚Ì‘¼‚Ì‹¤’ÊEntity‚Ìì¬ ---
 	//ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
 

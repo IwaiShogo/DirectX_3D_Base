@@ -216,6 +216,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Components\Rendering\EffectComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\ModelComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\RenderComponent.h" />
+    <ClInclude Include="Include\ECS\Components\UI\FloatingComponent.h" />
     <ClInclude Include="Include\ECS\Components\UI\ScanLineComponent.h" />
     <ClInclude Include="Include\ECS\Components\UI\SonarComponent.h" />
     <ClInclude Include="Include\ECS\Components\UI\UICursorComponent.h" />
@@ -244,6 +245,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Systems\Rendering\EffectSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Rendering\RenderSystem.h" />
     <ClInclude Include="Include\ECS\Systems\UI\CursorSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\UI\FloatingSystem.h" />
     <ClInclude Include="Include\ECS\Systems\UI\UIInputSystem.h" />
     <ClInclude Include="Include\ECS\Systems\UI\UIRenderSystem.h" />
     <ClInclude Include="Include\ECS\AllComponents.h" />
