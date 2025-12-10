@@ -79,6 +79,7 @@
 // @component	ソナー
 #include "ECS/Components/UI/SonarComponent.h"
 
+#include "ECS/Components/UI/FloatingComponent.h"
 // @folder		Gameplay
 // @component	プレイヤー入力制御
 #include "ECS/Components/Gameplay/PlayerControlComponent.h"

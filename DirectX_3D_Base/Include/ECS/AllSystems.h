@@ -45,7 +45,6 @@
 #include "ECS/Systems/Rendering/DebugDrawSystem.h"
 // @system	アニメーション
 #include "ECS/Systems/Rendering/AnimationSystem.h"
-#include "ECS/Systems/Gameplay/PlayerControlSystem.h"
 // @system	エフェクト
 #include "ECS/Systems/Rendering/EffectSystem.h"
 
@@ -63,6 +62,7 @@
 // @system	カーソルUI
 #include "ECS/Systems/UI/CursorSystem.h"
 
+#include "ECS/Systems/UI/FloatingSystem.h"
 // @folder	Gameplay
 // @system	プレイヤー入力制御
 #include "ECS/Systems/Gameplay/PlayerControlSystem.h"
