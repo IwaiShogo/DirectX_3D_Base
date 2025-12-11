@@ -27,7 +27,6 @@ public:
 		PS_KIND_MAX
 	};
 
-
 public:
 	ShaderList();
 	~ShaderList();

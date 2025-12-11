@@ -70,6 +70,8 @@
 #include "ECS/Systems/Gameplay/CollectionSystem.h"
 // @system	ƒ}ƒbƒv¶¬
 #include "ECS/Systems/Gameplay/MapGenerationSystem.h"
+// @system	¶¬‚ğ’x‚ç‚¹‚é
+#include "ECS/Systems/Gameplay/EnemySpawnSystem.h"
 
 // @system	Œx”õˆõAI
 #include "ECS/Systems/Gimmick/GuardAISystem.h"

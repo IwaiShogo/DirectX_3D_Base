@@ -35,15 +35,8 @@ namespace ECS
 	class EntityFactory final
 	{
 	public:
-		/**
-		 * @brief 全てのデモ用エンティティを生成し、ECSに登録する
-		 * @param coordinator - エンティティの生成と登録を行うCoordinator
-		 */
-		static void CreateAllDemoEntities(Coordinator* coordinator);
 
 		static EntityID CreatePlayer(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
-
-		static EntityID CreateGameController(Coordinator* coordinator);
 
 		static EntityID CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position, int orderIndex = 0, const std::string& itemID = "");
 
@@ -53,15 +46,11 @@ namespace ECS
 
 		static EntityID CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY);
 
-		static EntityID CreateGoal(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
-
 		static EntityID CreateTaser(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 
 		static EntityID CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume = 1.0f);
 		
 		static EntityID CreateLoopSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume = 1.0f);
-
-		static EntityID CreateUITestEntity(Coordinator* coordinator, const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size, const std::string& assetID);
 
 		static EntityID CreateTitleSceneEntity(Coordinator* coordinator);
 
@@ -72,6 +61,8 @@ namespace ECS
 		static EntityID CreateOneShotEffect(Coordinator* coordinator, const std::string& assetID, const DirectX::XMFLOAT3& position, float duration, float scale = 1.0f);
 
 		static EntityID CreateDoor(Coordinator* coordinator, const DirectX::XMFLOAT3& position, float rotationY, bool isEntrance);
+
+		static EntityID CreateEnemySpawner(Coordinator* coordinator, const DirectX::XMFLOAT3& position, float delayTime);
 
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止
