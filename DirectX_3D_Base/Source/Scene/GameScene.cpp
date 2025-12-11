@@ -48,21 +48,61 @@ void GameScene::Init()
 	ECS::EntityFactory::GenerateStageFromConfig(m_coordinator.get(), s_StageNo);
 
 
-	// --- 4. その他の共通Entityの作成 ---
-	ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
+	// 1. トップビュー用
+	ECS::EntityID scoutingBGM = ECS::EntityFactory::CreateLoopSoundEntity(
+		m_coordinator.get(),
+		"BGM_TEST",
+		0.5f
+	);
+	// タグを "BGM_SCOUTING" に変更
+	if (m_coordinator->HasComponent<TagComponent>(scoutingBGM)) {
+		m_coordinator->GetComponent<TagComponent>(scoutingBGM).tag = "BGM_SCOUTING";
+	}
 
-	ECS::EntityID cont = m_coordinator->CreateEntity(
+	// 2. アクション用
+	ECS::EntityID actionBGM = ECS::EntityFactory::CreateLoopSoundEntity(
+		m_coordinator.get(),
+		"BGM_TEST2",
+		0.5f
+	);
+	// タグを "BGM_ACTION" に変更
+	if (m_coordinator->HasComponent<TagComponent>(actionBGM)) {
+		m_coordinator->GetComponent<TagComponent>(actionBGM).tag = "BGM_ACTION";
+	}
+
+	// アクション用は止めておく
+	if (m_coordinator->HasComponent<SoundComponent>(actionBGM)) {
+		m_coordinator->GetComponent<SoundComponent>(actionBGM).RequestStop();
+	}	ECS::EntityID gameController = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator.get());
+	auto& gameState = m_coordinator->GetComponent<GameStateComponent>(gameController);
+
+	ECS::EntityID topviewBG = m_coordinator->CreateEntity(
 		TransformComponent(
 			/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f),
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Scale	*/	XMFLOAT3(SCREEN_WIDTH, SCREEN_HEIGHT, 1)
 		),
 		UIImageComponent(
-			/* AssetID	*/	"BG_TOPVIEW",
+			/* AssetID		*/	"BG_TOPVIEW",
 			/* Depth		*/	-1.0f,
 			/* IsVisible	*/	true
 		)
 	);
+	gameState.topviewBgID = topviewBG;
+
+	ECS::EntityID tpsBG = m_coordinator->CreateEntity(
+		TransformComponent(
+			/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale	*/	XMFLOAT3(SCREEN_WIDTH, SCREEN_HEIGHT, 1)
+		),
+		UIImageComponent(
+			/* AssetID		*/	"UI_SCAN_LINE",
+			/* Depth		*/	-1.0f,
+			/* IsVisible	*/	false
+		)
+	);
+	gameState.tpsBgID = tpsBG;
 
 	// 画面幅いっぱいの細長い棒を作る
 	float lineWidth = (float)SCREEN_WIDTH;

@@ -277,6 +277,8 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
   <ItemGroup>
     <None Include="..\README.md" />
     <None Include="Assets\Config\map_config.json" />
+    <None Include="Assets\CSV\AnimationList.csv" />
+    <None Include="Assets\CSV\EffectList.csv" />
     <None Include="Assets\CSV\ModelList.csv" />
     <None Include="Assets\CSV\SoundList.csv" />
     <None Include="Assets\CSV\TextureList.csv" />

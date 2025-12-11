@@ -111,6 +111,30 @@ void GameControlSystem::Update(float deltaTime)
                 float distSq = XMVectorGetX(XMVector3LengthSq(XMLoadFloat3(&pTrans.position) - XMLoadFloat3(&dTrans.position)));
                 if (distSq < 2.0f * 2.0f) // 2m以内
                 {
+
+                    for (auto const& entity : m_coordinator->GetActiveEntities())
+                    {
+                        if (!m_coordinator->HasComponent<SoundComponent>(entity))
+                            continue;
+
+                        auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+                        const auto& id = sound.assetID;
+
+                        // アイテム全回収後まで流れていた BGM_TEST2 を停止
+                        if (id == "BGM_TEST2"
+                            // もし BGM_TEST3 もここで止めたい場合は ↓ を有効に
+                            || id == "BGM_TEST3")
+                        {
+                            sound.RequestStop();
+                        }
+                    }
+
+                    // ゴール演出開始SEを一回だけ鳴らす
+                    ECS::EntityFactory::CreateOneShotSoundEntity(
+                        m_coordinator,
+                        "SE_TEST3",  // ゴール用SE
+                        0.8f         // 音量はお好みで
+                    );
                     state.sequenceState = GameSequenceState::Exiting;
                     state.sequenceTimer = 0.0f;
                 }
@@ -158,9 +182,12 @@ void GameControlSystem::UpdateTimerAndRules(float deltaTime, ECS::EntityID contr
 // ---------------------------------------------------------
 void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
 {
-    // Tabキー または Yボタン
+    // Tabキー または Yボタン または SPACEキー
     bool toggle = IsKeyTrigger(VK_SPACE) || IsButtonTriggered(BUTTON_A);
     if (!toggle) return;
+
+    // 決定音（SE）
+    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST4");
 
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
@@ -169,57 +196,70 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
         ? GameMode::SCOUTING_MODE
         : GameMode::ACTION_MODE;
 
+    // GameControlSystem.cpp の HandleInputAndStateSwitch 内
+
+        // ... (前略) ...
+
     bool isScouting = (state.currentMode == GameMode::SCOUTING_MODE);
+
     for (auto const& entity : m_coordinator->GetActiveEntities())
     {
-        if (!m_coordinator->HasComponent<RenderComponent>(entity)) continue;
-
-        auto& render = m_coordinator->GetComponent<RenderComponent>(entity);
-        bool isTarget = false;
-        MeshType restoreType = MESH_BOX; // 復帰時のデフォルト
-
-        // プレイヤー
-        if (m_coordinator->HasComponent<PlayerControlComponent>(entity)) {
-            isTarget = true;
-            restoreType = MESH_MODEL;
-        }
-        // アイテム
-        else if (m_coordinator->HasComponent<CollectableComponent>(entity)) {
-            isTarget = true;
-            restoreType = MESH_MODEL; // アイテムは箱表示
-        }
-        // 敵 (GuardComponent または TagがGuard/Taser)
-        else if (m_coordinator->HasComponent<GuardComponent>(entity)) {
-            isTarget = true;
-            restoreType = MESH_BOX; // 敵は箱表示
-        }
-        else if (m_coordinator->HasComponent<TagComponent>(entity)) {
-            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
-            if (tag == "taser" || tag == "guard") {
-                isTarget = true;
-                restoreType = MESH_BOX;
-            }
-            if (tag == "ground" || tag == "wall" || tag == "door")
-            {
-                isTarget = true;
-                restoreType = MESH_MODEL;
-            }
-        }
-
-        // 対象であれば描画モード変更
-        if (isTarget)
+        if (m_coordinator->HasComponent<TagComponent>(entity) &&
+            m_coordinator->HasComponent<SoundComponent>(entity))
         {
-            if (isScouting) {
-                render.type = MESH_NONE; // トップビュー時は描画しない
+            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
+            auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+
+            // A. トップビュー用BGM
+            if (tag == "BGM_SCOUTING")
+            {
+                if (isScouting) sound.playRequested = true;
+                else            sound.RequestStop();
             }
-            else {
-                render.type = restoreType; // アクション時は元の形状で描画
+            // B. アクション用BGM
+            else if (tag == "BGM_ACTION")
+            {
+                if (isScouting) sound.RequestStop();
+                else            sound.playRequested = true;
             }
         }
     }
-}
+    // ... (背景切り替えや描画モードのコードはそのまま) ...
+    // -------------------------------------------------------
+    // 背景画像の切り替え
+    // -------------------------------------------------------
+    if (state.topviewBgID != INVALID_ENTITY_ID && state.tpsBgID != INVALID_ENTITY_ID)
+    {
+        auto& normalUI = m_coordinator->GetComponent<UIImageComponent>(state.topviewBgID);
+        auto& tpsUI = m_coordinator->GetComponent<UIImageComponent>(state.tpsBgID);
 
-// ---------------------------------------------------------
+        if (isScouting) { normalUI.isVisible = true; tpsUI.isVisible = false; }
+        else { normalUI.isVisible = false; tpsUI.isVisible = true; }
+    }
+
+    // 描画モードの切り替え
+    for (auto const& entity : m_coordinator->GetActiveEntities())
+    {
+        if (!m_coordinator->HasComponent<RenderComponent>(entity)) continue;
+        auto& render = m_coordinator->GetComponent<RenderComponent>(entity);
+        bool isTarget = false;
+        MeshType restoreType = MESH_BOX;
+
+        if (m_coordinator->HasComponent<PlayerControlComponent>(entity)) { isTarget = true; restoreType = MESH_MODEL; }
+        else if (m_coordinator->HasComponent<CollectableComponent>(entity)) { isTarget = true; restoreType = MESH_MODEL; }
+        else if (m_coordinator->HasComponent<TagComponent>(entity)) {
+            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
+            if (tag == "guard") { isTarget = true; restoreType = MESH_MODEL; }
+            if (tag == "taser") { isTarget = true; restoreType = MESH_NONE; }
+            if (tag == "ground" || tag == "wall" || tag == "door") { isTarget = true; restoreType = MESH_MODEL; }
+        }
+
+        if (isTarget) {
+            if (isScouting) render.type = MESH_NONE;
+            else render.type = restoreType;
+        }
+    }
+}// ---------------------------------------------------------
 // C. シーン遷移管理 (旧 GameFlowSystem)
 // ---------------------------------------------------------
 void GameControlSystem::CheckSceneTransition(ECS::EntityID controllerID)
@@ -815,7 +855,7 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
 
         // --- 2. ドアを開ける ---
         if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
-            m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE");
+            m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_OPEN", false);
         }
 
         // 通れるようにコリジョンをトリガー化
@@ -840,7 +880,7 @@ void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID control
 
     // アニメーション再生 (歩き)
     if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
-        m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_WALK");
+        m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_RUN");
     }
 
     // --- 0.0s ~ 2.0s: 直進して部屋に入る ---
@@ -858,14 +898,14 @@ void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID control
     {
         // 待機モーションに戻す
         if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
-            m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_IDLE");
+            m_coordinator->GetComponent<AnimationComponent>(playerID).PlayBlend("A_PLAYER_IDLE", 0.5f);
         }
 
         // ドアを閉める
         EntityID doorID = FindEntranceDoor();
         if (doorID != INVALID_ENTITY_ID) {
             if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
-                m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE");
+                m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE", false);
             }
             // コリジョンを壁に戻す (閉じ込める)
             if (m_coordinator->HasComponent<CollisionComponent>(doorID)) {
@@ -900,9 +940,36 @@ void GameControlSystem::CheckDoorUnlock(EntityID controllerID)
                 door.isLocked = false;
                  door.state = DoorState::Open;
 
-                m_coordinator->GetComponent<AnimationComponent>(exitDoor).Play("A_DOOR_OPEN");
+                m_coordinator->GetComponent<AnimationComponent>(exitDoor).Play("A_DOOR_OPEN", false);
                 m_coordinator->GetComponent<CollisionComponent>(exitDoor).type = COLLIDER_TRIGGER;
 
+                // ★ 全アイテム回収後のBGM切り替え -------------------
+                // 1. 既存のBGMを止める
+                for (auto const& entity : m_coordinator->GetActiveEntities())
+                {
+                    if (!m_coordinator->HasComponent<SoundComponent>(entity))
+                        continue;
+
+                    auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+
+                    // アクション用BGM (assetID = "BGM_TEST2") を停止
+                    if (sound.assetID == "BGM_TEST2")
+                    {
+                        sound.RequestStop();
+                    }
+                }
+                // 2. クリア待機用BGM（BGM_TEST3）を再生開始
+                ECS::EntityID clearBgm = ECS::EntityFactory::CreateLoopSoundEntity(
+                    m_coordinator,
+                    "BGM_TEST3",  // ★ Sound.csv に登録されているID
+                    0.5f          // 音量は好みで
+                );
+
+                // 必要ならタグを付けておく（あとで止めたい時用）
+                if (m_coordinator->HasComponent<TagComponent>(clearBgm))
+                {
+                    m_coordinator->GetComponent<TagComponent>(clearBgm).tag = "BGM_CLEAR";
+                }
                 // 音やメッセージ「脱出せよ！」などを出す
             }
         }
@@ -925,6 +992,13 @@ void GameControlSystem::UpdateExitSequence(float deltaTime, EntityID controllerI
     float rad = pTrans.rotation.y;
     pTrans.position.x += sin(rad) * speed;
     pTrans.position.z += cos(rad) * speed;
+
+    EntityID doorID = FindEntranceDoor();
+    if (doorID != INVALID_ENTITY_ID) {
+        if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
+            m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE", false);
+        }
+    }
 
     // フェードアウトなどをかけて、一定時間後にリザルトへ
     if (state.sequenceTimer > 2.0f)

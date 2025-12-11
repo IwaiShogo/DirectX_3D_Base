@@ -102,7 +102,7 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 		),
 		CollisionComponent(
 			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
-			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.5f, 0.0f),
 			/* ColliderType	*/	COLLIDER_DYNAMIC
 		),
 		PlayerControlComponent(
@@ -197,16 +197,14 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 		),
 		CollectableComponent(1.0f, orderIndex, itemID),
 		//浮遊コンポーネント
-	    FloatingComponent(
-		/* Amplitude */ 0.5f,     // 上下 0.5 の範囲で揺れる
-		/* Speed     */ 2.0f,     // 速度
-		/* InitialY  */ position.y // 基準となる高さ（配置位置）
-
+		FloatingComponent(
+			/* Amplitude */ 0.5f,     // 上下 0.5 の範囲で揺れる
+			/* Speed     */ 2.0f,     // 速度
+			/* InitialY  */ position.y // 基準となる高さ（配置位置）
+		
 	),
 		RotatorComponent(0.0f, 2.0f, 0.0f)
-	);
-	
-		
+		);
 	return entity;
 }
 
@@ -281,6 +279,12 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* Scale	*/	0.1f,
 			/* Flip		*/	Model::None
 		),
+		AnimationComponent(
+			{
+				"A_GUARD_RUN",
+				"A_GUARD_WALK"
+			}
+		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -300,6 +304,9 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* ColliderType	*/	COLLIDER_DYNAMIC
 		)
 	);
+
+	auto& anim = coordinator->GetComponent<AnimationComponent>(guard);
+	anim.Play("A_GUARD_RUN");
 
 	return guard;
 }
@@ -452,14 +459,18 @@ EntityID ECS::EntityFactory::CreateLoopSoundEntity(Coordinator* coordinator, con
 {
 	EntityID entity = coordinator->CreateEntity(
 		TagComponent("BGM"),
-		SoundComponent()//サウンドコンポーネント
+		SoundComponent(
+			assetID,
+			SoundType::BGM,
+			volume,
+			XAUDIO2_LOOP_INFINITE
+		)
 	);
 
-	//コンポーネント値設定
 	auto& sound = coordinator->GetComponent<SoundComponent>(entity);
-	sound.assetID = assetID;
-	sound.type = SoundType::BGM;
-	sound.RequestPlay(volume, XAUDIO2_LOOP_INFINITE);
+	sound.RequestBGM(volume);
+
+	
 	return entity;
 }
 
@@ -563,19 +574,26 @@ EntityID ECS::EntityFactory::CreateDoor(Coordinator* coordinator, const DirectX:
 			XMFLOAT3(1.0f, 1.0f, 1.0f) // モデルに合わせてスケール調整
 		),
 		RenderComponent(MESH_MODEL, XMFLOAT4(1, 1, 1, 1)),
-		ModelComponent("M_DOOR", 0.50f, Model::None), // "M_DOOR"はロード済みとする
+		ModelComponent("M_DOOR", 0.25f, Model::None), // "M_DOOR"はロード済みとする
 		AnimationComponent({ "A_DOOR_OPEN", "A_DOOR_CLOSE" }), // アニメーション名
 		DoorComponent(isEntrance, isEntrance), // 入口ならロックなし、出口ならロックあり
 		CollisionComponent(
-			XMFLOAT3(2.5f, 5.0f, 0.5f), // 壁と同じくらいのサイズ
+			XMFLOAT3(5.0f, 5.0f, 0.5f), // 壁と同じくらいのサイズ
 			XMFLOAT3(0.0f, 0.0f, 0.0f),
 			COLLIDER_STATIC // 閉まっている時は壁扱い
+		),
+		RigidBodyComponent(
+			XMFLOAT3(0.0f, 0.0f, 0.0f), // 速度
+			XMFLOAT3(0.0f, 0.0f, 0.0f), // 加速度
+			0.0f,  // 質量0 = 静的（押されても動かない）
+			0.5f,  // 摩擦
+			0.0f   // 反発
 		)
 	);
 
 	// 初期アニメーション（閉じた状態）
 	auto& anim = coordinator->GetComponent<AnimationComponent>(door);
-	anim.Play("A_DOOR_CLOSE"); 
+	anim.Play("A_DOOR_CLOSE", false, 100.0f); 
 
 	return door;
 }

@@ -48,6 +48,9 @@ struct GameStateComponent
 {
 	GameMode currentMode = GameMode::SCOUTING_MODE; ///< 現在のゲームモード
 
+	ECS::EntityID topviewBgID = ECS::INVALID_ENTITY_ID;
+	ECS::EntityID tpsBgID = ECS::INVALID_ENTITY_ID;
+
 	// --- 時間管理 ---
 	float timeLimit = 180.0f;	// 制限時間
 	float timeLimitStar = 60.0f;	// 評価用目標タイム

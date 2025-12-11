@@ -4,7 +4,6 @@
  *********************************************************************/
 #pragma once
 
-
 #include "ECS/Coordinator.h"
 #include "ECS/Components/Core/TransformComponent.h"
 #include "ECS/Components/UI/RotatorComponent.h"

@@ -198,12 +198,11 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     REGISTER_SYSTEM_AND_INIT(
-        coordinator, 
-        RotatorSystem, 
-        TransformComponent, 
+        coordinator,
+        RotatorSystem,
+        TransformComponent,
         RotatorComponent
     );
-
     // ------------------------------------------------------------
     // 2. DrawÅiï`âÊèàóùÅj
     // ------------------------------------------------------------

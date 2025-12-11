@@ -136,7 +136,7 @@ void PlayerControlSystem::Update(float deltaTime)
 		auto& animComp = m_coordinator->GetComponent<AnimationComponent>(entity); 
 
 
-		if (IsKeyPress('E'))
+		if (IsKeyTrigger('E'))
 		{
 			ECS::EntityFactory::CreateOneShotEffect(m_coordinator, "EFK_TEST", transform.position, 6.0f);
 		}
@@ -220,12 +220,12 @@ void PlayerControlSystem::Update(float deltaTime)
 			if (desiredState == PlayerAnimState::Run)
 			{
 				// 走りアニメへ
-				animComp.Play("A_PLAYER_RUN");
+				animComp.PlayBlend("A_PLAYER_RUN", 0.3f);
 			}
 			else
 			{
 				// 待機アニメへ
-				animComp.Play("A_PLAYER_IDLE");
+				animComp.PlayBlend("A_PLAYER_IDLE", 0.3f);
 			}
 		}
 	}

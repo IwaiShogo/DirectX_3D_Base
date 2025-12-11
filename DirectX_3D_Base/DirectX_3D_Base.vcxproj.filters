@@ -363,12 +363,14 @@
     <ClInclude Include="Include\ECS\Components\Core\PlayerControlComponent.h">
       <Filter>Header Files\ECS\Components\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Include\ECS\Components\Gimmick\DoorComponent.h" />
     <ClInclude Include="Include\ECS\Components\UI\FloatingComponent.h">
       <Filter>Header Files\ECS\Components\UI</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Systems\UI\FloatingSystem.h">
       <Filter>Header Files\ECS\Systems\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Gimmick\DoorComponent.h">
+      <Filter>Header Files\ECS\Components\Gimmick</Filter>
     </ClInclude>
     <ClInclude Include="Include\ECS\Components\UI\RotatorComponent.h">
       <Filter>Header Files\ECS\Components\UI</Filter>
@@ -523,6 +525,12 @@
     </None>
     <None Include="Assets\Config\map_config.json">
       <Filter>Assets\Config</Filter>
+    </None>
+    <None Include="Assets\CSV\AnimationList.csv">
+      <Filter>Assets\CSV</Filter>
+    </None>
+    <None Include="Assets\CSV\EffectList.csv">
+      <Filter>Assets\CSV</Filter>
     </None>
   </ItemGroup>
 </Project>
