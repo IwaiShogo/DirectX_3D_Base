@@ -1,19 +1,19 @@
 /*****************************************************************//**
  * @file	UIButtonComponent.h
- * @brief	
- * 
- * @details	
- * 
+ * @brief
+ *
+ * @details
+ *
  * ------------------------------------------------------------
  * @author	Iwai Shogo / Oda kaito
  * ------------------------------------------------------------
- * 
+ *
  * @date	2025/12/03	初回作成日
  * 			作業内容：	- 追加：
- * 
+ *
  * @update	2025/xx/xx	最終更新日
  * 			作業内容：	- XX：
- * 
+ *
  * @note	（省略可）
  *********************************************************************/
 
@@ -42,22 +42,26 @@ struct UIButtonComponent
 	ButtonState state;				///< 現在の状態
 	bool isVisible;					///< 有効か（非表示なら判定もしない想定）
 	std::function<void()> onClick;	///< クリック時のコールバック関数
+	DirectX::XMFLOAT3 originalScale; //元のサイズ
 
 	UIButtonComponent()
 		: state(ButtonState::Normal)
 		, isVisible(true)
 		, onClick(nullptr)
+		, originalScale{ 1.0f,1.0f,1.0f }
 	{
 	}
 
 	UIButtonComponent(
 		ButtonState initialState,
 		bool initialVisible,
-		std::function<void()> callback
+		std::function<void()> callback,
+		const DirectX::XMFLOAT3& scale = { 1.0f, 1.0f, 1.0f }
 	)
 		: state(initialState)
 		, isVisible(initialVisible)
 		, onClick(callback)
+		, originalScale(scale)
 	{
 		if (!this->onClick)
 		{
