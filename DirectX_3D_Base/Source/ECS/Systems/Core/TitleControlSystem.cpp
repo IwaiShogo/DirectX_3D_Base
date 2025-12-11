@@ -24,8 +24,10 @@ void TitleControlSystem::Update(float deltaTime)
                 ctrl.animTimer = 0.0f;
 
                 // PressStart UIを非表示にする（透明化）
-                for (auto uiEntity : ctrl.pressStartUIEntities) {
-                    if (m_coordinator->HasComponent<UIImageComponent>(uiEntity)) {
+                for (auto uiEntity : ctrl.pressStartUIEntities)
+                {
+                    if (m_coordinator->HasComponent<UIImageComponent>(uiEntity))
+                    {
                         auto& img = m_coordinator->GetComponent<UIImageComponent>(uiEntity).isVisible = false;
                     }
                 }
@@ -47,35 +49,100 @@ void TitleControlSystem::Update(float deltaTime)
                 // 完了 -> モード選択へ
                 ctrl.state = TitleState::ModeSelect;
 
+                ctrl.uiAnimTimer = 0.0f;
+
                 // メニューUIのボタン機能を有効化
                 for (auto uiEntity : ctrl.menuUIEntities) {
                     if (m_coordinator->HasComponent<UIButtonComponent>(uiEntity)) {
                         m_coordinator->GetComponent<UIButtonComponent>(uiEntity).isVisible = true;
                     }
-                    if (m_coordinator->HasComponent<UIImageComponent>(uiEntity)) {
-                        m_coordinator->GetComponent<UIImageComponent>(uiEntity).isVisible = true;
-                    }
+                    /*  if (m_coordinator->HasComponent<UIImageComponent>(uiEntity)) {
+                          m_coordinator->GetComponent<UIImageComponent>(uiEntity).isVisible = true;
+                      }*/
                 }
             }
 
             // イージング (SmoothStep)
             float smoothT = t * t * (3.0f - 2.0f * t);
 
+            // ベジエ曲線の計算係数
+            float u = 1.0f - smoothT;
+            float tt = smoothT * smoothT;
+            float uu = u * u;
+            float ut2 = 2.0f * u * smoothT;
+
             // カメラ位置更新
             if (ctrl.cameraEntityID != INVALID_ENTITY_ID)
             {
                 auto& trans = m_coordinator->GetComponent<TransformComponent>(ctrl.cameraEntityID);
-                trans.position.x = ctrl.camStartPos.x + (ctrl.camEndPos.x - ctrl.camStartPos.x) * smoothT;
-                trans.position.y = ctrl.camStartPos.y + (ctrl.camEndPos.y - ctrl.camStartPos.y) * smoothT;
-                trans.position.z = ctrl.camStartPos.z + (ctrl.camEndPos.z - ctrl.camStartPos.z) * smoothT;
+                trans.position.x = (uu * ctrl.camStartPos.x) + (ut2 * ctrl.camControlPos.x) + (tt * ctrl.camEndPos.x);
+                trans.position.y = (uu * ctrl.camStartPos.y) + (ut2 * ctrl.camControlPos.y) + (tt * ctrl.camEndPos.y);
+                trans.position.z = (uu * ctrl.camStartPos.z) + (ut2 * ctrl.camControlPos.z) + (tt * ctrl.camEndPos.z);
+
+                trans.rotation.y = ctrl.startRotY + (ctrl.endRotY - ctrl.startRotY) * smoothT;
             }
         }
         break;
 
         case TitleState::ModeSelect:
-            // ここでの処理は不要。
-            // UIInputSystemとUICursorSystemがボタンクリックを処理し、
-            // ボタンのonClickコールバックでシーン遷移が発生する。
+
+            if (ctrl.uiAnimTimer < ctrl.uiAnimDuration)
+            {
+                ctrl.uiAnimTimer += deltaTime;
+                float t = ctrl.uiAnimTimer / ctrl.uiAnimDuration;
+                if (t > 1.0f) t = 1.0f;
+
+                // イージング関数 (EaseOutQuad: ふわっと減速して止まる)
+                float easeT = 1.0f - (1.0f - t) * (1.0f - t);
+
+                for (size_t i = 0; i < ctrl.menuUIEntities.size(); ++i)
+                {
+                    // 範囲チェック
+                    if (i >= ctrl.menuTargetYs.size()) break;
+
+                    ECS::EntityID uiEntity = ctrl.menuUIEntities[i];
+                    float targetY = ctrl.menuTargetYs[i];
+                    float startY = SCREEN_HEIGHT + 100.0f; // Initで設定した開始位置と同じ値
+
+                    // 1. 位置の更新 (スライドアップ)
+                    if (m_coordinator->HasComponent<TransformComponent>(uiEntity))
+                    {
+                        auto& trans = m_coordinator->GetComponent<TransformComponent>(uiEntity);
+                        // 現在位置 = 開始位置 + (移動距離 * 進行度)
+                        trans.position.y = startY + (targetY - startY) * easeT;
+                    }
+
+                    // 2. 透明度の更新 (フェードイン)
+                    if (m_coordinator->HasComponent<UIImageComponent>(uiEntity))
+                    {
+                        auto& img = m_coordinator->GetComponent<UIImageComponent>(uiEntity);
+                        img.color.w = easeT; // 0.0(透明) -> 1.0(不透明) に変化
+                    }
+                }
+
+            }
+            for (auto uiEntity : ctrl.menuUIEntities)
+            {
+                if (m_coordinator->HasComponent<UIButtonComponent>(uiEntity) &&
+                    m_coordinator->HasComponent<TransformComponent>(uiEntity))
+                {
+                    auto& btn = m_coordinator->GetComponent<UIButtonComponent>(uiEntity);
+                    auto& trans = m_coordinator->GetComponent<TransformComponent>(uiEntity);
+
+                    // 1. 目標倍率を決める (Hoverなら1.2倍、それ以外は1.0倍)
+                    float targetRatio = (btn.state == ButtonState::Hover) ? 1.2f : 1.0f;
+
+                    // 2. 目標サイズを計算 (元のサイズ × 倍率)
+                    float targetX = btn.originalScale.x * targetRatio;
+                    float targetY = btn.originalScale.y * targetRatio;
+
+                    // 3. 線形補間(Lerp)で滑らかにサイズ変更
+                    float speed = 15.0f * deltaTime;
+
+                    trans.scale.x += (targetX - trans.scale.x) * speed;
+                    trans.scale.y += (targetY - trans.scale.y) * speed;
+                }
+            }
 
             // キャンセル処理（WaitInputに戻るなど）を入れる場合はここに記述
             if (IsKeyTrigger(VK_ESCAPE) || IsButtonTriggered(BUTTON_B))

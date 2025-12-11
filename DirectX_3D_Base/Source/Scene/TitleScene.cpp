@@ -1,19 +1,19 @@
 /*****************************************************************//**
  * @file	TitleScene.cpp
- * @brief	
- * 
- * @details	
- * 
+ * @brief
+ *
+ * @details
+ *
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
- * 
+ *
  * @date	2025/11/30	初回作成日
  * 			作業内容：	- 追加：
- * 
+ *
  * @update	2025/xx/xx	最終更新日
  * 			作業内容：	- XX：
- * 
+ *
  * @note	（省略可）
  *********************************************************************/
 
@@ -31,7 +31,7 @@
 #include <ECS/Systems/Rendering/RenderSystem.h>
 #include "ECS/EntityFactory.h"
 #include "ECS/Systems/Core/TitleControlSystem.h"
-
+#include "ECS/Components/Rendering/RenderComponent.h"
 
 using namespace DirectX;
 
@@ -47,12 +47,23 @@ void TitleScene::Init()
 
 	// コントローラー
 	TitleControllerComponent titleCtrl;
-	titleCtrl.camStartPos = XMFLOAT3(0.0f, 2.0f, -14.3f);
-	titleCtrl.camEndPos = XMFLOAT3(0.0f, 1.6f, -5.0f);
+	titleCtrl.camStartPos = XMFLOAT3(0.0f, 2.0f, -9.8f);    //カメラ開始点
+	titleCtrl.camEndPos = XMFLOAT3(0.0f, 1.6f, -5.0f);      //カメラ終点
+	titleCtrl.camControlPos = XMFLOAT3{ 3.5f,1.8f, -11.0f };//カメラ中点
 
 	// 固定カメラ
 	ECS::EntityID cam = ECS::EntityFactory::CreateBasicCamera(m_coordinator.get(), titleCtrl.camStartPos);
 	titleCtrl.cameraEntityID = cam;
+
+	titleCtrl.startRotY = XMConvertToRadians(-90.0f);
+	titleCtrl.endRotY = XMConvertToRadians(0.0f);
+
+	if (m_coordinator->HasComponent<TransformComponent>(cam)) {
+		auto& trans = m_coordinator->GetComponent<TransformComponent>(cam);
+		trans.rotation.y = titleCtrl.startRotY;
+	}
+
+
 
 	// 背景モデル
 	ECS::EntityID museum = m_coordinator->CreateEntity(
@@ -92,7 +103,7 @@ void TitleScene::Init()
 			TransformComponent(
 				/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.8f, 0.0f),
 				/* Rotation	*/	XMFLOAT3(1.0f, 0.0f, 0.0f),
-				/* Scale	*/	XMFLOAT3(400, 50, 1)
+				/* Scale	*/	XMFLOAT3(400, 100, 1)
 			),
 			UIImageComponent(
 				/* AssetID		*/	"UI_PRESS_START",
@@ -105,6 +116,10 @@ void TitleScene::Init()
 
 	// メニューUI
 	{
+		float tagetY_NewGame = SCREEN_HEIGHT * 0.6f;
+		float tagetY_Continue = SCREEN_HEIGHT * 0.8f;
+		float startY_Offset = SCREEN_HEIGHT + 100.0f;
+
 		// New Game
 		ECS::EntityID newGame = m_coordinator->CreateEntity(
 			TransformComponent(
@@ -115,12 +130,14 @@ void TitleScene::Init()
 			UIImageComponent(
 				/* AssetID		*/	"BTN_NEW_GAME",
 				/* Depth		*/	0.0f,
-				/* IsVisible	*/	false
+				/* IsVisible	*/	true,
+				/*color*/        XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f)
 			),
 			UIButtonComponent(
 				/* State		*/	ButtonState::Normal,
 				/* IsVisible	*/	false,
-				/* OnClick		*/	[]() { SceneManager::ChangeScene<StageSelectScene>(); }
+				/* OnClick   */	[]() { SceneManager::ChangeScene<StageSelectScene>(); },
+				/* scale */      XMFLOAT3(300, 80, 1)
 			)
 		);
 
@@ -134,18 +151,23 @@ void TitleScene::Init()
 			UIImageComponent(
 				/* AssetID	*/	"BTN_CONTINUE",
 				/* Depth		*/	0.0f,
-				/* IsVisible	*/	false
+				/* IsVisible	*/	true,
+				/*color*/        XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f)
 			),
 			UIButtonComponent(
 				/* State		*/	ButtonState::Normal,
 				/* IsVisible	*/	false,
-				/* OnClick		*/	[]() { SceneManager::ChangeScene<StageSelectScene>(); }
+				/* OnClick		*/	[]() { SceneManager::ChangeScene<StageSelectScene>(); },
+				/* scale*/  XMFLOAT3(300, 80, 1)
 			)
 		);
 
 		// 登録
 		titleCtrl.menuUIEntities.push_back(newGame);
 		titleCtrl.menuUIEntities.push_back(cont);
+
+		titleCtrl.menuTargetYs.push_back(tagetY_NewGame);
+		titleCtrl.menuTargetYs.push_back(tagetY_Continue);
 	}
 
 	// カーソル
@@ -192,12 +214,6 @@ void TitleScene::Update(float deltaTime)
 	// (ここで UIInputSystem も自動的に動くので、手動呼び出しは不要です！)
 	m_coordinator->UpdateSystems(deltaTime);
 
-#ifdef _DEBUG
-	if (IsKeyTrigger('E'))
-	{
-		ECS::EntityFactory::CreateOneShotEffect(m_coordinator.get(), "EFK_TITLE_SHINE", { 0, 0, 0 }, 6.0f);
-	}
-#endif // _DEBUG
 }
 void TitleScene::Draw()
 {
