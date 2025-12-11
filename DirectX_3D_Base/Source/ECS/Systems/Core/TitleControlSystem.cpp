@@ -16,6 +16,49 @@ void TitleControlSystem::Update(float deltaTime)
         switch (ctrl.state)
         {
         case TitleState::WaitInput:
+        {
+
+            ctrl.animTimer += deltaTime;
+
+            float speed = 5.0f; // 点滅速度
+            float t = (std::sin(ctrl.animTimer * speed) + 1.0f) * 0.5f;
+            // 0.0～1.0の範囲に正規化
+
+            for (auto uiEntity : ctrl.pressStartUIEntities)
+            {
+                // サイズ変更 (TransformComponent)
+                if (m_coordinator->HasComponent<TransformComponent>(uiEntity))
+                {
+                    auto& trans = m_coordinator->GetComponent<TransformComponent>(uiEntity);
+
+                    // 基準サイズ (TitleScene::Initで設定した 450, 150 を基準にする)
+                    // ※本来はComponentに初期値を保存するのが理想ですが、ここでは固定値で計算します
+                    float baseW = 450.0f;
+                    float baseH = 150.0f;
+
+                    // 1.0倍 ? 1.1倍 の間で伸縮
+                    float scaleFactor = 1.0f + (t * 0.1f);
+
+                    trans.scale.x = baseW * scaleFactor;
+                    trans.scale.y = baseH * scaleFactor;
+                }
+
+                // 透明度変更 (UIImageComponent)
+                if (m_coordinator->HasComponent<UIImageComponent>(uiEntity))
+                {
+                    auto& img = m_coordinator->GetComponent<UIImageComponent>(uiEntity);
+
+                    // t=0(小)のとき不透明(1.0)、t=1(大)のとき半透明(0.2)
+                    // Lerp: A + (B - A) * t
+                    float maxAlpha = 1.0f;
+                    float minAlpha = 0.2f; // ここを0.0fにすると完全に消えます
+
+                    img.color.w = minAlpha + (maxAlpha - minAlpha) * t;
+                    
+                }
+            }
+
+
             // 入力判定
             if (IsKeyTrigger(VK_RETURN) || IsButtonTriggered(BUTTON_A))
             {
@@ -31,13 +74,18 @@ void TitleControlSystem::Update(float deltaTime)
                         auto& img = m_coordinator->GetComponent<UIImageComponent>(uiEntity).isVisible = false;
                     }
                 }
+                if (ctrl.logoEntityID != ECS::INVALID_ENTITY_ID &&
+                    m_coordinator->HasComponent<UIImageComponent>(ctrl.logoEntityID))
+                {
+                    m_coordinator->GetComponent<UIImageComponent>(ctrl.logoEntityID).isVisible = false;
+                }
             }
             else if (IsKeyTrigger(VK_ESCAPE) || IsButtonTriggered(BUTTON_B))
             {
                 PostQuitMessage(0);
             }
             break;
-
+        }
         case TitleState::ZoomAnimation:
         {
             ctrl.animTimer += deltaTime;

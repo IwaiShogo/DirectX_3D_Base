@@ -47,9 +47,12 @@ void TitleScene::Init()
 
 	// コントローラー
 	TitleControllerComponent titleCtrl;
-	titleCtrl.camStartPos = XMFLOAT3(0.0f, 2.0f, -9.8f);    //カメラ開始点
+	titleCtrl.camStartPos = XMFLOAT3(0.0f, 2.5f, -9.8f);    //カメラ開始点
 	titleCtrl.camEndPos = XMFLOAT3(0.0f, 1.6f, -5.0f);      //カメラ終点
 	titleCtrl.camControlPos = XMFLOAT3{ 3.5f,1.8f, -11.0f };//カメラ中点
+
+	titleCtrl.animDuration = 1.2f;  //カメラ移動スピード
+	titleCtrl.uiAnimDuration = 0.3f; //UIアニメーション時間
 
 	// 固定カメラ
 	ECS::EntityID cam = ECS::EntityFactory::CreateBasicCamera(m_coordinator.get(), titleCtrl.camStartPos);
@@ -62,8 +65,6 @@ void TitleScene::Init()
 		auto& trans = m_coordinator->GetComponent<TransformComponent>(cam);
 		trans.rotation.y = titleCtrl.startRotY;
 	}
-
-
 
 	// 背景モデル
 	ECS::EntityID museum = m_coordinator->CreateEntity(
@@ -97,13 +98,16 @@ void TitleScene::Init()
 				/* IsVisible	*/	true
 			)
 		);
-		titleCtrl.pressStartUIEntities.push_back(logo);
+
+		//titleCtrl.pressStartUIEntities.push_back(logo);
+		titleCtrl.logoEntityID = logo;
+
 
 		ECS::EntityID ent = m_coordinator->CreateEntity(
 			TransformComponent(
 				/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.8f, 0.0f),
 				/* Rotation	*/	XMFLOAT3(1.0f, 0.0f, 0.0f),
-				/* Scale	*/	XMFLOAT3(400, 100, 1)
+				/* Scale	*/	XMFLOAT3(450, 150, 1)
 			),
 			UIImageComponent(
 				/* AssetID		*/	"UI_PRESS_START",

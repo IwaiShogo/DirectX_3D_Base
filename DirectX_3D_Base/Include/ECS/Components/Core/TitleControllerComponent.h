@@ -30,6 +30,7 @@ struct TitleControllerComponent
 
     // 制御対象のエンティティID
     ECS::EntityID cameraEntityID;
+    ECS::EntityID logoEntityID;
     std::vector<ECS::EntityID> pressStartUIEntities;
     std::vector<ECS::EntityID> menuUIEntities;
 
@@ -45,6 +46,7 @@ struct TitleControllerComponent
         , uiAnimTimer(0.0f)
         , uiAnimDuration(0.8f)
         , cameraEntityID(ECS::INVALID_ENTITY_ID)
+		, logoEntityID(ECS::INVALID_ENTITY_ID)
         , camStartPos{ 0,0,0 }
         , camEndPos{ 0,0,0 }
         , camControlPos{ 0,0,0 }
