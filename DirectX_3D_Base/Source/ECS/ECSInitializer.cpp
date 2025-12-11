@@ -196,6 +196,15 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         FloatingSystem,
         TransformComponent, FloatingComponent
     );
+
+    // @system  EnemySpawnSystem
+    // @brief   ê∂ê¨íxâÑ
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  EnemySpawnSystem,
+        /* Components   */  EnemySpawnComponent
+    );
+
     // ------------------------------------------------------------
     // 2. DrawÅiï`âÊèàóùÅj
     // ------------------------------------------------------------

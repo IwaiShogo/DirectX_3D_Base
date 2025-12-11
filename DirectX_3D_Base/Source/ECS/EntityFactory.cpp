@@ -29,38 +29,6 @@ using namespace ECS;
 using namespace DirectX;
 
 /**
- * @brief 全てのデモ用エンティティを生成し、ECSに登録する (GameScene::Init()から呼ばれる)
- * @param coordinator - エンティティの生成と登録を行うCoordinator
- */
-void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
-{
-	// 1. Map Entity (Game Controller) の作成と初期化
-	//ECS::EntityID mapEntityID = coordinator->CreateEntity(
-	//	TagComponent("game_controller"),
-	//	MapComponent(), // 50x50のエリアでBSP/MSTを生成
-	//	GameStateComponent(GameMode::SCOUTING_MODE),
-	//	ItemTrackerComponent(),
-	//	DebugComponent() // F1キーによるデバッグ機能のトグル用
-	//);
-
-	//// 2. MapGenerationSystemを呼び出し、BSP/MSTを生成
-	//auto mapGenSystem = ECSInitializer::GetSystem<MapGenerationSystem>();
-	//if (mapGenSystem)
-	//{
-	//	// MapGenerationSystem::GenerateMapがBSP/MSTを実行し、MapComponent.layoutを更新する
-	//	mapGenSystem->CreateMap("ST_001");
-	//}
-	//else
-	//{
-	//	// マップ生成システムが見つからない場合は処理を中断
-	//	// throw std::runtime_error("MapGenerationSystem is not registered!");
-	//	return;
-	//}
-
-	//CreateUITestEntity(coordinator, { 0.9f, 0.0f }, { 0.5f, 1.0f }, "UI_TEST");
-}
-
-/**
  * @brief プレイヤーエンティティを生成する
  * @param coordinator - エンティティの生成と登録を行うCoordinator
  * @param position - 初期位置
@@ -140,24 +108,6 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 }
 
 /**
- * [EntityID - CreateGameController]
- * @brief	ゲームの状態（GameMode）を管理するためのEntityを生成する
- *
- * @param	[in] coordinator
- * @return	生成されたEntityID
- */
-EntityID EntityFactory::CreateGameController(Coordinator* coordinator)
-{
-	// GameStateComponentのみを持つEntity
-	EntityID controller = coordinator->CreateEntity(
-		GameStateComponent(GameMode::SCOUTING_MODE),	// 初期モードは偵察モード
-		ItemTrackerComponent()
-	);
-
-	return controller;
-}
-
-/**
  * [EntityID - CreateCollectable]
  * @brief	回収アイテムEntityを生成
  *
@@ -200,7 +150,7 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 	    FloatingComponent(
 		/* Amplitude */ 0.5f,     // 上下 0.5 の範囲で揺れる
 		/* Speed     */ 2.0f,     // 速度
-		/* InitialY  */ position.y // 基準となる高さ（配置位置）
+		/* InitialY  */ position.y - 1 // 基準となる高さ（配置位置）
 	)
 	);
 	
@@ -271,7 +221,7 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_NONE,
+			/* MeshType	*/	MESH_MODEL,
 			/* Color	*/	XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)
 		),
 		ModelComponent(
@@ -295,7 +245,7 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 		GuardComponent(
 			/* predictionDistance	*/	1.0f,
 			/* isActive				*/	false,
-			/* delayBeforeChase		*/	7.0f,
+			/* delayBeforeChase		*/	0.1f,
 			/* chaseSpeed			*/	25.0f
 		),
 		CollisionComponent(
@@ -355,52 +305,6 @@ EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX:
 	);
 
 	return entity;
-}
-
-/**
- * [EntityID - CreateGoal]
- * @brief	ゴールエンティティの生成
- *
- * @param	[in] coordinator
- * @param	[in] position
- * @param	[in] scale
- * @return	生成されたエンティティ
- */
-EntityID ECS::EntityFactory::CreateGoal(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
-{
-	EntityID goal = coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"goal"
-		),
-		TransformComponent(
-			/* Position	*/	position,
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
-		),
-		RenderComponent(
-			/* MeshType	*/	MESH_BOX, // MESH_BOXで仮描画
-			/* Color	*/	XMFLOAT4(0.3f, 1.0f, 0.3f, 1.0f)
-		),
-		//ModelComponent(
-		//	/* Path		*/	"Assets/Model/Item/yubiwakana.fbx",
-		//	/* Scale	*/	0.1f,
-		//	/* Flip		*/	Model::None
-		//),
-		RigidBodyComponent(
-			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Mass			*/	0.0f, // 静的オブジェクト
-			/* Friction		*/	0.8f,
-			/* Restitution	*/	0.2f
-		),
-		CollisionComponent(
-			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
-			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType	*/	COLLIDER_TRIGGER
-		)
-	);
-
-	return goal;
 }
 
 EntityID ECS::EntityFactory::CreateTaser(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
@@ -470,25 +374,6 @@ EntityID ECS::EntityFactory::CreateLoopSoundEntity(Coordinator* coordinator, con
 	return entity;
 }
 
-EntityID ECS::EntityFactory::CreateUITestEntity(Coordinator* coordinator, const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size, const std::string& assetID)
-{
-	EntityID entity = coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ui"
-		),
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(position.x, position.y, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(size.x, size.y, 1.0f)
-		),
-		UIImageComponent(
-			/* AssetID	*/	assetID
-		)
-	);
-
-	return entity;
-}
-
 EntityID ECS::EntityFactory::CreateTitleSceneEntity(Coordinator* coordinator)
 {
 	EntityID entity = coordinator->CreateEntity(
@@ -496,8 +381,6 @@ EntityID ECS::EntityFactory::CreateTitleSceneEntity(Coordinator* coordinator)
 	);
 	return entity;
 }
-
-
 
 void ECS::EntityFactory::GenerateStageFromConfig(ECS::Coordinator* coordinator, const std::string& stageId)
 {
@@ -592,4 +475,19 @@ EntityID ECS::EntityFactory::CreateDoor(Coordinator* coordinator, const DirectX:
 	anim.Play("A_DOOR_CLOSE", false, 100.0f); 
 
 	return door;
+}
+
+EntityID ECS::EntityFactory::CreateEnemySpawner(Coordinator* coordinator, const DirectX::XMFLOAT3& position, float delayTime)
+{
+	EntityID spawner = coordinator->CreateEntity(
+		TagComponent("spawner"),
+		TransformComponent(position, { 0,0,0 }, { 1,1,1 }),
+
+		// RenderComponentは無し（見えない）
+		// RigidBodyも無し（物理干渉しない）
+
+		// スポーン情報 (例: 3秒後にGuardを出す)
+		EnemySpawnComponent(EnemyType::Guard, delayTime, 1.5f)
+	);
+	return spawner;
 }

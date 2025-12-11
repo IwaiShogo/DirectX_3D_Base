@@ -158,6 +158,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\ECS\Systems\Gameplay\CollectionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gameplay\MapGenerationSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gameplay\PlayerControlSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Gameplay\EnemySpawnSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gimmick\GuardAISystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Physics\CollisionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Physics\PhysicsSystem.cpp" />
@@ -205,6 +206,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Components\Core\TitleControllerComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\TransformComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gameplay\CollectableComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Gameplay\EnemySpawnComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gameplay\ItemTrackerComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gameplay\MapComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gameplay\PlayerControlComponent.h" />
@@ -238,6 +240,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Systems\Gameplay\CollectionSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gameplay\MapGenerationSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gameplay\PlayerControlSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Gameplay\EnemySpawnSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gimmick\GuardAISystem.h" />
     <ClInclude Include="Include\ECS\Systems\Physics\CollisionSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Physics\PhysicsSystem.h" />
