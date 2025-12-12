@@ -227,6 +227,10 @@ void CollisionSystem::Update(float deltaTime)
 	// ★変更したいならここ（今は 1.2 のまま）
 	static constexpr float kTaserEffectDurationSec = 1.2f;
 
+	// ★見えない時の調整ポイント（ここだけ触ればOK）
+	static constexpr float kTaserEffectSpawnYOffset = 2.0f; // ★高さ（床に埋まるなら上げる）
+	static constexpr float kTaserEffectScale = 2.5f; // ★大きさ（小さければ上げる）
+
 	// ===== taser 演出中：時間経過でゲームオーバー確定（→リザルト遷移）=====
 	if (m_isTaserEffectPlaying)
 	{
@@ -340,17 +344,23 @@ void CollisionSystem::Update(float deltaTime)
 				ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST6");
 
 				// 2) プレイヤー位置で EFK_TASER を再生
-				// ★尺を変えるなら Update 冒頭の kTaserEffectDurationSec を変更（今は 1.2 のまま）
+				// 尺を変えるなら Update 冒頭の kTaserEffectDurationSec を変更（今は 1.2 のまま）
 				const auto& playerTr = m_coordinator->GetComponent<TransformComponent>(playerID);
 				DirectX::XMFLOAT3 spawnPos = playerTr.position; // ★プレイヤー側で出すのはここ
 
+				// 床に埋まって見えない対策：少し上げる
+				spawnPos.y += kTaserEffectSpawnYOffset;
+
 				ECS::EntityFactory::CreateOneShotEffect(
 					m_coordinator,
-					"EFK_TASER",              // CSV登録済み
+					"EFK_TASER",
+
+					//"EFK_TASER",
 					spawnPos,
-					kTaserEffectDurationSec,  // ★変更したいなら Update 冒頭の定数
-					1.0f                      // ★スケール変えたいならここ
+					kTaserEffectDurationSec,
+					kTaserEffectScale       // ★スケールはここ
 				);
+
 
 				// 3) 演出待ち開始（この後、タイマー満了で isGameOver → リザルト）
 				m_isTaserEffectPlaying = true;

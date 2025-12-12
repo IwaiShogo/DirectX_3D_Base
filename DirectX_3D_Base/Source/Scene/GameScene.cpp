@@ -184,7 +184,18 @@ void GameScene::Update(float deltaTime)
 {
 	m_coordinator->UpdateSystems(deltaTime);
 
-	
+	// ------------------------------------------------------------
+	// [EFK] エフェクトが出ない時の最優先チェックポイント
+	// EffectSystem は Update() 側で requestPlay を処理して再生開始する。
+	// Coordinator側で回っていない場合、ここで明示的に回すと出るようになる。
+	//
+	// もし二重Updateでエフェクトが早回しになる場合は、このブロックをコメントアウトしてOK
+	// ------------------------------------------------------------
+	if (auto effectSystem = ECS::ECSInitializer::GetSystem<EffectSystem>())
+	{
+		effectSystem->Update(deltaTime); // ★ここが本命
+	}
+
 	UpdateFadeIn(deltaTime);
 }
 

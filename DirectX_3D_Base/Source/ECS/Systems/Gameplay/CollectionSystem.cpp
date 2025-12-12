@@ -1,23 +1,23 @@
 /*****************************************************************//**
  * @file	CollectionSystem.cpp
  * @brief	アイテムとプレイヤーの距離をチェックし、回収処理をするシステムの実装
- * 
- * @details	
- * 
+ *
+ * @details
+ *
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
- * 
+ *
  * @date	2025/11/06	初回作成日
  * 			作業内容：	- 追加：
- * 
+ *
  * @update	2025/xx/xx	最終更新日
  * 			作業内容：	- XX：
- * 
+ *
  * @note	（省略可）
  *********************************************************************/
 
-// ===== インクルード =====
+ // ===== インクルード =====
 #include "ECS/Systems/Gameplay/CollectionSystem.h"
 #include <DirectXMath.h>
 #include <vector>
@@ -63,7 +63,6 @@ void CollectionSystem::Update(float deltaTime)
 		{
 			// --- 回収処理 ---
 			collectable.isCollected = true;
-			// ★ここに「近接キラキラ停止（今後スポーン禁止）」を入れる
 			tracker.collectedItems++;
 			entitiesToDestroy.push_back(itemEntity);
 			itemCollectedThisFrame = true;
