@@ -121,6 +121,7 @@ void RenderSystem::DrawEntityInternal(ECS::EntityID entity, const DirectX::XMFLO
 
 	case MESH_MODEL:
 	{
+
 		ModelComponent& model = m_coordinator->GetComponent<ModelComponent>(entity);
 		if (model.pModel)
 		{

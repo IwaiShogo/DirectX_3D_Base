@@ -1,6 +1,6 @@
 AssetID,AssetType,FilePath
-UI_TITLE_LOGO,Texture,Assets/Texture/ui_title_logo.png
-UI_PRESS_START,Texture,Assets/Texture/btn_new_game.png
+UI_TITLE_LOGO,Texture,Assets/Texture/ui__title_logo.png
+UI_PRESS_START,Texture,Assets/Texture/btn_pushto_start_normal.png
 BTN_NEW_GAME,Texture,Assets/Texture/btn_new_game.png
 BTN_CONTINUE,Texture,Assets/Texture/btn_continue.png
 ICO_CURSOR,Texture,Assets/Texture/ico_cursor.png
