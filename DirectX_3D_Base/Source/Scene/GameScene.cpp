@@ -142,7 +142,29 @@ void GameScene::Init()
 			/* Color		*/	XMFLOAT4(0.0f, 1.0f, 1.0f, 0.1f)
 		)
 	);
+
+	// ------------------------------
+	// トップビュー開始時のフェードイン（黒→表示）
+	// ------------------------------
+	m_isFadeIn = true;
+	m_fadeTimer = 0.0f;
+
+	// フルスクリーン黒板（UI_WHITE を黒で乗算して使う想定）
+	m_fadeEntity = m_coordinator->CreateEntity(
+		TransformComponent(
+			XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f),
+			XMFLOAT3(0.0f, 0.0f, 0.0f),
+			XMFLOAT3(SCREEN_WIDTH, SCREEN_HEIGHT, 1.0f)
+		),
+		UIImageComponent(
+			"UI_WHITE",
+			1000.0f,
+			true,
+			XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f) // 黒・完全不透明からスタート
+		)
+	);
 }
+
 
 void GameScene::Uninit()
 {
@@ -161,7 +183,38 @@ void GameScene::Uninit()
 void GameScene::Update(float deltaTime)
 {
 	m_coordinator->UpdateSystems(deltaTime);
+
+	
+	UpdateFadeIn(deltaTime);
 }
+
+void GameScene::UpdateFadeIn(float deltaTime)
+{
+	if (!m_isFadeIn) return;
+	if (m_fadeEntity == ECS::INVALID_ENTITY_ID) { m_isFadeIn = false; return; }
+	if (!m_coordinator || !m_coordinator->HasComponent<UIImageComponent>(m_fadeEntity)) { m_isFadeIn = false; return; }
+
+	m_fadeTimer += deltaTime;
+
+	float t = (m_fadeInDuration <= 0.0f) ? 1.0f : (m_fadeTimer / m_fadeInDuration);
+	if (t > 1.0f) t = 1.0f;
+	if (t < 0.0f) t = 0.0f;
+
+	// SmoothStep: t^2(3-2t)
+	float eased = t * t * (3.0f - 2.0f * t);
+	float alpha = 1.0f - eased; // 1→0
+
+	auto& img = m_coordinator->GetComponent<UIImageComponent>(m_fadeEntity);
+	img.isVisible = true;
+	img.color = XMFLOAT4(0.0f, 0.0f, 0.0f, alpha);
+
+	if (t >= 1.0f)
+	{
+		m_isFadeIn = false;
+		img.isVisible = false;
+	}
+}
+
 
 void GameScene::Draw()
 {

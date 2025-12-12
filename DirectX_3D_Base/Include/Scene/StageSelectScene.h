@@ -60,6 +60,10 @@ public:
 	// コンストラクタとデストラクタ（Sceneを継承しているため仮想デストラクタはScene側で定義済みと仮定）
 	StageSelectScene()
 		: m_coordinator(nullptr)
+		//, m_isStartDecision(false)
+		//, m_fadeTimer(0.0f)
+		//, m_fadeDuration(0.5f)          // フェードアウトにかける時間(秒) 好きに調整してOK
+		//, m_fadeEntity(0)
 	{
 	}
 	~StageSelectScene() override {} // 仮想デストラクタを実装
@@ -90,6 +94,16 @@ private:
 	// エンティティ管理
 	std::vector<ECS::EntityID> m_listUIEntities;   // 一覧画面のボタン等
 	std::vector<ECS::EntityID> m_detailUIEntities; // 詳細画面の表示物
+
+	// フェード制御用
+	bool  m_isStartDecision = false;  // 決定が押されてフェード中か
+	float m_fadeTimer = 0.0f;   // フェード演出全体の経過時間
+
+	float m_fadeOutDuration = 0.5f; // フェードアウト(明→暗)にかける時間
+	float m_blackHoldDuration = 0.05f;// ★真っ黒で止めておく時間（ここを短くする）
+
+	ECS::EntityID m_fadeEntity = 0;   // 画面全体を覆う黒板UI
+
 };
 
 #endif // !___STAGE_SELECT_SCENE_H___

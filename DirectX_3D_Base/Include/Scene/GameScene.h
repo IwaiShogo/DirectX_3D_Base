@@ -51,6 +51,14 @@ private:
 	ECS::EntityID m_bgmActionID = ECS::INVALID_ENTITY_ID;
 	ECS::EntityID m_bgmCompleteID = ECS::INVALID_ENTITY_ID;
 
+	// フェードイン（黒→通常表示）
+	bool m_isFadeIn = true;
+	float m_fadeTimer = 0.0f;
+	float m_fadeInDuration = 0.3f; // ここを調整（秒）
+	ECS::EntityID m_fadeEntity = ECS::INVALID_ENTITY_ID;
+
+	void UpdateFadeIn(float deltaTime);
+
 public:
 	// コンストラクタとデストラクタ（Sceneを継承しているため仮想デストラクタはScene側で定義済みと仮定）
 	GameScene()

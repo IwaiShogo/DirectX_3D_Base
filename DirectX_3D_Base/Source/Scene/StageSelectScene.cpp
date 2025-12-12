@@ -1,18 +1,18 @@
-/*****************************************************************//**
+ï»¿/*****************************************************************//**
  * @file	StageSelectScene.cpp
  * @brief
  * * @details
  * * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
- * * @date	2025/11/13	‰‰ñì¬“ú
- * ì‹Æ“à—eF	- ’Ç‰ÁF
- * * @update	2025/xx/xx	ÅIXV“ú
- * ì‹Æ“à—eF	- XXF
- * * @note	iÈ—ª‰Âj
+ * * @date	2025/11/13	åˆå›ä½œæˆæ—¥
+ * ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼š
+ * * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * ä½œæ¥­å†…å®¹ï¼š	- XXï¼š
+ * * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
- // ===== ƒCƒ“ƒNƒ‹[ƒh =====
+ // ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
 #include "Scene/SceneManager.h"
 #include "Systems/Input.h"
 #include "ECS/ECS.h"
@@ -21,12 +21,12 @@
 
 #include <DirectXMath.h>
 #include <iostream>
-#include <typeindex> // SystemManager‚©‚ç‚ÌRenderSystemæ“¾‚Ég—p
+#include <typeindex> // SystemManagerã‹ã‚‰ã®RenderSystemå–å¾—ã«ä½¿ç”¨
 using namespace DirectX;
-// ‚±‚ê‚ğ’Ç‰Á‚µ‚Ä‚¨‚­‚ÆAECS:: ‚ğÈ—ª‚Å‚«‚Ü‚·
+// ã“ã‚Œã‚’è¿½åŠ ã—ã¦ãŠãã¨ã€ECS:: ã‚’çœç•¥ã§ãã¾ã™
 using namespace ECS;
 
-// ===== Ã“Iƒƒ“ƒo[•Ï”‚Ì’è‹` =====
+// ===== é™çš„ãƒ¡ãƒ³ãƒãƒ¼å¤‰æ•°ã®å®šç¾© =====
 ECS::Coordinator* StageSelectScene::s_coordinator = nullptr;
 
 std::string GetStageItemIconPath(const std::string& itemID)
@@ -38,23 +38,23 @@ std::string GetStageItemIconPath(const std::string& itemID)
 	if (itemID == "Takara_Kaiga2")  return "ICO_TREASURE5";
 	if (itemID == "Takara_Kaiga3")  return "ICO_TREASURE6";
 
-	// ƒfƒtƒHƒ‹ƒg
+	// ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆ
 	return "ICO_TREASURE";
 }
 
 void StageSelectScene::Init()
 {
-	// 1. ‰Šú‰»
+	// 1. åˆæœŸåŒ–
 	m_coordinator = std::make_unique<Coordinator>();
 	s_coordinator = m_coordinator.get();
 	ECSInitializer::InitECS(m_coordinator);
 
 	LoadStageData();
 
-	// ŒÅ’èƒJƒƒ‰
+	// å›ºå®šã‚«ãƒ¡ãƒ©
 	ECS::EntityID cam = ECS::EntityFactory::CreateBasicCamera(m_coordinator.get(), { 0, 0, 0 });
 
-	// ”wŒi
+	// èƒŒæ™¯
 	m_coordinator->CreateEntity(
 		TransformComponent(
 			/* Position */ XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f),
@@ -68,7 +68,7 @@ void StageSelectScene::Init()
 	);
 
 	// ==========================================
-	// 1. ˆê——‰æ–Ê (List) UI\’z
+	// 1. ä¸€è¦§ç”»é¢ (List) UIæ§‹ç¯‰
 	// ==========================================
 	std::vector<std::string> stageIDs = { "ST_001", "ST_002", "ST_003", "ST_004", "ST_005", "ST_006" };
 	float startX = SCREEN_WIDTH * 0.2f;
@@ -82,15 +82,15 @@ void StageSelectScene::Init()
 		float x = startX + (i % 3) * gapX;
 		float y = startY + (i / 3) * gapY;
 
-		// ƒXƒe[ƒW‘I‘ğƒ{ƒ^ƒ“
+		// ã‚¹ãƒ†ãƒ¼ã‚¸é¸æŠãƒœã‚¿ãƒ³
 		ECS::EntityID btn = m_coordinator->CreateEntity(
 			TransformComponent(XMFLOAT3(x, y, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(250, 150, 1)),
 			UIImageComponent("BTN_STAGE_SELECT", 1.0f),
 			UIButtonComponent(
 				ButtonState::Normal,
-				true, // Listƒ‚[ƒh‚È‚Ì‚ÅÅ‰‚Í•\¦
+				true, // Listãƒ¢ãƒ¼ãƒ‰ãªã®ã§æœ€åˆã¯è¡¨ç¤º
 				[this, id]() {
-					// Ú×ƒ‚[ƒh‚Ö‘JˆÚ
+					// è©³ç´°ãƒ¢ãƒ¼ãƒ‰ã¸é·ç§»
 					this->m_selectedStageID = id;
 					this->SwitchState(true);
 				}
@@ -100,47 +100,47 @@ void StageSelectScene::Init()
 	}
 
 	// ==========================================
-	// 2. Ú×‰æ–Ê (Detail) UI\’z
+	// 2. è©³ç´°ç”»é¢ (Detail) UIæ§‹ç¯‰
 	// ==========================================
 
-	// --- A. ƒ}ƒbƒv‰æ‘œ (¶‘¤) ---
-	// ˆÊ’u: ‰æ–Ê¶Šñ‚è, ƒTƒCƒY: ‘å‚«‚ß
+	// --- A. ãƒãƒƒãƒ—ç”»åƒ (å·¦å´) ---
+	// ä½ç½®: ç”»é¢å·¦å¯„ã‚Š, ã‚µã‚¤ã‚º: å¤§ãã‚
 	ECS::EntityID mapImg = m_coordinator->CreateEntity(
 		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.38f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(400, 400, 1)),
 		UIImageComponent("UI_STAGE_MAP", 1.0f)
 	);
 	m_detailUIEntities.push_back(mapImg);
 
-	// --- B. î•ñƒpƒlƒ‹ (‰E‘¤) ---
-	// ƒxƒXƒgƒ^ƒCƒ€ƒtƒŒ[ƒ€
+	// --- B. æƒ…å ±ãƒ‘ãƒãƒ« (å³å´) ---
+	// ãƒ™ã‚¹ãƒˆã‚¿ã‚¤ãƒ ãƒ•ãƒ¬ãƒ¼ãƒ 
 	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
 		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.8f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(550, 160, 1)),
 		UIImageComponent("UI_FRAME", 1.0f)
 	));
 
-	// ƒxƒXƒgƒ^ƒCƒ€iƒAƒCƒRƒ“j
+	// ãƒ™ã‚¹ãƒˆã‚¿ã‚¤ãƒ ï¼ˆã‚¢ã‚¤ã‚³ãƒ³ï¼‰
 	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
 		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.15f, SCREEN_HEIGHT * 0.8f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 100, 1)),
 		UIImageComponent("UI_BEST_TIME", 2.0f)
 	));
 
-	// ‚¨•óî•ñ (ƒAƒCƒRƒ“)
+	// ãŠå®æƒ…å ± (ã‚¢ã‚¤ã‚³ãƒ³)
 	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
 		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.75f, SCREEN_HEIGHT * 0.25f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(500, 200, 1)),
 		UIImageComponent("UI_TRESURE", 1.0f)
 	));
-	// ‚¨•ó” (–{—ˆ‚Í”š‰æ‘œ‚ğ•\¦‚·‚é‚ªA‚±‚±‚Å‚ÍƒƒOo—Í‚Å‘ã—p)
+	// ãŠå®æ•° (æœ¬æ¥ã¯æ•°å­—ç”»åƒã‚’è¡¨ç¤ºã™ã‚‹ãŒã€ã“ã“ã§ã¯ãƒ­ã‚°å‡ºåŠ›ã§ä»£ç”¨)
 
-	// Œx”õî•ñ (ƒAƒCƒRƒ“)
+	// è­¦å‚™æƒ…å ± (ã‚¢ã‚¤ã‚³ãƒ³)
 	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
 		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.75f, SCREEN_HEIGHT * 0.6f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(500, 260, 1)),
 		UIImageComponent("UI_STAGE_ENEMY", 1.0f)
 	));
 
 
-	// --- C. ƒ{ƒ^ƒ“—Ş ---
+	// --- C. ãƒœã‚¿ãƒ³é¡ ---
 
-	// [Œˆ’è] ƒ{ƒ^ƒ“ (‰E‰º)
+	// [æ±ºå®š] ãƒœã‚¿ãƒ³ (å³ä¸‹)
 	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
 		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.65f, SCREEN_HEIGHT * 0.86f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 100, 1)),
 		UIImageComponent("UI_START_NORMAL", 1.0f)
@@ -151,18 +151,30 @@ void StageSelectScene::Init()
 		UIImageComponent("BTN_DECISION", 2.0f),
 		UIButtonComponent(
 			ButtonState::Normal,
-			false, // Detailƒ‚[ƒh—p‚È‚Ì‚ÅÅ‰‚Í”ñ•\¦
+			false, // Detailãƒ¢ãƒ¼ãƒ‰ç”¨ãªã®ã§æœ€åˆã¯éè¡¨ç¤º
 			[this]() {
 				std::cout << "Game Start: " << m_selectedStageID << std::endl;
-				GameScene::SetStageNo(m_selectedStageID);
-				SceneManager::ChangeScene<GameScene>();
+
+				// ç›´æ›¸ããƒ•ã‚§ãƒ¼ãƒ‰é–‹å§‹
+				m_isStartDecision = true;
+				m_fadeTimer = 0.0f;
+
+				// é»’æ¿ã‚’è¡¨ç¤ºã—ã¦ 0 ã‹ã‚‰é–‹å§‹
+				if (m_coordinator->HasComponent<UIImageComponent>(m_fadeEntity))
+				{
+					auto& img = m_coordinator->GetComponent<UIImageComponent>(m_fadeEntity);
+					img.isVisible = true;
+					img.color = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+				}
 			}
+
+
 		)
 	);
 	m_detailUIEntities.push_back(startBtn);
 
-	// [–ß‚é] ƒ{ƒ^ƒ“ (Œˆ’èƒ{ƒ^ƒ“‚Ì¶—×A‚ ‚é‚¢‚Í¶‰º)
-	// u–ß‚évƒ{ƒ^ƒ“
+	// [æˆ»ã‚‹] ãƒœã‚¿ãƒ³ (æ±ºå®šãƒœã‚¿ãƒ³ã®å·¦éš£ã€ã‚ã‚‹ã„ã¯å·¦ä¸‹)
+	// ã€Œæˆ»ã‚‹ã€ãƒœã‚¿ãƒ³
 	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
 		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.85f, SCREEN_HEIGHT * 0.86f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 100, 1)),
 		UIImageComponent("UI_FINISH_NORMAL", 1.0f)
@@ -173,16 +185,16 @@ void StageSelectScene::Init()
 		UIImageComponent("BTN_REBERSE", 2.0f),
 		UIButtonComponent(
 			ButtonState::Normal,
-			false, // Detailƒ‚[ƒh—p
+			false, // Detailãƒ¢ãƒ¼ãƒ‰ç”¨
 			[this]() {
-				// ˆê——‚Ö–ß‚é
+				// ä¸€è¦§ã¸æˆ»ã‚‹
 				this->SwitchState(false);
 			}
 		)
 	);
 	m_detailUIEntities.push_back(backBtn);
 
-	// 5. ƒJ[ƒ\ƒ‹ì¬
+	// 5. ã‚«ãƒ¼ã‚½ãƒ«ä½œæˆ
 	{
 		m_coordinator->CreateEntity(
 			TransformComponent(
@@ -198,6 +210,23 @@ void StageSelectScene::Init()
 		);
 	}
 	SwitchState(false);
+
+
+
+// ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆç”¨ã®çœŸã£é»’ãªãƒ•ãƒ«ã‚¹ã‚¯ãƒªãƒ¼ãƒ³UI
+	m_fadeEntity = m_coordinator->CreateEntity(
+		TransformComponent(
+			XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f),
+			XMFLOAT3(0, 0, 0),
+			XMFLOAT3(SCREEN_WIDTH, SCREEN_HEIGHT, 1.0f)
+		),
+		// ç™½1Ã—1ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’é»’ã«ä¹—ç®—ã—ã¦ä½¿ã†æƒ³å®š
+		UIImageComponent("UI_WHITE", 100.0f,  // ä¸€ç•ªæ‰‹å‰ã«å‡ºã—ãŸã„ã®ã§ depth ã¯å¤§ãã‚
+			false,               // æœ€åˆã¯éè¡¨ç¤º
+			XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f)) // é»’, å®Œå…¨é€æ˜
+
+	);
+
 
 	std::cout << "StageSelectScene::Init() - ECS Initialized." << std::endl;
 }
@@ -217,8 +246,46 @@ void StageSelectScene::Uninit()
 
 void StageSelectScene::Update(float deltaTime)
 {
-	// 1. ƒVƒXƒeƒ€XV
+	// 1. é€šå¸¸ã® ECS æ›´æ–°
 	m_coordinator->UpdateSystems(deltaTime);
+
+	// 2. æ±ºå®šå¾Œã®ãƒ•ã‚§ãƒ¼ãƒ‰å‡¦ç†
+	if (!m_isStartDecision)
+		return;
+
+	if (!m_coordinator->HasComponent<UIImageComponent>(m_fadeEntity))
+		return;
+
+	m_fadeTimer += deltaTime;
+	auto& img = m_coordinator->GetComponent<UIImageComponent>(m_fadeEntity);
+
+	const float fadeEndTime = m_fadeOutDuration;
+	const float blackEndTime = m_fadeOutDuration + m_blackHoldDuration;
+
+	if (m_fadeTimer < fadeEndTime)
+	{
+		// â‘  ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆä¸­: 0 â†’ 1
+		float t = m_fadeTimer / m_fadeOutDuration;
+		if (t > 1.0f) t = 1.0f;
+
+		// ã‚«ãƒ¼ãƒ–: t^3ï¼ˆæœ€å¾Œã§ä¸€æ°—ã«æš—ããªã‚‹ï¼‰
+		float eased = t * t * t;
+
+		img.color = XMFLOAT4(0.0f, 0.0f, 0.0f, eased);
+	}
+	else if (m_fadeTimer < blackEndTime)
+	{
+		// â‘¡ å®Œå…¨ã«çœŸã£é»’ã§ãƒ›ãƒ¼ãƒ«ãƒ‰
+		img.color = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
+	}
+	else
+	{
+		// â‘¢ ãƒ›ãƒ¼ãƒ«ãƒ‰æ™‚é–“ã‚‚çµ‚ã‚ã£ãŸã®ã§ã‚·ãƒ¼ãƒ³é·ç§»
+		GameScene::SetStageNo(m_selectedStageID);
+		SceneManager::ChangeScene<GameScene>();
+
+		m_isStartDecision = false;
+	}
 }
 
 void StageSelectScene::Draw()
@@ -257,22 +324,22 @@ void StageSelectScene::LoadStageData()
 			auto& val = el.value();
 			StageData d;
 			d.name = val.value("name", "Unknown Stage");
-			d.imageID = val.value("image", "default"); // ƒfƒtƒHƒ‹ƒg‰æ‘œ
+			d.imageID = val.value("image", "default"); // ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆç”»åƒ
 			d.timeLimitStar = val.value("timeLimitStar", 180.0f);
 
-			// ƒAƒCƒeƒ€ƒŠƒXƒg
+			// ã‚¢ã‚¤ãƒ†ãƒ ãƒªã‚¹ãƒˆ
 			if (val.contains("items") && val["items"].is_array()) {
 				for (const auto& item : val["items"]) d.items.push_back(item.get<std::string>());
 			}
 
-			// ƒMƒ~ƒbƒNî•ñ
+			// ã‚®ãƒŸãƒƒã‚¯æƒ…å ±
 			if (val.contains("gimmicks") && val["gimmicks"].is_array()) {
 				for (const auto& gim : val["gimmicks"]) {
 					d.gimmicks.push_back({ gim.value("type", "Unknown"), gim.value("count", 0) });
 				}
 			}
 			else {
-				// ŒİŠ·«: guardCount‚ª‚ ‚ê‚ÎƒMƒ~ƒbƒN‚Æ‚µ‚Ä’Ç‰Á
+				// äº’æ›æ€§: guardCountãŒã‚ã‚Œã°ã‚®ãƒŸãƒƒã‚¯ã¨ã—ã¦è¿½åŠ 
 				int guards = val.value("guardCount", 0);
 				if (guards > 0) d.gimmicks.push_back({ "Guard", guards });
 			}
@@ -284,20 +351,20 @@ void StageSelectScene::LoadStageData()
 
 void StageSelectScene::SwitchState(bool toDetail)
 {
-	// ˆê——‰æ–ÊUI‚Ì§Œä
+	// ä¸€è¦§ç”»é¢UIã®åˆ¶å¾¡
 	for (auto id : m_listUIEntities)
 	{
-		// ‰æ‘œ‚Ì•\¦Ø‘Ö
+		// ç”»åƒã®è¡¨ç¤ºåˆ‡æ›¿
 		if (m_coordinator->HasComponent<UIImageComponent>(id)) {
 			m_coordinator->GetComponent<UIImageComponent>(id).isVisible = !toDetail;
 		}
-		// ƒ{ƒ^ƒ“‚Ì—LŒø‰»Ø‘Ö
+		// ãƒœã‚¿ãƒ³ã®æœ‰åŠ¹åŒ–åˆ‡æ›¿
 		if (m_coordinator->HasComponent<UIButtonComponent>(id)) {
 			m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = !toDetail;
 		}
 	}
 
-	// Ú×‰æ–ÊUI‚Ì§Œä
+	// è©³ç´°ç”»é¢UIã®åˆ¶å¾¡
 	for (auto id : m_detailUIEntities)
 	{
 		if (m_coordinator->HasComponent<UIImageComponent>(id)) {
@@ -311,30 +378,30 @@ void StageSelectScene::SwitchState(bool toDetail)
 
 //void StageSelectScene::CreateDetailUI()
 //{
-//	// Šù‘¶‚ÌUI‚ğíœ
+//	// æ—¢å­˜ã®UIã‚’å‰Šé™¤
 //	for (auto id : m_detailUIEntities) m_coordinator->DestroyEntity(id);
 //	m_detailUIEntities.clear();
 //
 //	if (m_stageDataMap.find(m_selectedStageID) == m_stageDataMap.end()) return;
 //	const auto& data = m_stageDataMap[m_selectedStageID];
 //
-//	// A. ƒXƒe[ƒWƒCƒ[ƒW (¶‘¤)
+//	// A. ã‚¹ãƒ†ãƒ¼ã‚¸ã‚¤ãƒ¡ãƒ¼ã‚¸ (å·¦å´)
 //	ECS::EntityID mapImg = m_coordinator->CreateEntity(
 //		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.3f, SCREEN_HEIGHT * 0.45f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(500, 350, 1)),
-//		UIImageComponent(data.imageID) // JSON‚ÌimageID‚ğg—p
+//		UIImageComponent(data.imageID) // JSONã®imageIDã‚’ä½¿ç”¨
 //	);
 //	m_detailUIEntities.push_back(mapImg);
 //
-//	// B. î•ñƒpƒlƒ‹ (‰E‘¤)
+//	// B. æƒ…å ±ãƒ‘ãƒãƒ« (å³å´)
 //	float infoX = SCREEN_WIDTH * 0.7f;
 //	float startY = SCREEN_HEIGHT * 0.3f;
 //
-//	// B-1. –Ú•Wƒ^ƒCƒ€•\¦
-//	// (–{—ˆ‚ÍƒtƒHƒ“ƒg•`‰æ‚Å‚·‚ªA‚±‚±‚Å‚ÍŠT”O“I‚ÉƒAƒCƒRƒ“‚Æ˜g‚ğ•\¦)
-//	// uTARGET TIME: 03:00v‚Ì‚æ‚¤‚È•\¦‚ª•K—v
-//	// ... (ƒtƒHƒ“ƒg•`‰æƒƒWƒbƒN‚ğ“ü‚ê‚é‚©AŠÈˆÕƒAƒCƒRƒ“‚Ì‚İ) ...
+//	// B-1. ç›®æ¨™ã‚¿ã‚¤ãƒ è¡¨ç¤º
+//	// (æœ¬æ¥ã¯ãƒ•ã‚©ãƒ³ãƒˆæç”»ã§ã™ãŒã€ã“ã“ã§ã¯æ¦‚å¿µçš„ã«ã‚¢ã‚¤ã‚³ãƒ³ã¨æ ã‚’è¡¨ç¤º)
+//	// ã€ŒTARGET TIME: 03:00ã€ã®ã‚ˆã†ãªè¡¨ç¤ºãŒå¿…è¦
+//	// ... (ãƒ•ã‚©ãƒ³ãƒˆæç”»ãƒ­ã‚¸ãƒƒã‚¯ã‚’å…¥ã‚Œã‚‹ã‹ã€ç°¡æ˜“ã‚¢ã‚¤ã‚³ãƒ³ã®ã¿) ...
 //
-//	// B-2. oŒ»ƒAƒCƒeƒ€ˆê——
+//	// B-2. å‡ºç¾ã‚¢ã‚¤ãƒ†ãƒ ä¸€è¦§
 //	float itemSize = 50.0f;
 //	for (size_t i = 0; i < data.items.size(); ++i) {
 //		std::string path = GetStageItemIconPath(data.items[i]);
@@ -348,22 +415,22 @@ void StageSelectScene::SwitchState(bool toDetail)
 //		m_detailUIEntities.push_back(itemIcon);
 //	}
 //
-//	// B-3. ƒMƒ~ƒbƒNî•ñ (GuardƒAƒCƒRƒ“ x ŒÂ” ‚È‚Ç)
+//	// B-3. ã‚®ãƒŸãƒƒã‚¯æƒ…å ± (Guardã‚¢ã‚¤ã‚³ãƒ³ x å€‹æ•° ãªã©)
 //	float gimY = startY + 150.0f;
 //	for (size_t i = 0; i < data.gimmicks.size(); ++i) {
 //		auto& gim = data.gimmicks[i];
-//		std::string path = "ICO_TASER"; // ‰¼
+//		std::string path = "ICO_TASER"; // ä»®
 //		if (gim.type == "Guard") path = "ICO_TASER";
 //
-//		// ƒAƒCƒRƒ“
+//		// ã‚¢ã‚¤ã‚³ãƒ³
 //		ECS::EntityID gimIcon = m_coordinator->CreateEntity(
 //			TransformComponent(XMFLOAT3(infoX, gimY + i * 60, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(50, 50, 1)),
 //			UIImageComponent(path)
 //		);
 //		m_detailUIEntities.push_back(gimIcon);
 //
-//		// ŒÂ”•\¦ (ŠÈˆÕ“I‚ÉƒAƒCƒRƒ“‚ğ•À‚×‚é‚©A–{—ˆ‚Í”šƒtƒHƒ“ƒg)
-//		// ‚±‚±‚Å‚ÍƒAƒCƒRƒ“‚ğŒÂ”•ª•À‚×‚éŠÈˆÕÀ‘•
+//		// å€‹æ•°è¡¨ç¤º (ç°¡æ˜“çš„ã«ã‚¢ã‚¤ã‚³ãƒ³ã‚’ä¸¦ã¹ã‚‹ã‹ã€æœ¬æ¥ã¯æ•°å­—ãƒ•ã‚©ãƒ³ãƒˆ)
+//		// ã“ã“ã§ã¯ã‚¢ã‚¤ã‚³ãƒ³ã‚’å€‹æ•°åˆ†ä¸¦ã¹ã‚‹ç°¡æ˜“å®Ÿè£…
 //		for (int k = 1; k < gim.count && k < 5; ++k) {
 //			ECS::EntityID subIcon = m_coordinator->CreateEntity(
 //				TransformComponent(XMFLOAT3(infoX + k * 40, gimY + i * 60, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(40, 40, 1)),
@@ -373,7 +440,7 @@ void StageSelectScene::SwitchState(bool toDetail)
 //		}
 //	}
 //
-//	// C. ƒ{ƒ^ƒ“—Ş
+//	// C. ãƒœã‚¿ãƒ³é¡
 //	// [Start]
 //	ECS::EntityID startBtn = m_coordinator->CreateEntity(
 //		TransformComponent(XMFLOAT3(SCREEN_WIDTH * 0.85f, SCREEN_HEIGHT * 0.85f, 0), XMFLOAT3(0, 0, 0), XMFLOAT3(200, 80, 1)),
