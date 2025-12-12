@@ -127,6 +127,9 @@
     <ClCompile Include="Source\ECS\Systems\Core\LifeTimeSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Core\ItemProximityEffectSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Scene\GameScene.h">
@@ -377,6 +380,12 @@
     </ClInclude>
     <ClInclude Include="Include\ECS\Systems\UI\RotatorSystem.h">
       <Filter>Header Files\ECS\Systems\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Core\ItemProximityEffectSystem.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\ItemProximityEffectSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

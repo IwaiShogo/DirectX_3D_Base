@@ -37,6 +37,7 @@
 // @system	¶‘¶ŠÔ
 #include "ECS/Systems/Core/LifeTimeSystem.h"
 
+#include"ECS/Components/Core/ItemProximityEffectSystem.h"
 
 // @folder	Rendering
 // @system	•`‰æ

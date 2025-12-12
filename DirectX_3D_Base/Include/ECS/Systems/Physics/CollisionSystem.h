@@ -39,6 +39,11 @@ class CollisionSystem : public ECS::System
 private:
 	ECS::Coordinator* m_coordinator = nullptr;
 
+	// ===== taser 演出用（EFK_TASER → 終了後リザルト）=====
+	bool  m_isTaserEffectPlaying = false;
+	float m_taserEffectTimer = 0.0f;
+
+
 	/**
 	 * @brief AABB間の衝突検出と最小移動ベクトル(MTV)を計算する。
 	 * @param entityA, entityB - 衝突チェック対象のEntityID

@@ -63,6 +63,7 @@ void CollectionSystem::Update(float deltaTime)
 		{
 			// --- 回収処理 ---
 			collectable.isCollected = true;
+			// ★ここに「近接キラキラ停止（今後スポーン禁止）」を入れる
 			tracker.collectedItems++;
 			entitiesToDestroy.push_back(itemEntity);
 			itemCollectedThisFrame = true;

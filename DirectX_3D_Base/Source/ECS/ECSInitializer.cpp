@@ -25,6 +25,8 @@
 #include "ECS/Systems/UI/UIInputSystem.h"
 #include "ECS/Components/UI/UIButtonComponent.h"
 #include "ECS/Systems/Core/ResultControlSystem.h"
+#include "ECS/Components/Core/ItemProximityEffectSystem.h"
+#include "ECS/Systems/Core/ItemProximityEffectSystem.h"
 
 
 #include <iostream>
@@ -216,8 +218,13 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  RenderComponent, TransformComponent 
     );
 
-    // @system  EffectSystem
-    // @brief   エフェクト
+    // @system  ItemProximityEffectSystem
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        ItemProximityEffectSystem,
+        CollectableComponent, TransformComponent, ProximitySparkleEffectComponent
+    );
+
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  EffectSystem,

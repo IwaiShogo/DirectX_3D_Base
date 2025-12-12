@@ -152,6 +152,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\ECS\Systems\Core\BasicCameraSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\CameraControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\GameControlSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\ItemProximityEffectSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\LifeTimeSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\ResultControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\TitleControlSystem.cpp" />
@@ -197,6 +198,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Components\Core\BasicCameraComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\CameraComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\GameStateComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\ItemProximityEffectSystem.h" />
     <ClInclude Include="Include\ECS\Components\Core\LifeTimeComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\OneShotSoundComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\PlayerControlComponent.h" />
@@ -233,6 +235,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Systems\Core\BasicCameraSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\CameraControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\GameControlSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\ItemProximityEffectSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\LifeTimeSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\ResultControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\TitleControlSystem.h" />

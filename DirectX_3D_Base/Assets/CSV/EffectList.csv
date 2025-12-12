@@ -1,3 +1,4 @@
 AssetID,AssetType,FilePath
 EFK_TEST,Effect,Assets/Effect/effect_shine.efkefc
-EFK_TITLE_SHINE,Effect,Assets/Effect/effect_title_shine.efkefc
+EFK_ITEMGET,Effect,Assets/Effect/effect_shine_.efkefc
+EFK_TASER,Effect,Assets/Effect/effect_taser.efkefc

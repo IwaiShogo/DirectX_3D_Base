@@ -22,6 +22,7 @@
 #include "ECS/EntityFactory.h"
 #include <algorithm>
 #include <cmath>
+#include "ECS/Systems/Gameplay/CollectionSystem.h"
 
 using namespace DirectX;
 
@@ -222,6 +223,30 @@ void CollisionSystem::Update(float deltaTime)
 
 	GameStateComponent& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
+	// ===== taser 演出の尺（秒）=====
+	// ★変更したいならここ（今は 1.2 のまま）
+	static constexpr float kTaserEffectDurationSec = 1.2f;
+
+	// ===== taser 演出中：時間経過でゲームオーバー確定（→リザルト遷移）=====
+	if (m_isTaserEffectPlaying)
+	{
+		m_taserEffectTimer += deltaTime;
+
+		if (m_taserEffectTimer >= kTaserEffectDurationSec)
+		{
+			state.isGameOver = true;   // リザルトへ
+			m_isTaserEffectPlaying = false;
+			m_taserEffectTimer = 0.0f;
+		}
+
+		// 演出中は他の衝突処理を止める
+		return;
+	}
+
+
+
+
+
 	// ゲームが既に終了していたら、衝突チェックをスキップ
 	if (state.isGameOver || state.isGameClear) return;
 
@@ -311,12 +336,32 @@ void CollisionSystem::Update(float deltaTime)
 			}
 			if (tagB.tag == "taser")
 			{
+				// 1) SE
 				ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST6");
-				
-				state.isGameOver = true;
-				
+
+				// 2) プレイヤー位置で EFK_TASER を再生
+				// ★尺を変えるなら Update 冒頭の kTaserEffectDurationSec を変更（今は 1.2 のまま）
+				const auto& playerTr = m_coordinator->GetComponent<TransformComponent>(playerID);
+				DirectX::XMFLOAT3 spawnPos = playerTr.position; // ★プレイヤー側で出すのはここ
+
+				ECS::EntityFactory::CreateOneShotEffect(
+					m_coordinator,
+					"EFK_TASER",              // CSV登録済み
+					spawnPos,
+					kTaserEffectDurationSec,  // ★変更したいなら Update 冒頭の定数
+					1.0f                      // ★スケール変えたいならここ
+				);
+
+				// 3) 演出待ち開始（この後、タイマー満了で isGameOver → リザルト）
+				m_isTaserEffectPlaying = true;
+				m_taserEffectTimer = 0.0f;
+
+				// （任意）入力止めたいならこれも入れる：Playing以外で操作しない設計なら有効
+				state.sequenceState = GameSequenceState::Exiting;
+
 				return;
 			}
+
 		}
 	}
 

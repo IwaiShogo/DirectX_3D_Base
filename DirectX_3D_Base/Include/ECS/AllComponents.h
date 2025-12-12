@@ -49,6 +49,8 @@
 
 #include "ECS/Components/Core/PlayerControlComponent.h"
 
+#include "ECS/Components/Core/ItemProximityEffectSystem.h"
+
 // @folder		Rendering
 // @component	•`‰æ
 #include "ECS/Components/Rendering/RenderComponent.h"

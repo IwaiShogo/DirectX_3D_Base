@@ -196,6 +196,17 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 			/* Flip		*/	Model::None
 		),
 		CollectableComponent(1.0f, orderIndex, itemID),
+
+
+		// 追加（近づくとキラキラ）
+		ProximitySparkleEffectComponent{
+			"EFK_ITEMGET",
+			2.0f,    // triggerDistance
+			0.25f,   // interval
+			0.25f,   // oneShotDuration
+			0.2f,    // effectScale
+			{0.0f, 0.5f, 0.0f}
+		},
 		//浮遊コンポーネント
 		FloatingComponent(
 			/* Amplitude */ 0.5f,     // 上下 0.5 の範囲で揺れる
@@ -204,6 +215,8 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 		
 	),
 		RotatorComponent(0.0f, 2.0f, 0.0f)
+
+
 		);
 	return entity;
 }
