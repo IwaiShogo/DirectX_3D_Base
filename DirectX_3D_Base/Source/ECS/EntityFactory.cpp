@@ -75,7 +75,8 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 		),
 		PlayerControlComponent(
 			/* MoveSpeed	*/	9.0f
-		)
+		),
+		PointLightComponent(0.9f, 0.4f, 1.0f, 5.0f, {0.0f, 0.5f, 0.0f})
 	);
 
 	auto& anim = coordinator->GetComponent<AnimationComponent>(player);
@@ -151,7 +152,8 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 		/* Amplitude */ 0.5f,     // 上下 0.5 の範囲で揺れる
 		/* Speed     */ 2.0f,     // 速度
 		/* InitialY  */ position.y - 1 // 基準となる高さ（配置位置）
-	)
+		),
+		PointLightComponent(0.0f, 5.0f, 0.0f, 5.0f)
 	);
 	
 		
@@ -250,9 +252,10 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 		),
 		CollisionComponent(
 			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
-			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.5f, 0.0f),
 			/* ColliderType	*/	COLLIDER_DYNAMIC
-		)
+		),
+		PointLightComponent(5.0f, 0.0f, 0.0f, 7.0f, {0.0f, 0.5f, 0.3f})
 	);
 
 	auto& anim = coordinator->GetComponent<AnimationComponent>(guard);
@@ -413,7 +416,8 @@ EntityID ECS::EntityFactory::CreateBasicCamera(Coordinator* coordinator, const D
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
-		BasicCameraComponent()
+		BasicCameraComponent(),
+		PointLightComponent(2.0f, 1.8f, 1.4f, 30.0f, {0.0f, 0.0f, 0.0f})
 	);
 
 	return entity;

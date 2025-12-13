@@ -47,6 +47,8 @@
 #include "ECS/Systems/Rendering/AnimationSystem.h"
 // @system	エフェクト
 #include "ECS/Systems/Rendering/EffectSystem.h"
+// @system	点滅
+#include "ECS/Systems/Rendering/FlickerSystem.h"
 
 // @folder	Physics
 // @system	衝突判定

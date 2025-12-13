@@ -146,6 +146,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Include\ECS\Systems\Rendering\FlickerSystem.cpp" />
     <ClCompile Include="Source\ECS\ECSInitializer.cpp" />
     <ClCompile Include="Source\ECS\EntityFactory.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\AudioSystem.cpp" />
@@ -216,7 +217,9 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Components\Physics\RigidBodyComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\DebugComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\EffectComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Rendering\FlickerComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\ModelComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Rendering\PointLightComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\RenderComponent.h" />
     <ClInclude Include="Include\ECS\Components\UI\FloatingComponent.h" />
     <ClInclude Include="Include\ECS\Components\UI\ScanLineComponent.h" />
@@ -246,6 +249,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Systems\Physics\PhysicsSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Rendering\DebugDrawSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Rendering\EffectSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Rendering\FlickerSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Rendering\RenderSystem.h" />
     <ClInclude Include="Include\ECS\Systems\UI\CursorSystem.h" />
     <ClInclude Include="Include\ECS\Systems\UI\FloatingSystem.h" />

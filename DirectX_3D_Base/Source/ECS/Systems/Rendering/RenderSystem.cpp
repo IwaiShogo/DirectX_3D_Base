@@ -186,6 +186,12 @@ void RenderSystem::DrawEntities()
 		viewMat = cam.viewMatrix;
 		projMat = cam.projectionMatrix;
 		cameraFound = true;
+
+		if (m_coordinator->HasComponent<TransformComponent>(cameraID))
+		{
+			auto& trans = m_coordinator->GetComponent<TransformComponent>(cameraID);
+			ShaderList::SetCameraPos(cam.worldPosition);
+		}
 	}
 	else
 	{
@@ -197,22 +203,126 @@ void RenderSystem::DrawEntities()
 			projMat = cam.projectionMatrix;
 			cameraFound = true;
 		}
+
+		if (m_coordinator->HasComponent<TransformComponent>(cameraID))
+		{
+			auto& trans = m_coordinator->GetComponent<TransformComponent>(cameraID);
+			ShaderList::SetCameraPos(trans.position);
+		}
 	}
 
 	if (!cameraFound) return;
 
 	// 2. ライト設定 (カメラ方向からの平行光源)
+	//{
+	//	DirectX::XMFLOAT3 lightDir = { -0.5f, -1.0f, 0.5f };
+
+	//	// 正規化（長さを1にする）
+	//	XMVECTOR vLight = XMLoadFloat3(&lightDir);
+	//	vLight = XMVector3Normalize(vLight);
+	//	XMStoreFloat3(&lightDir, vLight);
+
+	//	// セット (色は真っ白: 1,1,1,1)
+	//	ShaderList::SetLight(XMFLOAT4(0.1f, 0.1f, 0.3f, 1.0f), lightDir);
+	//}
+	// ライトリストの作成
+	PointLightData lights[MAX_LIGHTS];
+	int lightCount = 0;
+
+	// 1. 【プレイヤーのライト】を0番目に登録 (最優先)
+	if (m_coordinator->HasComponent<CameraComponent>(cameraID))
 	{
-		DirectX::XMFLOAT3 lightDir = { -0.5f, -1.0f, 0.5f };
+		auto& cam = m_coordinator->GetComponent<CameraComponent>(cameraID);
 
-		// 正規化（長さを1にする）
-		XMVECTOR vLight = XMLoadFloat3(&lightDir);
-		vLight = XMVector3Normalize(vLight);
-		XMStoreFloat3(&lightDir, vLight);
+		lights[lightCount].position = { cam.worldPosition.x, cam.worldPosition.y, cam.worldPosition.z, 30.0f }; // w=範囲30m
 
-		// セット (色は真っ白: 1,1,1,1)
-		ShaderList::SetLight(XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), lightDir);
+		// 時間計測用の変数 (staticにすることで値を保持し続ける)
+		static float timeCounter = 0.0f;
+		timeCounter += 0.05f; // 数値を変えると明滅の速さが変わります
+
+		// 1. ベースの揺らぎ (サイン波でゆっくり明滅)
+		// sinの結果(-1.0~1.0)を 0.8~1.1 くらいの範囲に調整
+		float wave = sin(timeCounter);
+		float intensity = 0.9f + (wave * 0.15f);
+
+		// 2. ノイズ (たまにチカッと暗くする)
+		// 乱数(0~99)が 5未満(5%の確率) なら、明るさをガクッと下げる
+		if (rand() % 100 < 5)
+		{
+			intensity *= 0.3f; // 一瞬だけ30%の明るさに
+		}
+
+		// 計算した強度(intensity)を色に掛け合わせる
+		// 元の色: (1.0, 0.9, 0.7)
+		lights[lightCount].color = {
+			1.0f * intensity,
+			0.9f * intensity,
+			0.7f * intensity,
+			1.0f
+		};
+
+		lightCount++;
 	}
+
+	// 2. 【シーン上の点光源】を集める
+	// PointLightComponent を持つエンティティを探す
+	for (auto const& entity : m_coordinator->GetActiveEntities()) // または全エンティティ走査
+	{
+		if (lightCount >= MAX_LIGHTS) break; // 上限チェック
+
+		// PointLightComponentを持っていれば...
+		if (m_coordinator->HasComponent<PointLightComponent>(entity) && m_coordinator->HasComponent<TransformComponent>(entity))
+		{
+			auto& pl = m_coordinator->GetComponent<PointLightComponent>(entity);
+			auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+
+			if (!pl.isActive) continue;
+
+			// 1. エンティティのワールド座標
+			XMVECTOR posV = XMLoadFloat3(&trans.position);
+
+			// 2. オフセットベクトル
+			XMVECTOR offsetV = XMLoadFloat3(&pl.offset);
+
+			// 3. エンティティの回転行列を作成
+			XMMATRIX rotM = XMMatrixRotationRollPitchYaw(
+				trans.rotation.x,
+				trans.rotation.y,
+				trans.rotation.z
+			);
+
+			// 4. オフセットを回転させる (体の向きに合わせる)
+			// これにより、キャラが回転してもライトの位置関係が保たれます
+			XMVECTOR rotatedOffset = XMVector3Transform(offsetV, rotM);
+
+			// 5. 足し合わせる
+			XMVECTOR finalPos = posV + rotatedOffset;
+
+			// 格納
+			XMFLOAT3 finalPosF;
+			XMStoreFloat3(&finalPosF, finalPos);
+
+			lights[lightCount].position = { finalPosF.x, finalPosF.y, finalPosF.z, pl.range };
+
+			// FlickerComponent(点滅)があれば、その結果を反映させる
+			if (m_coordinator->HasComponent<FlickerComponent>(entity) && m_coordinator->HasComponent<RenderComponent>(entity))
+			{
+				// RenderSystemで計算済みのRenderComponentの色を使うと楽です
+				auto& render = m_coordinator->GetComponent<RenderComponent>(entity);
+				lights[lightCount].color = render.color;
+			}
+			else
+			{
+				lights[lightCount].color = pl.color;
+			}
+
+			lightCount++;
+		}
+	}
+
+	// 3. まとめてシェーダーに送信
+	// 環境光は少し暗めの青 (0.1, 0.1, 0.3)
+	ShaderList::SetPointLights(lights, lightCount, DirectX::XMFLOAT4(0.1f, 0.1f, 0.3f, 1.0f));
 
 	// 3. 描画ターゲット設定
 	RenderTarget* pRTV = GetDefaultRTV();

@@ -4,6 +4,15 @@
 #include "Shader.h"
 #include "Systems/Model.h"
 
+// 最大ライト数
+#define MAX_LIGHTS 8
+
+// 点光源のデータをまとめた構造体
+struct PointLightData
+{
+	DirectX::XMFLOAT4 position;	// xyz:座標, w:範囲(Range)
+	DirectX::XMFLOAT4 color;	// rgba:色と強さ
+};
 
 class ShaderList
 {
@@ -45,7 +54,8 @@ public:
 	static void SetLight(DirectX::XMFLOAT4 color, DirectX::XMFLOAT3 dir);
 	static void SetCameraPos(const DirectX::XMFLOAT3 pos);
 	static void SetFog(DirectX::XMFLOAT4 color, float start, float range);
-	
+	static void SetPointLights(const PointLightData* lights, int lightCount, DirectX::XMFLOAT4 ambient);
+
 private:
 	static void MakeWorldVS();
 	static void MakeAnimeVS();

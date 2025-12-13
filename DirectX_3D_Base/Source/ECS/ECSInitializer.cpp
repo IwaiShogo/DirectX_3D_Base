@@ -209,6 +209,13 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     // 2. Draw（描画処理）
     // ------------------------------------------------------------
 
+    // @system  FlickerSystem
+    // @brief   点滅
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  FlickerSystem,
+        /* Components   */  FlickerComponent
+    );
 
     // @system  RenderSystem
     // @brief   カメラ設定や、デバッググリッド描画＆Entitiesの描画
