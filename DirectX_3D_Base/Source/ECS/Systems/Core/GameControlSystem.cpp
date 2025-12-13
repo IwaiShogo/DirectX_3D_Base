@@ -68,6 +68,10 @@ void GameControlSystem::Update(float deltaTime)
         UpdateExitSequence(deltaTime, controllerID);
         return;
     }
+    else if (state.sequenceState == GameSequenceState::Caught) {
+        UpdateCaughtSequence(deltaTime, controllerID);
+        return;
+    }
 
     if (!m_uiInitialized)
     {
@@ -148,6 +152,65 @@ void GameControlSystem::Update(float deltaTime)
 
    
 
+}
+
+void GameControlSystem::TriggerCaughtSequence(ECS::EntityID guardID)
+{
+    EntityID controllerID = FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
+    if (controllerID == INVALID_ENTITY_ID) return;
+
+    auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+
+    // 多重呼び出し防止
+    if (state.sequenceState == GameSequenceState::Caught || state.isGameOver) return;
+
+    // ステート変更
+    state.sequenceState = GameSequenceState::Caught;
+    state.sequenceTimer = 0.0f;
+    m_catchingGuardID = guardID;
+    m_caughtAnimPlayed = false; // フラグ・リセット
+
+    EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+
+    if (playerID != INVALID_ENTITY_ID && guardID != INVALID_ENTITY_ID)
+    {
+        auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
+        auto& gTrans = m_coordinator->GetComponent<TransformComponent>(guardID);
+
+        // 1. アニメーション初期化
+        // 警備員: プレイヤーに向かって走る
+        if (m_coordinator->HasComponent<AnimationComponent>(guardID)) {
+            m_coordinator->GetComponent<AnimationComponent>(guardID).Play("A_GUARD_RUN");
+        }
+        // プレイヤー: 驚く/立ち止まる
+        if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
+            m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_IDLE");
+        }
+
+        // 2. カメラ設定（二人の様子が見える位置へ）
+        if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
+        {
+            // 中間地点
+            XMVECTOR pPos = XMLoadFloat3(&pTrans.position);
+            XMVECTOR gPos = XMLoadFloat3(&gTrans.position);
+            XMVECTOR midPoint = (pPos + gPos) * 0.5f;
+
+            // カメラ位置: 中間地点から少し離れた場所
+            // (例: 高さ2.5m, 奥行き3.0m)
+            XMVECTOR camOffset = XMVectorSet(2.0f, 2.5f, -3.0f, 0.0f);
+            XMVECTOR camPosVec = midPoint + camOffset;
+            XMVECTOR lookAtVec = midPoint;
+
+            XMFLOAT3 camPos, lookAt;
+            XMStoreFloat3(&camPos, camPosVec);
+            XMStoreFloat3(&lookAt, lookAtVec);
+
+            camSys->SetFixedCamera(camPos, lookAt);
+        }
+
+        // プレイヤー発見音
+        EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_FOUND");
+    }
 }
 
 // ---------------------------------------------------------
@@ -443,6 +506,94 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID)
         // ※クリップ空間のZ範囲はDirectXでは 0.0～1.0
         if (ndc.z < 0.0f || ndc.z > 1.0f) {
             iconUI.isVisible = false;
+        }
+    }
+}
+
+void GameControlSystem::UpdateCaughtSequence(float deltaTime, ECS::EntityID controllerID)
+{
+    auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+    state.sequenceTimer += deltaTime;
+
+    EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+
+    // 警備員かプレイヤーがいなければ即終了
+    if (playerID == INVALID_ENTITY_ID || m_catchingGuardID == INVALID_ENTITY_ID) {
+        state.isGameOver = true;
+        CheckSceneTransition(controllerID);
+        return;
+    }
+
+    auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
+    auto& gTrans = m_coordinator->GetComponent<TransformComponent>(m_catchingGuardID);
+
+    // --- フェーズ1: 接近 ---
+    if (!m_caughtAnimPlayed)
+    {
+        XMVECTOR pPos = XMLoadFloat3(&pTrans.position);
+        XMVECTOR gPos = XMLoadFloat3(&gTrans.position);
+
+        // 距離と方向
+        XMVECTOR dirVec = XMVectorSubtract(pPos, gPos);
+
+        // Y軸（高さ）の差を無視して、水平方向のみのベクトルにする
+        dirVec = XMVectorSetY(dirVec, 0.0f);
+
+        // 水平距離で長さを再計算
+        float distance = XMVectorGetX(XMVector3Length(dirVec));
+        dirVec = XMVector3Normalize(dirVec);
+
+        // 停止距離
+        float stopDist = 1.5f;
+
+        if (distance > stopDist)
+        {
+            // 近づく
+            float moveSpeed = 3.5f * deltaTime;
+            XMVECTOR newPos = gPos + (dirVec * moveSpeed);
+
+            // 移動後のY座標は元の高さを維持する (めり込み防止)
+            float originalY = gTrans.position.y;
+            XMStoreFloat3(&gTrans.position, newPos);
+            gTrans.position.y = originalY; // 高さは固定
+
+            // 向き調整
+            float dx = XMVectorGetX(dirVec);
+            float dz = XMVectorGetZ(dirVec);
+            gTrans.rotation.y = atan2(dx, dz);
+
+            pTrans.rotation.y = atan2(-dx, -dz);
+        }
+        else
+        {
+            // --- フェーズ2: 到着＆捕獲アクション ---
+            m_caughtAnimPlayed = true;
+            state.sequenceTimer = 0.0f; // タイマーリセット(アニメ再生待ち用)
+
+            // 警備員: 攻撃/捕獲モーション
+            if (m_coordinator->HasComponent<AnimationComponent>(m_catchingGuardID)) {
+                // "A_GUARD_ATTACK" や "A_GUARD_CATCH" など
+                m_coordinator->GetComponent<AnimationComponent>(m_catchingGuardID).Play("A_GUARD_ATTACK", false);
+            }
+
+            // プレイヤー: やられたモーション
+            if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
+                // "A_PLAYER_DAMAGE" や "A_PLAYER_CAUGHT"
+                m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_DAMAGE", false);
+            }
+
+            // 効果音 (バシッ！とか)
+            EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_HIT");
+        }
+    }
+    // --- フェーズ3: 余韻 ---
+    else
+    {
+        // アニメーションが終わるくらいまで待つ (例: 2秒)
+        if (state.sequenceTimer > 2.0f)
+        {
+            state.isGameOver = true;
+            CheckSceneTransition(controllerID);
         }
     }
 }

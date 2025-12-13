@@ -51,12 +51,15 @@ public:
 
 	void Update(float deltaTime) override;
 
+    void TriggerCaughtSequence(ECS::EntityID guardID);
+
 private:
     // --- 内部処理用ヘルパー関数 ---
     void UpdateTimerAndRules(float deltaTime, ECS::EntityID controllerID); // 時間・勝敗判定
     void HandleInputAndStateSwitch(ECS::EntityID controllerID);            // 入力・視点切替
     void CheckSceneTransition(ECS::EntityID controllerID);                 // シーン遷移
     void UpdateTopViewUI(ECS::EntityID controllerID);                      // UI更新
+    void UpdateCaughtSequence(float deltaTime, ECS::EntityID controllerID);
 
     void UpdateIcon(ECS::EntityID target, std::string iconAsset, DirectX::XMFLOAT4 color);
     void UpdateScanLine(float deltaTime, ECS::EntityID controllerID);
@@ -99,6 +102,10 @@ private:
     bool m_uiInitialized = false;
     std::vector<ECS::EntityID> m_timerDigits; // タイム表示用の桁Entityリスト
     std::vector<ECS::EntityID> m_itemHUDs;    // アイテムHUDのEntityリスト
+
+    // 捕まえた警備員のIDを一時保存用
+    ECS::EntityID m_catchingGuardID = ECS::INVALID_ENTITY_ID;
+    bool m_caughtAnimPlayed = false; // 捕獲アニメーション再生済みフラグ
 };
 
 #endif // !___GAME_CONTROL_SYSTEM_H___

@@ -36,9 +36,10 @@ enum class GameMode
 enum class GameSequenceState
 {
 	None,
-	Entering, // スタート演出
-	Playing,  // 通常プレイ
-	Exiting   // 脱出演出
+	Entering,	// スタート演出
+	Playing,	// 通常プレイ
+	Exiting,	// 脱出演出
+	Caught,		// 捕まった
 };
 /**
  * @struct GameStateComponent

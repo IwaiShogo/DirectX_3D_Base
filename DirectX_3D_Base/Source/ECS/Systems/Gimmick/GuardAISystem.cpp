@@ -477,10 +477,13 @@ void GuardAISystem::Update(float deltaTime)
                 // --- プレイヤー発見時の処理 ---
 
                 // 1. 発見音/接触音の再生
-                ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST5");
+                //ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST5");
 
                 // 2. ゲームオーバーフラグを立てる (CollisionSystemと同じ処理)
-                gameStateComp.isGameOver = true;
+                if (auto gameCtrl = ECS::ECSInitializer::GetSystem<GameControlSystem>())
+                {
+                    gameCtrl->TriggerCaughtSequence(entity);
+                }
 
                 // 3. 以降の処理を行わず、即座に関数を抜ける
                 // (これによりGameControlSystemが次のフレームでリスタート処理を行います)
