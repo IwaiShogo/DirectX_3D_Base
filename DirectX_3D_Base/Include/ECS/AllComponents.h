@@ -89,8 +89,6 @@
 #include "ECS/Components/Gameplay/ItemTrackerComponent.h"
 // @component	マップ管理
 #include "ECS/Components/Gameplay/MapComponent.h"
-// @component	生成を遅らせる
-#include "ECS/Components/Gameplay/EnemySpawnComponent.h"
 // @component	エネミーの生成遅延
 #include "ECS/Components/Gameplay/EnemySpawnComponent.h"
 

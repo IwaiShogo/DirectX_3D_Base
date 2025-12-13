@@ -17,15 +17,13 @@
  * @note	（省略可）
  *********************************************************************/
 
- // ===== インクルード =====
+// ===== インクルード =====
 #include "ECS/Systems/Core/GameControlSystem.h"
 #include "Scene/SceneManager.h"
 #include "ECS/EntityFactory.h"
+#include "ECS/ECSInitializer.h"
 
-#include "ECS/Components/Core/GameStateComponent.h"
-#include "ECS/Components/Gameplay/CollectableComponent.h"   
-#include "ECS/Components/Gameplay/ItemTrackerComponent.h"  
-#include "Scene/ResultScene.h"                          
+#include "Scene/ResultScene.h"
 
 #include <cmath>
 
@@ -113,6 +111,36 @@ void GameControlSystem::Update(float deltaTime)
                 {
                     state.sequenceState = GameSequenceState::Exiting;
                     state.sequenceTimer = 0.0f;
+
+                    // 脱出時もカメラを固定（入場時と同じ位置でOK、あるいは逆側）
+                    if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
+                    {
+                        // 入場時と同じ計算で「部屋の中から去っていく背中」を映す
+                        // ドアの位置
+                        XMVECTOR doorPos = XMLoadFloat3(&dTrans.position);
+                        float rad = dTrans.rotation.y;
+
+                        // ドアの向きベクトル (Z+ 方向)
+                        // プレイヤーが入場する方向(rad)と同じ向き
+                        float sinY = sin(rad);
+                        float cosY = cos(rad);
+                        XMVECTOR doorDir = XMVectorSet(sinY, 0.0f, cosY, 0.0f);
+
+                        // カメラの位置計算:
+                        // ドアから「前方へ4m」、かつ「高さ2m」の位置（部屋の中からドアを見下ろす）
+                        XMVECTOR camPosVec = doorPos + (doorDir * 3.0f) + XMVectorSet(0.0f, 2.0f, 0.0f, 0.0f);
+
+                        // 注視点:
+                        // ドアの中心（より少し上）を見る
+                        XMVECTOR lookAtVec = doorPos + XMVectorSet(0.0f, 1.5f, 0.0f, 0.0f);
+
+                        XMFLOAT3 camPos, lookAt;
+                        XMStoreFloat3(&camPos, camPosVec);
+                        XMStoreFloat3(&lookAt, lookAtVec);
+
+                        // カメラシステムにセット
+                        camSys->SetFixedCamera(camPos, lookAt);
+                    }
                 }
             }
         }
@@ -818,25 +846,39 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
         auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
         auto& dTrans = m_coordinator->GetComponent<TransformComponent>(doorID);
 
-        // ドアの回転(Y軸)を取得
+        // --- 1. プレイヤー配置 ---
         float rad = dTrans.rotation.y;
-
-        // ★重要: ドアの「後ろ（外側）」へのベクトル
-        // モデルの向きによりますが、通常ドアの正面(Z+)が部屋の内側なら、
-        // 「外」は -Z 方向（つまり前方ベクトルの逆）になります。
-        // もし逆なら + を - に調整してください。
-
-        // ドアの外 5.0m の位置
         float startDist = 5.0f;
-        float startX = dTrans.position.x - sin(rad) * startDist;
-        float startZ = dTrans.position.z - cos(rad) * startDist;
-
-        // プレイヤー配置
-        pTrans.position.x = startX;
-        pTrans.position.z = startZ;
-
-        // プレイヤーの向きをドアと同じにする（部屋の方を向く）
+        // ドアの外側(-Z方向と仮定)に配置
+        pTrans.position.x = dTrans.position.x - sin(rad) * startDist;
+        pTrans.position.z = dTrans.position.z - cos(rad) * startDist;
         pTrans.rotation.y = dTrans.rotation.y;
+
+        // --- 2. カメラ位置の計算 ---
+        if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
+        {
+            XMVECTOR doorPos = XMLoadFloat3(&dTrans.position);
+
+            float sinY = sin(rad);
+            float cosY = cos(rad);
+            XMVECTOR doorDir = XMVectorSet(sinY, 0.0f, cosY, 0.0f);
+
+            // ★修正A: 部屋の内側に配置するために「マイナス」にする
+            // 距離も 2.5f 程度に調整
+            XMVECTOR camPosVec = doorPos + (doorDir * 7.5f) + XMVectorSet(0.0f, 3.0f, 0.0f, 0.0f);
+
+            XMVECTOR lookAtVec = doorPos + XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+
+            XMFLOAT3 camPos, lookAt;
+            XMStoreFloat3(&camPos, camPosVec);
+            XMStoreFloat3(&lookAt, lookAtVec);
+
+            printf("[DEBUG] DoorPos: %.2f, %.2f, %.2f\n", dTrans.position.x, dTrans.position.y, dTrans.position.z);
+            printf("[DEBUG] CamPos : %.2f, %.2f, %.2f\n", camPos.x, camPos.y, camPos.z);
+
+            // システムに目標をセット
+            camSys->SetFixedCamera(camPos, lookAt);
+        }
 
         // --- 2. ドアを開ける ---
         if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
@@ -863,44 +905,60 @@ void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID control
 
     auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
 
-    // アニメーション再生 (歩き)
-    if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
-        m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_RUN");
-    }
-
-    // --- 0.0s ~ 2.0s: 直進して部屋に入る ---
-    if (state.sequenceTimer < 2.0f)
+    // --- 1. 入場移動 (0.0s ~ 2.5s) ---
+    // ★時間を 2.0f -> 2.5f に延ばして、より奥へ進ませる
+    if (state.sequenceTimer < 2.5f)
     {
+        // アニメーション再生 (歩き)
+        if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
+            m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_RUN");
+        }
+
         // プレイヤーが向いている方向(回転)に進む
-        float speed = 4.0f * deltaTime; // 少し速めに
+        float speed = 4.0f * deltaTime;
         float rad = pTrans.rotation.y;
 
         pTrans.position.x += sin(rad) * speed;
         pTrans.position.z += cos(rad) * speed;
     }
-    // --- 2.0s: 演出終了 ---
+    // --- 2. ドア閉鎖 & 待機 (2.5s ~ 3.5s) ---
+    // ★移動が終わったら、ドアを閉めて少し待つ
+    else if (state.sequenceTimer < 4.5f)
+    {
+        // 待機モーション
+        if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
+            m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_IDLE");
+        }
+
+        // ★このフェーズに入った瞬間(1回だけ)ドアを閉める
+        // (前フレームまでは 2.5f 未満だった場合)
+        if (state.sequenceTimer - deltaTime < 2.5f)
+        {
+            EntityID doorID = FindEntranceDoor();
+            if (doorID != INVALID_ENTITY_ID) {
+                if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
+                    m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE", false);
+                }
+                // コリジョンを壁に戻す (閉じ込める)
+                if (m_coordinator->HasComponent<CollisionComponent>(doorID)) {
+                    m_coordinator->GetComponent<CollisionComponent>(doorID).type = COLLIDER_STATIC;
+                }
+                // 閉まる音
+                EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_DOOR_CLOSE");
+            }
+        }
+    }
+    // --- 3. 演出終了 & 操作開始 (3.5s以降) ---
     else
     {
-        // 待機モーションに戻す
-        if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
-            m_coordinator->GetComponent<AnimationComponent>(playerID).PlayBlend("A_PLAYER_IDLE", 0.5f);
+        // カメラを背後に戻す (前回の回答で追加したリセット処理)
+        if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
+        {
+            camSys->ReleaseFixedCamera();
+            camSys->ResetCameraAngle(pTrans.rotation.y, 0.6f);
         }
 
-        // ドアを閉める
-        EntityID doorID = FindEntranceDoor();
-        if (doorID != INVALID_ENTITY_ID) {
-            if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
-                m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE", false);
-            }
-            // コリジョンを壁に戻す (閉じ込める)
-            if (m_coordinator->HasComponent<CollisionComponent>(doorID)) {
-                m_coordinator->GetComponent<CollisionComponent>(doorID).type = COLLIDER_STATIC;
-            }
-            // 閉まる音
-            EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_DOOR_CLOSE");
-        }
-
-        // ゲーム状態をプレイ中に変更
+        // ★ここで初めて操作可能になる
         state.sequenceState = GameSequenceState::Playing;
     }
 }
@@ -943,26 +1001,80 @@ void GameControlSystem::UpdateExitSequence(float deltaTime, EntityID controllerI
     state.sequenceTimer += deltaTime;
 
     EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
-    auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
+    EntityID exitDoorID = FindExitDoor();
 
-    // 光の方へ歩いていく
-    float speed = 3.0f * deltaTime;
-    float rad = pTrans.rotation.y;
-    pTrans.position.x += sin(rad) * speed;
-    pTrans.position.z += cos(rad) * speed;
+    if (playerID != INVALID_ENTITY_ID && exitDoorID != INVALID_ENTITY_ID)
+    {
+        auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
+        auto& dTrans = m_coordinator->GetComponent<TransformComponent>(exitDoorID);
 
-    EntityID doorID = FindEntranceDoor();
-    if (doorID != INVALID_ENTITY_ID) {
-        if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
-            m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE", false);
+        // --- 1. 移動フェーズ (0.0s ~ 4.0s) ---
+        if (state.sequenceTimer < 4.0f)
+        {
+            // 歩きモーション
+            if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
+                m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_RUN");
+            }
+
+            // ★ムーンウォーク対策:
+            // 「ドアへのベクトル」ではなく、「ドアの逆向き(退出方向)」へ回転し、その前方へ進む
+
+            // 目標の向き: ドアの向きの反対 (部屋の外へ)
+            float targetRot = dTrans.rotation.y + XM_PI;
+
+            // 向きの補間
+            float currentRot = pTrans.rotation.y;
+            float diff = targetRot - currentRot;
+            while (diff > XM_PI) diff -= XM_2PI;
+            while (diff < -XM_PI) diff += XM_2PI;
+            pTrans.rotation.y += diff * 5.0f * deltaTime;
+
+            // 移動 (向いている方向へ)
+            float walkSpeed = 2.0f * deltaTime;
+            float rad = pTrans.rotation.y;
+            float moveX = sin(rad) * walkSpeed;
+            float moveZ = cos(rad) * walkSpeed;
+
+            pTrans.position.x += moveX;
+            pTrans.position.z += moveZ;
+
+            // 位置補正 (ドアの正面ラインに寄せる)
+            // ドアとのX軸(横)ズレを簡易的に修正
+            XMVECTOR doorPosV = XMLoadFloat3(&dTrans.position);
+            XMVECTOR playerPosV = XMLoadFloat3(&pTrans.position);
+            XMVECTOR toDoor = XMVectorSubtract(doorPosV, playerPosV);
+            // ※厳密な計算は省略し、ここでは「進む」ことを優先しています
+        }
+
+        // --- 2. ドアを閉める (2.5秒経過後など、プレイヤーが出た後) ---
+        // ★追加: ゴール時もドアを閉める処理
+        if (state.sequenceTimer > 2.5f)
+        {
+            // ドアが開いていれば閉める
+            bool isOpen = false;
+            if (m_coordinator->HasComponent<CollisionComponent>(exitDoorID)) {
+                if (m_coordinator->GetComponent<CollisionComponent>(exitDoorID).type == COLLIDER_TRIGGER) {
+                    isOpen = true;
+                }
+            }
+            if (isOpen)
+            {
+                if (m_coordinator->HasComponent<AnimationComponent>(exitDoorID)) {
+                    m_coordinator->GetComponent<AnimationComponent>(exitDoorID).Play("A_DOOR_CLOSE", false);
+                }
+                if (m_coordinator->HasComponent<CollisionComponent>(exitDoorID)) {
+                    m_coordinator->GetComponent<CollisionComponent>(exitDoorID).type = COLLIDER_STATIC;
+                }
+                EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_DOOR_CLOSE");
+            }
         }
     }
 
-    // フェードアウトなどをかけて、一定時間後にリザルトへ
-    if (state.sequenceTimer > 2.0f)
+    // --- 3. 終了判定 (時間を長く) ---
+    if (state.sequenceTimer > 5.0f)
     {
         state.isGameClear = true;
-        CheckSceneTransition(controllerID); // リザルトへ遷移
+        CheckSceneTransition(controllerID);
     }
 }
 
