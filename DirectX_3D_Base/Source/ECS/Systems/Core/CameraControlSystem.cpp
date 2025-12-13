@@ -249,6 +249,53 @@ void CameraControlSystem::Update(float deltaTime)
     bool isModeChanged = (currentMode != m_lastGameMode);
     m_lastGameMode = currentMode;
 
+    // 2. カメラエンティティを探す (これが最優先)
+    ECS::EntityID cameraID = ECS::FindFirstEntityWithComponent<CameraComponent>(m_coordinator);
+
+    // 見つからなければ、BasicCameraComponentを探すなどのフォールバックが必要だが、
+    // 固定カメラやTPSは CameraComponent 必須なので、なければ終了
+    if (cameraID == ECS::INVALID_ENTITY_ID) return;
+
+    auto& cameraComp = m_coordinator->GetComponent<CameraComponent>(cameraID);
+    auto& cameraTrans = m_coordinator->GetComponent<TransformComponent>(cameraID);
+
+    // ========================================================
+    // ★固定カメラモード (演出中)
+    // ========================================================
+    if (m_isFixedMode)
+    {
+        // 位置の補間 (Lerp)
+        XMVECTOR currentPos = XMLoadFloat3(&cameraTrans.position);
+        XMVECTOR targetPos = XMLoadFloat3(&m_fixedPos);
+        XMVECTOR newPos = XMVectorLerp(currentPos, targetPos, 5.0f * deltaTime);
+        XMStoreFloat3(&cameraTrans.position, newPos);
+        XMStoreFloat3(&m_currentCameraPos, newPos);
+
+        // 注視点計算
+        XMVECTOR eye = newPos;
+        XMVECTOR focus = XMLoadFloat3(&m_fixedLookAt);
+        XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+        XMMATRIX view = XMMatrixLookAtLH(eye, focus, up);
+
+        XMStoreFloat3(&m_currentLookAt, focus);
+
+        // ビュー行列更新
+        XMStoreFloat4x4(&cameraComp.viewMatrix, XMMatrixTranspose(view));
+
+        XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH(
+            cameraComp.FOV,
+            (float)SCREEN_WIDTH / SCREEN_HEIGHT,
+            cameraComp.nearClip,
+            cameraComp.farClip
+        );
+        XMStoreFloat4x4(&cameraComp.projectionMatrix, XMMatrixTranspose(projectionMatrix));
+
+        cameraComp.worldPosition = m_currentCameraPos; // カメラ位置も格納
+
+        // ★重要: これで終了する (下のループに入らないようにする！)
+        return;
+    }
+
     // 2. 右スティック入力の取得 (アクションモードでのみ有効)
     XMFLOAT2 rightStick = GetRightStick();
     XMFLOAT2 mouseDelta = GetMouseDelta();
@@ -483,4 +530,25 @@ void CameraControlSystem::Update(float deltaTime)
             cameraComp.worldPosition = m_currentCameraPos; // カメラ位置も格納
         }
     }
+}
+
+void CameraControlSystem::SetFixedCamera(const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& lookAt)
+{
+    m_isFixedMode = true;
+    m_fixedPos = position;
+    m_fixedLookAt = lookAt;
+
+    m_currentCameraPos = position;
+    m_currentLookAt = lookAt;
+}
+
+void CameraControlSystem::ReleaseFixedCamera()
+{
+    m_isFixedMode = false;
+}
+
+void CameraControlSystem::ResetCameraAngle(float yaw, float pitch)
+{
+    m_currentYaw = yaw;
+    m_currentPitch = pitch;
 }

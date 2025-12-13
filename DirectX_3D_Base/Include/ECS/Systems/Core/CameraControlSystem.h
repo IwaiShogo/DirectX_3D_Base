@@ -41,13 +41,17 @@ class CameraControlSystem : public ECS::System
 private:
 	ECS::Coordinator* m_coordinator = nullptr;
 
-	// 現在のカメラの位置と注視点（前フレームの結果を保持し、補間に使用）
-	DirectX::XMFLOAT3 m_currentCameraPos;
-	DirectX::XMFLOAT3 m_currentLookAt;
+	bool m_isFixedMode = false;
+	DirectX::XMFLOAT3 m_fixedPos;
+	DirectX::XMFLOAT3 m_fixedLookAt;
 
 	// 【追加】カメラの回転角度を保持する変数
 	float m_currentYaw = 0.0f;     // Y軸回転 (水平方向)
 	float m_currentPitch = 0.0f;   // X軸回転 (垂直方向)
+
+	// 現在のカメラの位置と注視点（前フレームの結果を保持し、補間に使用）
+	DirectX::XMFLOAT3 m_currentCameraPos;
+	DirectX::XMFLOAT3 m_currentLookAt;
 
 	GameMode m_lastGameMode = GameMode::ACTION_MODE;
 
@@ -69,6 +73,10 @@ public:
 
 	/// @brief カメラの位置を計算し、RenderSystemのカメラ設定関数を呼び出す
 	void Update(float deltaTime) override;
+
+	void SetFixedCamera(const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& lookAt);
+	void ReleaseFixedCamera();
+	void ResetCameraAngle(float yaw, float pitch);
 };
 
 #endif // !___CAMERA_CONTROL_SYSTEM_H___
