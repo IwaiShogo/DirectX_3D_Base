@@ -205,10 +205,25 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  EnemySpawnComponent
     );
 
+    // @system  EffectSystem
+    // @brief   エフェクト
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  EffectSystem,
+        /* Components   */  EffectComponent, TransformComponent
+    );
+
     // ------------------------------------------------------------
     // 2. Draw（描画処理）
     // ------------------------------------------------------------
 
+    // @system  FlickerSystem
+    // @brief   点滅
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  FlickerSystem,
+        /* Components   */  FlickerComponent
+    );
 
     // @system  RenderSystem
     // @brief   カメラ設定や、デバッググリッド描画＆Entitiesの描画
@@ -216,14 +231,6 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Coordinator  */  coordinator,
         /* System       */  RenderSystem,
         /* Components   */  RenderComponent, TransformComponent 
-    );
-
-    // @system  EffectSystem
-    // @brief   エフェクト
-    REGISTER_SYSTEM_AND_INIT(
-        /* Coordinator  */  coordinator,
-        /* System       */  EffectSystem,
-        /* Components   */  EffectComponent, TransformComponent
     );
 
     // @system  UIRenderSystem
@@ -245,11 +252,6 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* System       */  MapGenerationSystem,
         /* Components   */  MapComponent
     );
-
-
-
-
-
 
     std::cout << "ECSInitializer: All Systems registered and initialized." << std::endl;
 }

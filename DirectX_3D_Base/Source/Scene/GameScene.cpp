@@ -77,7 +77,8 @@ void GameScene::Init()
 		UIImageComponent(
 			/* AssetID		*/	"UI_SCAN_LINE",
 			/* Depth		*/	-1.0f,
-			/* IsVisible	*/	false
+			/* IsVisible	*/	false,
+			/* Color		*/	XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f)
 		)
 	);
 	gameState.tpsBgID = tpsBG;

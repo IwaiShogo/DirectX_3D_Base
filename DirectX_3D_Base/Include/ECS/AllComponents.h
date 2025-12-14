@@ -60,6 +60,10 @@
 #include "ECS/Components/Rendering/AnimationComponent.h"
 // @component	エフェクト
 #include "ECS/Components/Rendering/EffectComponent.h"
+// @component	点光源
+#include "ECS/Components/Rendering/PointLightComponent.h"
+// @component	点滅
+#include "ECS/Components/Rendering/FlickerComponent.h"
 
 // @folder		Physics
 // @component	衝突判定

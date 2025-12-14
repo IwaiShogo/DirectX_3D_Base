@@ -127,6 +127,10 @@
     <ClCompile Include="Source\ECS\Systems\Core\LifeTimeSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Gameplay\EnemySpawnSystem.cpp" />
+    <ClCompile Include="Include\ECS\Systems\Rendering\FlickerSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Scene\GameScene.h">
@@ -371,6 +375,17 @@
     </ClInclude>
     <ClInclude Include="Include\ECS\Components\Gimmick\DoorComponent.h">
       <Filter>Header Files\ECS\Components\Gimmick</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Gameplay\EnemySpawnComponent.h" />
+    <ClInclude Include="Include\ECS\Systems\Gameplay\EnemySpawnSystem.h" />
+    <ClInclude Include="Include\ECS\Components\Rendering\PointLightComponent.h">
+      <Filter>Header Files\ECS\Components\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Rendering\FlickerComponent.h">
+      <Filter>Header Files\ECS\Components\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Rendering\FlickerSystem.h">
+      <Filter>Header Files\ECS\Systems\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

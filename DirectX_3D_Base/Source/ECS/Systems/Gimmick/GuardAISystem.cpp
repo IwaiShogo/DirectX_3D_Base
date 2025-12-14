@@ -342,12 +342,59 @@ void GuardAISystem::Update(float deltaTime)
     GameStateComponent& gameStateComp = m_coordinator->GetComponent<GameStateComponent>(mapEntity);
 
     // プレイヤーエンティティの検索 (追跡目標)
-    EntityID playerEntity = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
-    if (playerEntity == INVALID_ENTITY_ID) return;
+    EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+    if (playerID == INVALID_ENTITY_ID) return;
 
-    // プレイヤーのTransformComponentを取得
-    const TransformComponent& playerTransform = m_coordinator->GetComponent<TransformComponent>(playerEntity);
-    XMINT2 playerGridPos = GetGridPosition(playerTransform.position, mapComp);
+    auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
+    auto& pEffect = m_coordinator->GetComponent<EffectComponent>(playerID);
+
+    // 2. 「近くに警備員がいるか？」フラグをリセット
+    bool isAnyGuardClose = false;
+    float alertDistance = 15.0f; // 10m以内なら反応
+
+    // 3. 全ての警備員をチェック
+    for (auto const& entity : m_entities)
+    {
+        // 警備員タグまたはコンポーネントを持つエンティティのみ対象
+        if (!m_coordinator->HasComponent<GuardComponent>(entity)) continue;
+
+        auto& gTrans = m_coordinator->GetComponent<TransformComponent>(entity);
+
+        // 距離計算
+        float dx = pTrans.position.x - gTrans.position.x;
+        float dy = pTrans.position.y - gTrans.position.y;
+        float dz = pTrans.position.z - gTrans.position.z;
+        float distSq = dx * dx + dy * dy + dz * dz;
+
+        // もし1体でも近くにいたらフラグを立ててループ終了
+        if (distSq < alertDistance * alertDistance)
+        {
+            isAnyGuardClose = true;
+            break;
+        }
+    }
+
+
+    // 4. フラグに基づいてプレイヤーのエフェクトを制御
+    if (isAnyGuardClose)
+    {
+        // 危険なのに、まだ再生していなければ -> 再生
+        if (pEffect.handle == 0)
+        {
+            pEffect.requestPlay = true;
+        }
+    }
+    else
+    {
+        // 安全なのに、まだ再生中なら -> 停止
+        // (少し余裕を持たせたい場合は、ここでの判定距離を12mなどにする手もあります)
+        if (pEffect.handle != 0)
+        {
+            pEffect.requestStop = true;
+        }
+    }
+
+    XMINT2 playerGridPos = GetGridPosition(pTrans.position, mapComp);
 
     // 動的マップサイズを取得
     const int GRID_SIZE_X = mapComp.gridSizeX;
@@ -422,7 +469,7 @@ void GuardAISystem::Update(float deltaTime)
 
             // 色の設定
             DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 0.0f, 1.0f }; // 赤
-            if (IsTargetInSight(guardTransform, guardComp, playerTransform, mapComp))
+            if (IsTargetInSight(guardTransform, guardComp, pTrans, mapComp))
             {
                 color = { 1.0f, 0.0f, 0.0f, 1.0f }; // 黄色
             }
@@ -472,7 +519,7 @@ void GuardAISystem::Update(float deltaTime)
             // -------------------------------------------------------------
             // 視界判定とゲームオーバー処理
             // -------------------------------------------------------------
-            if (IsTargetInSight(guardTransform, guardComp, playerTransform, mapComp))
+            if (IsTargetInSight(guardTransform, guardComp, pTrans, mapComp))
             {
                 // --- プレイヤー発見時の処理 ---
 
@@ -506,7 +553,7 @@ void GuardAISystem::Update(float deltaTime)
                 guardComp.pathRecalcTimer = guardComp.PATH_RECALC_INTERVAL;
 
                 XMINT2 guardGrid = GetGridPosition(guardTransform.position, mapComp);
-                XMINT2 playerGrid = GetGridPosition(playerTransform.position, mapComp);
+                XMINT2 playerGrid = GetGridPosition(pTrans.position, mapComp);
 
                 // A* で全経路取得
                 std::vector<XMINT2> rawPath = FindPath(guardGrid, playerGrid, mapComp);
