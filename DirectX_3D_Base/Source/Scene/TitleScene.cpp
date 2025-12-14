@@ -81,6 +81,13 @@ void TitleScene::Init()
 			/* Path		*/	"M_TITLE_MUSEUM",
 			/* Scale	*/	0.1f,
 			/* Flip		*/	Model::ZFlip
+		),
+		EffectComponent(
+			"EFK_TITLE_SHINE",
+			true,
+			true,
+			{0.0f, 0.0f, -3.0f},
+			0.3f
 		)
 	);
 
