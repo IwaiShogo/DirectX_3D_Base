@@ -135,12 +135,6 @@ void PlayerControlSystem::Update(float deltaTime)
 		auto& playerControl = m_coordinator->GetComponent<PlayerControlComponent>(entity);
 		auto& animComp = m_coordinator->GetComponent<AnimationComponent>(entity); 
 
-
-		if (IsKeyTrigger('E'))
-		{
-			ECS::EntityFactory::CreateOneShotEffect(m_coordinator, "EFK_TEST", transform.position, 6.0f);
-		}
-
 		// =====================================
 		// 1. ˆÚ“® (ƒJƒƒ‰Šî€‚Å‚ÌˆÚ“®)
 		// =====================================

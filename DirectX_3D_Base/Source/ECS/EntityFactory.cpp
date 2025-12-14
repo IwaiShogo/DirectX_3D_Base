@@ -76,7 +76,14 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 		PlayerControlComponent(
 			/* MoveSpeed	*/	9.0f
 		),
-		PointLightComponent(0.9f, 0.4f, 1.0f, 5.0f, {0.0f, 0.5f, 0.0f})
+		PointLightComponent(0.9f, 0.4f, 1.0f, 5.0f, {0.0f, 0.5f, 0.0f}),
+		EffectComponent(
+			"EFK_ALERT",
+			true,
+			false,
+			{ 0.0f, 1.3f, 0.0f },
+			0.1f
+		)
 	);
 
 	auto& anim = coordinator->GetComponent<AnimationComponent>(player);
@@ -153,7 +160,14 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 		/* Speed     */ 2.0f,     // 速度
 		/* InitialY  */ position.y - 1 // 基準となる高さ（配置位置）
 		),
-		PointLightComponent(0.0f, 5.0f, 0.0f, 5.0f)
+		PointLightComponent(0.0f, 5.0f, 0.0f, 5.0f),
+		EffectComponent(
+			"EFK_TREASURE_GLOW",
+			true,
+			true,
+			{ 0.0f, 0.0f, 0.0f },
+			0.3f
+		)
 	);
 	
 		
@@ -426,7 +440,7 @@ EntityID ECS::EntityFactory::CreateBasicCamera(Coordinator* coordinator, const D
 EntityID EntityFactory::CreateOneShotEffect(Coordinator* coordinator, const std::string& assetID, const DirectX::XMFLOAT3& position, float duration, float scale)
 {
 	EntityID entity = coordinator->CreateEntity(
-		TagComponent("Effect"),
+		TagComponent("effect"),
 		TransformComponent(
 			position,
 			{ 0.0f, 0.0f, 0.0f },
@@ -471,6 +485,13 @@ EntityID ECS::EntityFactory::CreateDoor(Coordinator* coordinator, const DirectX:
 			0.0f,  // 質量0 = 静的（押されても動かない）
 			0.5f,  // 摩擦
 			0.0f   // 反発
+		),
+		EffectComponent(
+			"EFK_DOOR",
+			true,
+			true,
+			{ 0.0f, 0.0f, 0.0f },
+			0.5f
 		)
 	);
 

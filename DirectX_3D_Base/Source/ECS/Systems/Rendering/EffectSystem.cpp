@@ -120,6 +120,38 @@ void EffectSystem::Update(float deltaTime)
         auto& effectComp = m_coordinator->GetComponent<EffectComponent>(entity);
         auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
 
+        // ループ再生するもの（お宝など）だけ対象にする
+        if (effectComp.isLooping)
+        {
+            // カメラとの距離の二乗を計算 (平方根計算を避けて高速化)
+            float dx = transform.position.x - camPos.x;
+            float dy = transform.position.y - camPos.y;
+            float dz = transform.position.z - camPos.z;
+            float distSq = dx * dx + dy * dy + dz * dz;
+
+            // 表示する距離のしきい値 (例: 15m)
+            // チラつき防止のため、ON/OFFの境界に差をつける（ヒステリシス）
+            float showDist = 20.0f; // 15m以内に入ったら表示
+            float hideDist = 23.0f; // 18m以上離れたら消す
+
+            if (effectComp.handle == -1)
+            {
+                // 今：停止中 -> 近づいたら再生リクエスト
+                if (distSq < showDist * showDist)
+                {
+                    effectComp.requestPlay = true;
+                }
+            }
+            else
+            {
+                // 今：再生中 -> 離れたら停止リクエスト
+                if (distSq > hideDist * hideDist)
+                {
+                    effectComp.requestStop = true;
+                }
+            }
+        }
+
         // A. 再生リクエスト処理
         if (effectComp.requestPlay)
         {
@@ -157,7 +189,7 @@ void EffectSystem::Update(float deltaTime)
             if (m_manager->Exists(effectComp.handle)) {
                 m_manager->StopEffect(effectComp.handle);
             }
-            effectComp.handle = 0;
+            effectComp.handle = -1;
         }
 
         // C. 位置同期 (再生中の場合)
@@ -175,11 +207,11 @@ void EffectSystem::Update(float deltaTime)
         else
         {
             // エフェクト終了（かつループ設定なら再再生）
-            if (effectComp.isLooping && effectComp.handle != 0) {
+            if (effectComp.isLooping && effectComp.handle != -1) {
                 effectComp.requestPlay = true;
             }
             else {
-                effectComp.handle = 0;
+                effectComp.handle = -1;
             }
         }
     }
