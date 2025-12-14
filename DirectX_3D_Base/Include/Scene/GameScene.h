@@ -51,6 +51,13 @@ private:
 	ECS::EntityID m_bgmActionID = ECS::INVALID_ENTITY_ID;
 	ECS::EntityID m_bgmCompleteID = ECS::INVALID_ENTITY_ID;
 
+	// フェードイン（黒→通常表示）
+	bool m_isFadeIn = true;
+	float m_fadeTimer = 0.0f;
+	float m_fadeInDuration = 0.3f; // ここを調整（秒）
+	ECS::EntityID m_fadeEntity = ECS::INVALID_ENTITY_ID;
+
+	
 public:
 	// コンストラクタとデストラクタ（Sceneを継承しているため仮想デストラクタはScene側で定義済みと仮定）
 	GameScene()
@@ -63,6 +70,9 @@ public:
 	void Uninit() override;
 	void Update(float deltaTime) override;
 	void Draw() override;
+
+	void UpdateFadeIn(float deltaTime);
+
 
 	static std::string s_StageNo;
 	static void SetStageNo(std::string no) { s_StageNo = no; }
