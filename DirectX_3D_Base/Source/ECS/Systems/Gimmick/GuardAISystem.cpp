@@ -438,7 +438,7 @@ void GuardAISystem::Update(float deltaTime)
                 {
                     // 遅延時間経過後、AI追跡を有効化
                     guardComp.isActive = true;
-                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST2");
+                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_FAINDPLAYER");
 
                     // 以降、AI追跡ロジックに移行
                 }

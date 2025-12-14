@@ -145,6 +145,32 @@ void GameControlSystem::Update(float deltaTime)
                         // カメラシステムにセット
                         camSys->SetFixedCamera(camPos, lookAt);
                     }
+
+                    for (auto const& entity : m_coordinator->GetActiveEntities())
+                    {
+                        if (!m_coordinator->HasComponent<SoundComponent>(entity))
+                            continue;
+
+                        auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+                        const auto& id = sound.assetID;
+
+                        // アイテム全回収後まで流れていた BGM_TEST2 を停止
+                        if (id == "BGM_ACTION"
+                            // もし BGM_TEST3 もここで止めたい場合は ↓ を有効に
+                            || id == "BGM_ALLGET")
+                        {
+                            sound.RequestStop();
+                        }
+                    }
+
+                    // ゴール演出開始SEを一回だけ鳴らす
+                    ECS::EntityFactory::CreateOneShotSoundEntity(
+                        m_coordinator,
+                        "SE_CLEAR",  // ゴール用SE
+                        0.8f         // 音量はお好みで
+                    );
+                    state.sequenceState = GameSequenceState::Exiting;
+                    state.sequenceTimer = 0.0f;
                 }
             }
         }
@@ -249,16 +275,62 @@ void GameControlSystem::UpdateTimerAndRules(float deltaTime, ECS::EntityID contr
 // ---------------------------------------------------------
 void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
 {
-    // Tabキー または Yボタン
-    bool toggle = IsKeyTrigger(VK_SPACE) || IsButtonTriggered(BUTTON_A);
-    if (!toggle) return;
+    // スペース or A
+    bool pressedSpace = IsKeyTrigger(VK_SPACE);
+    bool pressedA = IsButtonTriggered(BUTTON_A);
+
+    if (!(pressedSpace || pressedA)) return;
 
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+
+    // ここに入れる：スペース / A でSEを鳴らす
+    // （トップビュー画面で鳴らしたいなら「反転前」の state.currentMode を見る）
+    if (state.currentMode == GameMode::SCOUTING_MODE && (pressedSpace || pressedA))
+    {
+        ECS::EntityFactory::CreateOneShotSoundEntity(
+            m_coordinator,
+            "SE_TOPVIEWSTART", // ← Sound.csvのSE IDに置き換え
+            0.8f
+        );
+    }
+    // ★追加：切替前モードを保存
+    GameMode prevMode = state.currentMode;
 
     // モード反転
     state.currentMode = (state.currentMode == GameMode::ACTION_MODE)
         ? GameMode::SCOUTING_MODE
         : GameMode::ACTION_MODE;
+
+    // トップビュー → アクションになった瞬間にBGM切替
+    if (prevMode == GameMode::SCOUTING_MODE && state.currentMode == GameMode::ACTION_MODE)
+    {
+        for (auto const& e : m_coordinator->GetActiveEntities())
+        {
+            if (!m_coordinator->HasComponent<SoundComponent>(e)) continue;
+            auto& snd = m_coordinator->GetComponent<SoundComponent>(e);
+
+            // ★トップビュー系は全部止める（IDが揺れてても止まるように）
+            if (snd.assetID == "BGM_TOPVIEW"
+                || snd.assetID == "BGM_TEST")     // ← もしトップビューBGMをこれで登録してるなら追加
+            {
+                snd.RequestStop();
+            }
+
+            // 念のため：すでに鳴ってるアクションBGMも止めて重複防止
+            if (snd.assetID == "BGM_ACTION"
+                || snd.assetID == "BGM_TEST2")    // ← もしアクションBGMをこれで登録してるなら追加
+            {
+                snd.RequestStop();
+            }
+        }
+
+        // アクション用BGMを開始（IDはプロジェクトに合わせる）
+        ECS::EntityFactory::CreateLoopSoundEntity(
+            m_coordinator,
+            "BGM_ACTION",
+            0.5f
+        );
+    }
 
     // 背景画像の切り替え
     if (state.topviewBgID != INVALID_ENTITY_ID && state.tpsBgID != INVALID_ENTITY_ID)
@@ -1044,6 +1116,56 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
         // ドアが開く音
         EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_DOOR_OPEN");
     }
+            auto& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(controllerID);
+
+    // 全回収したら
+    if (tracker.collectedItems >= tracker.totalItems)
+    {
+        // 出口ドアを探して開ける
+        EntityID exitDoor = FindExitDoor();
+        if (exitDoor != INVALID_ENTITY_ID)
+        {
+            auto& door = m_coordinator->GetComponent<DoorComponent>(exitDoor);
+            if (door.isLocked) // まだ開いてなければ
+            {
+                door.isLocked = false;
+                door.state = DoorState::Open;
+
+                m_coordinator->GetComponent<AnimationComponent>(exitDoor).Play("A_DOOR_OPEN", false);
+                m_coordinator->GetComponent<CollisionComponent>(exitDoor).type = COLLIDER_TRIGGER;
+
+                // ★ 全アイテム回収後のBGM切り替え -------------------
+                // 1. 既存のBGMを止める
+                for (auto const& entity : m_coordinator->GetActiveEntities())
+                {
+                    if (!m_coordinator->HasComponent<SoundComponent>(entity))
+                        continue;
+
+                    auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+
+                    // アクション用BGM (assetID = "BGM_TEST2") を停止
+                    if (sound.assetID == "BGM_ACTION")
+                    {
+                        sound.RequestStop();
+                    }
+                }
+                // 2. クリア待機用BGM（BGM_TEST3）を再生開始
+                ECS::EntityID clearBgm = ECS::EntityFactory::CreateLoopSoundEntity(
+                    m_coordinator,
+                    "BGM_TEST3",  // ★ Sound.csv に登録されているID
+                    0.5f          // 音量は好みで
+                );
+
+                // 必要ならタグを付けておく（あとで止めたい時用）
+                if (m_coordinator->HasComponent<TagComponent>(clearBgm))
+                {
+                    m_coordinator->GetComponent<TagComponent>(clearBgm).tag = "BGM_CLEAR";
+                }
+                // 音やメッセージ「脱出せよ！」などを出す
+            }
+        }
+    }
+
 }
 
 void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID controllerID)
@@ -1119,6 +1241,9 @@ void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID control
 // ---------------------------------------------------------
 void GameControlSystem::CheckDoorUnlock(EntityID controllerID)
 {
+    // ItemTrackerが無い場合は安全に抜ける
+    if (!m_coordinator->HasComponent<ItemTrackerComponent>(controllerID)) return;
+
     auto& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(controllerID);
 
     // 全回収したら
@@ -1129,15 +1254,46 @@ void GameControlSystem::CheckDoorUnlock(EntityID controllerID)
         if (exitDoor != INVALID_ENTITY_ID)
         {
             auto& door = m_coordinator->GetComponent<DoorComponent>(exitDoor);
-            if (door.isLocked) // まだ開いてなければ
+
+            // まだ開いてなければ（= 1回だけ実行される）
+            if (door.isLocked)
             {
+                // ドア解錠・開く
                 door.isLocked = false;
-                 door.state = DoorState::Open;
+                door.state = DoorState::Open;
 
-                m_coordinator->GetComponent<AnimationComponent>(exitDoor).Play("A_DOOR_OPEN", false);
-                m_coordinator->GetComponent<CollisionComponent>(exitDoor).type = COLLIDER_TRIGGER;
+                if (m_coordinator->HasComponent<AnimationComponent>(exitDoor))
+                {
+                    m_coordinator->GetComponent<AnimationComponent>(exitDoor).Play("A_DOOR_OPEN", false);
+                }
+                if (m_coordinator->HasComponent<CollisionComponent>(exitDoor))
+                {
+                    m_coordinator->GetComponent<CollisionComponent>(exitDoor).type = COLLIDER_TRIGGER;
+                }
 
-                // 音やメッセージ「脱出せよ！」などを出す
+                // いま鳴ってるBGMを止める（必要に応じてID追加してOK）
+                for (auto const& entity : m_coordinator->GetActiveEntities())
+                {
+                    if (!m_coordinator->HasComponent<SoundComponent>(entity)) continue;
+
+                    auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+                    const auto& id = sound.assetID;
+
+                    if (id == "BGM_TEST" || id == "BGM_TEST2")
+                    {
+                        sound.RequestStop();
+                    }
+                }
+
+                // 全回収BGMへ切り替え
+                ECS::EntityFactory::CreateLoopSoundEntity(
+                    m_coordinator,
+                    "BGM_TEST3", // ← 全回収後に流したいBGMのID
+                    0.5f
+                );
+
+                // 任意：全回収SEを鳴らしたいなら
+                // ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST2", 0.8f);
             }
         }
     }

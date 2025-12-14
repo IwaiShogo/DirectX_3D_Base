@@ -74,7 +74,7 @@ void CollectionSystem::Update(float deltaTime)
 				if (collectable.orderIndex == tracker.currentTargetOrder)
 				{
 					// ê≥âÅI
-					ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST3");
+					ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_GETTREJUR");
 				}
 				else
 				{
@@ -88,7 +88,7 @@ void CollectionSystem::Update(float deltaTime)
 			else
 			{
 				// èáèòÇ»ÇµÉÇÅ[Éh
-				ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST3");
+				ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_GETTREJUR");
 			}
 		}
 	}
