@@ -43,3 +43,5 @@ BTN_UNDER_GAMEOVER,Texture,Assets/Texture/btn_result_normal.png
 STAR_TEXT1,Texture,Assets/Texture/ui_evaluation_criteria1.png
 STAR_TEXT2,Texture,Assets/Texture/ui_evaluation_criteria2.png
 STAR_TEXT3,Texture,Assets/Texture/ui_evaluation_criteria3.png
+BG_INFO1,Texture,Assets/Texture/ui_scanline.png
+BG_INFO2,Texture,Assets/Texture/bg_info2.png
