@@ -53,7 +53,7 @@ void GameScene::Init()
 
 	ECS::EntityID gameController = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator.get());
 	auto& gameState = m_coordinator->GetComponent<GameStateComponent>(gameController);
-
+	
 	// 1. トップビュー用
 	ECS::EntityID scoutingBGM = ECS::EntityFactory::CreateLoopSoundEntity(
 		m_coordinator.get(),
