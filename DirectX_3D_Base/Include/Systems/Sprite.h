@@ -20,6 +20,8 @@ public:
 	static void SetUVScale(DirectX::XMFLOAT2 scale);
 	static void SetColor(DirectX::XMFLOAT4 color);
 	static void SetTexture(Texture* tex);
+	static void SetAngle(float  angle);
+	static void SetAspect(float aspect);
 
 	static void SetWorld(DirectX::XMFLOAT4X4 world);
 	static void SetView(DirectX::XMFLOAT4X4 view);
@@ -33,7 +35,7 @@ private:
 	{
 		std::shared_ptr<MeshBuffer> mesh;
 		DirectX::XMFLOAT4X4 matrix[3];
-		DirectX::XMFLOAT4 param[3];
+		DirectX::XMFLOAT4 param[4];
 		Texture* texture;
 		Shader* vs;
 		Shader* ps;

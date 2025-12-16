@@ -280,7 +280,7 @@ void ResultScene::Init()
             {
                 m_coordinator->CreateEntity(
                     TransformComponent(
-                        { SCREEN_WIDTH * 0.80f, SCREEN_HEIGHT * 0.25f, 0 }, // 右上寄り
+                        { SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.28f, 0 }, // 右上寄り
                         { 0,0,0 },
                         { 200,200, 1 }            // 大きめ
                     ),

@@ -62,22 +62,30 @@ void ResultControlSystem::Update(float deltaTime)
 
             float t = (m_timer - appearTime) * 5.0f;
 
-            // 最初は 5倍＆透明 → 1倍＆不透明へ
+            // 変数定義
             float scale = 1.0f;
             float alpha = 1.0f;
+
+            // ★修正: ラジアンへの変換係数 (3.14... / 180)
+            const float TO_RAD = 3.141592f / 180.0f;
+
 
             if (t < 1.0f)
             {
                 scale = 5.0f - 4.0f * t; // 5 -> 1
                 alpha = t;               // 0 -> 1
+        
             }
             else
             {
                 scale = 1.0f;
                 alpha = 1.0f;
+				
             }
 
-            trans.scale = { 200.0f * scale, 200.0f * scale, 1.0f };
+
+            trans.scale = { 150.0f * scale, 150.0f * scale, 1.0f };
+            trans.rotation.z = -30.0f * TO_RAD;
             ui.color.w = alpha;
         }
     }
