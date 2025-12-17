@@ -70,6 +70,7 @@ public:
 	void Update(float deltaTime) override;
 	void Draw() override;
 
+
 	/**
 	 * @brief Coordinatorインスタンスへのポインタを取得する静的アクセサ
 	 * @return ECS::Coordinator* - 現在アクティブなシーンのCoordinator
@@ -90,6 +91,7 @@ private:
 	// エンティティ管理
 	std::vector<ECS::EntityID> m_listUIEntities;   // 一覧画面のボタン等
 	std::vector<ECS::EntityID> m_detailUIEntities; // 詳細画面の表示物
+
 };
 
 #endif // !___STAGE_SELECT_SCENE_H___

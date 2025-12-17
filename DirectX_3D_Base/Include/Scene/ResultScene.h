@@ -47,10 +47,15 @@ public:
 
     // GameControlSystem から ResultData を受け取るための窓口
     static void SetResultData(const ResultData& data) { s_resultData = data; }
+    // 追加：StageSelect 等から読む用
+    static const ResultData& GetResultData() { return s_resultData; }
 
     // 互換用（必要なら使う）
     static bool isClear;
     static int  finalItenCount;
+
+
+
 
 private:
     std::shared_ptr<ECS::Coordinator> m_coordinator;
