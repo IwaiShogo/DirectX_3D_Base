@@ -17,40 +17,48 @@
  * @note	（省略可）
  *********************************************************************/
 
+
+
 #ifndef ___EFFECT_COMPONENT_H___
 #define ___EFFECT_COMPONENT_H___
 
 #include <string>
 #include <DirectXMath.h>
-#include <Effekseer/Effekseer.h> // Handle型のために必要
+#include <Effekseer/Effekseer.h>
 
 struct EffectComponent
 {
-    std::string assetID;            // 再生するエフェクトのアセットID
-    Effekseer::Handle handle = 0;   // 再生中のハンドル (0なら未再生/終了)
+	std::string assetID;            // 再生するエフェクトのアセットID
+	Effekseer::Handle handle = -1;  // ★未再生/終了は -1 に統一
 
-    bool playOnAwake;               // 生成時に再生するか
-    bool isLooping;                 // ループ再生するか（Effekseerデータ側で設定されている場合はそれに従うが、再トリガー用）
-    DirectX::XMFLOAT3 offset;       // エンティティからの位置オフセット
-    float scale;                    // スケール倍率
+	bool playOnAwake = true;        // 生成時に再生するか
+	bool isLooping = false;         // ループするか
+	DirectX::XMFLOAT3 offset = { 0,0,0 };
+	float scale = 1.0f;
 
-    // 制御フラグ
-    bool requestPlay = false;
-    bool requestStop = false;
+	// 制御フラグ
+	bool requestPlay = false;
+	bool requestStop = false;
 
-    EffectComponent(std::string id = "", bool loop = false, bool autoPlay = true, DirectX::XMFLOAT3 off = { 0,0,0 }, float scl = 1.0f)
-        : assetID(id)
-        , handle(0)
-        , playOnAwake(autoPlay)
-        , isLooping(loop)
-        , offset(off)
-        , scale(scl)
-    {
-        if (autoPlay) requestPlay = true;
-    }
+	EffectComponent(
+		std::string id = "",
+		bool loop = false,
+		bool autoPlay = true,
+		DirectX::XMFLOAT3 off = { 0,0,0 },
+		float scl = 1.0f
+	)
+		: assetID(std::move(id))
+		, handle(-1)
+		, playOnAwake(autoPlay)
+		, isLooping(loop)
+		, offset(off)
+		, scale(scl)
+	{
+		if (autoPlay) requestPlay = true;
+	}
 
-    void Play() { requestPlay = true; }
-    void Stop() { requestStop = true; }
+	void Play() { requestPlay = true; }
+	void Stop() { requestStop = true; }
 };
 
 #include "ECS/ComponentRegistry.h"

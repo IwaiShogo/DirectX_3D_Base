@@ -1,6 +1,6 @@
-/*****************************************************************//**
+ï»¿/*****************************************************************//**
  * @file	EffectSystem.h
- * @brief	ƒGƒtƒFƒNƒg
+ * @brief	ã‚¨ãƒ•ã‚§ã‚¯ãƒˆ
  * 
  * @details	
  * 
@@ -8,35 +8,48 @@
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  * 
- * @date	2025/12/07	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁF
+ * @date	2025/12/07	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼š
  * 
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
+ * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- XXï¼š
  * 
- * @note	iÈ—ª‰Âj
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
 #ifndef ___EFFECT_SYSTEM_H___
 #define ___EFFECT_SYSTEM_H___
 
 #include "ECS/ECS.h"
+
 #include <Effekseer/Effekseer.h>
 #include <Effekseer/EffekseerRendererDX11.h>
+#include <DirectXMath.h>
 
 class EffectSystem : public ECS::System
 {
 public:
-    void Uninit(); // I—¹ˆ—
+	void Uninit();
 
-    void Init(ECS::Coordinator* coordinator) override;   // Effekseer‰Šú‰» & AssetManager‚Ö‚ÌƒZƒbƒg
-    void Update(float deltaTime) override; // ˆÊ’u“¯Šú‚ÆÄ¶ŠÇ—
-    void Render(); // •`‰æÀs
+	void Init(ECS::Coordinator* coordinator) override;
+	void Update(float deltaTime) override;
+	void Render();
+
+	
+	// â˜…è¿½åŠ ï¼šã‚¹ã‚¯ãƒªãƒ¼ãƒ³åº§æ¨™ï¼ˆUIåº§æ¨™ï¼‰ç”¨ã®æ­£å°„å½±ã‚«ãƒ¡ãƒ©ã‚’ä¸Šæ›¸ã
+	// å·¦ä¸Š(0,0) ã€œ å³ä¸‹(screenW, screenH) / Yä¸‹å‘ã
+	void SetScreenSpaceCamera(float screenW, float screenH);
+	void ClearOverrideCamera();
 
 private:
-    ECS::Coordinator* m_coordinator = nullptr;
-    EffekseerRenderer::RendererRef m_renderer;
-    Effekseer::ManagerRef m_manager;
+	ECS::Coordinator* m_coordinator = nullptr;
+	EffekseerRenderer::RendererRef m_renderer;
+	Effekseer::ManagerRef m_manager;
+
+	// â˜…è¿½åŠ ï¼šã‚«ãƒ¡ãƒ©ä¸Šæ›¸ã
+	bool m_hasOverride = false;
+	DirectX::XMFLOAT4X4 m_overrideView{};
+	DirectX::XMFLOAT4X4 m_overrideProj{};
 };
 
 #endif // !___EFFECT_SYSTEM_H___

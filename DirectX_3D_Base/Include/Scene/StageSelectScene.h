@@ -1,96 +1,140 @@
-/*****************************************************************//**
+ï»¿/*****************************************************************//**
  * @file	StageSelectScene.h
- * @brief	ƒXƒe[ƒWƒZƒŒƒNƒg‚ÌƒƒCƒ“ƒƒWƒbƒN‚ğŠÜ‚ŞƒV[ƒ“ƒNƒ‰ƒX
- * 
- * @details	
- * 
- * ------------------------------------------------------------
- * @author	Iwai Shogo
- * ------------------------------------------------------------
- * 
- * @date	2025/11/13	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁF
- * 
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
- * 
- * @note	iÈ—ª‰Âj
+ * @brief	ã‚¹ãƒ†ãƒ¼ã‚¸ã‚»ãƒ¬ã‚¯ãƒˆ
  *********************************************************************/
 
 #ifndef ___STAGE_SELECT_SCENE_H___
 #define ___STAGE_SELECT_SCENE_H___
 
-// ===== ƒCƒ“ƒNƒ‹[ƒh =====
 #include "Scene/Scene.h"
 #include "ECS/Coordinator.h"
 
+#include <DirectXMath.h>   // â˜…DirectX::XMFLOAT2 ç”¨
+
+
+#include <functional>
 #include <memory>
 #include <map>
+#include <vector>
+#include <string>
+#include <random>
 
-// ƒXƒe[ƒWî•ñ‚Ì\‘¢‘Ì
 struct StageData {
 	std::string name;
-	std::string imageID;      // ƒXƒe[ƒWƒCƒ[ƒW‰æ‘œ‚ÌID
-	float timeLimitStar;      // –Ú•Wƒ^ƒCƒ€
-
-	std::vector<std::string> items; // ƒAƒCƒeƒ€IDƒŠƒXƒg
+	std::string imageID;
+	float timeLimitStar;
+	std::vector<std::string> items;
 
 	struct GimmickInfo {
 		std::string type;
 		int count;
 	};
-	std::vector<GimmickInfo> gimmicks; // ƒMƒ~ƒbƒNî•ñ
+	std::vector<GimmickInfo> gimmicks;
 };
 
-/**
- * @class	StageSelectScene
- * @brief	ƒXƒe[ƒWƒZƒŒƒNƒgƒƒWƒbƒN‚ÆECS‚ğŠÇ—‚·‚éƒV[ƒ“
- */
-class StageSelectScene
-	: public Scene
+class StageSelectScene : public Scene
 {
 private:
-	// ECS‚Ì’†S‚Æ‚È‚éƒR[ƒfƒBƒl[ƒ^[ (ƒV[ƒ“‚ªECS‚Ìƒ‰ƒCƒtƒTƒCƒNƒ‹‚ğŠÇ—)
 	std::shared_ptr<ECS::Coordinator> m_coordinator;
-
-	// ECS‚ÌƒOƒ[ƒoƒ‹ƒAƒNƒZƒX—p (System‚È‚Ç‚ªECS‘€ì‚ğs‚¤‚½‚ß‚Ì‘‹Œû)
 	static ECS::Coordinator* s_coordinator;
 
 public:
-	// ƒRƒ“ƒXƒgƒ‰ƒNƒ^‚ÆƒfƒXƒgƒ‰ƒNƒ^iScene‚ğŒp³‚µ‚Ä‚¢‚é‚½‚ß‰¼‘zƒfƒXƒgƒ‰ƒNƒ^‚ÍScene‘¤‚Å’è‹`Ï‚İ‚Æ‰¼’èj
-	StageSelectScene()
-		: m_coordinator(nullptr)
-	{
-	}
-	~StageSelectScene() override {} // ‰¼‘zƒfƒXƒgƒ‰ƒNƒ^‚ğÀ‘•
+	StageSelectScene() : m_coordinator(nullptr) {}
+	~StageSelectScene() override {}
 
-	// SceneƒCƒ“ƒ^[ƒtƒF[ƒX‚ÌÀ‘•
 	void Init() override;
 	void Uninit() override;
 	void Update(float deltaTime) override;
 	void Draw() override;
 
-
-	/**
-	 * @brief CoordinatorƒCƒ“ƒXƒ^ƒ“ƒX‚Ö‚Ìƒ|ƒCƒ“ƒ^‚ğæ“¾‚·‚éÃ“IƒAƒNƒZƒT
-	 * @return ECS::Coordinator* - Œ»İƒAƒNƒeƒBƒu‚ÈƒV[ƒ“‚ÌCoordinator
-	 */
 	static ECS::Coordinator* GetCoordinator() { return s_coordinator; }
 
 private:
-	// JSONƒf[ƒ^‚Ì“Ç‚İ‚İ
+	// ãƒ‡ãƒ¼ã‚¿
 	void LoadStageData();
-	// UI‚Ì•\¦Ø‚è‘Ö‚¦
-	void SwitchState(bool toDetail);
-	void CreateDetailUI();
-
-	// ƒf[ƒ^
 	std::map<std::string, StageData> m_stageDataMap;
 	std::string m_selectedStageID;
 
-	// ƒGƒ“ƒeƒBƒeƒBŠÇ—
-	std::vector<ECS::EntityID> m_listUIEntities;   // ˆê——‰æ–Ê‚Ìƒ{ƒ^ƒ““™
-	std::vector<ECS::EntityID> m_detailUIEntities; // Ú×‰æ–Ê‚Ì•\¦•¨
+	// UI
+	void SwitchState(bool toDetail);
+	void SetUIVisible(ECS::EntityID id, bool visible);
+
+	std::vector<ECS::EntityID> m_listUIEntities;
+	std::vector<ECS::EntityID> m_detailUIEntities;
+
+	// ã‚«ãƒ¼ã‚½ãƒ«ã¯å¸¸é§ï¼ˆæ¶ˆã•ãªã„ï¼‰
+	ECS::EntityID m_cursorEntity = (ECS::EntityID)-1;
+
+	// ===== Fade =====
+	enum class FadeState { None, FadingOut, FadingIn };
+
+	ECS::EntityID m_fadeEntity = (ECS::EntityID)-1;
+	FadeState m_fadeState = FadeState::None;
+
+	float m_fadeTimer = 0.0f;
+	float m_fadeDuration = 1.0f;
+	float m_fadeAlpha = 0.0f;
+
+	bool m_inputLocked = false;
+	std::function<void()> m_onBlack = nullptr;
+	bool m_autoFadeInAfterBlack = true;
+
+	void CreateFadeOverlay();
+	void StartFadeIn(float durationSec = 1.0f);
+	void StartFadeOut(float durationSec, std::function<void()> onBlack, bool autoFadeIn);
+	void UpdateFade(float dt);
+	void ApplyFadeAlpha(float a);
+
+	void  KillAllShootingStars();
+
+	// ===== Shooting Starï¼ˆUI_STAGE_MAPå†…ã§ãŸã¾ã«ï¼‰=====
+	ECS::EntityID m_stageMapEntity = (ECS::EntityID)-1;
+
+	// ===== Shooting Star instance =====
+	struct ShootingStarInstance
+	{
+		ECS::EntityID star = (ECS::EntityID)-1;   // æœ¬ä½“
+
+		// è»Œè·¡ï¼ˆé‡ã­ã‚‹ï¼‰
+		ECS::EntityID trails[3] = {
+			(ECS::EntityID)-1,
+			(ECS::EntityID)-1,
+			(ECS::EntityID)-1
+		};
+
+		DirectX::XMFLOAT2 velocity = { -320.0f, 110.0f }; // å³ä¸Šâ†’å·¦ä¸‹ï¼ˆâ€»åº§æ¨™ç³»ã«ã‚ˆã‚Šç¬¦å·ã¯èª¿æ•´ï¼‰
+		float remaining = 0.0f; // æ®‹ã‚Šæ™‚é–“
+		float life = 0.0f;      // ç”Ÿæˆæ™‚å¯¿å‘½ï¼ˆé€²è¡Œåº¦è¨ˆç®—ç”¨ï¼‰
+	};
+
+	std::vector<ShootingStarInstance> m_activeShootingStars;
+
+	void UpdateActiveShootingStars(float dt);
+
+
+	// â˜…ãƒ‡ãƒãƒƒã‚°ç”¨ï¼šãƒãƒƒãƒ—ä¸Šã«ç¢ºå®Ÿã«è¦‹ãˆã‚‹ã‚¨ãƒ•ã‚§ã‚¯ãƒˆï¼ˆTREASURE_GLOWï¼‰ã‚’å¸¸é§è¡¨ç¤ºã—ã¦åˆ‡ã‚Šåˆ†ã‘
+	ECS::EntityID m_debugStarEntity = (ECS::EntityID)-1;
+	bool m_debugShowGlowOnMap = true;
+
+	bool m_isDetailMode = false;
+
+	// â˜…å‡ºç¾é–“éš”ï¼ˆç§’ï¼‰ã“ã“ã‚’å¤‰ãˆã‚‹ã¨é »åº¦ãŒå¤‰ã‚ã‚‹
+	float m_shootingStarIntervalMin = 3.0f; // ä¾‹ï¼šé »ç¹=1.0fã€ãƒ¬ã‚¢=3.0f
+	float m_shootingStarIntervalMax = 8.0f; // ä¾‹ï¼šé »ç¹=2.5fã€ãƒ¬ã‚¢=8.0f
+
+	float m_shootingStarTimer = 0.0f;
+	float m_nextShootingStarWait = 0.0f; // â˜…0ã§é–‹å§‹ã—ã€æœ€åˆã®æŠ½é¸ã§æ±ºã‚ã‚‹
+	bool  m_enableShootingStar = true;
+
+	// â˜…è¿½åŠ ï¼šè©³ç´°ã«å…¥ã£ãŸã‚ã¨ã€ãƒ•ã‚§ãƒ¼ãƒ‰ãŒçµ‚ã‚ã£ãŸç¬é–“ã«1å›ã ã‘å‡ºã™
+	bool  m_spawnStarOnEnterDetail = false;
+
+	std::mt19937 m_rng;
+
+	void UpdateShootingStar(float dt);
+	void SpawnShootingStar();
+	void EnsureDebugEffectOnMap(); // â˜…è¿½åŠ ï¼šåˆ‡ã‚Šåˆ†ã‘ç”¨ã«GLOWã‚’å¸¸é§
+	bool GetUIRect(ECS::EntityID id, float& left, float& top, float& right, float& bottom) const;
 
 };
 
