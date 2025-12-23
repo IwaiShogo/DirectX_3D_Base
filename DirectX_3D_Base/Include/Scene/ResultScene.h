@@ -60,4 +60,25 @@ public:
 private:
     std::shared_ptr<ECS::Coordinator> m_coordinator;
     static ResultData                 s_resultData;
+
+    // 織田：ボタンエンティティのための変数
+private:
+
+    struct ButtonPair {
+        ECS::EntityID textEntity; // ボタンの文字
+        ECS::EntityID frameEntity; // 背景の枠
+    };
+
+
+    std::vector<ButtonPair> m_buttons;
+
+    float m_elapsedTime = 0.0f; // アニメ―ジョン経過時間
+
+    const float BUTTON_NORMAL_SCALE = 1.0f; // 通常時の倍率
+    const float PULSE_CENTER_SCALE  = 1.15f; // 元気な時の倍率
+    const float PULSE_AMPLITUDE     = 0.05f; // 揺れ幅
+    const float PULSE_SPEED         = 10.0f; // 揺れの速さ
+    const float LERP_SPEED          = 10.0f; // 変化の追従速度
+
+
 };

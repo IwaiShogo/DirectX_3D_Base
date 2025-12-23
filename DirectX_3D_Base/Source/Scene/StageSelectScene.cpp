@@ -305,8 +305,7 @@ void StageSelectScene::Draw()
 	// ★ここに DebugDrawSystem の描画を入れる
 	if (auto dbg = ECSInitializer::GetSystem<DebugDrawSystem>())
 	{
-		// DebugDrawSystem側の関数名に合わせて呼ぶ（例：dbg->Render(); / dbg->Draw();）
-		dbg->Render();
+		
 	}
 #endif
 
