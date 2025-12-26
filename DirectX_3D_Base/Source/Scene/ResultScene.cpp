@@ -53,7 +53,7 @@ void ResultScene::Init()
 
     bool isClear = s_resultData.isCleared;
 
-    if (isClear)
+    if (isClear==false)
     {
         // 1) 背景
         m_coordinator->CreateEntity(
@@ -286,6 +286,39 @@ void ResultScene::Uninit()
 void ResultScene::Update(float deltaTime)
 {
     m_coordinator->UpdateSystems(deltaTime);
+
+    // 織田
+    m_elapsedTime += deltaTime;
+
+    for (const auto& pair : m_buttons)
+    {
+        auto& button = m_coordinator->GetComponent<UIButtonComponent>(pair.textEntity);
+
+        float targetScale = BUTTON_NORMAL_SCALE;
+
+        if (button.state == ButtonState::Hover)
+        {
+            targetScale = PULSE_CENTER_SCALE + PULSE_AMPLITUDE * std::sin(m_elapsedTime * PULSE_SPEED);
+
+
+        }
+        auto UpdateEntityScale = [&](EntityID entity, float baseW, float baseH)
+            {
+                auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
+
+                float& currentRatio = transform.scale.z;
+
+                currentRatio += (targetScale - currentRatio) * LERP_SPEED * deltaTime;
+
+                transform.scale.x = baseW * currentRatio;
+                transform.scale.y = baseH * currentRatio;
+
+            };
+
+        UpdateEntityScale(pair.textEntity, 210.0f, 60.0f);
+        UpdateEntityScale(pair.frameEntity, 260.0f, 90.0f);
+    }
+
 }
 
 void ResultScene::Draw()
@@ -344,6 +377,10 @@ void ResultScene::CreateTimeDisplay(float time, DirectX::XMFLOAT2 pos)
 
 void ResultScene::CreateButtons()
 {
+    m_buttons.clear(); // 織田：ペアリストをクリア
+
+    m_elapsedTime = 0.0f; // 織田：初期化
+
     const bool isClear = s_resultData.isCleared;
 
     const float y = SCREEN_HEIGHT * 0.93f;
@@ -366,16 +403,19 @@ void ResultScene::CreateButtons()
         {
             const float x = firstX + index * (frameW + spacing);
 
-            m_coordinator->CreateEntity(
+            // 織田：frameEntityに背景フレームの情報を入れる
+            EntityID frameEntity = m_coordinator->CreateEntity(
                 TransformComponent({ x, y, 0.0f }, { 0,0,0 }, { frameW, frameH, 1.0f }),
                 UIImageComponent(frameTexId, 1.5f, true, { 1,1,1,1 })
             );
-
-            m_coordinator->CreateEntity(
+            // 織田：textEntityにボタンテキストの情報を入れる
+            EntityID textEntity = m_coordinator->CreateEntity(
                 TransformComponent({ x, y, 0.0f }, { 0,0,0 }, { textW, textH, 1.0f }),
                 UIImageComponent(textTex, 2.0f, true, { 1,1,1,1 }),
                 UIButtonComponent(ButtonState::Normal, true, onClick)
             );
+
+            m_buttons.push_back({ textEntity, frameEntity });// 織田：ペアにしてリストに保存
         };
 
     createResultButton(
