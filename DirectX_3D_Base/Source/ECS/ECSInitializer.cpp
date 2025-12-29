@@ -1,30 +1,26 @@
-ï»¿/*****************************************************************//**
+/*****************************************************************//**
  * @file	ECSInitializer.cpp
- * @brief	ECSVXeSÌ‚ÌWñ‚µAV[Init()Ó–ğ•ª—é‚½ß‚Ìƒwp[NXÌ
- *
- * @details
- *
+ * @brief	ECSƒVƒXƒeƒ€‘S‘Ì‚Ì‰Šú‰»‚ğW–ñ‚µAƒV[ƒ“‚ÌInit()‚©‚çÓ–±‚ğ•ª—£‚·‚é‚½‚ß‚Ìƒwƒ‹ƒp[ƒNƒ‰ƒX‚ÌÀ‘•
+ * 
+ * @details	
+ * 
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
- *
- * @date	2025/10/31	ì¬
- * 			Æ“eF	- Ç‰F
- *
- * @update	2025/11/08	ÅIXV
- * 			Æ“eF	- Ç‰FxAIÌ’Ç‰
- *
- * @note	iÈ—Âj
+ * 
+ * @date	2025/10/31	‰‰ñì¬“ú
+ * 			ì‹Æ“à—eF	- ’Ç‰ÁF
+ * 
+ * @update	2025/11/08	ÅIXV“ú
+ * 			ì‹Æ“à—eF	- ’Ç‰ÁFŒx”õˆõAI‚Ì’Ç‰Á
+ * 
+ * @note	iÈ—ª‰Âj
  *********************************************************************/
 
- // ===== CN[h =====
+// ===== ƒCƒ“ƒNƒ‹[ƒh =====
 #include "ECS/ECSInitializer.h"
 #include "ECS/AllComponents.h"
 #include "ECS/AllSystems.h"
-
-// Screen transition (card-tilt fade)
-#include "ECS/Components/Core/ScreenTransitionComponent.h"
-#include "ECS/Systems/Core/ScreenTransitionSystem.h"
 
 #include "ECS/Systems/UI/UIInputSystem.h"
 #include "ECS/Components/UI/UIButtonComponent.h"
@@ -35,47 +31,47 @@
 
 using namespace ECS;
 
-// Ã“Io[Ï s_systems ÌÌ‚`AmÛ‚
+// Ã“Iƒƒ“ƒo[•Ï” s_systems ‚ÌÀ‘Ì‚ğ’è‹`‚µAƒƒ‚ƒŠ‚ğŠm•Û‚·‚é
 std::unordered_map<std::type_index, std::shared_ptr<ECS::System>> ECS::ECSInitializer::s_systems;
 
 /**
  * [void - RegisterComponents]
- * @brief	SÄ‚ÌƒR|[lgCoordinatorÉ“o^B
- *
- * @param	[in] coordinator
+ * @brief	‘S‚Ä‚ÌƒRƒ“ƒ|[ƒlƒ“ƒg‚ğCoordinator‚É“o˜^‚·‚éB
+ * 
+ * @param	[in] coordinator 
  */
 void ECSInitializer::RegisterComponents(Coordinator* coordinator)
 {
-    // R|[lgÌ“o^iÅ“o^j
+    // ƒRƒ“ƒ|[ƒlƒ“ƒg‚Ì“o˜^i©“®‚Å“o˜^‚³‚ê‚éj
     for (const auto& registerFn : GetComponentRegisterers())
     {
         registerFn(coordinator);
     }
 
-    std::cout << "ECSInitializer: All Components registered." << std::endl;
+	std::cout << "ECSInitializer: All Components registered." << std::endl;
 }
 
 void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
 {
     // ============================================================
-    // VXeÌ“o^ÆƒVOl`Ìİ’iç‰ºÉ’Ç‰j
-    // o^ÉƒVXesB
+    // ƒVƒXƒeƒ€‚Ì“o˜^‚ÆƒVƒOƒlƒ`ƒƒ‚Ìİ’èi‚±‚±‚©‚ç‰º‚É’Ç‰Áj
+    // ¦“o˜^‡‚ÉƒVƒXƒeƒ€‚ªÀs‚³‚ê‚éB
     // ============================================================
 
     // ------------------------------------------------------------
-    // 1. UpdateiXVj
+    // 1. UpdateiXVˆ—j
     // ------------------------------------------------------------
 
     // @system  PlayerControlSystem
-    // @brief   L[ÍARg[[
+    // @brief   ƒL[“ü—ÍAƒRƒ“ƒgƒ[ƒ‰[“ü—Í
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  PlayerControlSystem,
-        /* Components   */  PlayerControlComponent, TransformComponent, RigidBodyComponent, AnimationComponent
+        /* Components   */  PlayerControlComponent, TransformComponent, RigidBodyComponent,AnimationComponent
     );
 
     // @system  PhysicsSystem
-    // @brief   vZiÊ’uÌXVj
+    // @brief   •¨—ŒvZiˆÊ’u‚ÌXVj
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  PhysicsSystem,
@@ -83,7 +79,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  CollectionSystem
-    // @brief   ACeWbN
+    // @brief   ƒAƒCƒeƒ€‰ñûƒƒWƒbƒN
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  CollectionSystem,
@@ -91,7 +87,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  CollisionSystem
-    // @brief   Õ“ËŒoÆ‰iÊ’uÌCj
+    // @brief   Õ“ËŒŸo‚Æ‰“šiˆÊ’u‚ÌC³j
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  CollisionSystem,
@@ -99,7 +95,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  GameControlSystem
-    // @brief   Q[Xe[g
+    // @brief   ƒQ[ƒ€ƒXƒe[ƒg
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  GameControlSystem,
@@ -107,7 +103,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  CameraControlSystem
-    // @brief   Jir[EvWFNVsÌXVj
+    // @brief   ƒJƒƒ‰§Œäiƒrƒ…[EƒvƒƒWƒFƒNƒVƒ‡ƒ“s—ñ‚ÌXVj
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  CameraControlSystem,
@@ -115,7 +111,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  BasicCameraSystem
-    // @brief   Å’J
+    // @brief   ŒÅ’èƒJƒƒ‰
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  BasicCameraSystem,
@@ -124,7 +120,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
 
 #ifdef _DEBUG
     // @system  DebugDrawSystem
-    // @brief   fobO`VXe
+    // @brief   ƒfƒoƒbƒO•`‰æƒVƒXƒeƒ€
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  DebugDrawSystem,
@@ -133,23 +129,23 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
 #endif
 
     // @system  GuardAISystem
-    // @brief   xAI
+    // @brief   Œx”õˆõAI
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  GuardAISystem,
         /* Components   */  GuardComponent, TransformComponent, RigidBodyComponent
-    );
+	);
 
     // @system UIInoutSystem
-    // @brief  }EXJ[\Ì”
+    // @brief  ƒ}ƒEƒXƒJ[ƒ\ƒ‹‚Ì”»’è
     REGISTER_SYSTEM_AND_INIT(
         coordinator,
         UIInputSystem,
         UIButtonComponent, TransformComponent
     );
-
+    
     // @system  CursorSystem
-    // @brief   J[\UI
+    // @brief   ƒJ[ƒ\ƒ‹UI
     REGISTER_SYSTEM_AND_INIT(
         coordinator,
         CursorSystem,
@@ -157,7 +153,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  AudioSystem
-    // @brief   Ä
+    // @brief   ‰¹ºÄ¶
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  AudioSystem,
@@ -165,7 +161,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  AnimationSystem
-    // @brief   Aj[VXV
+    // @brief   ƒAƒjƒ[ƒVƒ‡ƒ“XV
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  AnimationSystem,
@@ -173,7 +169,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  LifeTimeSystem
-    // @brief   
+    // @brief   ¶‘¶ŠÔ
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  LifeTimeSystem,
@@ -190,11 +186,11 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     REGISTER_SYSTEM_AND_INIT(
         coordinator,
         ResultControlSystem,
-        TagComponent, UIButtonComponent
+        TagComponent,UIButtonComponent
 
     );
 
-    // 2. VXeo^ÆƒVOl`İ’
+    // 2. ƒVƒXƒeƒ€“o˜^‚ÆƒVƒOƒlƒ`ƒƒİ’è
     REGISTER_SYSTEM_AND_INIT(
         coordinator,
         FloatingSystem,
@@ -202,7 +198,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  EnemySpawnSystem
-    // @brief   x
+    // @brief   ¶¬’x‰„
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  EnemySpawnSystem,
@@ -210,28 +206,19 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  EffectSystem
-    // @brief   GtFNg
+    // @brief   ƒGƒtƒFƒNƒg
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  EffectSystem,
         /* Components   */  EffectComponent, TransformComponent
     );
 
-    // @system  ScreenTransitionSystem
-    // @brief   ç”»é¢é·ç§»ï¼ˆã‚«ãƒ¼ãƒ‰æ–œã‚ãƒ•ã‚§ãƒ¼ãƒ‰ï¼‰: Transform + UIImage + ScreenTransitionComponent ã‚’æ›´æ–°
-    REGISTER_SYSTEM_AND_INIT(
-        /* Coordinator  */  coordinator,
-        /* System       */  ScreenTransitionSystem,
-        /* Components   */  TransformComponent, UIImageComponent, ScreenTransitionComponent
-    );
-
-
     // ------------------------------------------------------------
-    // 2. Drawi`æˆj
+    // 2. Drawi•`‰æˆ—j
     // ------------------------------------------------------------
 
     // @system  FlickerSystem
-    // @brief   _
+    // @brief   “_–Å
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  FlickerSystem,
@@ -239,15 +226,15 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  RenderSystem
-    // @brief   Jİ’AfobOObh`æ•EntitiesÌ•`
+    // @brief   ƒJƒƒ‰İ’è‚âAƒfƒoƒbƒOƒOƒŠƒbƒh•`‰æ•Entities‚Ì•`‰æ
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  RenderSystem,
-        /* Components   */  RenderComponent, TransformComponent
+        /* Components   */  RenderComponent, TransformComponent 
     );
 
     // @system  UIRenderSystem
-    // @brief   UIÌ•`
+    // @brief   UI‚Ì•`‰æ
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  UIRenderSystem,
@@ -255,11 +242,11 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // ------------------------------------------------------------
-    // 3. Ì‘UpdatesÈ‚VXe
+    // 3. ‚»‚Ì‘¼Update‚ªs‚í‚ê‚È‚¢ƒVƒXƒeƒ€
     // ------------------------------------------------------------
 
     // @system  MapGenerationSystem
-    // @brief   _}bvğ¶
+    // @brief   ƒ‰ƒ“ƒ_ƒ€ƒ}ƒbƒv‚ğ¶¬
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  MapGenerationSystem,
@@ -271,29 +258,29 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
 
 /**
  * [void - InitECS]
- * @brief	CoordinatorSystemÖ˜AtGg|CgB
- *
- * @param	[in] coordinator
+ * @brief	Coordinator‚ÆSystem‚ğŠÖ˜A•t‚¯‚éƒGƒ“ƒgƒŠƒ|ƒCƒ“ƒgB
+ * 
+ * @param	[in] coordinator 
  */
 void ECSInitializer::InitECS(std::shared_ptr<Coordinator>& coordinator)
 {
-    // CoordinatorÌ|C^æ“¾
-    Coordinator* rawCoordinator = coordinator.get();
+	// Coordinator‚Ì¶ƒ|ƒCƒ“ƒ^‚ğæ“¾
+	Coordinator* rawCoordinator = coordinator.get();
 
-    // 1. CoordinatorÌ‚Ì (ECSRAÌƒf[^\Ì)
-    rawCoordinator->Init();
+	// 1. Coordinator©‘Ì‚Ì‰Šú‰» (ECSƒRƒA“à•”‚Ìƒf[ƒ^\‘¢‚Ì‰Šú‰»)
+	rawCoordinator->Init();
 
-    // 2. R|[lgÌ“o^
-    RegisterComponents(rawCoordinator);
+	// 2. ƒRƒ“ƒ|[ƒlƒ“ƒg‚Ì“o˜^
+	RegisterComponents(rawCoordinator);
 
-    // 3. VXeÌ“o^ÆƒVOl`Ìİ’ (Ã“I}bvÉŠi[)
-    RegisterSystemsAndSetSignatures(rawCoordinator);
+	// 3. ƒVƒXƒeƒ€‚Ì“o˜^‚ÆƒVƒOƒlƒ`ƒƒ‚Ìİ’è (Ã“Iƒ}ƒbƒv‚ÉŠi”[‚³‚ê‚é)
+	RegisterSystemsAndSetSignatures(rawCoordinator);
 }
 
 /**
- * @brief ECSÉŠÖ˜ASÄ‚ÌÃ“I\[XN[AbvB
+ * @brief ECS‚ÉŠÖ˜A‚·‚é‘S‚Ä‚ÌÃ“IƒŠƒ\[ƒX‚ğƒNƒŠ[ƒ“ƒAƒbƒv‚·‚éB
  */
 void ECSInitializer::UninitECS()
 {
-    s_systems.clear(); // SÄ‚ÌƒVXeSharedPtr
+	s_systems.clear(); // ‘S‚Ä‚ÌƒVƒXƒeƒ€SharedPtr‚ğ‰ğ•ú
 }

@@ -49,8 +49,6 @@
 
 #include "ECS/Components/Core/PlayerControlComponent.h"
 
-#include "ECS/Components/Core/ScreenTransitionComponent.h"
-
 // @folder		Rendering
 // @component	•`‰æ
 #include "ECS/Components/Rendering/RenderComponent.h"

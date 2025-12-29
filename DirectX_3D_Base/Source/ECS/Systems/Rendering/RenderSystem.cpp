@@ -170,20 +170,7 @@ void RenderSystem::DrawEntityInternal(ECS::EntityID entity, const DirectX::XMFLO
 }
 
 /**
- * @brief 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- ‚ÆRenderComponent‚ğ‚Â‘S‚Ä‚ÌEntity‚ğ•`‰æ‚·‚é
+ * @brief TransformComponent‚ÆRenderComponent‚ğ‚Â‘S‚Ä‚ÌEntity‚ğ•`‰æ‚·‚é
  */
 void RenderSystem::DrawEntities()
 {

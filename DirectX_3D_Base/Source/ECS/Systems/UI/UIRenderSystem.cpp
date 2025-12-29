@@ -31,10 +31,6 @@ using namespace DirectX;
  * [void - Render]
  * @brief 描画処理。Depthに基づきソートしてから描画します。
  */
- /**
-  * [void - Render]
-  * @brief 描画処理。Depthに基づきソートしてから描画します。
-  */
 void UIRenderSystem::Render(bool drawBackground)
 {
 	if (m_entities.empty())

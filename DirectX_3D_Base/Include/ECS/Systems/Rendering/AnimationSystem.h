@@ -1,38 +1,47 @@
 /*****************************************************************//**
- * @file    AnimationSystem.h
- * @brief   Updates animation playback for entities that have AnimationComponent.
- *
- * Notes:
- * - Advances Model::Step(deltaTime)
- * - Applies node-animation (non-skeletal) transform results to TransformComponent
- *   with root-motion delta so that "start position" can be controlled externally.
+ * @file	AnimationSystem.h
+ * @brief	AnimationComponentを持つEnitityのアニメーションを更新するSystem。
+ * 
+ * @details	
+ * Model::Stepを呼び出し、アニメーション時間の進行とボーン行列の計算を行う。
+ * 
+ * ------------------------------------------------------------
+ * @author	Iwai Shogo
+ * ------------------------------------------------------------
+ * 
+ * @date	2025/11/23	初回作成日
+ * 			作業内容：	- 追加：AnimationSystemのヘッダーファイルを作成。
+ * 
+ * @update	2025/xx/xx	最終更新日
+ * 			作業内容：	- XX：
+ * 
+ * @note	（省略可）
  *********************************************************************/
 
 #ifndef ___ANIMATION_SYSTEM_H___
 #define ___ANIMATION_SYSTEM_H___
 
+// ===== インクルード =====
 #include "ECS/ECS.h"
 #include <DirectXMath.h>
-#include <unordered_map>
-#include <unordered_set>
 
-class AnimationSystem : public ECS::System
+/**
+ * @class	AnimationSystem
+ * @brief	アニメーションを更新するシステム
+ */
+class AnimationSystem
+	: public ECS::System
 {
 private:
-    ECS::Coordinator* m_coordinator = nullptr;
-
-    // For node-animation (models without bones): apply translation as delta (root motion).
-    std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_prevNodeAnimPos;
-    std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_prevNodeAnimRot;
-    std::unordered_set<ECS::EntityID> m_resetNodeAnimPos;
+	ECS::Coordinator* m_coordinator = nullptr;
 
 public:
-    void Init(ECS::Coordinator* coordinator) override
-    {
-        m_coordinator = coordinator;
-    }
+	void Init(ECS::Coordinator* coordinator) override
+	{
+		m_coordinator = coordinator;
+	}
 
-    void Update(float deltaTime) override;
+	void Update(float deltaTime) override;
 };
 
 #endif // !___ANIMATION_SYSTEM_H___
