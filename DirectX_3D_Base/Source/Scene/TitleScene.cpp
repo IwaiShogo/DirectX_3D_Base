@@ -31,6 +31,7 @@
 #include <ECS/Systems/Rendering/RenderSystem.h>
 #include "ECS/EntityFactory.h"
 #include "ECS/Systems/Core/TitleControlSystem.h"
+#include "ECS/Systems/Core/ScreenTransition.h"
 #include "ECS/Components/Rendering/RenderComponent.h"
 
 using namespace DirectX;
@@ -44,6 +45,27 @@ void TitleScene::Init()
 {
 	m_coordinator = std::make_shared<ECS::Coordinator>();
 	ECS::ECSInitializer::InitECS(m_coordinator);
+
+
+	// 画面遷移フェード（黒）: タイトル→ステージセレクト遷移で使用
+	{
+		const float fadeX = SCREEN_WIDTH * 0.5f;
+		const float fadeY = SCREEN_HEIGHT * 0.5f;
+		const float fadeW = SCREEN_WIDTH * 2.0f;
+		const float fadeH = SCREEN_HEIGHT * 2.0f;
+
+		m_transitionEntity = ScreenTransition::CreateOverlay(
+			m_coordinator.get(), "BG_STAGE_SELECT", fadeX, fadeY, fadeW, fadeH
+		);
+		if (m_transitionEntity != ECS::INVALID_ENTITY_ID &&
+			m_coordinator->HasComponent<UIImageComponent>(m_transitionEntity))
+		{
+			auto& ui = m_coordinator->GetComponent<UIImageComponent>(m_transitionEntity);
+			ui.color = { 0.0f, 0.0f, 0.0f, 0.0f }; // 初期は透明
+			ui.depth = 200000.0f;                 // 最前面
+			ui.isVisible = true;
+		}
+	}
 
 	// コントローラー
 	TitleControllerComponent titleCtrl;
@@ -86,7 +108,7 @@ void TitleScene::Init()
 			"EFK_TITLE_SHINE",
 			true,
 			true,
-			{0.0f, 0.0f, -3.0f},
+			{ 0.0f, 0.0f, -3.0f },
 			0.3f
 		)
 	);
@@ -147,7 +169,17 @@ void TitleScene::Init()
 			UIButtonComponent(
 				/* State		*/	ButtonState::Normal,
 				/* IsVisible	*/	false,
-				/* OnClick   */	[]() { SceneManager::ChangeScene<StageSelectScene>(); },
+				/* OnClick   */	[this]() {
+					if (!m_coordinator) { return; }
+					// フェード用オーバーレイが無い場合は即遷移
+					if (m_transitionEntity == ECS::INVALID_ENTITY_ID) { SceneManager::ChangeScene<StageSelectScene>(); return; }
+					if (ScreenTransition::IsBusy(m_coordinator.get(), m_transitionEntity)) { return; }
+					ScreenTransition::RequestFadeOutEx(
+						m_coordinator.get(), m_transitionEntity, 0.15f, 0.35f, 0.45f,
+						[]() { SceneManager::ChangeScene<StageSelectScene>(); },
+						false, nullptr, 0.0f, 0.35f, false, false
+					);
+				},
 				/* scale */      XMFLOAT3(300, 80, 1)
 			)
 		);
@@ -168,7 +200,17 @@ void TitleScene::Init()
 			UIButtonComponent(
 				/* State		*/	ButtonState::Normal,
 				/* IsVisible	*/	false,
-				/* OnClick		*/	[]() { SceneManager::ChangeScene<StageSelectScene>(); },
+				/* OnClick		*/	[this]() {
+					if (!m_coordinator) { return; }
+					// フェード用オーバーレイが無い場合は即遷移
+					if (m_transitionEntity == ECS::INVALID_ENTITY_ID) { SceneManager::ChangeScene<StageSelectScene>(); return; }
+					if (ScreenTransition::IsBusy(m_coordinator.get(), m_transitionEntity)) { return; }
+					ScreenTransition::RequestFadeOutEx(
+						m_coordinator.get(), m_transitionEntity, 0.15f, 0.35f, 0.45f,
+						[]() { SceneManager::ChangeScene<StageSelectScene>(); },
+						false, nullptr, 0.0f, 0.35f, false, false
+					);
+				},
 				/* scale*/  XMFLOAT3(300, 80, 1)
 			)
 		);

@@ -155,6 +155,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\ECS\Systems\Core\GameControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\LifeTimeSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\ResultControlSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\ScreenTransitionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\TitleControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gameplay\CollectionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gameplay\MapGenerationSystem.cpp" />
@@ -171,6 +172,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\ECS\Systems\UI\UIInputSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\UI\UIRenderSystem.cpp" />
     <ClCompile Include="Source\Main.cpp" />
+    <ClCompile Include="Source\Scene\FadeManager.cpp" />
     <ClCompile Include="Source\Scene\GameScene.cpp" />
     <ClCompile Include="Source\Scene\ResultScene.cpp" />
     <ClCompile Include="Source\Scene\SceneManager.cpp" />
@@ -202,6 +204,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Components\Core\LifeTimeComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\OneShotSoundComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\PlayerControlComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\ScreenTransitionComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\SoundComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\TagComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\TitleControllerComponent.h" />
@@ -239,6 +242,8 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Systems\Core\GameControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\LifeTimeSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\ResultControlSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\ScreenTransition.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\ScreenTransitionSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\TitleControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gameplay\CollectionSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gameplay\MapGenerationSystem.h" />
@@ -258,6 +263,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\AllComponents.h" />
     <ClInclude Include="Include\ECS\Types.h" />
     <ClInclude Include="Include\Main.h" />
+    <ClInclude Include="Include\Scene\FadeManager.h" />
     <ClInclude Include="Include\Scene\GameScene.h" />
     <ClInclude Include="Include\Scene\ResultScene.h" />
     <ClInclude Include="Include\Scene\Scene.h" />

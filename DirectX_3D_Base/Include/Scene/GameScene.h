@@ -1,28 +1,28 @@
-/*****************************************************************//**
+ï»¿/*****************************************************************//**
  * @file	GameScene.h
- * @brief	ƒQ[ƒ€‚ÌƒƒCƒ“ƒƒWƒbƒN‚ğŠÜ‚ŞƒV[ƒ“ƒNƒ‰ƒXB
- * 
- * @details	
- * ECS‚Ì‰Šú‰»AŠÇ—ASystem‚ÌÀs‚ğ‚±‚ÌƒV[ƒ“ƒNƒ‰ƒX“à‚ÅŠ®Œ‹‚³‚¹‚éB
- * 
+ * @brief	Q[ÌƒCWbNÜ‚ŞƒV[NXB
+ *
+ * @details
+ * ECSÌAÇ—ASystemÌsÌƒV[NXÅŠB
+ *
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
- * 
- * @date   2025/10/21	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁFECS::Coordinator‚ÌƒCƒ“ƒXƒ^ƒ“ƒX‚ÆRenderSystem‚Ö‚Ìƒ|ƒCƒ“ƒ^‚ğƒƒ“ƒo[‚É’Ç‰ÁB
- *						- ’Ç‰ÁF‘¼‚ÌƒVƒXƒeƒ€‚©‚çCoordinator‚ÉƒAƒNƒZƒX‚·‚é‚½‚ß‚ÌÃ“IƒAƒNƒZƒTŠÖ”‚ğ’è‹`B
- * 
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
- * 
- * @note	iÈ—ª‰Âj
+ *
+ * @date   2025/10/21	ì¬
+ * 			Æ“eF	- Ç‰FECS::CoordinatorÌƒCX^XRenderSystemÖ‚Ìƒ|C^o[É’Ç‰B
+ *						- Ç‰FÌƒVXeCoordinatorÉƒANZXé‚½ß‚ÌÃ“IANZTÖ`B
+ *
+ * @update	2025/xx/xx	ÅIXV
+ * 			Æ“eF	- XXF
+ *
+ * @note	iÈ—Âj
  *********************************************************************/
 
 #ifndef ___GAME_SCENE_H___
 #define ___GAME_SCENE_H___
 
-// ===== ƒCƒ“ƒNƒ‹[ƒh =====
+ // ===== CN[h =====
 #include "Scene.h"
 #include "ECS/Coordinator.h"
 
@@ -30,42 +30,43 @@
 
  /**
   * @class GameScene
-  * @brief ÀÛ‚ÌƒQ[ƒ€ƒƒWƒbƒN‚ÆECS‚ğŠÇ—‚·‚éƒV[ƒ“
+  * @brief Û‚ÌƒQ[WbNECSÇ—V[
   */
 class GameScene
 	: public Scene
 {
 private:
-	// ECS‚Ì’†S‚Æ‚È‚éƒR[ƒfƒBƒl[ƒ^[ (ƒV[ƒ“‚ªECS‚Ìƒ‰ƒCƒtƒTƒCƒNƒ‹‚ğŠÇ—)
+	// ECSÌ’SÆ‚È‚R[fBl[^[ (V[ECSÌƒCtTCNÇ—)
 	std::shared_ptr<ECS::Coordinator> m_coordinator;
 
-	// ECS‚ÌƒOƒ[ƒoƒ‹ƒAƒNƒZƒX—p (System‚È‚Ç‚ªECS‘€ì‚ğs‚¤‚½‚ß‚Ì‘‹Œû)
+	// ECSÌƒO[oANZXp (SystemÈ‚Ç‚ECSsß‚Ì‘)
 	static ECS::Coordinator* s_coordinator;
 
-	//UI—p•Ï”
+	//UIpÏ
 	ECS::EntityID m_completeUIEntity = ECS::INVALID_ENTITY_ID;
 	std::vector<ECS::EntityID> m_uiEntities;
 
-	//BGM—p•Ï”
+	//BGMpÏ
 	ECS::EntityID m_bgmScoutID = ECS::INVALID_ENTITY_ID;
 	ECS::EntityID m_bgmActionID = ECS::INVALID_ENTITY_ID;
 	ECS::EntityID m_bgmCompleteID = ECS::INVALID_ENTITY_ID;
 
-	// ƒtƒF[ƒhƒCƒ“i•¨’Êí•\¦j
+	// tF[hCiÊ\j
 	bool m_isFadeIn = true;
 	float m_fadeTimer = 0.0f;
-	float m_fadeInDuration = 0.3f; // ‚±‚±‚ğ’²®i•bj
+	float m_fadeInDuration = 0.45f; // ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³æ™‚é–“ï¼ˆç§’ï¼‰
 	ECS::EntityID m_fadeEntity = ECS::INVALID_ENTITY_ID;
 
-	
+
 public:
-	// ƒRƒ“ƒXƒgƒ‰ƒNƒ^‚ÆƒfƒXƒgƒ‰ƒNƒ^iScene‚ğŒp³‚µ‚Ä‚¢‚é‚½‚ß‰¼‘zƒfƒXƒgƒ‰ƒNƒ^‚ÍScene‘¤‚Å’è‹`Ï‚İ‚Æ‰¼’èj
+	// RXgN^ÆƒfXgN^iScenepÄ‚é‚½ß‰zfXgN^SceneÅ’`Ï‚İ‚Æ‰j
 	GameScene()
 		: m_coordinator(nullptr)
-	{}
-	~GameScene() override {} // ‰¼‘zƒfƒXƒgƒ‰ƒNƒ^‚ğÀ‘•
+	{
+	}
+	~GameScene() override {} // zfXgN^
 
-	// SceneƒCƒ“ƒ^[ƒtƒF[ƒX‚ÌÀ‘•
+	// SceneC^[tF[XÌ
 	void Init() override;
 	void Uninit() override;
 	void Update(float deltaTime) override;
@@ -79,8 +80,8 @@ public:
 	static std::string GetStageNo() { return s_StageNo; }
 
 	/**
-	 * @brief CoordinatorƒCƒ“ƒXƒ^ƒ“ƒX‚Ö‚Ìƒ|ƒCƒ“ƒ^‚ğæ“¾‚·‚éÃ“IƒAƒNƒZƒT
-	 * @return ECS::Coordinator* - Œ»İƒAƒNƒeƒBƒu‚ÈƒV[ƒ“‚ÌCoordinator
+	 * @brief CoordinatorCX^XÖ‚Ìƒ|C^æ“¾Ã“IANZT
+	 * @return ECS::Coordinator* - İƒANeBuÈƒV[Coordinator
 	 */
 	static ECS::Coordinator* GetCoordinator() { return s_coordinator; }
 };

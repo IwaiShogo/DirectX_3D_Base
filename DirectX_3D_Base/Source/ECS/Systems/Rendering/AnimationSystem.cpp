@@ -1,27 +1,25 @@
-/*****************************************************************//**
- * @file	AnimationSystem.cpp
- * @brief	AnimationComponent‚ğ‚ÂEntity‚ÌƒAƒjƒ[ƒVƒ‡ƒ“‚ğXV‚·‚éSystem‚ÌÀ‘•B
- * 
- * @details	
- * 
- * ------------------------------------------------------------
- * @author	Iwai Shogo
- * ------------------------------------------------------------
- * 
- * @date	2025/11/23	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁF
- * 
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
- * 
- * @note	iÈ—ª‰Âj
+ï»¿/*****************************************************************//**
+ * @file    AnimationSystem.cpp
+ * @brief   Updates animation playback for entities that have AnimationComponent.
  *********************************************************************/
 
-// ===== ƒCƒ“ƒNƒ‹[ƒh =====
 #include "ECS/Systems/Rendering/AnimationSystem.h"
 #include "ECS/ECS.h"
+#include <DirectXMath.h>
 
 using namespace ECS;
+
+// Wrap angle delta across +-PI (prevents snapping)
+static float WrapAngleDelta(float d)
+{
+    while (d > DirectX::XM_PI)  d -= DirectX::XM_2PI;
+    while (d < -DirectX::XM_PI) d += DirectX::XM_2PI;
+    return d;
+}
+
+
+
+// AnimationSystem.cpp
 
 void AnimationSystem::Update(float deltaTime)
 {
@@ -30,66 +28,93 @@ void AnimationSystem::Update(float deltaTime)
         auto& modelComp = m_coordinator->GetComponent<ModelComponent>(entity);
         auto& animComp = m_coordinator->GetComponent<AnimationComponent>(entity);
 
-        // ƒ‚ƒfƒ‹‚ÌÀ‘Ì‚ª‚È‚¯‚ê‚ÎƒXƒLƒbƒv
         if (!modelComp.pModel) continue;
 
-        // ----------------------------------------------------
-        // 1. –¢ƒ[ƒh‚ÌƒAƒjƒ[ƒVƒ‡ƒ“‚ª‚ ‚ê‚Îƒ[ƒh‚ğÀs
-        // ----------------------------------------------------
+        // 1) Preload animations
         if (!animComp.preloadList.empty())
         {
             for (const auto& animeID : animComp.preloadList)
             {
-                // STEP 2‚ÅModel‚É’Ç‰Á‚µ‚½uID‚¾‚¯‚Åƒ[ƒh‚·‚éŠÖ”v‚ğŒÄ‚Ô
                 modelComp.pModel->AddAnimation(animeID);
             }
             animComp.preloadList.clear();
         }
 
-        // ----------------------------------------------------
-        // 2. Ä¶ƒŠƒNƒGƒXƒg‚ª‚ ‚ê‚ÎÀs (C++14‘Î‰)
-        // ----------------------------------------------------
+        // 2) Handle play requests
         if (animComp.hasRequest)
         {
             const auto& req = animComp.currentRequest;
 
             if (req.isBlend)
-            {
                 modelComp.pModel->PlayBlend(req.animeID, req.blendTime, req.loop, req.speed);
-            }
             else
-            {
                 modelComp.pModel->Play(req.animeID, req.loop, req.speed);
-            }
 
-            // ƒŠƒNƒGƒXƒgÁ”ïŠ®—¹iƒtƒ‰ƒO‚ğ‰º‚ë‚·j
+            // â˜…â˜…â˜… ä¿®æ­£ç®‡æ‰€ï¼šã“ã“ã«è¿½åŠ  â˜…â˜…â˜…
+            // å†ç”Ÿé–‹å§‹æ™‚ã«ã€å¤ã„å±¥æ­´ãƒ‡ãƒ¼ã‚¿ï¼ˆå‰ã®Entityã®æ®‹ã‚Šã‚«ã‚¹ï¼‰ã‚’æ¶ˆã™
+            if (m_prevNodeAnimPos.count(entity)) m_prevNodeAnimPos.erase(entity);
+            if (m_prevNodeAnimRot.count(entity)) m_prevNodeAnimRot.erase(entity);
+            // â˜…â˜…â˜… è¿½åŠ çµ‚ã‚ã‚Š â˜…â˜…â˜…
+
+            // ãƒªã‚¯ã‚¨ã‚¹ãƒˆæ™‚ã¯ãƒªã‚»ãƒƒãƒˆãƒ•ãƒ©ã‚°ã‚’ç«‹ã¦ã‚‹
+            m_resetNodeAnimPos.insert(entity);
             animComp.hasRequest = false;
         }
 
-        // ----------------------------------------------------
-        // 3. ƒAƒjƒ[ƒVƒ‡ƒ“‚ÌXVƒXƒeƒbƒvÀs
-        // ----------------------------------------------------
+        // 3) Advance animation time
         modelComp.pModel->Step(deltaTime);
 
-        // ========================================================================
-        // š’Ç‰Á: [‰ğŒˆô2] ƒm[ƒhƒAƒjƒ[ƒVƒ‡ƒ“iƒ{[ƒ“‚È‚µj‚Ì“K—pˆ—
-        // ========================================================================
-
-        // TransformComponent‚ğæ“¾
-        // (Signature‚ÉTransformComponent‚ªŠÜ‚Ü‚ê‚Ä‚¢‚é‘O’ñ)
+        // 4) Apply node-animation transform
         auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
 
-        DirectX::XMFLOAT3 animPos;
-        DirectX::XMFLOAT3 animRot; // “x”–@ (Degree)
-        DirectX::XMFLOAT3 animScale;
+        DirectX::XMFLOAT3 animPos{};
+        DirectX::XMFLOAT3 animRot{};
+        DirectX::XMFLOAT3 animScale{};
 
-        // ƒ‚ƒfƒ‹ƒNƒ‰ƒX‚ÉuŒ»İ‚ÌƒAƒjƒ[ƒVƒ‡ƒ“•ÏŒ`’l‚ğæ“¾‚·‚éŠÖ”v‚ğ’Ç‰Á‚µ‚ÄŒÄ‚Ño‚·
-        // –ß‚è’l‚ª true ‚È‚çuƒ{[ƒ“‚È‚µƒAƒjƒ[ƒVƒ‡ƒ“v‚Æ‚µ‚Ä Transform ‚ğXV‚·‚é
         if (modelComp.pModel->GetAnimatedTransform(animPos, animRot, animScale))
         {
-            // ƒGƒ“ƒeƒBƒeƒB‚ÌTransform‚ğƒAƒjƒ[ƒVƒ‡ƒ“‚ÌŒ‹‰Ê‚Åã‘‚«
-            transform.position = animPos;
-            transform.rotation = animRot;
+            // --- ä½ç½®ç”¨ã®ã‚¤ãƒ†ãƒ¬ãƒ¼ã‚¿å–å¾— ---
+            auto itPrevPos = m_prevNodeAnimPos.find(entity);
+            if (itPrevPos == m_prevNodeAnimPos.end())
+            {
+                // æ–°è¦ã€ã¾ãŸã¯Playã§eraseã•ã‚ŒãŸç›´å¾Œã¯ã“ã“ã«æ¥ã‚‹
+                itPrevPos = m_prevNodeAnimPos.emplace(entity, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f)).first;
+                m_resetNodeAnimPos.insert(entity); // å¿µã®ãŸã‚ãƒªã‚»ãƒƒãƒˆãƒ•ãƒ©ã‚°ã‚’ä¿è¨¼
+            }
+
+            // --- å›è»¢ç”¨ã®ã‚¤ãƒ†ãƒ¬ãƒ¼ã‚¿å–å¾— ---
+            auto itPrevRot = m_prevNodeAnimRot.find(entity);
+            if (itPrevRot == m_prevNodeAnimRot.end())
+            {
+                itPrevRot = m_prevNodeAnimRot.emplace(entity, DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f)).first;
+            }
+
+            auto& prevPos = itPrevPos->second;
+            auto& prevRot = itPrevRot->second;
+
+            // ãƒªã‚»ãƒƒãƒˆè¦æ±‚ãŒã‚ã‚‹å ´åˆï¼ˆå†ç”Ÿé–‹å§‹ç›´å¾Œãªã©ï¼‰
+            if (m_resetNodeAnimPos.find(entity) != m_resetNodeAnimPos.end())
+            {
+                prevPos = animPos;
+                prevRot = animRot; // ç¾åœ¨ã®ã‚¢ãƒ‹ãƒ¡çŠ¶æ…‹ã‚’ã€Œå‰å›ã€ã¨ã—ã¦è¨˜éŒ²ï¼ˆå·®åˆ†0ã«ã™ã‚‹ãŸã‚ï¼‰
+                m_resetNodeAnimPos.erase(entity);
+            }
+            else
+            {
+                // --- ä½ç½®ã®é©ç”¨ (Delta) ---
+                transform.position.x += (animPos.x - prevPos.x);
+                transform.position.y += (animPos.y - prevPos.y);
+                transform.position.z += (animPos.z - prevPos.z);
+                prevPos = animPos;
+
+                // --- å›è»¢ã®é©ç”¨ (Delta) ---
+                transform.rotation.x += WrapAngleDelta(animRot.x - prevRot.x);
+                transform.rotation.y += WrapAngleDelta(animRot.y - prevRot.y);
+                transform.rotation.z += WrapAngleDelta(animRot.z - prevRot.z);
+                prevRot = animRot;
+            }
+
+            // ã‚¹ã‚±ãƒ¼ãƒ«ã¯çµ¶å¯¾å€¤é©ç”¨
             transform.scale = animScale;
         }
     }

@@ -1,20 +1,20 @@
-/*****************************************************************//**
+ï»¿/*****************************************************************//**
  * @file	GameScene.cpp
- * @brief	
- * 
- * @details	
- * 
+ * @brief
+ *
+ * @details
+ *
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
- * 
- * @date	2025/11/30	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁF
- * 
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
- * 
- * @note	iÈ—ª‰Âj
+ *
+ * @date	2025/11/30	ì¬
+ * 			Æ“eF	- Ç‰F
+ *
+ * @update	2025/xx/xx	ÅIXV
+ * 			Æ“eF	- XXF
+ *
+ * @note	iÈ—Âj
  *********************************************************************/
 
 #include "Scene/GameScene.h"
@@ -25,65 +25,65 @@
 #include "Systems/Input.h"
 #include <DirectXMath.h>
 #include <iostream>
-#include <typeindex> // SystemManager‚©‚ç‚ÌRenderSystemæ“¾‚Ég—p
+#include <typeindex> // SystemManagerRenderSystemæ“¾Égp
 #include <sstream> 
 
 using namespace DirectX;
 
-// ===== Ã“Iƒƒ“ƒo[•Ï”‚Ì’è‹` =====u
-// ‘¼‚ÌƒVƒXƒeƒ€‚©‚çECS‚ÉƒAƒNƒZƒX‚·‚é‚½‚ß‚ÌÃ“Iƒ|ƒCƒ“ƒ^
+// ===== Ã“Io[ÏÌ’` =====u
+// ÌƒVXeECSÉƒANZXé‚½ß‚ÌÃ“I|C^
 ECS::Coordinator* GameScene::s_coordinator = nullptr;
 std::string GameScene::s_StageNo = "";
 
 void GameScene::Init()
 {
-	// ECS‰Šú‰»
+	// ECS
 	m_coordinator = std::make_shared<ECS::Coordinator>();
 	s_coordinator = m_coordinator.get();
 	ECS::ECSInitializer::InitECS(m_coordinator);
 
-	// --- 3. JSONƒRƒ“ƒtƒBƒO‚ğg‚Á‚ÄˆêŒ‚¶¬I ---
-	// ‚ ‚È‚½‚ªì‚Á‚½uˆêŒ‚ŠÖ”v‚ÉAID‚ÆCoordinator‚ğ“n‚µ‚Ü‚·
-	// ¦ŠÖ”–¼‚ÍÀÛ‚ÌƒR[ƒh‚É‡‚í‚¹‚Ä‘‚«Š·‚¦‚Ä‚­‚¾‚³‚¢
+	// --- 3. JSONRtBOgÄˆêŒ‚I ---
+	// È‚uêŒ‚ÖvÉAIDCoordinatornÜ‚
+	// ÖÍÛ‚ÌƒR[hÉí‚¹ÄÄ‚
 	ECS::EntityFactory::GenerateStageFromConfig(m_coordinator.get(), s_StageNo);
 
 
-	// --- 4. ‚»‚Ì‘¼‚Ì‹¤’ÊEntity‚Ìì¬ ---
+	// --- 4. Ì‘Ì‹EntityÌì¬ ---
 	//ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
 
 	ECS::EntityID gameController = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator.get());
 	auto& gameState = m_coordinator->GetComponent<GameStateComponent>(gameController);
-	
-	// 1. ƒgƒbƒvƒrƒ…[—p
+
+	// 1. gbvr[p
 	ECS::EntityID scoutingBGM = ECS::EntityFactory::CreateLoopSoundEntity(
 		m_coordinator.get(),
 		"BGM_TEST",
 		0.5f
 	);
-	// ƒ^ƒO‚ğ "BGM_SCOUTING" ‚É•ÏX
+	// ^O "BGM_SCOUTING" É•ÏX
 	if (m_coordinator->HasComponent<TagComponent>(scoutingBGM)) {
 		m_coordinator->GetComponent<TagComponent>(scoutingBGM).tag = "BGM_SCOUTING";
 	}
 
-	// 2. ƒAƒNƒVƒ‡ƒ“—p
+	// 2. ANVp
 	ECS::EntityID actionBGM = ECS::EntityFactory::CreateLoopSoundEntity(
 		m_coordinator.get(),
 		"BGM_TEST2",
 		0.5f
 	);
-	// ƒ^ƒO‚ğ "BGM_ACTION" ‚É•ÏX
+	// ^O "BGM_ACTION" É•ÏX
 	if (m_coordinator->HasComponent<TagComponent>(actionBGM)) {
 		m_coordinator->GetComponent<TagComponent>(actionBGM).tag = "BGM_ACTION";
 	}
 
-	// ƒAƒNƒVƒ‡ƒ“—p‚Í~‚ß‚Ä‚¨‚­
+	// ANVpÍ~ß‚Ä‚
 	if (m_coordinator->HasComponent<SoundComponent>(actionBGM)) {
 		m_coordinator->GetComponent<SoundComponent>(actionBGM).RequestStop();
-	}	
+	}
 
 	ECS::EntityID topviewBG = m_coordinator->CreateEntity(
 		TransformComponent(
-			/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f),
+			/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 200000.0f),
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Scale	*/	XMFLOAT3(SCREEN_WIDTH, SCREEN_HEIGHT, 1)
 		),
@@ -110,11 +110,11 @@ void GameScene::Init()
 	);
 	gameState.tpsBgID = tpsBG;
 
-	// ‰æ–Ê•‚¢‚Á‚Ï‚¢‚Ì×’·‚¢–_‚ğì‚é
+	// Ê•Ï‚Ì×’_
 	float lineWidth = (float)SCREEN_WIDTH;
-	float lineHeight = 5.0f; // ü‚Ì‘¾‚³
+	float lineHeight = 5.0f; // Ì‘
 
-	// ƒXƒLƒƒƒ“ƒ‰ƒCƒ“
+	// XLC
 	ECS::EntityID scanLine = m_coordinator->CreateEntity(
 		TransformComponent(
 			/* Position	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -134,7 +134,7 @@ void GameScene::Init()
 		)
 	);
 
-	// ƒfƒWƒ^ƒ‹ƒOƒŠƒbƒh
+	// fW^Obh
 	ECS::EntityID grid = m_coordinator->CreateEntity(
 		TransformComponent(
 			/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f),
@@ -150,23 +150,23 @@ void GameScene::Init()
 	);
 
 	// ------------------------------
-    // ƒgƒbƒvƒrƒ…[ŠJn‚ÌƒtƒF[ƒhƒCƒ“i•¨•\¦j
-    // ------------------------------
+	// gbvr[JnÌƒtF[hCi\j
+	// ------------------------------
 	m_isFadeIn = true;
 	m_fadeTimer = 0.0f;
 
-	// ƒtƒ‹ƒXƒNƒŠ[ƒ“•”ÂiUI_WHITE ‚ğ•‚ÅæZ‚µ‚Äg‚¤‘z’èj
+	// tXN[ÂiUI_WHITE ÅZÄgzj
 	m_fadeEntity = m_coordinator->CreateEntity(
 		TransformComponent(
-			XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f),
+			XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 200000.0f),
 			XMFLOAT3(0.0f, 0.0f, 0.0f),
 			XMFLOAT3(SCREEN_WIDTH, SCREEN_HEIGHT, 1.0f)
 		),
 		UIImageComponent(
 			"UI_WHITE",
-			1000.0f,
+			200000.0f,
 			true,
-			XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f) // •EŠ®‘S•s“§–¾‚©‚çƒXƒ^[ƒg
+			XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f) // ESsX^[g
 		)
 	);
 
@@ -189,6 +189,7 @@ void GameScene::Uninit()
 void GameScene::Update(float deltaTime)
 {
 	m_coordinator->UpdateSystems(deltaTime);
+	UpdateFadeIn(deltaTime);
 }
 
 void GameScene::UpdateFadeIn(float deltaTime)
@@ -205,7 +206,7 @@ void GameScene::UpdateFadeIn(float deltaTime)
 
 	// SmoothStep: t^2(3-2t)
 	float eased = t * t * (3.0f - 2.0f * t);
-	float alpha = 1.0f - eased; // 1¨0
+	float alpha = 1.0f - eased; // 10
 
 	auto& img = m_coordinator->GetComponent<UIImageComponent>(m_fadeEntity);
 	img.isVisible = true;

@@ -8,7 +8,8 @@ M_TITLE_MUSEUM,Model,Assets/Model/Prop/std_title_back4.fbx
 M_TREASURE1,Model,Assets/Model/Item/obj_daiya.fbx
 M_TREASURE2,Model,Assets/Model/Item/obj_crystal.fbx
 M_TREASURE3,Model,Assets/Model/Item/obj_yubiwa.fbx
-M_TREASURE4,Model,Assets/Model/Item/treasure_painting_sunflower.fbx
-M_TREASURE5,Model,Assets/Model/Item/treasure_painting_girl.fbx
+M_TREASURE4,Model,Assets/Model/Item/treasure_painting_girl.fbx
+M_TREASURE5,Model,Assets/Model/Item/treasure_painting_sunflower.fbx
 M_TREASURE6,Model,Assets/Model/Item/treasure_painting_waterlily.fbx
 M_DOOR,Model,Assets/Model/Stage/obj_door.fbx
+M_CARD,Model,Assets/Model/Guard/anim_yokokujo.fbx

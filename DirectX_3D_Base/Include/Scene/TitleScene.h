@@ -22,5 +22,6 @@ public:
 
 private:
 	std::shared_ptr<ECS::Coordinator> m_coordinator;
+	ECS::EntityID m_transitionEntity = ECS::INVALID_ENTITY_ID; // タイトル→遷移用フェード(黒)
 };
 #endif //!___TitleScene_H___
