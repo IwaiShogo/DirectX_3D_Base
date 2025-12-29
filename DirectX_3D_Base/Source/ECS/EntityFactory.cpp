@@ -76,7 +76,7 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 		PlayerControlComponent(
 			/* MoveSpeed	*/	9.0f
 		),
-		PointLightComponent(0.9f, 0.4f, 1.0f, 5.0f, {0.0f, 0.5f, 0.0f}),
+		PointLightComponent(0.9f, 0.4f, 1.0f, 5.0f, { 0.0f, 0.5f, 0.0f }),
 		EffectComponent(
 			"EFK_ALERT",
 			true,
@@ -90,7 +90,7 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 	anim.Play("A_PLAYER_IDLE");
 
 	auto& ctrl = coordinator->GetComponent<PlayerControlComponent>(player);
-	ctrl.animState = PlayerAnimState::Idle; 
+	ctrl.animState = PlayerAnimState::Idle;
 
 
 	// 2. プレイヤーに追従するカメラエンティティ生成（後続ステップ1-3の準備）
@@ -155,10 +155,10 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 		),
 		CollectableComponent(1.0f, orderIndex, itemID),
 		//浮遊コンポーネント
-	    FloatingComponent(
-		/* Amplitude */ 0.5f,     // 上下 0.5 の範囲で揺れる
-		/* Speed     */ 2.0f,     // 速度
-		/* InitialY  */ position.y - 1 // 基準となる高さ（配置位置）
+		FloatingComponent(
+			/* Amplitude */ 0.5f,     // 上下 0.5 の範囲で揺れる
+			/* Speed     */ 2.0f,     // 速度
+			/* InitialY  */ position.y - 1 // 基準となる高さ（配置位置）
 		),
 		PointLightComponent(0.0f, 5.0f, 0.0f, 5.0f),
 		EffectComponent(
@@ -169,8 +169,8 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 			0.3f
 		)
 	);
-	
-		
+
+
 	return entity;
 }
 
@@ -196,9 +196,9 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
 			/* Color	*/	XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f)
 		),
 		ModelComponent(
-				/* Path		*/	"M_CORRIDOR",
-				/* Scale	*/	0.25f,
-				/* Flip		*/	Model::None
+			/* Path		*/	"M_CORRIDOR",
+			/* Scale	*/	0.25f,
+			/* Flip		*/	Model::None
 		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -269,7 +269,7 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* Offset		*/	XMFLOAT3(0.0f, 0.5f, 0.0f),
 			/* ColliderType	*/	COLLIDER_DYNAMIC
 		),
-		PointLightComponent(5.0f, 0.0f, 0.0f, 7.0f, {0.0f, 0.5f, 0.3f})
+		PointLightComponent(5.0f, 0.0f, 0.0f, 7.0f, { 0.0f, 0.5f, 0.3f })
 	);
 
 	auto& anim = coordinator->GetComponent<AnimationComponent>(guard);
@@ -431,7 +431,7 @@ EntityID ECS::EntityFactory::CreateBasicCamera(Coordinator* coordinator, const D
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		BasicCameraComponent(),
-		PointLightComponent(2.0f, 1.8f, 1.4f, 30.0f, {0.0f, 0.0f, 0.0f})
+		PointLightComponent(2.0f, 1.8f, 1.4f, 30.0f, { 0.0f, 0.0f, 0.0f })
 	);
 
 	return entity;
@@ -497,7 +497,7 @@ EntityID ECS::EntityFactory::CreateDoor(Coordinator* coordinator, const DirectX:
 
 	// 初期アニメーション（閉じた状態）
 	auto& anim = coordinator->GetComponent<AnimationComponent>(door);
-	anim.Play("A_DOOR_CLOSE", false, 100.0f); 
+	anim.Play("A_DOOR_CLOSE", false, 100.0f);
 
 	return door;
 }

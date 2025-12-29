@@ -5,3 +5,4 @@ A_DOOR_OPEN,Animation,Assets/Model/Stage/anim_door_open.fbx
 A_DOOR_CLOSE,Animation,Assets/Model/Stage/anim_door_close.fbx
 A_GUARD_RUN,Animation,Assets/Model/Guard/anim_enemy_run.fbx
 A_GUARD_WALK,Animation,Assets/Model/Guard/anim_enemy_walk.fbx
+A_CARD_COMEON,Animation,Assets/Model/Guard/anim_yokokujo.fbx
