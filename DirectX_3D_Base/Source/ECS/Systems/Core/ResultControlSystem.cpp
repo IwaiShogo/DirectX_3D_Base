@@ -87,15 +87,31 @@ void ResultControlSystem::Update(float deltaTime)
             auto& ui = m_coordinator->GetComponent<UIImageComponent>(entity);
 
             float t = (m_timer - appearTime) * 2.0f;
-            float scale = 0.0f;
 
-            if (t < 1.0f)            scale = t;
-            else if (t < 1.5f)       scale = 1.0f + (1.5f - t) * 0.3f;
-            else                     scale = 1.0f;
+            // 変数定義
+            float scale = 1.0f;
+            float alpha = 1.0f;
 
-            float alpha = (t < 1.0f) ? t : 1.0f;
+            // ★修正: ラジアンへの変換係数 (3.14... / 180)
+            const float TO_RAD = 3.141592f / 180.0f;
 
-            trans.scale = { 140.0f * scale, 140.0f * scale, 1.0f };
+
+            if (t < 1.0f)
+            {
+                scale = 5.0f - 4.0f * t; // 5 -> 1
+                alpha = t;               // 0 -> 1
+        
+            }
+            else
+            {
+                scale = 1.0f;
+                alpha = 1.0f;
+				
+            }
+
+
+            trans.scale = { 150.0f * scale, 150.0f * scale, 1.0f };
+            trans.rotation.z = -30.0f * TO_RAD;
             ui.color.w = alpha;
         }
     }

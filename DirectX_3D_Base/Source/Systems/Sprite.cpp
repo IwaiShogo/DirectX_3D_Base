@@ -27,19 +27,43 @@ cbuffer Param : register(b1) {
 	float2 uvPos;
 	float2 uvScale;
 	float4 color;
+	float angle;
+	float aspect;
 };
 VS_OUT main(VS_IN vin) {
 	VS_OUT vout;
-	vout.pos = float4(vin.pos, 1.0f);
-	vout.pos.xy *= size;
-	vout.pos.xy += offset;
+	
+	// ŒvŽZ—p‚ÌˆêŽž•Ï”
+	float4 pos = float4(vin.pos, 1.0f);
+	
+	// 1. Šg‘åk¬
+	pos.xy *= size;
+	
+	// 2. ‰ñ“]ŒvŽZ
+	pos.x *= aspect;
+	float c = cos(angle);  // šC³: 'loat' -> 'float'
+	float s = sin(angle);
+	float2 rotPos;
+	rotPos.x = pos.x * c - pos.y * s;
+	rotPos.y = pos.x * s + pos.y * c;
+	pos.xy = rotPos;
+	pos.x /= aspect;
+	
+	// 3. ˆÚ“®
+	pos.xy += offset;
+	
+	// 4. À•W•ÏŠ·
+	vout.pos = pos;
 	vout.pos = mul(vout.pos, world);
 	vout.pos = mul(vout.pos, view);
 	vout.pos = mul(vout.pos, proj);
+	
+	// UV‚ÆƒJƒ‰[
 	vout.uv = vin.uv;
 	vout.uv *= uvScale;
 	vout.uv += uvPos;
 	vout.color = color;
+	
 	return vout;
 })EOT";
 	const char* PS = R"EOT(
@@ -78,6 +102,7 @@ float4 main(PS_IN pin) : SV_TARGET {
 	m_data.param[0] = DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 	m_data.param[1] = DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 	m_data.param[2] = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	m_data.param[3] = DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f);
 	DirectX::XMStoreFloat4x4(&m_data.matrix[0], DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_data.matrix[1], DirectX::XMMatrixIdentity());
 	DirectX::XMStoreFloat4x4(&m_data.matrix[2], DirectX::XMMatrixIdentity());
@@ -101,6 +126,8 @@ void Sprite::Draw()
 	m_data.ps->SetTexture(0, m_data.texture);
 	m_data.ps->Bind();
 	m_data.mesh->Draw();
+
+	m_data.param[3].x = 0.0f;
 }
 
 void Sprite::SetOffset(DirectX::XMFLOAT2 offset)
@@ -131,6 +158,14 @@ void Sprite::SetColor(DirectX::XMFLOAT4 color)
 void Sprite::SetTexture(Texture* tex)
 {
 	m_data.texture = tex;
+}
+void Sprite::SetAngle(float angle)
+{
+	m_data.param[3].x = angle;
+}
+void Sprite::SetAspect(float aspect)
+{
+	m_data.param[3].y = aspect;
 }
 void Sprite::SetWorld(DirectX::XMFLOAT4X4 world)
 {
