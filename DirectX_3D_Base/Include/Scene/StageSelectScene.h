@@ -18,6 +18,8 @@
 #include <vector>
 #include <string>
 #include <random>
+#include <unordered_map>
+
 
 struct StageData {
 	std::string name;
@@ -47,9 +49,55 @@ public:
 	void Update(float deltaTime) override;
 	void Draw() override;
 
+
+
+
 	static ECS::Coordinator* GetCoordinator() { return s_coordinator; }
 
 private:
+
+	// ===== UI Select FX（OK / BACK）=====
+	struct UISelectFxInstance
+	{
+		ECS::EntityID entity = (ECS::EntityID)-1;
+		float remaining = 0.0f; // 手動寿命（秒）
+	};
+	std::vector<UISelectFxInstance> m_uiSelectFx;
+
+	void UpdateUISelectFx(float dt);
+	// Hover中だけボタンを少し拡大（UIButtonSystem側の演出が無い/効かない場合の保険）
+	void UpdateButtonHoverScale(float dt);
+	std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_buttonBaseScale;
+
+
+	// ===== Card Focus Animation（ボタン押下→カードが画面中央へ出てくる）=====
+	struct CardFocusAnim
+	{
+		bool active = false;
+		ECS::EntityID entity = (ECS::EntityID)-1;
+
+		float elapsed = 0.0f;
+		float duration = 0.45f; // ここを短く/長くすると「中央へ来る速さ」が変わる
+
+		DirectX::XMFLOAT3 startPos = { 0,0,0 };
+		DirectX::XMFLOAT3 endPos = { 0,0,0 };
+		DirectX::XMFLOAT3 startScale = { 1,1,1 };
+		DirectX::XMFLOAT3 endScale = { 1,1,1 };
+
+		DirectX::XMFLOAT3 baseRot = { 0,0,0 }; // 通常は (0, PI, 0)
+		float extraRollRad = 0.0f;             // 追加で少しだけZ回転（演出）
+	};
+	CardFocusAnim m_cardFocus;
+
+	void StartCardFocusAnim(ECS::EntityID cardEntity, const DirectX::XMFLOAT3& uiPos);
+	void UpdateCardFocusAnim(float dt);
+
+	// 毎回新規作成する「集中カード」(情報画面へ行く際の回転/拡大演出用)
+	ECS::EntityID m_focusCardEntity = (ECS::EntityID)-1;
+	void DestroyFocusCard();
+
+	ECS::EntityID m_listBgEntity = (ECS::EntityID)-1;
+
 	// データ
 	void LoadStageData();
 	std::map<std::string, StageData> m_stageDataMap;
@@ -57,38 +105,68 @@ private:
 
 	// UI
 	void SwitchState(bool toDetail);
+	// ★画面(一覧↔詳細)の切替時や再入場時に、演出状態を必ず初期化する
+	// keepFocusCard=true の場合は、フォーカスカードの Destroy を呼ばない（EntityID 再利用によるアニメ状態持ち越し対策）
+	void ResetSelectToDetailAnimState(bool unlockInput = false, bool keepFocusCard = false);
 	void SetUIVisible(ECS::EntityID id, bool visible);
+	// ★UIエンティティの中心にワンショットエフェクトを出す
+	void PlayUISelectEffect(ECS::EntityID uiEntity, const std::string& effectId, float scale);
+	// START / FINISH 押下エフェクト用
+	ECS::EntityID m_startBtnEntity = (ECS::EntityID)-1;
+	ECS::EntityID m_finishBtnEntity = (ECS::EntityID)-1;
 
+	// UIエンティティの中心にワンショットエフェクトを出す
+// 既存のフェードを呼ぶための接続口（既にあるならそれを使う）
+// 既存のシーン切替関数（既にあるならそれを使う）
 	std::vector<ECS::EntityID> m_listUIEntities;
 	std::vector<ECS::EntityID> m_detailUIEntities;
+
+	// ===== 詳細UIを「一覧の上に重ねる」ための補助 =====
+	ECS::EntityID m_lastHiddenListCardEntity = (ECS::EntityID)-1; // 集中演出で一時的に隠したカード
+	bool m_detailAppearActive = false;
+	float m_detailAppearTimer = 0.0f;
+	float DETAIL_APPEAR_DURATION = 0.25f; // 詳細UIがふわっと出るまでの時間
+	std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_detailBaseScale;
+	std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_detailBasePos;
+	void CacheDetailBaseTransform(ECS::EntityID id);
+	void BeginDetailAppear();
+	void UpdateDetailAppear(float dt);
+
 
 	// カーソルは常駐（消さない）
 	ECS::EntityID m_cursorEntity = (ECS::EntityID)-1;
 
-	// ===== Fade =====
-	enum class FadeState { None, FadingOut, FadingIn };
+	// ===== Screen Transition (System + Component) =====
+	// どのシーンでも「呼ぶだけ」で使える共通フェード。
+	// StageSelectScene 側の直書きフェードは撤去し、このEntityに依頼する。
+	ECS::EntityID m_transitionEntity = (ECS::EntityID)-1;
 
-	ECS::EntityID m_fadeEntity = (ECS::EntityID)-1;
-	FadeState m_fadeState = FadeState::None;
+	ECS::EntityID m_blackTransitionEntity = (ECS::EntityID)-1; // ゲーム遷移専用：全面黒フェード
+	// 入力ロック（多重押し防止）。基本は遷移開始時に true、
+	// 「同一シーン内で戻ってくる遷移」の完了コールバックで false。
 
-	float m_fadeTimer = 0.0f;
-	float m_fadeDuration = 1.0f;
-	float m_fadeAlpha = 0.0f;
+	bool m_enableSlideFade = false;
+
+	// ===== FadeManager（カメラ非依存のフェード）=====
+	bool m_waitingSceneFadeIn = false;
+	std::function<void()> m_onFadeOutComplete = nullptr;
+
 
 	bool m_inputLocked = false;
-	std::function<void()> m_onBlack = nullptr;
-	bool m_autoFadeInAfterBlack = true;
-
-	void CreateFadeOverlay();
-	void StartFadeIn(float durationSec = 1.0f);
-	void StartFadeOut(float durationSec, std::function<void()> onBlack, bool autoFadeIn);
-	void UpdateFade(float dt);
-	void ApplyFadeAlpha(float a);
+	bool m_isWaitingForTransition = false;
+	float m_transitionWaitTimer = 0.0f;
+	float m_transitionDelayTime = 1.0f; // アニメーション開始から何秒後に遷移するか
+	// 調整ポイント：一覧→情報（詳細）へ切り替わるまでの待ち時間（秒）
+	float LIST_TO_DETAIL_DELAY = 1.50f; // 0.80=現状(0.45+0.35)相当
+	// 調整ポイント：カード回転アニメ（A_CARD_COMEON）の再生速度
+	float LIST_TO_DETAIL_ANIM_SPEED = 1.5f; // 1.0=等速, 2.0=2倍速
+	std::string m_pendingStageID = "";  // 遷移予定のステージID
 
 	void  KillAllShootingStars();
 
 	// ===== Shooting Star（UI_STAGE_MAP内でたまに）=====
 	ECS::EntityID m_stageMapEntity = (ECS::EntityID)-1;
+	ECS::EntityID m_stageMapSiroEntity = (ECS::EntityID)-1; // 城(手前)
 
 	// ===== Shooting Star instance =====
 	struct ShootingStarInstance
@@ -117,6 +195,15 @@ private:
 	bool m_debugShowGlowOnMap = true;
 
 	bool m_isDetailMode = false;
+
+	// ★追加: ゲーム開始遷移待ち用
+	bool m_isWaitingForGameStart = false;
+
+	// ★追加: 一覧へ戻る遷移待ち用
+	bool m_isWaitingForBackToList = false;
+
+	float m_gameStartTimer = 0.0f;
+	const float GAME_START_DELAY = 1.0f; // ★ここで待機時間を調整（秒）
 
 	// ★出現間隔（秒）ここを変えると頻度が変わる
 	float m_shootingStarIntervalMin = 3.0f; // 例：頻繁=1.0f、レア=3.0f

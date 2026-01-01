@@ -1,42 +1,42 @@
-/*****************************************************************//**
+ï»¿/*****************************************************************//**
  * @file	AnimationComponent.h
- * @brief	ƒ‚ƒfƒ‹‚ÌƒAƒjƒ[ƒVƒ‡ƒ“Ä¶‚É•K—v‚Èó‘Ô‚ğ’è‹`‚·‚éComponentB
+ * @brief	ãƒ¢ãƒ‡ãƒ«ã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å†ç”Ÿã«å¿…è¦ãªçŠ¶æ…‹ã‚’å®šç¾©ã™ã‚‹Componentã€‚
  * 
  * @details	
- * Ä¶’†‚ÌƒAƒjƒ[ƒVƒ‡ƒ“IDAÄ¶ŠÔ‚È‚Ç‚ğ•Û‚·‚éB
+ * å†ç”Ÿä¸­ã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³IDã€å†ç”Ÿæ™‚é–“ãªã©ã‚’ä¿æŒã™ã‚‹ã€‚
  * 
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  * 
- * @date	2025/11/23	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁFƒAƒjƒ[ƒVƒ‡ƒ“Ä¶ó‘Ô‚ğŠÇ—‚·‚é`AnimationComponent`‚ğì¬
+ * @date	2025/11/23	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼šã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å†ç”ŸçŠ¶æ…‹ã‚’ç®¡ç†ã™ã‚‹`AnimationComponent`ã‚’ä½œæˆ
  * 
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
+ * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- XXï¼š
  * 
- * @note	iÈ—ª‰Âj
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
 #ifndef ___ANIMATION_COMPONENT_H___
 #define ___ANIMATION_COMPONENT_H___
 
-// ===== ƒCƒ“ƒNƒ‹[ƒh =====
+// ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
 #include <string>
 #include <vector>
 
 /**
  * @struct	AnimationComponent
- * @brief	ƒAƒjƒ[ƒVƒ‡ƒ“Ä¶ó‘Ô
+ * @brief	ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å†ç”ŸçŠ¶æ…‹
  */
 struct AnimationComponent
 {
-    // --- ƒf[ƒ^’è‹` ---
+    // --- ãƒ‡ãƒ¼ã‚¿å®šç¾© ---
 
-    // 1. ƒ[ƒh—\–ñƒŠƒXƒg
+    // 1. ãƒ­ãƒ¼ãƒ‰äºˆç´„ãƒªã‚¹ãƒˆ
     std::vector<std::string> preloadList;
 
-    // 2. Ä¶ƒŠƒNƒGƒXƒgî•ñ\‘¢‘Ì
+    // 2. å†ç”Ÿãƒªã‚¯ã‚¨ã‚¹ãƒˆæƒ…å ±æ§‹é€ ä½“
     struct PlayRequest {
         std::string animeID;
         bool loop;
@@ -44,7 +44,7 @@ struct AnimationComponent
         bool isBlend;
         float blendTime;
 
-        // ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+        // ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
         PlayRequest()
             : animeID(""), loop(true), speed(1.0f), isBlend(false), blendTime(0.0f) {
         }
@@ -55,9 +55,9 @@ struct AnimationComponent
     };
 
     PlayRequest currentRequest;
-    bool hasRequest = false; // std::optional‚Ì‘ã‚í‚è‚Ìƒtƒ‰ƒO
+    bool hasRequest = false; // std::optionalã®ä»£ã‚ã‚Šã®ãƒ•ãƒ©ã‚°
 
-    // --- ƒRƒ“ƒXƒgƒ‰ƒNƒ^ ---
+    // --- ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ ---
     AnimationComponent() : hasRequest(false) {}
 
     AnimationComponent(std::initializer_list<std::string> animeIDs)
@@ -66,9 +66,9 @@ struct AnimationComponent
         preloadList.insert(preloadList.end(), animeIDs.begin(), animeIDs.end());
     }
 
-    // --- ƒwƒ‹ƒp[ŠÖ” ---
+    // --- ãƒ˜ãƒ«ãƒ‘ãƒ¼é–¢æ•° ---
 
-    // –‘O‚Éƒ[ƒh‚µ‚Ä‚¨‚«‚½‚¢ƒAƒjƒ[ƒVƒ‡ƒ“ID‚ğ“o˜^
+    // äº‹å‰ã«ãƒ­ãƒ¼ãƒ‰ã—ã¦ãŠããŸã„ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³IDã‚’ç™»éŒ²
     void RegisterAnimation(const std::string& animeID)
     {
         preloadList.push_back(animeID);
@@ -79,14 +79,14 @@ struct AnimationComponent
         preloadList.insert(preloadList.end(), animeIDs.begin(), animeIDs.end());
     }
 
-    // Ä¶–½—ß
+    // å†ç”Ÿå‘½ä»¤
     void Play(const std::string& animeID, bool loop = true, float speed = 1.0f)
     {
         currentRequest = PlayRequest(animeID, loop, speed, false, 0.0f);
         hasRequest = true;
     }
 
-    // ƒuƒŒƒ“ƒhÄ¶–½—ß
+    // ãƒ–ãƒ¬ãƒ³ãƒ‰å†ç”Ÿå‘½ä»¤
     void PlayBlend(const std::string& animeID, float blendTime, bool loop = true, float speed = 1.0f)
     {
         currentRequest = PlayRequest(animeID, loop, speed, true, blendTime);
@@ -94,7 +94,7 @@ struct AnimationComponent
     }
 };
 
-// Component“o˜^
+// Componentç™»éŒ²
 #include "ECS/ComponentRegistry.h"
 REGISTER_COMPONENT_TYPE(AnimationComponent)
 

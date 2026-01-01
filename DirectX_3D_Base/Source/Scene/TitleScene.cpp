@@ -1,6 +1,6 @@
 /*****************************************************************//**
  * @file	TitleScene.cpp
- * @brief   ƒ^ƒCƒgƒ‹ƒV[ƒ“F3DƒJ[ƒhÃ~”z’u”Å
+ * @brief   ã‚¿ã‚¤ãƒˆãƒ«ã‚·ãƒ¼ãƒ³ï¼š3Dã‚«ãƒ¼ãƒ‰é™æ­¢é…ç½®ç‰ˆ
  *********************************************************************/
 
 #include "Scene/TitleScene.h"
@@ -16,6 +16,7 @@
 #include <ECS/Systems/Rendering/RenderSystem.h>
 #include "ECS/EntityFactory.h"
 #include "ECS/Systems/Core/TitleControlSystem.h"
+#include "ECS/Systems/Core/ScreenTransition.h"
 #include "ECS/Components/Rendering/RenderComponent.h"
 
 using namespace DirectX;
@@ -52,15 +53,15 @@ void TitleScene::Init()
     titleCtrl.startRotY = XMConvertToRadians(-90.0f);
     titleCtrl.endRotY = XMConvertToRadians(0.0f);
 
-    // --- ƒJƒƒ‰¶¬ ---
+    // --- ã‚«ãƒ¡ãƒ©ç”Ÿæˆ ---
     ECS::EntityID cam = ECS::EntityFactory::CreateBasicCamera(m_coordinator.get(), titleCtrl.camStartPos);
     titleCtrl.cameraEntityID = cam;
     if (m_coordinator->HasComponent<TransformComponent>(cam)) {
         m_coordinator->GetComponent<TransformComponent>(cam).rotation.y = titleCtrl.startRotY;
     }
 
-    // --- 1. ”wŒiEƒJ[ƒh‚Ì¶¬ ---
-    // ”üpŠÙ”wŒi
+    // --- 1. èƒŒæ™¯ãƒ»ã‚«ãƒ¼ãƒ‰ã®ç”Ÿæˆ ---
+    // ç¾è¡“é¤¨èƒŒæ™¯
     m_coordinator->CreateEntity(
         TransformComponent(
             /* Position */{ 0.0f, 0.0f, 0.0f },
@@ -85,7 +86,7 @@ void TitleScene::Init()
         )
     );
 
-    // ƒ^ƒCƒgƒ‹ƒJ[ƒh
+    // ã‚¿ã‚¤ãƒˆãƒ«ã‚«ãƒ¼ãƒ‰
     titleCtrl.cardEntityID = m_coordinator->CreateEntity(
         TransformComponent(
             /* Position */{ 0.0f, 1.4f, -3.5f },
@@ -103,7 +104,7 @@ void TitleScene::Init()
         )
     );
 
-    // ƒKƒ‰ƒXƒP[ƒX
+    // ã‚¬ãƒ©ã‚¹ã‚±ãƒ¼ã‚¹
     m_coordinator->CreateEntity(
         TransformComponent(
             /* Position */{ 0.0f, 0.0f, 0.0f },
@@ -121,8 +122,8 @@ void TitleScene::Init()
         )
     );
 
-    // --- 2. UI‚Ì¶¬ ---
-    // ƒƒS
+    // --- 2. UIã®ç”Ÿæˆ ---
+    // ãƒ­ã‚´
     titleCtrl.logoEntityID = m_coordinator->CreateEntity(
         TransformComponent(
             /* Position */{ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * TitleLayout::LOGO_Y_RATIO, 0.0f },
@@ -153,14 +154,14 @@ void TitleScene::Init()
     );
     titleCtrl.pressStartUIEntities.push_back(pressStart);
 
-    // --- 3. ƒƒjƒ…[UI ---
+    // --- 3. ãƒ¡ãƒ‹ãƒ¥ãƒ¼UI ---
     {
         float targetY_NewGame = SCREEN_HEIGHT * TitleLayout::BTN_Y_NEWGAME;
         float targetY_Continue = SCREEN_HEIGHT * TitleLayout::BTN_Y_CONTINUE;
         const XMFLOAT3 hitScale = { TitleLayout::BTN_BASE_SCALE.x * 0.66f, TitleLayout::BTN_BASE_SCALE.y * 0.66f, 1.0f };
         const XMFLOAT3 menuRotation = { 0.0f, 0.0f, XMConvertToRadians(-20.0f) };
 
-        // New Game ƒ{ƒ^ƒ“
+        // New Game ãƒœã‚¿ãƒ³
         ECS::EntityID newGame = m_coordinator->CreateEntity(
             TransformComponent(
                 /* Position */{ SCREEN_WIDTH * 0.5f - 60.0f, targetY_NewGame, 0.0f },
@@ -181,7 +182,7 @@ void TitleScene::Init()
             )
         );
 
-        // Continue ƒ{ƒ^ƒ“
+        // Continue ãƒœã‚¿ãƒ³
         ECS::EntityID cont = m_coordinator->CreateEntity(
             TransformComponent(
                 /* Position */{ SCREEN_WIDTH * 0.5f + 60.0f , targetY_Continue - 10.0f, 0.0f },
@@ -208,11 +209,11 @@ void TitleScene::Init()
         titleCtrl.menuTargetYs.push_back(targetY_Continue);
     }
 
-    // --- ƒVƒXƒeƒ€ƒRƒ“ƒgƒ[ƒ‰[ ---
+    // --- ã‚·ã‚¹ãƒ†ãƒ ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ©ãƒ¼ ---
     ECS::EntityID controller = m_coordinator->CreateEntity(TitleControllerComponent());
     m_coordinator->GetComponent<TitleControllerComponent>(controller) = titleCtrl;
 
-    // --- ƒJ[ƒ\ƒ‹ ---
+    // --- ã‚«ãƒ¼ã‚½ãƒ« ---
     m_coordinator->CreateEntity(
         TransformComponent(
             /* Position */{ 0.0f, 0.0f, 0.0f },
