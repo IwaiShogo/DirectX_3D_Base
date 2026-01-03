@@ -1,6 +1,7 @@
 ﻿#include "ECS/Systems/Core/ScreenTransitionSystem.h"
 #include "Main.h"
 #include <DirectXMath.h>
+#include <cmath>
 
 using namespace DirectX;
 
@@ -10,6 +11,27 @@ namespace
     {
         t = (t < 0.0f) ? 0.0f : (t > 1.0f ? 1.0f : t);
         return t * t * (3.0f - 2.0f * t);
+    }
+
+    // Snappier curves (used for "no-rotation" transitions)
+    inline float EaseOutCubic(float t)
+    {
+        t = (t < 0.0f) ? 0.0f : (t > 1.0f ? 1.0f : t);
+        const float u = 1.0f - t;
+        return 1.0f - (u * u * u);
+    }
+
+    inline float EaseInCubic(float t)
+    {
+        t = (t < 0.0f) ? 0.0f : (t > 1.0f ? 1.0f : t);
+        return t * t * t;
+    }
+
+    inline float Punch(float t, float amp)
+    {
+        // 0->1->0 (no overshoot at ends)
+        const float s = std::sin(t * DirectX::XM_PI);
+        return 1.0f + amp * s;
     }
 }
 
@@ -119,8 +141,13 @@ namespace ECS
             st.coverScaleMul = ComputeCoverScaleMul(st.angleDeg, (float)SCREEN_WIDTH, (float)SCREEN_HEIGHT);
         }
 
-        // ★回転演出の強さ（90度くらい回すとトランプっぽくなります）
-        const float spinRangeDeg = 90.0f;
+        // --- Transition style ---
+        // angleDeg==0 を「回転なしスタイル」とみなし、代わりに
+        //  ・アルファのカーブをスナッピーに
+        //  ・スケールに軽い“パンチ”を入れる
+        // で地味さを解消します。
+        const bool noRotationStyle = (std::fabs(st.angleDeg) < 0.01f);
+        const float spinRangeDeg = noRotationStyle ? 0.0f : 90.0f;
 
         switch (st.phase)
         {
@@ -175,7 +202,7 @@ namespace ECS
             st.timerSec += dt;
             const float dur = (st.durationOutSec > 0.0f) ? st.durationOutSec : ((st.durationSec > 0.0f) ? st.durationSec : 0.001f);
             const float t = Clamp01(st.timerSec / dur);
-            const float k = EaseInOut(t);
+            const float k = noRotationStyle ? EaseOutCubic(t) : EaseInOut(t);
 
             st.alpha = k;
 
@@ -184,17 +211,16 @@ namespace ECS
             float currentDeg = st.angleDeg + (spinRangeDeg * (1.0f - k));
             tr.rotation.z = XMConvertToRadians(currentDeg);
 
+            float baseMul = st.coverScaleMul;
             if (st.scaleFadeOut)
             {
-                const float mul = st.startScaleMul + (st.coverScaleMul - st.startScaleMul) * k;
-                tr.scale.x = (float)SCREEN_WIDTH * mul;
-                tr.scale.y = (float)SCREEN_HEIGHT * mul;
+                baseMul = st.startScaleMul + (st.coverScaleMul - st.startScaleMul) * k;
             }
-            else
-            {
-                tr.scale.x = (float)SCREEN_WIDTH * st.coverScaleMul;
-                tr.scale.y = (float)SCREEN_HEIGHT * st.coverScaleMul;
-            }
+
+            // No-rotation style: add a subtle punch so it doesn't feel like a flat fade.
+            const float mul = noRotationStyle ? (baseMul * Punch(t, 0.10f)) : baseMul;
+            tr.scale.x = (float)SCREEN_WIDTH * mul;
+            tr.scale.y = (float)SCREEN_HEIGHT * mul;
 
             ui.color.w = st.alpha;
 
@@ -246,7 +272,7 @@ namespace ECS
             st.timerSec += dt;
             const float dur = (st.durationInSec > 0.0f) ? st.durationInSec : ((st.durationSec > 0.0f) ? st.durationSec : 0.001f);
             const float t = Clamp01(st.timerSec / dur);
-            const float k = EaseInOut(t);
+            const float k = noRotationStyle ? EaseInCubic(t) : EaseInOut(t);
 
             st.alpha = 1.0f - k;
 
@@ -255,19 +281,18 @@ namespace ECS
             float currentDeg = st.angleDeg - (spinRangeDeg * k);
             tr.rotation.z = XMConvertToRadians(currentDeg);
 
+            float baseMul = st.coverScaleMul;
             if (st.scaleFadeIn)
             {
                 // 縮小しながら消える
                 const float endMul = (st.startScaleMul > 0.0f) ? st.startScaleMul : 0.001f;
-                const float mul = st.coverScaleMul + (endMul - st.coverScaleMul) * k;
-                tr.scale.x = (float)SCREEN_WIDTH * mul;
-                tr.scale.y = (float)SCREEN_HEIGHT * mul;
+                baseMul = st.coverScaleMul + (endMul - st.coverScaleMul) * k;
             }
-            else
-            {
-                tr.scale.x = (float)SCREEN_WIDTH * st.coverScaleMul;
-                tr.scale.y = (float)SCREEN_HEIGHT * st.coverScaleMul;
-            }
+
+            // No-rotation style: subtle punch on fade-in too.
+            const float mul = noRotationStyle ? (baseMul * Punch(t, 0.06f)) : baseMul;
+            tr.scale.x = (float)SCREEN_WIDTH * mul;
+            tr.scale.y = (float)SCREEN_HEIGHT * mul;
 
             ui.color.w = st.alpha;
 

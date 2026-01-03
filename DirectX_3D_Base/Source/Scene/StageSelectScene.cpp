@@ -54,6 +54,24 @@ static DirectX::XMFLOAT3 UIToWorld(float sx, float sy, float zWorld)
 	return DirectX::XMFLOAT3(wx, wy, zWorld);
 }
 
+//--------------------------------------------------------------
+// StageSelect: Card slot layout (fixed 3x2 grid)
+//  - Always place stage cards at the same positions as the "6 cards" layout.
+//  - This prevents re-centering when only 1-5 stages are unlocked.
+//--------------------------------------------------------------
+static void CalcStageCardSlotUIPos(int stageNo, float& outX, float& outY)
+{
+	// Match the layout used when creating 6 buttons in Init().
+	const float startX = SCREEN_WIDTH * 0.2f;
+	const float startY = SCREEN_HEIGHT * 0.3f;
+	const float gapX = 350.0f;
+	const float gapY = 250.0f;
+
+	const int idx = std::max(0, std::min(5, stageNo - 1));
+	outX = startX + (idx % 3) * gapX;
+	outY = startY + (idx / 3) * gapY;
+}
+
 
 
 static DirectX::XMFLOAT3 Lerp3(const DirectX::XMFLOAT3& a, const DirectX::XMFLOAT3& b, float t)
@@ -219,12 +237,6 @@ void StageSelectScene::Init()
 	m_listStageNos.clear();
 	m_listStageNos.reserve(6);
 
-
-	float startX = SCREEN_WIDTH * 0.2f;
-	float startY = SCREEN_HEIGHT * 0.3f;
-	float gapX = 350.0f;
-	float gapY = 250.0f;
-
 	m_listBgEntity = m_coordinator->CreateEntity(
 		TransformComponent({ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 5.0f }, { 0,0,0 }, { SCREEN_WIDTH, SCREEN_HEIGHT, 1.0f }),
 		UIImageComponent("BG_STAGE_SELECT", 0.0f)
@@ -233,8 +245,10 @@ void StageSelectScene::Init()
 	for (int i = 0; i < 6; ++i)
 	{
 		std::string id = (i < (int)stageIDs.size()) ? stageIDs[i] : "ST_001";
-		float x = startX + (i % 3) * gapX;
-		float y = startY + (i / 3) * gapY;
+		const int stageNo = i + 1;
+		float x = 0.0f;
+		float y = 0.0f;
+		CalcStageCardSlotUIPos(stageNo, x, y);
 
 		EntityID btn = m_coordinator->CreateEntity(
 			TransformComponent({ x, y, 5.0f }, { 0,0,0 }, { 250, 150, 1 }),
@@ -330,7 +344,7 @@ void StageSelectScene::Init()
 		m_listStageNos.push_back(i + 1);
 
 		// 初期表示：解放済みのみ表示。未解放は完全非表示。
-		const int stageNo = i + 1;
+		// 初期表示：解放済みのみ表示。未解放は完全非表示。
 		const bool unlocked = IsStageUnlocked(stageNo);
 		if (!unlocked)
 		{
@@ -339,7 +353,7 @@ void StageSelectScene::Init()
 
 	}
 
-	// 解放済みステージの並びを「見えている数」に合わせて中央寄せ
+	// 解放済みステージの並びを「6個並ぶ時の固定スロット」に再配置
 	ReflowUnlockedCardsLayout();
 
 	// 復帰時に「今回解放されたステージ」を浮かび上がり演出
@@ -525,6 +539,16 @@ void StageSelectScene::Init()
 			m_coordinator.get(), "BG_STAGE_SELECT", fadeX, fadeY, fadeBgW, fadeBgH
 		);
 
+		// ★FIX: フェード用オーバーレイが回転して見える対策
+		// CreateOverlay 側で Transform の rotation が初期化されていない／別値が入るケースがあるため、
+		// ここで必ず 0 にリセットする（UIは回転不要）
+		if (m_coordinator->HasComponent<TransformComponent>(m_transitionEntity))
+		{
+			auto& tr = m_coordinator->GetComponent<TransformComponent>(m_transitionEntity);
+			tr.rotation = { 0.0f, 0.0f, 0.0f };
+			tr.position = { fadeX, fadeY, tr.position.z }; // 念のため中心へ
+		}
+
 		if (m_coordinator->HasComponent<UIImageComponent>(m_transitionEntity))
 		{
 			auto& ui = m_coordinator->GetComponent<UIImageComponent>(m_transitionEntity);
@@ -540,6 +564,14 @@ void StageSelectScene::Init()
 		m_blackTransitionEntity = ScreenTransition::CreateOverlay(
 			m_coordinator.get(), "BG_STAGE_SELECT", fadeX, fadeY, fadeBgW, fadeBgH
 		);
+
+		// ★FIX: 黒フェード用オーバーレイも回転をゼロ固定
+		if (m_coordinator->HasComponent<TransformComponent>(m_blackTransitionEntity))
+		{
+			auto& tr = m_coordinator->GetComponent<TransformComponent>(m_blackTransitionEntity);
+			tr.rotation = { 0.0f, 0.0f, 0.0f };
+			tr.position = { fadeX, fadeY, tr.position.z };
+		}
 
 		if (m_coordinator->HasComponent<UIImageComponent>(m_blackTransitionEntity))
 		{
@@ -1037,9 +1069,6 @@ void StageSelectScene::SwitchState(bool toDetail)
 	// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 	// 一覧（カード）の制御
-	float startX = SCREEN_WIDTH * 0.2f;	float startY = SCREEN_HEIGHT * 0.3f;
-	float gapX = 350.0f;
-	float gapY = 250.0f;
 
 	for (int i = 0; i < (int)m_listUIEntities.size(); ++i)
 	{
@@ -1385,19 +1414,16 @@ void StageSelectScene::ApplyListVisibility(bool listVisible)
 }
 
 
-// 解放済みステージ（1..m_maxUnlockedStage）を「見えている数」で中央寄せ配置する
-// - 3列×2段を基本にし、各段は「その段にある数」で中央寄せ
+// 解放済みステージ（1..m_maxUnlockedStage）を「6個並ぶ時の固定スロット」に配置する
+// - 3列×2段の固定グリッド（Init() と同じ座標）
+// - 解放数が 1..5 でも中央寄せしない（常に 6個時の場所）
 // - 演出中のステージは配置を上書きしない（浮かび上がりを維持）
 void StageSelectScene::ReflowUnlockedCardsLayout()
 {
 	if (!m_coordinator) return;
 
 	const int n = std::max(1, std::min(6, m_maxUnlockedStage));
-	const float gapX = 350.0f;
-	const float gapY = 250.0f;
 
-	const float centerX = SCREEN_WIDTH * 0.5f;
-	const float startY = SCREEN_HEIGHT * 0.32f;
 
 	for (int stageNo = 1; stageNo <= n; ++stageNo)
 	{
@@ -1413,16 +1439,9 @@ void StageSelectScene::ReflowUnlockedCardsLayout()
 		if (id == (ECS::EntityID)-1) continue;
 		if (!m_coordinator->HasComponent<TransformComponent>(id)) continue;
 
-		const int visibleIndex = stageNo - 1; // 解放が連番(1..n)である前提
-		const int row = visibleIndex / 3;
-		const int col = visibleIndex % 3;
-
-		const int rowCount = std::min(3, n - row * 3);
-		const float rowWidth = (rowCount <= 1) ? 0.0f : (rowCount - 1) * gapX;
-		const float rowStartX = centerX - rowWidth * 0.5f;
-
-		const float x = rowStartX + col * gapX;
-		const float y = startY + row * gapY;
+		float x = 0.0f;
+		float y = 0.0f;
+		CalcStageCardSlotUIPos(stageNo, x, y);
 
 		auto& tr = m_coordinator->GetComponent<TransformComponent>(id);
 		tr.position.x = x;
