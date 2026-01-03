@@ -177,6 +177,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\Scene\ResultScene.cpp" />
     <ClCompile Include="Source\Scene\SceneManager.cpp" />
     <ClCompile Include="Source\Scene\StageSelectScene.cpp" />
+    <ClCompile Include="Source\Scene\StageUnlockProgress.cpp" />
     <ClCompile Include="Source\Scene\TitleScene.cpp" />
     <ClCompile Include="Source\Systems\AssetManager.cpp" />
     <ClCompile Include="Source\Systems\DirectX\DirectX.cpp" />
@@ -269,6 +270,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\Scene\Scene.h" />
     <ClInclude Include="Include\Scene\SceneManager.h" />
     <ClInclude Include="Include\Scene\StageSelectScene.h" />
+    <ClInclude Include="Include\Scene\StageUnlockProgress.h" />
     <ClInclude Include="Include\Scene\TitleScene.h" />
     <ClInclude Include="Include\Systems\AssetManager.h" />
     <ClInclude Include="Include\Systems\Camera.h" />

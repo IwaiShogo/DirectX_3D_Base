@@ -189,6 +189,21 @@ void GameScene::Uninit()
 void GameScene::Update(float deltaTime)
 {
 	m_coordinator->UpdateSystems(deltaTime);
+
+#ifdef _DEBUG
+	// デバッグ：Cキーでクリア扱い（GameControlSystem が ResultScene へ遷移する）
+	if (IsKeyTrigger('C'))
+	{
+		ECS::EntityID gameController =
+			ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator.get());
+		auto& gameState = m_coordinator->GetComponent<GameStateComponent>(gameController);
+
+		gameState.isGameClear = true;   // ✅ これが正しい
+		gameState.isGameOver = false;  // 念のため
+	}
+#endif
+
+
 	UpdateFadeIn(deltaTime);
 }
 

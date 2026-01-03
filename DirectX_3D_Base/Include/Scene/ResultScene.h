@@ -1,4 +1,4 @@
-// ResultScene.h
+ï»¿// ResultScene.h
 #pragma once
 #include "Scene/Scene.h"
 #include "ECS/ECS.h"
@@ -8,24 +8,24 @@
 #include <vector>      
 #include <string>      
 
-// GameControlSystem ‚©‚ç“n‚³‚ê‚éƒŠƒUƒ‹ƒgî•ñ
+// GameControlSystem néƒŠUg
 struct ResultData
 {
-    float clearTime = 0.0f;          // ƒNƒŠƒAƒ^ƒCƒ€
-    int   collectedCount = 0;        // Šl“¾ƒAƒCƒeƒ€”
-    int   totalItems = 0;            // ‘ƒAƒCƒeƒ€”
-    bool  isCleared = false;         // ƒNƒŠƒA‚µ‚½‚©ifalse‚È‚çƒQ[ƒ€ƒI[ƒo[j
-    bool  wasSpotted = false;        // Œ©‚Â‚©‚Á‚½‚©
-    bool  clearedInTime = false;     // §ŒÀŠÔ“à‚©
-    bool  collectedAllOrdered = false; // ‡˜’Ê‚èƒRƒ“ƒvƒŠ[ƒg‚µ‚½‚©
-    std::string stageID = "";        // ƒvƒŒƒC‚µ‚½ƒXƒe[ƒWID (ƒŠƒgƒ‰ƒC—p)
+    float clearTime = 0.0f;          // NA^C
+    int   collectedCount = 0;        // lACe
+    int   totalItems = 0;            // ACe
+    bool  isCleared = false;         // NAifalseÈ‚Q[I[o[j
+    bool  wasSpotted = false;        // Â‚
+    bool  clearedInTime = false;     // Ô“
+    bool  collectedAllOrdered = false; // Ê‚Rv[g
+    std::string stageID = "";        // vCXe[WID (gCp)
 
-    // š ‚·‚Å‚ÉƒŠƒUƒ‹ƒg‰æ–Ê‚Åg‚Á‚Ä‚¢‚éuæ‚ê‚½‚¨•ó‚¾‚¯v‚ÌƒŠƒXƒg
+    //  Å‚ÉƒUgÊ‚ÅgÄ‚uê‚½ó‚¾‚vÌƒXg
     std::vector<std::string> collectedItemIcons;
 
-    // š ƒQ[ƒ€ƒI[ƒo[—pFƒXƒe[ƒW“à‚Ì‚¨•ói‡”Ô‚Ç‚¨‚èj‘S•”
-    //   orderedItemIcons[i] c i ”Ô–Ú‚Ì‚¨•ó‚ÌƒAƒCƒRƒ“–¼
-    //   orderedItemCollected[i] c ‚»‚Ì‚¨•ó‚ğæ‚ê‚½‚©H
+    //  Q[I[o[pFXe[WÌ‚iÔ‚Ç‚jS
+    //   orderedItemIcons[i] c i Ô–Ú‚Ì‚ÌƒACR
+    //   orderedItemCollected[i] c Ì‚ê‚½H
     std::vector<std::string> orderedItemIcons;
     std::vector<bool>        orderedItemCollected;
 };
@@ -39,18 +39,18 @@ public:
     void Update(float deltaTime) override;
     void Draw() override;
 
-    // –{‚Ì’†‰›‚Éƒ^ƒCƒ€•\¦—p‚Ì”šƒXƒvƒ‰ƒCƒg‚ğ•À‚×‚é
+    // {Ì’Éƒ^C\pÌXvCg×‚
     void CreateTimeDisplay(float time, DirectX::XMFLOAT2 pos);
 
-    // ‰æ–Ê‰º•”‚Ìƒ{ƒ^ƒ“(RETRY / SELECT / TITLE)¶¬
+    // Ê‰Ìƒ{^(RETRY / SELECT / TITLE)
     void CreateButtons();
 
-    // GameControlSystem ‚©‚ç ResultData ‚ğó‚¯æ‚é‚½‚ß‚Ì‘‹Œû
+    // GameControlSystem  ResultData ó‚¯é‚½ß‚Ì‘
     static void SetResultData(const ResultData& data) { s_resultData = data; }
-    // ’Ç‰ÁFStageSelect “™‚©‚ç“Ç‚Ş—p
+    // Ç‰FStageSelect Ç‚Ş—p
     static const ResultData& GetResultData() { return s_resultData; }
 
-    // ŒİŠ·—pi•K—v‚È‚çg‚¤j
+    // İŠpiKvÈ‚gj
     static bool isClear;
     static int  finalItenCount;
 
@@ -60,25 +60,27 @@ public:
 private:
     std::shared_ptr<ECS::Coordinator> m_coordinator;
     static ResultData                 s_resultData;
+    // ç›´å‰ã®ã‚¯ãƒªã‚¢ã§æ–°è¦è§£æ”¾ã•ã‚ŒãŸã‚¹ãƒ†ãƒ¼ã‚¸ç•ªå·ï¼ˆ2..6ï¼‰ã€‚æ¼”å‡ºã¯StageSelectã¸æˆ»ã‚‹ã¨ãã ã‘å‡ºã™ã€‚
+    static int                      s_newlyUnlockedStageNo;
 
-    // D“cFƒ{ƒ^ƒ“ƒGƒ“ƒeƒBƒeƒB‚Ì‚½‚ß‚Ì•Ï”
+    // DcF{^GeBeBÌ‚ß‚Ì•Ï
 private:
 
     struct ButtonPair {
-        ECS::EntityID textEntity; // ƒ{ƒ^ƒ“‚Ì•¶š
-        ECS::EntityID frameEntity; // ”wŒi‚Ì˜g
+        ECS::EntityID textEntity; // {^Ì•
+        ECS::EntityID frameEntity; // wiÌ˜g
     };
 
 
     std::vector<ButtonPair> m_buttons;
 
-    float m_elapsedTime = 0.0f; // ƒAƒjƒ\ƒWƒ‡ƒ“Œo‰ßŠÔ
+    float m_elapsedTime = 0.0f; // Aj\Woß
 
-    const float BUTTON_NORMAL_SCALE = 1.0f; // ’Êí‚Ì”{—¦
-    const float PULSE_CENTER_SCALE  = 1.15f; // Œ³‹C‚È‚Ì”{—¦
-    const float PULSE_AMPLITUDE     = 0.05f; // —h‚ê•
-    const float PULSE_SPEED         = 10.0f; // —h‚ê‚Ì‘¬‚³
-    const float LERP_SPEED          = 10.0f; // •Ï‰»‚Ì’Ç]‘¬“x
+    const float BUTTON_NORMAL_SCALE = 1.0f; // ÊíÌ”{
+    const float PULSE_CENTER_SCALE = 1.15f; // CÈÌ”{
+    const float PULSE_AMPLITUDE = 0.05f; // hê•
+    const float PULSE_SPEED = 10.0f; // hÌ‘
+    const float LERP_SPEED = 10.0f; // Ï‰Ì’Ç]x
 
 
 };

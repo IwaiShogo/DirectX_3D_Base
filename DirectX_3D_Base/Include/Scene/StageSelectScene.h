@@ -196,6 +196,38 @@ private:
 
 	bool m_isDetailMode = false;
 
+
+	// ===== Stage Unlock / Reveal (Stage Select) =====
+	// 起動時は Stage1 のみ表示。クリア後に次ステージを解放し、StageSelect復帰時に「浮かび上がり」演出を出す。
+	int m_maxUnlockedStage = 1;      // 1..6
+	int m_pendingRevealStage = -1;   // -1 or 2..6（今回の復帰で演出するステージ）
+
+	// m_listUIEntities と同じ順（ST_001..ST_006）
+	std::vector<int> m_listStageNos;
+
+	struct StageRevealAnim
+	{
+		bool active = false;
+		ECS::EntityID entity = (ECS::EntityID)-1;
+		float elapsed = 0.0f;
+		float duration = 0.90f; // 演出時間（秒）
+
+		float startY = 0.0f;
+		float endY = 0.0f;
+		float startAlpha = 0.0f;
+		float endAlpha = 1.0f;
+
+		DirectX::XMFLOAT3 baseScale = { 1,1,1 };
+	};
+
+	std::unordered_map<int, StageRevealAnim> m_stageReveal;
+
+	bool IsStageUnlocked(int stageNo) const { return stageNo >= 1 && stageNo <= m_maxUnlockedStage; }
+	void BeginStageReveal(int stageNo);
+	void UpdateStageReveal(float dt);
+	void ApplyListVisibility(bool listVisible);
+	void ReflowUnlockedCardsLayout();
+
 	// ★追加: ゲーム開始遷移待ち用
 	bool m_isWaitingForGameStart = false;
 
