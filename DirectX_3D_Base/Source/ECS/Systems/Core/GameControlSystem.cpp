@@ -17,7 +17,7 @@
  * @note	（省略可）
  *********************************************************************/
 
-// ===== インクルード =====
+ // ===== インクルード =====
 #include "ECS/Systems/Core/GameControlSystem.h"
 #include "Scene/SceneManager.h"
 #include "ECS/EntityFactory.h"
@@ -176,7 +176,7 @@ void GameControlSystem::Update(float deltaTime)
         }
     }
 
-   
+
 
 }
 
@@ -258,13 +258,17 @@ void GameControlSystem::UpdateTimerAndRules(float deltaTime, ECS::EntityID contr
     }*/
 
 #ifdef _DEBUG
+    // Debug: C=Clear, O=GameOver
+    // (avoid setting both flags at once)
     if (IsKeyTrigger('C'))
     {
         state.isGameClear = true;
+        state.isGameOver = false;
     }
     if (IsKeyTrigger('O'))
     {
         state.isGameOver = true;
+        state.isGameClear = false;
     }
 #endif // _DEBUG
 
@@ -759,7 +763,7 @@ void GameControlSystem::UpdateScanLine(float deltaTime, ECS::EntityID controller
                     // ターゲットの種類に応じて色を決定
                     XMFLOAT4 color = { 1, 1, 1, 1 };
                     if (m_coordinator->HasComponent<CollectableComponent>(target)) color = { 1, 1, 0, 1 }; // 黄
-                    else if (m_coordinator->GetComponent<TagComponent>(target).tag == "taser") color = {1, 0, 0, 1}; // 赤（敵）
+                    else if (m_coordinator->GetComponent<TagComponent>(target).tag == "taser") color = { 1, 0, 0, 1 }; // 赤（敵）
 
                     SpawnSmallSonar(sPos, color);
                 }
@@ -1116,7 +1120,7 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
         // ドアが開く音
         EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_DOOR_OPEN");
     }
-            auto& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(controllerID);
+    auto& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(controllerID);
 
     // 全回収したら
     if (tracker.collectedItems >= tracker.totalItems)

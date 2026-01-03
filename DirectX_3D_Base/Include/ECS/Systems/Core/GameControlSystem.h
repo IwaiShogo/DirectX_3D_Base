@@ -1,26 +1,26 @@
 /*****************************************************************//**
  * @file	GameControlSystem.h
- * @brief	
- * 
- * @details	
- * 
+ * @brief
+ *
+ * @details
+ *
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
- * 
+ *
  * @date	2025/12/05	初回作成日
  * 			作業内容：	- 追加：
- * 
+ *
  * @update	2025/xx/xx	最終更新日
  * 			作業内容：	- XX：
- * 
+ *
  * @note	（省略可）
  *********************************************************************/
 
 #ifndef ___GAME_CONTROL_SYSTEM_H___
 #define ___GAME_CONTROL_SYSTEM_H___
 
-// ===== インクルード =====
+ // ===== インクルード =====
 #include "ECS/ECS.h"
 #include "Scene/SceneManager.h" // シーン遷移のため
 #include <unordered_map>
@@ -32,13 +32,13 @@
  * 処理対象: GameStateComponent を持つ Entity
  */
 class GameControlSystem
-	: public ECS::System
+    : public ECS::System
 {
 private:
-	ECS::Coordinator* m_coordinator = nullptr;
+    ECS::Coordinator* m_coordinator = nullptr;
 
 public:
-	void Init(ECS::Coordinator* coordinator) override
+    void Init(ECS::Coordinator* coordinator) override
     {
         m_coordinator = coordinator;
         m_iconMap.clear();
@@ -49,7 +49,7 @@ public:
         m_itemHUDs.clear();
     }
 
-	void Update(float deltaTime) override;
+    void Update(float deltaTime) override;
 
     void TriggerCaughtSequence(ECS::EntityID guardID);
 

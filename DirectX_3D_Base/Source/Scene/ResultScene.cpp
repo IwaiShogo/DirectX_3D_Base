@@ -8,6 +8,8 @@
 #include "ECS/ECSInitializer.h"
 #include "ECS/EntityFactory.h"
 
+#include "Scene/StageUnlockProgress.h"
+
 #include <ECS/Components/Core/TransformComponent.h>
 #include <ECS/Components/Core/TagComponent.h>
 #include <ECS/Components/UI/UIImageComponent.h>
@@ -33,6 +35,7 @@ static bool IsInputTitle() { return false; }
 bool       ResultScene::isClear = false;
 int        ResultScene::finalItenCount = 0;
 ResultData ResultScene::s_resultData = {};
+int        ResultScene::s_newlyUnlockedStageNo = -1;
 
 namespace
 {
@@ -53,7 +56,21 @@ void ResultScene::Init()
 
     bool isClear = s_resultData.isCleared;
 
-    if (isClear==false)
+    // ===== Stage unlock (persistent) =====
+    // クリアした場合のみ「次ステージ」を解放（最大6）。
+    // ※演出(浮かび上がり)は StageSelect に戻るときだけ出すので、ここでは pending はセットしない。
+    s_newlyUnlockedStageNo = -1;
+    if (s_resultData.isCleared)
+    {
+        s_newlyUnlockedStageNo = StageUnlockProgress::UnlockNextStageFromClearedStageID(s_resultData.stageID);
+    }
+
+
+    // NOTE:
+    //  isCleared==true  : GAME CLEAR 表示
+    //  isCleared==false : GAME OVER 表示
+    //  ここが逆だと「クリアしてもゲームオーバー側」に見える。
+    if (isClear == true)
     {
         // 1) 背景
         m_coordinator->CreateEntity(
@@ -396,7 +413,8 @@ void ResultScene::CreateButtons()
     const float totalWidth = frameW * 3.0f + spacing * 2.0f;
     const float firstX = (SCREEN_WIDTH * 0.6f) - totalWidth * 0.5f + frameW * 0.5f;
 
-    const char* frameTexId = isClear ? "BTN_UNDER_GAMEOVER" : "BTN_UNDER_RISULT";
+    // クリア時は通常リザルト枠、ゲームオーバー時は GAMEOVER 枠
+    const char* frameTexId = isClear ? "BTN_UNDER_RISULT" : "BTN_UNDER_GAMEOVER";
 
     auto createResultButton =
         [&](int index, const char* textTex, std::function<void()> onClick)
@@ -433,6 +451,11 @@ void ResultScene::CreateButtons()
         "BTN_BACK_STAGE_SELECT",
         []()
         {
+            // 直前のクリアで新規解放されたステージがある場合のみ、StageSelect復帰時に演出を出す
+            if (ResultScene::s_newlyUnlockedStageNo >= 2)
+            {
+                StageUnlockProgress::SetPendingRevealStage(ResultScene::s_newlyUnlockedStageNo);
+            }
             SceneManager::ChangeScene<StageSelectScene>();
         }
     );

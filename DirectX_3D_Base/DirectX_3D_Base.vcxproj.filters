@@ -137,6 +137,9 @@
     <ClCompile Include="Source\Scene\FadeManager.cpp">
       <Filter>Source Files\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Scene\StageUnlockProgress.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Scene\GameScene.h">
@@ -403,6 +406,9 @@
       <Filter>Header Files\ECS\Systems\Core</Filter>
     </ClInclude>
     <ClInclude Include="Include\Scene\FadeManager.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\StageUnlockProgress.h">
       <Filter>Header Files\Scene</Filter>
     </ClInclude>
   </ItemGroup>

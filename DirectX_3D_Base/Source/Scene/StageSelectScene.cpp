@@ -9,6 +9,7 @@
 #include "Scene/StageSelectScene.h"
 
 #include "Systems/Input.h"
+#include "Scene/StageUnlockProgress.h"
 #include "ECS/ECS.h"
 #include "ECS/ECSInitializer.h"
 #include "ECS/EntityFactory.h"
@@ -188,6 +189,12 @@ void StageSelectScene::Init()
 
 	LoadStageData();
 
+	// ===== Stage unlock progress =====
+	StageUnlockProgress::Load();
+	m_maxUnlockedStage = StageUnlockProgress::GetMaxUnlockedStage();
+	m_pendingRevealStage = StageUnlockProgress::ConsumePendingRevealStage();
+
+
 	// カメラ
 	EntityFactory::CreateBasicCamera(m_coordinator.get(), { 0,0,0 });
 
@@ -209,6 +216,9 @@ void StageSelectScene::Init()
 	// List UI（一覧）
 	// =====================
 	std::vector<std::string> stageIDs = { "ST_001", "ST_002", "ST_003", "ST_004", "ST_005", "ST_006" };
+	m_listStageNos.clear();
+	m_listStageNos.reserve(6);
+
 
 	float startX = SCREEN_WIDTH * 0.2f;
 	float startY = SCREEN_HEIGHT * 0.3f;
@@ -317,7 +327,28 @@ void StageSelectScene::Init()
 			)
 		);
 		m_listUIEntities.push_back(btn);
+		m_listStageNos.push_back(i + 1);
+
+		// 初期表示：解放済みのみ表示。未解放は完全非表示。
+		const int stageNo = i + 1;
+		const bool unlocked = IsStageUnlocked(stageNo);
+		if (!unlocked)
+		{
+			SetUIVisible(btn, false);
+		}
+
 	}
+
+	// 解放済みステージの並びを「見えている数」に合わせて中央寄せ
+	ReflowUnlockedCardsLayout();
+
+	// 復帰時に「今回解放されたステージ」を浮かび上がり演出
+	if (m_pendingRevealStage >= 2 && m_pendingRevealStage <= 6 && IsStageUnlocked(m_pendingRevealStage))
+	{
+		BeginStageReveal(m_pendingRevealStage);
+		m_pendingRevealStage = -1; // 1回だけ
+	}
+
 	// =====================
 	// Detail UI（情報/詳細）
 	/*
@@ -622,6 +653,7 @@ void StageSelectScene::Update(float deltaTime)
 	UpdateUISelectFx(dtSec);
 	UpdateDetailAppear(dtSec);
 	UpdateButtonHoverScale(dtSec);
+	UpdateStageReveal(dtSec);
 	UpdateCardFocusAnim(dtSec);
 
 	// ★★★ カード選択後の遷移待ち処理 ★★★
@@ -1018,13 +1050,26 @@ void StageSelectScene::SwitchState(bool toDetail)
 		// SetUIVisible(id, true);
 
 		// 修正後: 詳細画面(=toDetail)なら非表示、一覧なら表示
-		SetUIVisible(id, !toDetail);
+		const int stageNo = (i < (int)m_listStageNos.size()) ? m_listStageNos[i] : (i + 1);
+		const bool showList = (!toDetail) && IsStageUnlocked(stageNo);
+		auto itReveal = m_stageReveal.find(stageNo);
+		const bool revealActive = (itReveal != m_stageReveal.end() && itReveal->second.active);
 
-		if (m_coordinator->HasComponent<UIButtonComponent>(id))
+		if (!showList)
 		{
-			// ここも連動させる
-			auto& b = m_coordinator->GetComponent<UIButtonComponent>(id);
-			b.isVisible = !toDetail;
+			SetUIVisible(id, false);
+		}
+		else if (revealActive)
+		{
+			// 演出中は「画像だけ表示、クリック不可」
+			if (m_coordinator->HasComponent<UIImageComponent>(id))
+				m_coordinator->GetComponent<UIImageComponent>(id).isVisible = true;
+			if (m_coordinator->HasComponent<UIButtonComponent>(id))
+				m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = false;
+		}
+		else
+		{
+			SetUIVisible(id, true);
 		}
 		// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
@@ -1034,20 +1079,25 @@ void StageSelectScene::SwitchState(bool toDetail)
 			m_coordinator->GetComponent<RenderComponent>(id).type = MESH_NONE;
 		}
 
-		// ★重要：一覧に戻るとき座標とスケールを元に復元
+		// 一覧に戻るとき：回転・スケールだけ復元（座標は ReflowUnlockedCardsLayout で決める）
 		if (!toDetail)
 		{
-			if (m_coordinator->HasComponent<TransformComponent>(id))
+			// 演出中は座標を触らない
+			auto itReveal2 = m_stageReveal.find(stageNo);
+			const bool revealActive2 = (itReveal2 != m_stageReveal.end() && itReveal2->second.active);
+			if (!revealActive2 && m_coordinator->HasComponent<TransformComponent>(id))
 			{
 				auto& tr = m_coordinator->GetComponent<TransformComponent>(id);
-				float x = startX + (i % 3) * gapX;
-				float y = startY + (i / 3) * gapY;
-
-				tr.position = DirectX::XMFLOAT3(x, y, 5.0f);
+				tr.position.z = 5.0f;
 				tr.rotation = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 				tr.scale = DirectX::XMFLOAT3(250.0f, 150.0f, 1.0f);
 			}
 		}
+	}
+
+	if (!toDetail)
+	{
+		ReflowUnlockedCardsLayout();
 	}
 
 	// 詳細の制御
@@ -1185,18 +1235,252 @@ void StageSelectScene::UpdateDetailAppear(float dt)
 }
 
 
+
+//--------------------------------------------------------------
+// Stage Unlock / Reveal（未解放は完全非表示、解放時に浮かび上がる）
+//--------------------------------------------------------------
+void StageSelectScene::BeginStageReveal(int stageNo)
+{
+	if (!m_coordinator) return;
+	if (stageNo < 1 || stageNo > 6) return;
+	const int idx = stageNo - 1;
+	if (idx < 0 || idx >= (int)m_listUIEntities.size()) return;
+
+	ECS::EntityID id = m_listUIEntities[idx];
+	if (id == (ECS::EntityID)-1) return;
+
+	if (!m_coordinator->HasComponent<TransformComponent>(id) ||
+		!m_coordinator->HasComponent<UIImageComponent>(id))
+	{
+		return;
+	}
+
+	auto& tr = m_coordinator->GetComponent<TransformComponent>(id);
+	auto& ui = m_coordinator->GetComponent<UIImageComponent>(id);
+
+	StageRevealAnim anim;
+	anim.active = true;
+	anim.entity = id;
+	anim.elapsed = 0.0f;
+	anim.duration = 0.90f;
+	anim.endY = tr.position.y;
+	anim.startY = tr.position.y + 60.0f; // 少し下から
+	anim.startAlpha = 0.0f;
+	anim.endAlpha = 1.0f;
+	anim.baseScale = tr.scale;
+
+	// 初期状態
+	tr.position.y = anim.startY;
+	ui.isVisible = true;
+	ui.color.w = anim.startAlpha;
+
+	// 演出中はクリック不可にする（見えない/半透明で誤クリック防止）
+	if (m_coordinator->HasComponent<UIButtonComponent>(id))
+	{
+		m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = false;
+	}
+
+	// RenderComponent 側も念のため同期（UI描画がこちらを参照する実装もあるため）
+	if (m_coordinator->HasComponent<RenderComponent>(id))
+	{
+		m_coordinator->GetComponent<RenderComponent>(id).color.w = anim.startAlpha;
+	}
+
+	m_stageReveal[stageNo] = anim;
+}
+
+void StageSelectScene::UpdateStageReveal(float dt)
+{
+	if (!m_coordinator) return;
+	if (m_stageReveal.empty()) return;
+
+	for (auto& kv : m_stageReveal)
+	{
+		StageRevealAnim& anim = kv.second;
+		if (!anim.active) continue;
+		if (anim.entity == (ECS::EntityID)-1) { anim.active = false; continue; }
+
+		if (!m_coordinator->HasComponent<TransformComponent>(anim.entity) ||
+			!m_coordinator->HasComponent<UIImageComponent>(anim.entity))
+		{
+			anim.active = false;
+			continue;
+		}
+
+		anim.elapsed += dt;
+		float t = (anim.duration > 0.0f) ? (anim.elapsed / anim.duration) : 1.0f;
+		if (t > 1.0f) t = 1.0f;
+		const float e = SmoothStep01(t);
+
+		auto& tr = m_coordinator->GetComponent<TransformComponent>(anim.entity);
+		auto& ui = m_coordinator->GetComponent<UIImageComponent>(anim.entity);
+
+		// 位置：下→定位置
+		tr.position.y = anim.startY + (anim.endY - anim.startY) * e;
+
+		// アルファ：0→1
+		const float a = anim.startAlpha + (anim.endAlpha - anim.startAlpha) * e;
+		ui.color.w = a;
+
+		if (m_coordinator->HasComponent<RenderComponent>(anim.entity))
+		{
+			m_coordinator->GetComponent<RenderComponent>(anim.entity).color.w = a;
+		}
+
+		// 仕上げ：最後にクリック可能化
+		if (t >= 1.0f)
+		{
+			tr.position.y = anim.endY;
+			ui.color.w = anim.endAlpha;
+
+			if (m_coordinator->HasComponent<UIButtonComponent>(anim.entity))
+			{
+				m_coordinator->GetComponent<UIButtonComponent>(anim.entity).isVisible = true;
+			}
+
+			if (m_coordinator->HasComponent<RenderComponent>(anim.entity))
+			{
+				m_coordinator->GetComponent<RenderComponent>(anim.entity).color.w = anim.endAlpha;
+			}
+
+			anim.active = false;
+		}
+	}
+}
+
+// 一覧（カード）表示の統一制御（未解放は完全非表示）
+void StageSelectScene::ApplyListVisibility(bool listVisible)
+{
+	if (!m_coordinator) return;
+
+	for (int i = 0; i < (int)m_listUIEntities.size(); ++i)
+	{
+		const int stageNo = (i < (int)m_listStageNos.size()) ? m_listStageNos[i] : (i + 1);
+		ECS::EntityID id = m_listUIEntities[i];
+
+		const bool unlocked = IsStageUnlocked(stageNo);
+		const bool show = listVisible && unlocked;
+
+		auto itReveal = m_stageReveal.find(stageNo);
+		const bool revealActive = (itReveal != m_stageReveal.end() && itReveal->second.active);
+
+		if (!show)
+		{
+			SetUIVisible(id, false);
+			continue;
+		}
+
+		if (revealActive)
+		{
+			if (m_coordinator->HasComponent<UIImageComponent>(id))
+				m_coordinator->GetComponent<UIImageComponent>(id).isVisible = true;
+			if (m_coordinator->HasComponent<UIButtonComponent>(id))
+				m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = false;
+		}
+		else
+		{
+			SetUIVisible(id, true);
+		}
+	}
+}
+
+
+// 解放済みステージ（1..m_maxUnlockedStage）を「見えている数」で中央寄せ配置する
+// - 3列×2段を基本にし、各段は「その段にある数」で中央寄せ
+// - 演出中のステージは配置を上書きしない（浮かび上がりを維持）
+void StageSelectScene::ReflowUnlockedCardsLayout()
+{
+	if (!m_coordinator) return;
+
+	const int n = std::max(1, std::min(6, m_maxUnlockedStage));
+	const float gapX = 350.0f;
+	const float gapY = 250.0f;
+
+	const float centerX = SCREEN_WIDTH * 0.5f;
+	const float startY = SCREEN_HEIGHT * 0.32f;
+
+	for (int stageNo = 1; stageNo <= n; ++stageNo)
+	{
+		const int listIdx = stageNo - 1;
+		if (listIdx < 0 || listIdx >= (int)m_listUIEntities.size()) continue;
+
+		// 演出中は位置を上書きしない
+		auto itReveal = m_stageReveal.find(stageNo);
+		if (itReveal != m_stageReveal.end() && itReveal->second.active)
+			continue;
+
+		ECS::EntityID id = m_listUIEntities[listIdx];
+		if (id == (ECS::EntityID)-1) continue;
+		if (!m_coordinator->HasComponent<TransformComponent>(id)) continue;
+
+		const int visibleIndex = stageNo - 1; // 解放が連番(1..n)である前提
+		const int row = visibleIndex / 3;
+		const int col = visibleIndex % 3;
+
+		const int rowCount = std::min(3, n - row * 3);
+		const float rowWidth = (rowCount <= 1) ? 0.0f : (rowCount - 1) * gapX;
+		const float rowStartX = centerX - rowWidth * 0.5f;
+
+		const float x = rowStartX + col * gapX;
+		const float y = startY + row * gapY;
+
+		auto& tr = m_coordinator->GetComponent<TransformComponent>(id);
+		tr.position.x = x;
+		tr.position.y = y;
+
+		// 一覧の基準サイズ（既存の見た目に合わせる）
+		tr.position.z = 5.0f;
+		tr.rotation = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+		tr.scale = DirectX::XMFLOAT3(250.0f, 150.0f, 1.0f);
+	}
+}
+
+
+
 void StageSelectScene::SetUIVisible(ECS::EntityID id, bool visible)
 {
 	if (!m_coordinator) return;
 
+	// NOTE:
+	//  既存のUI描画が isVisible を参照しない実装だった場合でも確実に消えるように、
+	//  アルファも一緒に落とす（RenderComponent 側も同期）。
+	//  ※visible=true のときは「今が完全透明(0)なら 1 に戻す」だけにして、
+	//    Reveal演出中の半透明を上書きしない。
+	const float targetAlpha = visible ? 1.0f : 0.0f;
+
 	if (m_coordinator->HasComponent<UIImageComponent>(id))
 	{
-		m_coordinator->GetComponent<UIImageComponent>(id).isVisible = visible;
+		auto& ui = m_coordinator->GetComponent<UIImageComponent>(id);
+		ui.isVisible = visible;
+
+		if (!visible)
+		{
+			ui.color.w = 0.0f;
+		}
+		else
+		{
+			// 0のときだけ復帰（演出中の途中値を壊さない）
+			if (ui.color.w <= 0.001f) ui.color.w = targetAlpha;
+		}
 	}
 
 	if (m_coordinator->HasComponent<UIButtonComponent>(id))
 	{
 		m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = visible;
+	}
+
+	if (m_coordinator->HasComponent<RenderComponent>(id))
+	{
+		auto& rc = m_coordinator->GetComponent<RenderComponent>(id);
+
+		if (!visible)
+		{
+			rc.color.w = 0.0f;
+		}
+		else
+		{
+			if (rc.color.w <= 0.001f) rc.color.w = targetAlpha;
+		}
 	}
 }
 
