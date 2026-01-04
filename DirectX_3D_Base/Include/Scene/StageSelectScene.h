@@ -105,6 +105,8 @@ private:
 
 	// UI
 	void SwitchState(bool toDetail);
+	// 一覧カードの「スロット中心座標」を返す（押下時の一瞬のズレ対策用）
+	DirectX::XMFLOAT3 GetListCardSlotCenterPos(int stageNo) const;
 	// ★画面(一覧↔詳細)の切替時や再入場時に、演出状態を必ず初期化する
 	// keepFocusCard=true の場合は、フォーカスカードの Destroy を呼ばない（EntityID 再利用によるアニメ状態持ち越し対策）
 	void ResetSelectToDetailAnimState(bool unlockInput = false, bool keepFocusCard = false);
@@ -201,6 +203,10 @@ private:
 	// 起動時は Stage1 のみ表示。クリア後に次ステージを解放し、StageSelect復帰時に「浮かび上がり」演出を出す。
 	int m_maxUnlockedStage = 1;      // 1..6
 	int m_pendingRevealStage = -1;   // -1 or 2..6（今回の復帰で演出するステージ）
+	// ★追加：既に解放済みは先に表示し、新規解放だけを後から浮かせる（遅延Reveal）
+	int   m_scheduledRevealStage = -1; // -1 or 2..6
+	float m_revealDelayTimer = 0.0f;
+
 
 	// m_listUIEntities と同じ順（ST_001..ST_006）
 	std::vector<int> m_listStageNos;

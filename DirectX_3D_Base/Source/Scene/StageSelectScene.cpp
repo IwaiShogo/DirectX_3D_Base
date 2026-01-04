@@ -54,24 +54,6 @@ static DirectX::XMFLOAT3 UIToWorld(float sx, float sy, float zWorld)
 	return DirectX::XMFLOAT3(wx, wy, zWorld);
 }
 
-//--------------------------------------------------------------
-// StageSelect: Card slot layout (fixed 3x2 grid)
-//  - Always place stage cards at the same positions as the "6 cards" layout.
-//  - This prevents re-centering when only 1-5 stages are unlocked.
-//--------------------------------------------------------------
-static void CalcStageCardSlotUIPos(int stageNo, float& outX, float& outY)
-{
-	// Match the layout used when creating 6 buttons in Init().
-	const float startX = SCREEN_WIDTH * 0.2f;
-	const float startY = SCREEN_HEIGHT * 0.3f;
-	const float gapX = 350.0f;
-	const float gapY = 250.0f;
-
-	const int idx = std::max(0, std::min(5, stageNo - 1));
-	outX = startX + (idx % 3) * gapX;
-	outY = startY + (idx / 3) * gapY;
-}
-
 
 
 static DirectX::XMFLOAT3 Lerp3(const DirectX::XMFLOAT3& a, const DirectX::XMFLOAT3& b, float t)
@@ -90,14 +72,45 @@ static float SmoothStep01(float t)
 }
 
 //--------------------------------------------------------------
+// 一覧カード：スロット中心座標（押下時の一瞬ズレ対策）
+//  - UIButtonSystem 側の「押下演出」で Transform が一瞬だけ動く場合があるため、
+//    クリック時は Transform ではなく“本来の配置スロット”を基準にする。
+//--------------------------------------------------------------
+DirectX::XMFLOAT3 StageSelectScene::GetListCardSlotCenterPos(int stageNo) const
+{
+	const int n = std::max(1, std::min(6, m_maxUnlockedStage));
+	if (stageNo < 1 || stageNo > n)
+	{
+		return DirectX::XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f);
+	}
+
+	const float gapX = 350.0f;
+	const float gapY = 250.0f;
+
+	const float centerX = SCREEN_WIDTH * 0.5f;
+	const float startY = SCREEN_HEIGHT * 0.32f;
+	const float baseRowStartX = centerX - gapX;
+
+	const int slotIndex = stageNo - 1;
+	const int row = slotIndex / 3;
+	const int col = slotIndex % 3;
+
+	const float x = baseRowStartX + col * gapX;
+	const float y = startY + row * gapY;
+	return DirectX::XMFLOAT3(x, y, 0.0f);
+}
+
+//--------------------------------------------------------------
 // Card Focus Animation（ボタン押下 → カードが中央に来る）
 //--------------------------------------------------------------
 void StageSelectScene::StartCardFocusAnim(ECS::EntityID cardEntity, const DirectX::XMFLOAT3& uiPos)
 {
-	constexpr float kCardZ = 5.0f;        // 6.0f → 5.0f（少し手前）
-	constexpr float kEndScale = 0.15f;    // 0.22f → 0.70f（画面いっぱい狙い）
-	constexpr float kStartScaleMul = 0.10f;
-	constexpr float kDuration = 1.5f;    // 0.45f → 0.70f（“だんだん”感を強める）
+	constexpr float kCardZ = 5.0f;        // 少し手前
+	// ★開始時に「縮小」させない（押した瞬間のチラつき/縮み対策）
+	constexpr float kStartScale = 0.03f;
+	// ★終了時の拡大率（好みで 1.10f〜1.35f くらい）
+	constexpr float kEndScaleMul = 5.0f;
+	constexpr float kDuration = 1.5f;
 
 	constexpr float kExtraRollRad = DirectX::XMConvertToRadians(50.0f); // 追加で少しだけZ回転（演出）
 	// 画面「中央」補正（+で右 / -で左、-で上 / +で下）
@@ -113,20 +126,43 @@ void StageSelectScene::StartCardFocusAnim(ECS::EntityID cardEntity, const Direct
 	m_cardFocus.duration = kDuration;
 
 	m_cardFocus.startPos = UIToWorld(uiPos.x, uiPos.y, kCardZ);
+
+	// ------------------------------------------------------------
+	// ★開始位置の微調整（pixel単位）
+	// - UIToWorld の内部実装がどんな変換でも効くように、
+	//   「pixel -> world の差分」を差し引きで求めて加算する。
+	// - ここを調整しても全く変化が無い場合は、別の StageSelectScene.cpp が
+	//   ビルド対象になっている可能性が高い。
+	// ------------------------------------------------------------
+	constexpr float kFocusStartOffsetXPx = 65.0f;  // 右に寄せたいなら +, 左なら -
+	constexpr float kFocusStartOffsetYPx = 25.0f;  // 上に寄せたいなら +, 下なら -
+
+	if (kFocusStartOffsetXPx != 0.0f || kFocusStartOffsetYPx != 0.0f)
+	{
+		const auto w0 = UIToWorld(0.0f, 0.0f, kCardZ);
+		const auto w1 = UIToWorld(kFocusStartOffsetXPx, kFocusStartOffsetYPx, kCardZ);
+		m_cardFocus.startPos.x += (w1.x - w0.x);
+		m_cardFocus.startPos.y += (w1.y - w0.y);
+	}
+
 	m_cardFocus.endPos = UIToWorld(
 		SCREEN_WIDTH * 0.5f + kCenterOffsetPxX,
 		SCREEN_HEIGHT * 0.5f + kCenterOffsetPxY,
 		kCardZ
 	);
 
-	m_cardFocus.endScale = DirectX::XMFLOAT3(kEndScale, kEndScale, kEndScale);
-	m_cardFocus.startScale = DirectX::XMFLOAT3(kEndScale * kStartScaleMul, kEndScale * kStartScaleMul, kEndScale * kStartScaleMul);
+	const float endScale = kStartScale * kEndScaleMul;
+	m_cardFocus.startScale = DirectX::XMFLOAT3(kStartScale, kStartScale, kStartScale);
+	m_cardFocus.endScale = DirectX::XMFLOAT3(endScale, endScale, endScale);
 
 	m_cardFocus.baseRot = DirectX::XMFLOAT3(0.0f, DirectX::XM_PI, 0.0f); // カード表向きの向きに合わせる
 	m_cardFocus.extraRollRad = kExtraRollRad;
 
 	{
 		auto& tr = m_coordinator->GetComponent<TransformComponent>(cardEntity);
+		// ★生成直後の1フレーム目から「同じ場所・同じ大きさ」で始める（瞬間ズレ対策）
+		tr.position = m_cardFocus.startPos;
+		tr.scale = m_cardFocus.startScale;
 		tr.rotation = m_cardFocus.baseRot;
 	}
 }
@@ -237,6 +273,12 @@ void StageSelectScene::Init()
 	m_listStageNos.clear();
 	m_listStageNos.reserve(6);
 
+
+	float startX = SCREEN_WIDTH * 0.2f;
+	float startY = SCREEN_HEIGHT * 0.3f;
+	float gapX = 350.0f;
+	float gapY = 250.0f;
+
 	m_listBgEntity = m_coordinator->CreateEntity(
 		TransformComponent({ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 5.0f }, { 0,0,0 }, { SCREEN_WIDTH, SCREEN_HEIGHT, 1.0f }),
 		UIImageComponent("BG_STAGE_SELECT", 0.0f)
@@ -245,10 +287,8 @@ void StageSelectScene::Init()
 	for (int i = 0; i < 6; ++i)
 	{
 		std::string id = (i < (int)stageIDs.size()) ? stageIDs[i] : "ST_001";
-		const int stageNo = i + 1;
-		float x = 0.0f;
-		float y = 0.0f;
-		CalcStageCardSlotUIPos(stageNo, x, y);
+		float x = startX + (i % 3) * gapX;
+		float y = startY + (i / 3) * gapY;
 
 		EntityID btn = m_coordinator->CreateEntity(
 			TransformComponent({ x, y, 5.0f }, { 0,0,0 }, { 250, 150, 1 }),
@@ -287,11 +327,9 @@ void StageSelectScene::Init()
 
 
 						// 2. クリック位置から出す「集中カード」を新規作成
-						DirectX::XMFLOAT3 uiPos = { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f };
-						if (m_coordinator->HasComponent<TransformComponent>(currentBtnID))
-						{
-							uiPos = m_coordinator->GetComponent<TransformComponent>(currentBtnID).position;
-						}
+						//    ★押した瞬間だけTransformが動く(押下演出)ケースがあるため、
+						//      “本来のスロット座標”から開始する。
+						DirectX::XMFLOAT3 uiPos = GetListCardSlotCenterPos((int)i + 1);
 
 						// 旧フォーカスカードは「新規作成後」に破棄して EntityID 再利用を回避する
 						ECS::EntityID oldFocus = m_focusCardEntity;
@@ -344,7 +382,7 @@ void StageSelectScene::Init()
 		m_listStageNos.push_back(i + 1);
 
 		// 初期表示：解放済みのみ表示。未解放は完全非表示。
-		// 初期表示：解放済みのみ表示。未解放は完全非表示。
+		const int stageNo = i + 1;
 		const bool unlocked = IsStageUnlocked(stageNo);
 		if (!unlocked)
 		{
@@ -353,16 +391,23 @@ void StageSelectScene::Init()
 
 	}
 
-	// 解放済みステージの並びを「6個並ぶ時の固定スロット」に再配置
+	// 解放済みステージの並びを「見えている数」に合わせて中央寄せ
 	ReflowUnlockedCardsLayout();
 
-	// 復帰時に「今回解放されたステージ」を浮かび上がり演出
+	// 復帰時に「今回解放されたステージ」は“少し後から”浮かび上がり演出（既存解放カードは先に表示）
 	if (m_pendingRevealStage >= 2 && m_pendingRevealStage <= 6 && IsStageUnlocked(m_pendingRevealStage))
 	{
-		BeginStageReveal(m_pendingRevealStage);
+		const int idx = m_pendingRevealStage - 1;
+		if (0 <= idx && idx < (int)m_listUIEntities.size())
+		{
+			// まずは隠しておき、少し待ってから Reveal を開始する
+			SetUIVisible(m_listUIEntities[idx], false);
+		}
+
+		m_scheduledRevealStage = m_pendingRevealStage;
+		m_revealDelayTimer = 0.0f;
 		m_pendingRevealStage = -1; // 1回だけ
 	}
-
 	// =====================
 	// Detail UI（情報/詳細）
 	/*
@@ -502,7 +547,7 @@ void StageSelectScene::Init()
 					PlayUISelectEffect(m_finishBtnEntity, "EFK_SELECTBACK", 35.0f);
 					m_inputLocked = true;
 					ScreenTransition::RequestFadeOutEx(
-						m_coordinator.get(), m_transitionEntity, 0.15f, 0.35f, 0.45f,
+						m_coordinator.get(), m_blackTransitionEntity, 0.15f, 0.35f, 0.45f,
 						[this]() { SwitchState(false); },
 						true, [this]() { m_inputLocked = false; }, 0.0f, 0.35f, false, false
 					);
@@ -539,16 +584,6 @@ void StageSelectScene::Init()
 			m_coordinator.get(), "BG_STAGE_SELECT", fadeX, fadeY, fadeBgW, fadeBgH
 		);
 
-		// ★FIX: フェード用オーバーレイが回転して見える対策
-		// CreateOverlay 側で Transform の rotation が初期化されていない／別値が入るケースがあるため、
-		// ここで必ず 0 にリセットする（UIは回転不要）
-		if (m_coordinator->HasComponent<TransformComponent>(m_transitionEntity))
-		{
-			auto& tr = m_coordinator->GetComponent<TransformComponent>(m_transitionEntity);
-			tr.rotation = { 0.0f, 0.0f, 0.0f };
-			tr.position = { fadeX, fadeY, tr.position.z }; // 念のため中心へ
-		}
-
 		if (m_coordinator->HasComponent<UIImageComponent>(m_transitionEntity))
 		{
 			auto& ui = m_coordinator->GetComponent<UIImageComponent>(m_transitionEntity);
@@ -564,14 +599,6 @@ void StageSelectScene::Init()
 		m_blackTransitionEntity = ScreenTransition::CreateOverlay(
 			m_coordinator.get(), "BG_STAGE_SELECT", fadeX, fadeY, fadeBgW, fadeBgH
 		);
-
-		// ★FIX: 黒フェード用オーバーレイも回転をゼロ固定
-		if (m_coordinator->HasComponent<TransformComponent>(m_blackTransitionEntity))
-		{
-			auto& tr = m_coordinator->GetComponent<TransformComponent>(m_blackTransitionEntity);
-			tr.rotation = { 0.0f, 0.0f, 0.0f };
-			tr.position = { fadeX, fadeY, tr.position.z };
-		}
 
 		if (m_coordinator->HasComponent<UIImageComponent>(m_blackTransitionEntity))
 		{
@@ -685,6 +712,39 @@ void StageSelectScene::Update(float deltaTime)
 	UpdateUISelectFx(dtSec);
 	UpdateDetailAppear(dtSec);
 	UpdateButtonHoverScale(dtSec);
+
+	// ★解放カードの“遅延スタート”（既存カードは先に表示し、新規だけ後から浮かせる）
+// - リザルト → セレクト復帰時に「フェードイン」と同時に出ないよう、フェードが終わるまで待つ
+// - フェード完了後（必要なら少しだけ間を置いて）新規カードだけ Reveal を開始する
+	if (m_scheduledRevealStage != -1)
+	{
+		const bool isFading =
+			ScreenTransition::IsBusy(m_coordinator.get(), m_transitionEntity) ||
+			ScreenTransition::IsBusy(m_coordinator.get(), m_blackTransitionEntity);
+
+		if (!isFading)
+		{
+			// 調整：フェードイン完了後に何秒待ってから出すか（0.0fで即開始）
+			constexpr float kRevealDelayAfterFadeIn = 0.50f;
+			m_revealDelayTimer += dtSec;
+
+			if (m_revealDelayTimer >= kRevealDelayAfterFadeIn)
+			{
+				BeginStageReveal(m_scheduledRevealStage);
+				m_scheduledRevealStage = -1;
+				m_revealDelayTimer = 0.0f;
+			}
+		}
+		else
+		{
+			// フェード中はカウントしない（フェード完了後に0から開始）
+			m_revealDelayTimer = 0.0f;
+		}
+	}
+
+
+
+
 	UpdateStageReveal(dtSec);
 	UpdateCardFocusAnim(dtSec);
 
@@ -1069,6 +1129,9 @@ void StageSelectScene::SwitchState(bool toDetail)
 	// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 	// 一覧（カード）の制御
+	float startX = SCREEN_WIDTH * 0.2f;	float startY = SCREEN_HEIGHT * 0.3f;
+	float gapX = 350.0f;
+	float gapY = 250.0f;
 
 	for (int i = 0; i < (int)m_listUIEntities.size(); ++i)
 	{
@@ -1399,6 +1462,13 @@ void StageSelectScene::ApplyListVisibility(bool listVisible)
 			continue;
 		}
 
+		// 新規解放カードは、遅延時間が経つまで強制的に隠す（全部同時に出るのを防ぐ）
+		if (stageNo == m_scheduledRevealStage)
+		{
+			SetUIVisible(id, false);
+			continue;
+		}
+
 		if (revealActive)
 		{
 			if (m_coordinator->HasComponent<UIImageComponent>(id))
@@ -1414,16 +1484,25 @@ void StageSelectScene::ApplyListVisibility(bool listVisible)
 }
 
 
-// 解放済みステージ（1..m_maxUnlockedStage）を「6個並ぶ時の固定スロット」に配置する
-// - 3列×2段の固定グリッド（Init() と同じ座標）
-// - 解放数が 1..5 でも中央寄せしない（常に 6個時の場所）
+// 解放済みステージ（1..m_maxUnlockedStage）を「見えている数」で中央寄せ配置する
+// - 3列×2段を基本にし、各段は「その段にある数」で中央寄せ
+// - 演出中のステージは配置を上書きしない（浮かび上がりを維持）
+// 解放済みステージ（1..m_maxUnlockedStage）を「6枚表示時のスロット座標」に固定配置する
+// - 3列×2段（最大6枚）のスロットを常に同じ位置に置く
+// - 解放枚数が1枚でも「中央寄せ」しない（= 6枚ある時と同じ場所に出る）
 // - 演出中のステージは配置を上書きしない（浮かび上がりを維持）
 void StageSelectScene::ReflowUnlockedCardsLayout()
 {
 	if (!m_coordinator) return;
 
 	const int n = std::max(1, std::min(6, m_maxUnlockedStage));
+	const float gapX = 350.0f;
+	const float gapY = 250.0f;
 
+	// 6枚表示時の基準レイアウト（中央基準の3列）
+	const float centerX = SCREEN_WIDTH * 0.5f;
+	const float startY = SCREEN_HEIGHT * 0.32f;
+	const float baseRowStartX = centerX - gapX; // 3列(0..2)のとき: center - gapX
 
 	for (int stageNo = 1; stageNo <= n; ++stageNo)
 	{
@@ -1439,9 +1518,14 @@ void StageSelectScene::ReflowUnlockedCardsLayout()
 		if (id == (ECS::EntityID)-1) continue;
 		if (!m_coordinator->HasComponent<TransformComponent>(id)) continue;
 
-		float x = 0.0f;
-		float y = 0.0f;
-		CalcStageCardSlotUIPos(stageNo, x, y);
+		const int slotIndex = stageNo - 1; // 解放が連番(1..n)である前提
+		const int row = slotIndex / 3;
+		const int col = slotIndex % 3;
+
+		// ★ここが重要：rowStartX を「見えている数」で変えない。
+		// 1枚でも、6枚時と同じスロット位置に置く。
+		const float x = baseRowStartX + col * gapX;
+		const float y = startY + row * gapY;
 
 		auto& tr = m_coordinator->GetComponent<TransformComponent>(id);
 		tr.position.x = x;
