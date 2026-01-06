@@ -131,6 +131,15 @@
     <ClCompile Include="Include\ECS\Systems\Rendering\FlickerSystem.cpp">
       <Filter>Source Files\ECS\Systems\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Core\ScreenTransitionSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\FadeManager.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Scene\StageUnlockProgress.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Scene\GameScene.h">
@@ -386,6 +395,21 @@
     </ClInclude>
     <ClInclude Include="Include\ECS\Systems\Rendering\FlickerSystem.h">
       <Filter>Header Files\ECS\Systems\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\ScreenTransitionSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Core\ScreenTransitionComponent.h">
+      <Filter>Header Files\ECS\Components\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Core\ScreenTransition.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\FadeManager.h">
+      <Filter>Header Files\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\StageUnlockProgress.h">
+      <Filter>Header Files\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

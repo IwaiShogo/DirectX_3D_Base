@@ -36,8 +36,8 @@ using namespace DirectX;
 void RenderSystem::DrawSetup()
 {
 #ifdef _DEBUG
-	// 軸線の表示
-	// グリッド
+	// --- 軸線・グリッドの表示設定 ---
+	// グリッド（地面の網目）
 	XMFLOAT4 lineColor(0.5f, 0.5f, 0.5f, 1.0f);
 	float size = DEBUG_GRID_NUM * DEBUG_GRID_MARGIN;
 	for (int i = 1; i <= DEBUG_GRID_NUM; ++i)
@@ -58,21 +58,35 @@ void RenderSystem::DrawSetup()
 		pos[0].z = pos[1].z = -grid;
 		Geometory::AddLine(pos[0], pos[1], lineColor);
 	}
-	// 軸
+
+	// ★ 修正箇所 ★
+	// 以下の「軸（XYZ）」の描画が画面中央の線の正体です。
+	// 不要な場合はコメントアウトすることで、画面上の邪魔な線を消せます。
+
+	/* // X軸（赤）
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(size, 0, 0), XMFLOAT4(1, 0, 0, 1));
+	// Y軸（緑） <- これが中央の横線の正体！
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(0, size, 0), XMFLOAT4(0, 1, 0, 1));
+	// Z軸（青）
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, size), XMFLOAT4(0, 0, 1, 1));
+	// 反対方向の軸（黒）
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(-size, 0, 0), XMFLOAT4(0, 0, 0, 1));
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, -size), XMFLOAT4(0, 0, 0, 1));
+	*/
 
 #endif
+
+	// マップ生成システムのデバッグ行（これも必要に応じてMapGenerationSystem内で緑色の線を引いている可能性があります）
 	auto mapGenSystem = ECS::ECSInitializer::GetSystem<MapGenerationSystem>();
 	if (mapGenSystem)
 	{
 		mapGenSystem->DrawDebugLines();
 	}
 
-	Geometory::DrawLines();
+	// 登録されたすべてのラインを描画
+	//Geometory::DrawLines();
+
+	
 }
 
 /**
@@ -170,7 +184,20 @@ void RenderSystem::DrawEntityInternal(ECS::EntityID entity, const DirectX::XMFLO
 }
 
 /**
- * @brief TransformComponentとRenderComponentを持つ全てのEntityを描画する
+ * @brief 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ とRenderComponentを持つ全てのEntityを描画する
  */
 void RenderSystem::DrawEntities()
 {

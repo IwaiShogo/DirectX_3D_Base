@@ -6,7 +6,16 @@
 #include <ECS/Components/Core/TagComponent.h>
 #include <ECS/Components/UI/UIImageComponent.h>
 
+#include <cmath>
+#include <cstdlib>
+#include <string>
+
 using namespace ECS;
+
+static bool StartsWith(const std::string& s, const char* prefix)
+{
+    return s.rfind(prefix, 0) == 0;
+}
 
 void ResultControlSystem::Update(float deltaTime)
 {
@@ -15,39 +24,56 @@ void ResultControlSystem::Update(float deltaTime)
     m_timer += deltaTime;
 
     // ---------------------------------------------------------
-    // 1. ¯‚ÌƒAƒjƒ[ƒVƒ‡ƒ“ (0.5•bŠÔŠu‚Å 1‚Â‚¸‚Âƒ|ƒbƒv)
-    //    Tag: "AnimStar"
+    // 1. æ˜Ÿã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ (0.5ç§’é–“éš”ã§ 1ã¤ãšã¤ãƒãƒƒãƒ—)
+    //    Tag: "AnimStar0/1/2"
     // ---------------------------------------------------------
-    int starIndex = 0;
     for (auto const& entity : m_coordinator->GetActiveEntities())
     {
-        if (m_coordinator->HasComponent<TagComponent>(entity) &&
-            m_coordinator->GetComponent<TagComponent>(entity).tag == "AnimStar")
+        if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+
+        const auto& tagComp = m_coordinator->GetComponent<TagComponent>(entity);
+        const std::string& tag = tagComp.tag;
+
+        if (!StartsWith(tag, "AnimStar")) continue;
+
+        // "AnimStar0" ã®æœ«å°¾æ•°å­—ã‚’è¡Œç•ªå·ã¨ã—ã¦ä½¿ã†ï¼ˆç„¡ã‘ã‚Œã°0æ‰±ã„ï¼‰
+        int row = 0;
+        if (tag.size() > 7)
         {
-            // oŒ»ƒ^ƒCƒ~ƒ“ƒO: 0.5s, 1.0s, 1.5s ...
-            float appearTime = 0.5f + starIndex * 0.5f;
-
-            if (m_timer >= appearTime)
-            {
-                auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
-
-                // oŒ»‚©‚ç‚ÌŒo‰ßŠÔ‚ÅƒXƒP[ƒ‹‚ğ 0 -> 1.2 -> 1.0 ‚É•Ï‰»
-                float t = (m_timer - appearTime) * 3.0f;
-                float scale = 0.0f;
-
-                if (t < 1.0f)  scale = t;
-                else if (t < 1.5f)  scale = 1.0f + (1.5f - t) * 0.4f;
-                else                scale = 1.0f;
-
-                trans.scale = { 50.0f * scale, 50.0f * scale, 1.0f };
-            }
-
-            ++starIndex;
+            row = std::atoi(tag.c_str() + 7); // 7 = strlen("AnimStar")
+            if (row < 0) row = 0;
+            if (row > 2) row = 2;
         }
+
+        float appearTime = 0.5f + row * 0.5f;
+        if (m_timer < appearTime) continue;
+
+        auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+
+        // åˆå›ã ã‘ã€Œæœ€çµ‚ã‚µã‚¤ã‚ºã€ã‚’ä¿å­˜ã—ã€0é–‹å§‹ã«è½ã¨ã™
+        auto it = m_starTargetScale.find(entity);
+        if (it == m_starTargetScale.end())
+        {
+            m_starTargetScale[entity] = trans.scale; // ResultSceneã§å…¥ã‚ŒãŸæœ€çµ‚ã‚µã‚¤ã‚º
+            it = m_starTargetScale.find(entity);
+
+            trans.scale = { 0.0f, 0.0f, it->second.z };
+        }
+
+        // å‡ºç¾ã‹ã‚‰ã®çµŒéæ™‚é–“ã§ã‚¹ã‚±ãƒ¼ãƒ«ã‚’ 0 -> 1.2 -> 1.0 ã«å¤‰åŒ–
+        float t = (m_timer - appearTime) * 3.0f;
+        float pop = 0.0f;
+
+        if (t < 1.0f)            pop = t;
+        else if (t < 1.5f)       pop = 1.0f + (1.5f - t) * 0.4f;
+        else                     pop = 1.0f;
+
+        const auto& target = it->second;
+        trans.scale = { target.x * pop, target.y * pop, target.z };
     }
 
     // ---------------------------------------------------------
-    // 2. ƒXƒ^ƒ“ƒv‚ÌƒAƒjƒ[ƒVƒ‡ƒ“ (‘S¯oŒ»Œã‚Ì 2.0•b‚ ‚½‚è‚Åƒhƒ“I)
+    // 2. ï¿½Xï¿½^ï¿½ï¿½ï¿½vï¿½ÌƒAï¿½jï¿½ï¿½ï¿½[ï¿½Vï¿½ï¿½ï¿½ï¿½ (ï¿½Sï¿½ï¿½ï¿½oï¿½ï¿½ï¿½ï¿½ï¿½ 2.0ï¿½bï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Åƒhï¿½ï¿½ï¿½I)
     //    Tag: "AnimStamp"
     // ---------------------------------------------------------
     for (auto const& entity : m_coordinator->GetActiveEntities())
@@ -61,29 +87,40 @@ void ResultControlSystem::Update(float deltaTime)
             auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
             auto& ui = m_coordinator->GetComponent<UIImageComponent>(entity);
 
-            float t = (m_timer - appearTime) * 5.0f;
+            float t = (m_timer - appearTime) * 2.0f;
 
-            // Å‰‚Í 5”{•“§–¾ ¨ 1”{••s“§–¾‚Ö
+            // å¤‰æ•°å®šç¾©
             float scale = 1.0f;
             float alpha = 1.0f;
+
+            // â˜…ä¿®æ­£: ãƒ©ã‚¸ã‚¢ãƒ³ã¸ã®å¤‰æ›ä¿‚æ•° (3.14... / 180)
+            const float TO_RAD = 3.141592f / 180.0f;
+
 
             if (t < 1.0f)
             {
                 scale = 5.0f - 4.0f * t; // 5 -> 1
                 alpha = t;               // 0 -> 1
+        
             }
             else
             {
                 scale = 1.0f;
                 alpha = 1.0f;
+				
             }
 
-            trans.scale = { 200.0f * scale, 200.0f * scale, 1.0f };
+
+            trans.scale = { 150.0f * scale, 150.0f * scale, 1.0f };
+            trans.rotation.z = -30.0f * TO_RAD;
             ui.color.w = alpha;
         }
     }
 
-    // 3) š‚ğæ‚Á‚½s‚Ì STAR_TEXT ‚ğ”g‘Å‚½‚¹‚é
+    // ---------------------------------------------------------
+    // 3. â˜…ã‚’å–ã£ãŸè¡Œã® STAR_TEXT ã‚’æ³¢æ‰“ãŸã›ã‚‹
+    //    Tag: "AnimStarText"
+    // ---------------------------------------------------------
     {
         const float waveStartTime = 0.8f;
 
@@ -96,7 +133,7 @@ void ResultControlSystem::Update(float deltaTime)
             {
                 if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
 
-                auto& tag = m_coordinator->GetComponent<TagComponent>(entity);
+                const auto& tag = m_coordinator->GetComponent<TagComponent>(entity);
                 if (tag.tag != "AnimStarText") continue;
 
                 auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
@@ -111,14 +148,14 @@ void ResultControlSystem::Update(float deltaTime)
     }
 
 // ---------------------------------------------------------
-// 4. Œ‹‰Ê‰‰oFƒpƒ‰ƒpƒ‰–Ÿ‰æƒAƒjƒ[ƒVƒ‡ƒ“
+// 4. ï¿½ï¿½ï¿½Ê‰ï¿½ï¿½oï¿½Fï¿½pï¿½ï¿½ï¿½pï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Aï¿½jï¿½ï¿½ï¿½[ï¿½Vï¿½ï¿½ï¿½ï¿½
 //    Tag: "ResultAnim"
 // ---------------------------------------------------------
     {
         const float FRAME_TIME = 0.05f;
 
-        const int COLUMNS = 5; // ‰¡
-        const int ROWS = 1; // c
+        const int COLUMNS = 5; // ï¿½ï¿½
+        const int ROWS = 1; // ï¿½c
         const int FRAME_COUNT = COLUMNS * ROWS;
 
         int frame = static_cast<int>(m_timer / FRAME_TIME) % FRAME_COUNT;
@@ -145,7 +182,7 @@ void ResultControlSystem::Update(float deltaTime)
     }
 
 // ---------------------------------------------------------
-// Result ƒ{ƒ^ƒ“‚Ì Hover ‰‰o
+// Result ï¿½{ï¿½^ï¿½ï¿½ï¿½ï¿½ Hover ï¿½ï¿½ï¿½o
 // ---------------------------------------------------------
     for (auto entity : m_coordinator->GetActiveEntities())
     {
@@ -167,11 +204,11 @@ void ResultControlSystem::Update(float deltaTime)
         auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
 
 
-        // 1. –Ú•W”{—¦
+        // 1. ï¿½Ú•Wï¿½{ï¿½ï¿½
         float targetRatio =
             (btn.state == ButtonState::Hover) ? 1.08f : 1.0f;
 
-        // 2. Œ³ƒTƒCƒY ~ ”{—¦
+        // 2. ï¿½ï¿½ï¿½Tï¿½Cï¿½Y ï¿½~ ï¿½{ï¿½ï¿½
         float targetX = btn.originalScale.x * targetRatio;
         float targetY = btn.originalScale.y * targetRatio;
 
@@ -181,16 +218,16 @@ void ResultControlSystem::Update(float deltaTime)
         trans.scale.y += (targetY - trans.scale.y) * speed;
 
         // ================================
-        // š Hover ‚É“ü‚Á‚½uŠÔ‚É SE Ä¶
+        // ï¿½ï¿½ Hover ï¿½É“ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½uï¿½Ô‚ï¿½ SE ï¿½Äï¿½
         // ================================
         if (btn.prevState != ButtonState::Hover &&
             btn.state == ButtonState::Hover)
         {
-                // ƒ{ƒ^ƒ“‚ÉƒJ[ƒ\ƒ‹‚ª‚©‚Ô‚³‚Á‚½‚Æ‚«SE‚ğ–Â‚ç‚·
+                // ï¿½{ï¿½^ï¿½ï¿½ï¿½ÉƒJï¿½[ï¿½\ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ‚ï¿½SEï¿½ï¿½Â‚ç‚·
                 ECS::EntityFactory::CreateOneShotSoundEntity(
                     m_coordinator,
                     "SE_CLEAR",  // SE
-                    0.8f         // ‰¹—Ê       
+                    0.8f         // ï¿½ï¿½ï¿½ï¿½       
             );
         }
         btn.prevState = btn.state;

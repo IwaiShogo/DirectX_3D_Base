@@ -1,228 +1,259 @@
-/*****************************************************************//**
+ï»¿/*****************************************************************//**
  * @file	EffectSystem.cpp
- * @brief	ƒGƒtƒFƒNƒg
- * 
- * @details	
- * 
+ * @brief	ã‚¨ãƒ•ã‚§ã‚¯ãƒˆ
+ *
+ * @details
+ *
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
- * 
- * @date	2025/12/07	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁF
- * 
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
- * 
- * @note	iÈ—ª‰Âj
+ *
+ * @date	2025/12/07	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼š
+ *
+ * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- XXï¼š
+ *
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
-// ===== ƒCƒ“ƒNƒ‹[ƒh =====
+
 #include "ECS/Systems/Rendering/EffectSystem.h"
 #include "Systems/AssetManager.h"
-#include "Systems/DirectX/DirectX.h" 
+#include "Systems/DirectX/DirectX.h"
 #include "Main.h"
 
-using namespace DirectX;
+	using namespace DirectX;
 
 void EffectSystem::Init(ECS::Coordinator* coordinator)
 {
-    m_coordinator = coordinator;
+	m_coordinator = coordinator;
 
-    if (m_manager != nullptr)
-    {
-        Uninit();
-    }
+	if (m_manager != nullptr)
+	{
+		Uninit();
+	}
 
-    // 1. ƒŒƒ“ƒ_ƒ‰[ì¬ (Å‘åƒXƒvƒ‰ƒCƒg”: 8000)
-    m_renderer = EffekseerRendererDX11::Renderer::Create(
-        GetDevice(), GetContext(), 8000
-    );
+	// Renderer / Manager
+	m_renderer = EffekseerRendererDX11::Renderer::Create(GetDevice(), GetContext(), 8000);
+	m_manager = Effekseer::Manager::Create(8000);
 
-    // 2. ƒ}ƒl[ƒWƒƒ[ì¬
-    m_manager = Effekseer::Manager::Create(8000);
+	m_manager->SetSpriteRenderer(m_renderer->CreateSpriteRenderer());
+	m_manager->SetRibbonRenderer(m_renderer->CreateRibbonRenderer());
+	m_manager->SetRingRenderer(m_renderer->CreateRingRenderer());
+	m_manager->SetTrackRenderer(m_renderer->CreateTrackRenderer());
+	m_manager->SetModelRenderer(m_renderer->CreateModelRenderer());
 
-    // 3. •`‰æƒ‚ƒWƒ…[ƒ‹‚Ìİ’è
-    m_manager->SetSpriteRenderer(m_renderer->CreateSpriteRenderer());
-    m_manager->SetRibbonRenderer(m_renderer->CreateRibbonRenderer());
-    m_manager->SetRingRenderer(m_renderer->CreateRingRenderer());
-    m_manager->SetTrackRenderer(m_renderer->CreateTrackRenderer());
-    m_manager->SetModelRenderer(m_renderer->CreateModelRenderer());
+	m_manager->SetTextureLoader(m_renderer->CreateTextureLoader());
+	m_manager->SetModelLoader(m_renderer->CreateModelLoader());
+	m_manager->SetMaterialLoader(m_renderer->CreateMaterialLoader());
 
-    // ƒeƒNƒXƒ`ƒƒEƒ‚ƒfƒ‹Eƒ}ƒeƒŠƒAƒ‹‚Ìƒ[ƒ_[‚ğİ’è
-    m_manager->SetTextureLoader(m_renderer->CreateTextureLoader());
-    m_manager->SetModelLoader(m_renderer->CreateModelLoader());
-    m_manager->SetMaterialLoader(m_renderer->CreateMaterialLoader());
-
-    // 4. AssetManager‚Éƒ}ƒl[ƒWƒƒ[‚ğ“o˜^
-    Asset::AssetManager::GetInstance().SetEffekseerManager(m_manager);
+	Asset::AssetManager::GetInstance().SetEffekseerManager(m_manager);
 }
 
 void EffectSystem::Uninit()
 {
-    Asset::AssetManager::GetInstance().UnloadEffects();
+	Asset::AssetManager::GetInstance().UnloadEffects();
+	Asset::AssetManager::GetInstance().SetEffekseerManager(nullptr);
 
-    // AssetManager‚ÌQÆ‚ğŠO‚·
-    Asset::AssetManager::GetInstance().SetEffekseerManager(nullptr);
-    m_manager.Reset();
-    m_renderer.Reset();
+	m_manager.Reset();
+	m_renderer.Reset();
+
+	m_hasOverride = false;
+}
+
+void EffectSystem::SetScreenSpaceCamera(float screenW, float screenH)
+{
+	using namespace DirectX;
+
+	XMMATRIX view = XMMatrixIdentity();
+
+	// å·¦ä¸Š(0,0)ã€œå³ä¸‹(screenW, screenH)ã€Yä¸‹å‘ã
+	// â˜…Zç¯„å›²ã‚’åºƒã’ã‚‹ï¼ˆUIã§ã‚‚ã‚¨ãƒ•ã‚§ã‚¯ãƒˆå´ãŒZã‚’ä½¿ã†å ´åˆãŒã‚ã‚‹ãŸã‚ï¼‰
+	XMMATRIX proj = XMMatrixOrthographicOffCenterLH(
+		0.0f, screenW,
+		screenH, 0.0f,
+		0.0f, 1000.0f
+	);
+
+	XMStoreFloat4x4(&m_overrideView, XMMatrixTranspose(view));
+	XMStoreFloat4x4(&m_overrideProj, XMMatrixTranspose(proj));
+
+	m_hasOverride = true;
+}
+
+void EffectSystem::ClearOverrideCamera()
+{
+	m_hasOverride = false;
 }
 
 void EffectSystem::Update(float deltaTime)
 {
-    // ---------------------------------------------------
-    // 1. ƒJƒƒ‰î•ñ‚ÌXV (Effekseer‚ÉView/Projs—ñ‚ğ“n‚·)
-    // ---------------------------------------------------
-    XMFLOAT4X4 viewMat, projMat;
-    XMFLOAT3 camPos = { 0,0,0 };
-    bool camFound = false;
+	// -----------------------------
+	// 1) ã‚«ãƒ¡ãƒ©è¨­å®šï¼ˆView/Projï¼‰
+	// -----------------------------
+	XMFLOAT4X4 viewMat{}, projMat{};
+	XMFLOAT3 camPos = { 0,0,0 };
+	bool camFound = false;
 
-    // ƒƒCƒ“ƒJƒƒ‰‚ğ’T‚· (RenderSystem‚Æ“¯—l‚Ì—Dæ‡ˆÊ)
-    ECS::EntityID camID = ECS::FindFirstEntityWithComponent<CameraComponent>(m_coordinator);
-    if (camID != ECS::INVALID_ENTITY_ID) {
-        auto& cam = m_coordinator->GetComponent<CameraComponent>(camID);
-        viewMat = cam.viewMatrix;
-        projMat = cam.projectionMatrix;
-        camPos = cam.worldPosition;
-        camFound = true;
-    }
-    else {
-        camID = ECS::FindFirstEntityWithComponent<BasicCameraComponent>(m_coordinator);
-        if (camID != ECS::INVALID_ENTITY_ID) {
-            auto& cam = m_coordinator->GetComponent<BasicCameraComponent>(camID);
-            // BasicCamera‚É‚ÍworldPositionƒƒ“ƒo‚ª‚È‚¢ê‡‚ª‚ ‚é‚½‚ßATransform‚©‚çæ“¾
-            auto& trans = m_coordinator->GetComponent<TransformComponent>(camID);
-            viewMat = cam.viewMatrix;
-            projMat = cam.projectionMatrix;
-            camPos = trans.position;
-            camFound = true;
-        }
-    }
+	// é€šå¸¸ã®ã‚«ãƒ¡ãƒ©ã‚’æ¢ã™
+	ECS::EntityID camID = ECS::FindFirstEntityWithComponent<CameraComponent>(m_coordinator);
+	if (camID != ECS::INVALID_ENTITY_ID)
+	{
+		auto& cam = m_coordinator->GetComponent<CameraComponent>(camID);
+		viewMat = cam.viewMatrix;
+		projMat = cam.projectionMatrix;
+		camPos = cam.worldPosition;
+		camFound = true;
+	}
+	else
+	{
+		camID = ECS::FindFirstEntityWithComponent<BasicCameraComponent>(m_coordinator);
+		if (camID != ECS::INVALID_ENTITY_ID)
+		{
+			auto& cam = m_coordinator->GetComponent<BasicCameraComponent>(camID);
+			auto& trans = m_coordinator->GetComponent<TransformComponent>(camID);
+			viewMat = cam.viewMatrix;
+			projMat = cam.projectionMatrix;
+			camPos = trans.position;
+			camFound = true;
+		}
+	}
 
-    if (camFound) {
-        // RenderSystem‚Å“]’u‚µ‚Ä•Û‘¶‚³‚ê‚Ä‚¢‚éê‡AŒ³‚É–ß‚·
-        XMMATRIX v = XMMatrixTranspose(XMLoadFloat4x4(&viewMat));
-        XMMATRIX p = XMMatrixTranspose(XMLoadFloat4x4(&projMat));
+	// â˜…UIç”¨ä¸Šæ›¸ããŒã‚ã‚Œã°å„ªå…ˆ
+	if (m_hasOverride)
+	{
+		viewMat = m_overrideView;
+		projMat = m_overrideProj;
+		camPos = { 0,0,0 };
+		camFound = true;
+	}
 
-        Effekseer::Matrix44 effView, effProj;
-        XMStoreFloat4x4((XMFLOAT4X4*)&effView, v);
-        XMStoreFloat4x4((XMFLOAT4X4*)&effProj, p);
+	if (camFound)
+	{
+		// æ ¼ç´ã¯è»¢ç½®æƒ³å®šãªã®ã§å…ƒã«æˆ»ã™
+		XMMATRIX v = XMMatrixTranspose(XMLoadFloat4x4(&viewMat));
+		XMMATRIX p = XMMatrixTranspose(XMLoadFloat4x4(&projMat));
 
-        m_renderer->SetCameraMatrix(effView);
-        m_renderer->SetProjectionMatrix(effProj);
-    }
+		Effekseer::Matrix44 effView, effProj;
+		XMStoreFloat4x4((XMFLOAT4X4*)&effView, v);
+		XMStoreFloat4x4((XMFLOAT4X4*)&effProj, p);
 
-    // ---------------------------------------------------
-    // 2. ƒRƒ“ƒ|[ƒlƒ“ƒgXV (Ä¶EˆÊ’u“¯Šú)
-    // ---------------------------------------------------
-    for (auto const& entity : m_entities)
-    {
-        auto& effectComp = m_coordinator->GetComponent<EffectComponent>(entity);
-        auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
+		m_renderer->SetCameraMatrix(effView);
+		m_renderer->SetProjectionMatrix(effProj);
+	}
 
-        // ƒ‹[ƒvÄ¶‚·‚é‚à‚Ìi‚¨•ó‚È‚Çj‚¾‚¯‘ÎÛ‚É‚·‚é
-        if (effectComp.isLooping)
-        {
-            // ƒJƒƒ‰‚Æ‚Ì‹——£‚Ì“ñæ‚ğŒvZ (•½•ûªŒvZ‚ğ”ğ‚¯‚Ä‚‘¬‰»)
-            float dx = transform.position.x - camPos.x;
-            float dy = transform.position.y - camPos.y;
-            float dz = transform.position.z - camPos.z;
-            float distSq = dx * dx + dy * dy + dz * dz;
+	// -----------------------------
+	// 2) ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆå‡¦ç†
+	// -----------------------------
+	for (auto const& entity : m_entities)
+	{
+		auto& effectComp = m_coordinator->GetComponent<EffectComponent>(entity);
+		auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
 
-            // •\¦‚·‚é‹——£‚Ì‚µ‚«‚¢’l (—á: 15m)
-            // ƒ`ƒ‰‚Â‚«–h~‚Ì‚½‚ßAON/OFF‚Ì‹«ŠE‚É·‚ğ‚Â‚¯‚éiƒqƒXƒeƒŠƒVƒXj
-            float showDist = 20.0f; // 15mˆÈ“à‚É“ü‚Á‚½‚ç•\¦
-            float hideDist = 23.0f; // 18mˆÈã—£‚ê‚½‚çÁ‚·
+		// ãƒ«ãƒ¼ãƒ—æ™‚ã®è·é›¢åˆ¶å¾¡ï¼ˆUIç”¨é€”ã¯åŸºæœ¬OFFæƒ³å®šï¼‰
+		// â€»ã‚¹ã‚¯ãƒªãƒ¼ãƒ³åº§æ¨™ã‚«ãƒ¡ãƒ©ä¸Šæ›¸ãä¸­(m_hasOverride)ã¯è·é›¢åˆ¤å®šãŒUIãƒ”ã‚¯ã‚»ãƒ«è·é›¢ã«ãªã£ã¦ç ´ç¶»ã™ã‚‹ã®ã§OFF
+		if (effectComp.isLooping && !m_hasOverride)
+		{
+			float dx = transform.position.x - camPos.x;
+			float dy = transform.position.y - camPos.y;
+			float dz = transform.position.z - camPos.z;
+			float distSq = dx * dx + dy * dy + dz * dz;
 
-            if (effectComp.handle == -1)
-            {
-                // ¡F’â~’† -> ‹ß‚Ã‚¢‚½‚çÄ¶ƒŠƒNƒGƒXƒg
-                if (distSq < showDist * showDist)
-                {
-                    effectComp.requestPlay = true;
-                }
-            }
-            else
-            {
-                // ¡FÄ¶’† -> —£‚ê‚½‚ç’â~ƒŠƒNƒGƒXƒg
-                if (distSq > hideDist * hideDist)
-                {
-                    effectComp.requestStop = true;
-                }
-            }
-        }
+			const float showDist = 20.0f;
+			const float hideDist = 23.0f;
 
-        // A. Ä¶ƒŠƒNƒGƒXƒgˆ—
-        if (effectComp.requestPlay)
-        {
-            effectComp.requestPlay = false;
+			if (effectComp.handle == -1)
+			{
+				if (distSq < showDist * showDist) effectComp.requestPlay = true;
+			}
+			else
+			{
+				if (distSq > hideDist * hideDist) effectComp.requestStop = true;
+			}
+		}
 
-            // AssetManagerŒo—R‚Åƒ[ƒh
-            Effekseer::EffectRef effectRef = Asset::AssetManager::GetInstance().LoadEffect(effectComp.assetID);
+		// å†ç”Ÿ
+		if (effectComp.requestPlay)
+		{
+			effectComp.requestPlay = false;
 
-            if (effectRef != nullptr)
-            {
-                // Play‚É‚Í‚»‚Ì‚Ü‚Ü“n‚·
-                Effekseer::Handle handle = m_manager->Play(
-                    effectRef,
-                    transform.position.x + effectComp.offset.x,
-                    transform.position.y + effectComp.offset.y,
-                    transform.position.z + effectComp.offset.z
-                );
-                effectComp.handle = handle;
+			Effekseer::EffectRef effectRef = Asset::AssetManager::GetInstance().LoadEffect(effectComp.assetID);
 
-                // ‰Šúƒpƒ‰ƒ[ƒ^İ’è
-                m_manager->SetScale(handle, transform.scale.x * effectComp.scale, transform.scale.y * effectComp.scale, transform.scale.z * effectComp.scale);
-                m_manager->SetRotation(handle, transform.rotation.x, transform.rotation.y, transform.rotation.z);
-            }
-            else
-            {
-                // ƒ[ƒh¸”s
-                std::cerr << "[EffectSystem] Failed to load effect asset: " << effectComp.assetID << std::endl;
-            }
-        }
+			if (effectRef != nullptr)
+			{
+				Effekseer::Handle handle = m_manager->Play(
+					effectRef,
+					transform.position.x + effectComp.offset.x,
+					transform.position.y + effectComp.offset.y,
+					transform.position.z + effectComp.offset.z
+				);
 
-        // B. ’â~ƒŠƒNƒGƒXƒg
-        if (effectComp.requestStop)
-        {
-            effectComp.requestStop = false;
-            if (m_manager->Exists(effectComp.handle)) {
-                m_manager->StopEffect(effectComp.handle);
-            }
-            effectComp.handle = -1;
-        }
+				effectComp.handle = handle;
 
-        // C. ˆÊ’u“¯Šú (Ä¶’†‚Ìê‡)
-        if (m_manager->Exists(effectComp.handle))
-        {
-            m_manager->SetLocation(
-                effectComp.handle,
-                transform.position.x + effectComp.offset.x,
-                transform.position.y + effectComp.offset.y,
-                transform.position.z + effectComp.offset.z
-            );
-            m_manager->SetRotation(effectComp.handle, transform.rotation.x, transform.rotation.y, transform.rotation.z);
-            m_manager->SetScale(effectComp.handle, transform.scale.x * effectComp.scale, transform.scale.y * effectComp.scale, transform.scale.z * effectComp.scale);
-        }
-        else
-        {
-            // ƒGƒtƒFƒNƒgI—¹i‚©‚Âƒ‹[ƒvİ’è‚È‚çÄÄ¶j
-            if (effectComp.isLooping && effectComp.handle != -1) {
-                effectComp.requestPlay = true;
-            }
-            else {
-                effectComp.handle = -1;
-            }
-        }
-    }
+				m_manager->SetScale(handle,
+					transform.scale.x * effectComp.scale,
+					transform.scale.y * effectComp.scale,
+					transform.scale.z * effectComp.scale
+				);
+				m_manager->SetRotation(handle, transform.rotation.x, transform.rotation.y, transform.rotation.z);
+			}
+			else
+			{
+				std::cerr << "[EffectSystem] Failed to load effect asset: " << effectComp.assetID << std::endl;
+			}
+		}
 
-    // Effekseer©‘Ì‚ÌXV (60fpsŠî€)
-    m_manager->Update(deltaTime * 60.0f);
+		// åœæ­¢
+		if (effectComp.requestStop)
+		{
+			effectComp.requestStop = false;
+			if (m_manager->Exists(effectComp.handle))
+			{
+				m_manager->StopEffect(effectComp.handle);
+			}
+			effectComp.handle = -1;
+		}
+
+		// ä½ç½®åŒæœŸ
+		if (m_manager->Exists(effectComp.handle))
+		{
+			m_manager->SetLocation(
+				effectComp.handle,
+				transform.position.x + effectComp.offset.x,
+				transform.position.y + effectComp.offset.y,
+				transform.position.z + effectComp.offset.z
+			);
+
+			m_manager->SetRotation(effectComp.handle, transform.rotation.x, transform.rotation.y, transform.rotation.z);
+
+			m_manager->SetScale(effectComp.handle,
+				transform.scale.x * effectComp.scale,
+				transform.scale.y * effectComp.scale,
+				transform.scale.z * effectComp.scale
+			);
+		}
+		else
+		{
+			// çµ‚äº†ã—ãŸã‚‰-1ã¸
+			if (effectComp.isLooping && effectComp.handle != -1)
+			{
+				effectComp.requestPlay = true;
+			}
+			else
+			{
+				effectComp.handle = -1;
+			}
+		}
+	}
+
+	// Effekseeræ›´æ–°ï¼ˆ60fpsåŸºæº–ï¼‰
+	m_manager->Update(deltaTime * 60.0f);
 }
 
 void EffectSystem::Render()
 {
-    m_renderer->BeginRendering();
-    m_manager->Draw();
-    m_renderer->EndRendering();
+	m_renderer->BeginRendering();
+	m_manager->Draw();
+	m_renderer->EndRendering();
 }

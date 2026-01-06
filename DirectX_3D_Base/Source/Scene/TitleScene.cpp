@@ -1,23 +1,8 @@
 /*****************************************************************//**
  * @file	TitleScene.cpp
- * @brief
- *
- * @details
- *
- * ------------------------------------------------------------
- * @author	Iwai Shogo
- * ------------------------------------------------------------
- *
- * @date	2025/11/30	èââÒçÏê¨ì˙
- * 			çÏã∆ì‡óeÅF	- í«â¡ÅF
- *
- * @update	2025/xx/xx	ç≈èIçXêVì˙
- * 			çÏã∆ì‡óeÅF	- XXÅF
- *
- * @note	Åiè»ó™â¬Åj
+ * @brief   „Çø„Ç§„Éà„É´„Ç∑„Éº„É≥Ôºö3D„Ç´„Éº„ÉâÈùôÊ≠¢ÈÖçÁΩÆÁâà
  *********************************************************************/
 
- // ===== ÉCÉìÉNÉãÅ[Éh =====
 #include "Scene/TitleScene.h"
 #include "Scene/StageSelectScene.h"
 #include "ECS/ECSInitializer.h"
@@ -31,221 +16,251 @@
 #include <ECS/Systems/Rendering/RenderSystem.h>
 #include "ECS/EntityFactory.h"
 #include "ECS/Systems/Core/TitleControlSystem.h"
+#include "ECS/Systems/Core/ScreenTransition.h"
 #include "ECS/Components/Rendering/RenderComponent.h"
 
 using namespace DirectX;
 
-//âºÇÃì¸óÕÉ`ÉFÉbÉNä÷êî
-static bool IsInputStart() {
-	return false;
+namespace TitleLayout
+{
+    constexpr float ZOOM_DURATION = 1.2f;
+    constexpr float MENU_SLIDE_DURATION = 0.3f;
+
+    constexpr float LOGO_Y_RATIO = 0.3f;
+    constexpr float BTN_Y_NEWGAME = 0.35f;
+    constexpr float BTN_Y_CONTINUE = 0.65f;
+    constexpr float PRESS_START_Y_RATIO = 0.8f;
+
+    const XMFLOAT3 CARD_3D_SCALE = { 0.5f, 0.5f, 0.5f };
+    const XMFLOAT3 BTN_BASE_SCALE = { 300.0f, 140.0f, 1.0f };
+    const XMFLOAT3 LOGO_BASE_SCALE = { 550.0f, 410.0f, 1.0f };
+    const XMFLOAT3 START_BTN_SCALE = { 450.0f, 150.0f, 1.0f };
+
+    constexpr float CARD_STATIC_ROT_Z_DEG = 20.0f;
 }
 
 void TitleScene::Init()
 {
-	m_coordinator = std::make_shared<ECS::Coordinator>();
-	ECS::ECSInitializer::InitECS(m_coordinator);
+    m_coordinator = std::make_shared<ECS::Coordinator>();
+    ECS::ECSInitializer::InitECS(m_coordinator);
 
-	// ÉRÉìÉgÉçÅ[ÉâÅ[
-	TitleControllerComponent titleCtrl;
-	titleCtrl.camStartPos = XMFLOAT3(0.0f, 2.5f, -9.8f);    //ÉJÉÅÉâäJénì_
-	titleCtrl.camEndPos = XMFLOAT3(0.0f, 1.6f, -5.0f);      //ÉJÉÅÉâèIì_
-	titleCtrl.camControlPos = XMFLOAT3{ 3.5f,1.8f, -11.0f };//ÉJÉÅÉâíÜì_
+    TitleControllerComponent titleCtrl;
+    titleCtrl.camStartPos = XMFLOAT3(0.0f, 2.5f, -9.8f);
+    titleCtrl.camEndPos = XMFLOAT3(0.0f, 1.4f, -4.2f);
+    titleCtrl.camControlPos = XMFLOAT3{ 3.5f,1.8f, -11.0f };
+    titleCtrl.animDuration = TitleLayout::ZOOM_DURATION;
+    titleCtrl.uiAnimDuration = TitleLayout::MENU_SLIDE_DURATION;
+    titleCtrl.startRotY = XMConvertToRadians(-90.0f);
+    titleCtrl.endRotY = XMConvertToRadians(0.0f);
 
-	titleCtrl.animDuration = 1.2f;  //ÉJÉÅÉâà⁄ìÆÉXÉsÅ[Éh
-	titleCtrl.uiAnimDuration = 0.3f; //UIÉAÉjÉÅÅ[ÉVÉáÉìéûä‘
+    // --- „Ç´„É°„É©ÁîüÊàê ---
+    ECS::EntityID cam = ECS::EntityFactory::CreateBasicCamera(m_coordinator.get(), titleCtrl.camStartPos);
+    titleCtrl.cameraEntityID = cam;
+    if (m_coordinator->HasComponent<TransformComponent>(cam)) {
+        m_coordinator->GetComponent<TransformComponent>(cam).rotation.y = titleCtrl.startRotY;
+    }
 
-	// å≈íËÉJÉÅÉâ
-	ECS::EntityID cam = ECS::EntityFactory::CreateBasicCamera(m_coordinator.get(), titleCtrl.camStartPos);
-	titleCtrl.cameraEntityID = cam;
+    // --- 1. ËÉåÊôØ„Éª„Ç´„Éº„Éâ„ÅÆÁîüÊàê ---
+    // ÁæéË°ìÈ§®ËÉåÊôØ
+    m_coordinator->CreateEntity(
+        TransformComponent(
+            /* Position */{ 0.0f, 0.0f, 0.0f },
+            /* Rotation */{ 0.0f, 0.0f, 0.0f },
+            /* Scale    */{ 1.0f, 1.0f, 1.0f }
+        ),
+        RenderComponent(
+            /* Type  */ MESH_MODEL,
+            /* Color */{ 1.0f, 1.0f, 1.0f, 1.0f }
+        ),
+        ModelComponent(
+            /* AssetID */ "M_TITLE_MUSEUM",
+            /* Scale   */ 0.1f,
+            /* Flags   */ Model::ZFlip
+        ),
+        EffectComponent(
+            /* AssetID  */ "EFK_TITLE_SHINE",
+            /* Loop     */ true,
+            /* AutoPlay */ true,
+            /* Offset   */{ 0.0f, 0.0f, -3.0f },
+            /* Scale    */ 0.3f
+        )
+    );
 
-	titleCtrl.startRotY = XMConvertToRadians(-90.0f);
-	titleCtrl.endRotY = XMConvertToRadians(0.0f);
+    // „Çø„Ç§„Éà„É´„Ç´„Éº„Éâ
+    titleCtrl.cardEntityID = m_coordinator->CreateEntity(
+        TransformComponent(
+            /* Position */{ 0.0f, 1.4f, -3.5f },
+            /* Rotation */{ 0.0f, XMConvertToRadians(180.0f), XMConvertToRadians(TitleLayout::CARD_STATIC_ROT_Z_DEG) },
+            /* Scale    */ TitleLayout::CARD_3D_SCALE
+        ),
+        RenderComponent(
+            /* Type  */ MESH_MODEL,
+            /* Color */{ 1.0f, 1.0f, 1.0f, 1.0f }
+        ),
+        ModelComponent(
+            /* AssetID */ "M_TITLE_CARD",
+            /* Scale   */ 0.1f,
+            /* Flags   */ Model::ZFlip
+        )
+    );
 
-	if (m_coordinator->HasComponent<TransformComponent>(cam)) {
-		auto& trans = m_coordinator->GetComponent<TransformComponent>(cam);
-		trans.rotation.y = titleCtrl.startRotY;
-	}
+    // „Ç¨„É©„Çπ„Ç±„Éº„Çπ
+    m_coordinator->CreateEntity(
+        TransformComponent(
+            /* Position */{ 0.0f, 0.0f, 0.0f },
+            /* Rotation */{ 0.0f, 0.0f, 0.0f },
+            /* Scale    */{ 1.0f, 1.0f, 1.0f }
+        ),
+        RenderComponent(
+            /* Type  */ MESH_MODEL,
+            /* Color */{ 1.0f, 1.0f, 1.0f, 1.0f }
+        ),
+        ModelComponent(
+            /* AssetID */ "M_TITLE_GLASSCASE",
+            /* Scale   */ 0.1f,
+            /* Flags   */ Model::ZFlip
+        )
+    );
 
-	// îwåiÉÇÉfÉã
-	ECS::EntityID museum = m_coordinator->CreateEntity(
-		TransformComponent(
-			/* Position	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
-		),
-		RenderComponent(
-			/* MeshType	*/	MESH_MODEL, // MESH_BOXÇ≈âºï`âÊ
-			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
-		),
-		ModelComponent(
-			/* Path		*/	"M_TITLE_MUSEUM",
-			/* Scale	*/	0.1f,
-			/* Flip		*/	Model::ZFlip
-		),
-		EffectComponent(
-			"EFK_TITLE_SHINE",
-			true,
-			true,
-			{0.0f, 0.0f, -3.0f},
-			0.3f
-		)
-	);
+    // --- 2. UI„ÅÆÁîüÊàê ---
+    // „É≠„Ç¥
+    titleCtrl.logoEntityID = m_coordinator->CreateEntity(
+        TransformComponent(
+            /* Position */{ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * TitleLayout::LOGO_Y_RATIO, 0.0f },
+            /* Rotation */{ 0.0f, 0.0f, 0.0f },
+            /* Scale    */ TitleLayout::LOGO_BASE_SCALE
+        ),
+        UIImageComponent(
+            /* AssetID */ "UI_TITLE_LOGO",
+            /* Depth   */ 0.5f,
+            /* Visible */ true,
+            /* Color   */{ 1.0f, 1.0f, 1.0f, 0.0f }
+        )
+    );
 
-	// UIçÏê¨
-	{
-		ECS::EntityID logo = m_coordinator->CreateEntity(
-			TransformComponent(
-				/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.3f, 0.0f),
-				/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-				/* Scale	*/	XMFLOAT3(550, 410, 1)
-			),
-			UIImageComponent(
-				/* AssetID		*/	"UI_TITLE_LOGO",
-				/* Depth		*/	0.0f,
-				/* IsVisible	*/	true
-			)
-		);
+    // Press Start
+    ECS::EntityID pressStart = m_coordinator->CreateEntity(
+        TransformComponent(
+            /* Position */{ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * TitleLayout::PRESS_START_Y_RATIO, 0.0f },
+            /* Rotation */{ 1.0f, 0.0f, 0.0f },
+            /* Scale    */ TitleLayout::START_BTN_SCALE
+        ),
+        UIImageComponent(
+            /* AssetID */ "UI_PRESS_START",
+            /* Depth   */ 0.0f,
+            /* Visible */ true,
+            /* Color   */{ 1.0f, 1.0f, 1.0f, 0.0f }
+        )
+    );
+    titleCtrl.pressStartUIEntities.push_back(pressStart);
 
-		//titleCtrl.pressStartUIEntities.push_back(logo);
-		titleCtrl.logoEntityID = logo;
+    // --- 3. „É°„Éã„É•„ÉºUI ---
+    {
+        float targetY_NewGame = SCREEN_HEIGHT * TitleLayout::BTN_Y_NEWGAME;
+        float targetY_Continue = SCREEN_HEIGHT * TitleLayout::BTN_Y_CONTINUE;
+        const XMFLOAT3 hitScale = { TitleLayout::BTN_BASE_SCALE.x * 0.66f, TitleLayout::BTN_BASE_SCALE.y * 0.66f, 1.0f };
+        const XMFLOAT3 menuRotation = { 0.0f, 0.0f, XMConvertToRadians(-20.0f) };
 
+        // New Game „Éú„Çø„É≥
+        ECS::EntityID newGame = m_coordinator->CreateEntity(
+            TransformComponent(
+                /* Position */{ SCREEN_WIDTH * 0.5f - 60.0f, targetY_NewGame, 0.0f },
+                /* Rotation */ menuRotation,
+                /* Scale    */ TitleLayout::BTN_BASE_SCALE
+            ),
+            UIImageComponent(
+                /* AssetID */ "BTN_NEW_GAME",
+                /* Depth   */ 0.5f,
+                /* Visible */ true,
+                /* Color   */{ 1.0f, 1.0f, 1.0f, 0.0f }
+            ),
+            UIButtonComponent(
+                /* State    */ ButtonState::Normal,
+                /* Selected */ false,
+                /* Callback */ []() { SceneManager::ChangeScene<StageSelectScene>(); },
+                /* HitScale */ hitScale
+            )
+        );
 
-		ECS::EntityID ent = m_coordinator->CreateEntity(
-			TransformComponent(
-				/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.8f, 0.0f),
-				/* Rotation	*/	XMFLOAT3(1.0f, 0.0f, 0.0f),
-				/* Scale	*/	XMFLOAT3(450, 150, 1)
-			),
-			UIImageComponent(
-				/* AssetID		*/	"UI_PRESS_START",
-				/* Depth		*/	0.0f,
-				/* IsVisible	*/	true
-			)
-		);
-		titleCtrl.pressStartUIEntities.push_back(ent);
-	}
+        // Continue „Éú„Çø„É≥
+        ECS::EntityID cont = m_coordinator->CreateEntity(
+            TransformComponent(
+                /* Position */{ SCREEN_WIDTH * 0.5f + 60.0f , targetY_Continue - 10.0f, 0.0f },
+                /* Rotation */ menuRotation,
+                /* Scale    */ TitleLayout::BTN_BASE_SCALE
+            ),
+            UIImageComponent(
+                /* AssetID */ "BTN_CONTINUE",
+                /* Depth   */ 0.5f,
+                /* Visible */ true,
+                /* Color   */{ 1.0f, 1.0f, 1.0f, 0.0f }
+            ),
+            UIButtonComponent(
+                /* State    */ ButtonState::Normal,
+                /* Selected */ false,
+                /* Callback */ []() { SceneManager::ChangeScene<StageSelectScene>(); },
+                /* HitScale */ hitScale
+            )
+        );
 
-	// ÉÅÉjÉÖÅ[UI
-	{
-		float tagetY_NewGame = SCREEN_HEIGHT * 0.6f;
-		float tagetY_Continue = SCREEN_HEIGHT * 0.8f;
-		float startY_Offset = SCREEN_HEIGHT + 100.0f;
+        titleCtrl.menuUIEntities.push_back(newGame);
+        titleCtrl.menuUIEntities.push_back(cont);
+        titleCtrl.menuTargetYs.push_back(targetY_NewGame);
+        titleCtrl.menuTargetYs.push_back(targetY_Continue);
+    }
 
-		// New Game
-		ECS::EntityID newGame = m_coordinator->CreateEntity(
-			TransformComponent(
-				/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.6f, 0.0f),
-				/* Rotation	*/	XMFLOAT3(3.0f, 0.0f, 0.0f),
-				/* Scale	*/	XMFLOAT3(300, 80, 1)
-			),
-			UIImageComponent(
-				/* AssetID		*/	"BTN_NEW_GAME",
-				/* Depth		*/	0.0f,
-				/* IsVisible	*/	true,
-				/*color*/        XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f)
-			),
-			UIButtonComponent(
-				/* State		*/	ButtonState::Normal,
-				/* IsVisible	*/	false,
-				/* OnClick   */	[]() { SceneManager::ChangeScene<StageSelectScene>(); },
-				/* scale */      XMFLOAT3(300, 80, 1)
-			)
-		);
+    // --- „Ç∑„Çπ„ÉÜ„É†„Ç≥„É≥„Éà„É≠„Éº„É©„Éº ---
+    ECS::EntityID controller = m_coordinator->CreateEntity(TitleControllerComponent());
+    m_coordinator->GetComponent<TitleControllerComponent>(controller) = titleCtrl;
 
-		// Continue
-		ECS::EntityID cont = m_coordinator->CreateEntity(
-			TransformComponent(
-				/* Position	*/	XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.75f, 0.0f),
-				/* Rotation	*/	XMFLOAT3(3.0f, 0.0f, 0.0f),
-				/* Scale	*/	XMFLOAT3(300, 80, 1)
-			),
-			UIImageComponent(
-				/* AssetID	*/	"BTN_CONTINUE",
-				/* Depth		*/	0.0f,
-				/* IsVisible	*/	true,
-				/*color*/        XMFLOAT4(1.0f, 1.0f, 1.0f, 0.0f)
-			),
-			UIButtonComponent(
-				/* State		*/	ButtonState::Normal,
-				/* IsVisible	*/	false,
-				/* OnClick		*/	[]() { SceneManager::ChangeScene<StageSelectScene>(); },
-				/* scale*/  XMFLOAT3(300, 80, 1)
-			)
-		);
+    // --- „Ç´„Éº„ÇΩ„É´ ---
+    m_coordinator->CreateEntity(
+        TransformComponent(
+            /* Position */{ 0.0f, 0.0f, 0.0f },
+            /* Rotation */{ 0.0f, 0.0f, 0.0f },
+            /* Scale    */{ 64.0f, 64.0f, 1.0f }
+        ),
+        UIImageComponent(
+            /* AssetID  */ "ICO_CURSOR",
+            /* Depth    */ 1.0f
+        ),
+        UICursorComponent()
+    );
 
-		// ìoò^
-		titleCtrl.menuUIEntities.push_back(newGame);
-		titleCtrl.menuUIEntities.push_back(cont);
-
-		titleCtrl.menuTargetYs.push_back(tagetY_NewGame);
-		titleCtrl.menuTargetYs.push_back(tagetY_Continue);
-	}
-
-	// ÉJÅ[É\Éã
-	{
-		m_coordinator->CreateEntity(
-			TransformComponent(
-				/* Position	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-				/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-				/* Scale	*/	XMFLOAT3(64.0f, 64.0f, 1.0f)
-			),
-			UIImageComponent(
-				/* AssetID	*/	"ICO_CURSOR",
-				/* Depth	*/	1.0f
-			),
-			UICursorComponent()
-		);
-	}
-
-	// --- 4. ÉfÉÇópEntityÇÃçÏê¨ ---	
-	//ECS::EntityFactory::CreateTitleSceneEntity(m_coordinator.get());
-	ECS::EntityID controller = m_coordinator->CreateEntity(
-		TitleControllerComponent(titleCtrl)
-	);
-
-	std::cout << "TitleScene::Init() - TitleUiSystem Ready." << std::endl;
+    std::cout << "TitleScene::Init() - Layout Completed with Commented Parameters." << std::endl;
 }
-
 void TitleScene::Uninit()
 {
-	auto effectSystem = ECS::ECSInitializer::GetSystem<EffectSystem>();
-	if (effectSystem)
-	{
-		effectSystem->Uninit();
-	}
-
-	ECS::ECSInitializer::UninitECS();
-
-	m_coordinator.reset();
+    if (auto effectSystem = ECS::ECSInitializer::GetSystem<EffectSystem>()) effectSystem->Uninit();
+    ECS::ECSInitializer::UninitECS();
+    m_coordinator.reset();
 }
 
 void TitleScene::Update(float deltaTime)
 {
-	// 1. ÉVÉXÉeÉÄÇÃàÍäáçXêV
-	// (Ç±Ç±Ç≈ UIInputSystem Ç‡é©ìÆìIÇ…ìÆÇ≠ÇÃÇ≈ÅAéËìÆåƒÇ—èoÇµÇÕïsóvÇ≈Ç∑ÅI)
-	m_coordinator->UpdateSystems(deltaTime);
-
+    m_coordinator->UpdateSystems(deltaTime);
 }
+
 void TitleScene::Draw()
 {
-	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
-	{
-		system->Render(true);
-	}
+    if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
+    {
+        system->Render(true);
+    }
 
-	if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
-	{
-		system->DrawSetup();
-		system->DrawEntities();
-	}
+    if (auto system = ECS::ECSInitializer::GetSystem<RenderSystem>())
+    {
+        system->DrawSetup();
+        system->DrawEntities();
+    }
 
-	if (auto system = ECS::ECSInitializer::GetSystem<EffectSystem>())
-	{
-		system->Render();
-	}
+    if (auto system = ECS::ECSInitializer::GetSystem<EffectSystem>())
+    {
+        system->Render();
+    }
 
-	if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
-	{
-		system->Render(false);
-	}
+    if (auto system = ECS::ECSInitializer::GetSystem<UIRenderSystem>())
+    {
+        system->Render(false);
+    }
 }

@@ -31,6 +31,10 @@ using namespace DirectX;
  * [void - Render]
  * @brief 描画処理。Depthに基づきソートしてから描画します。
  */
+ /**
+  * [void - Render]
+  * @brief 描画処理。Depthに基づきソートしてから描画します。
+  */
 void UIRenderSystem::Render(bool drawBackground)
 {
 	if (m_entities.empty())
@@ -98,7 +102,7 @@ void UIRenderSystem::Render(bool drawBackground)
 		// Y: 1 - (Pos / Height) * 2  (Y軸は反転する)
 		float ndcPosX = (transform.position.x / (float)SCREEN_WIDTH) * 2.0f - 1.0f;
 		float ndcPosY = 1.0f - (transform.position.y / (float)SCREEN_HEIGHT) * 2.0f;
-
+		float aspect = (float)SCREEN_WIDTH / (float)SCREEN_HEIGHT;
 		// ----------------------------------------
 		// Sprite クラスを使用した描画
 		// ----------------------------------------
@@ -109,10 +113,13 @@ void UIRenderSystem::Render(bool drawBackground)
 		// 変換後の座標をセット
 		Sprite::SetOffset({ ndcPosX, ndcPosY });
 		Sprite::SetSize({ ndcScaleX, ndcScaleY });
-
 		Sprite::SetUVPos(uiComp.uvPos);
 		Sprite::SetUVScale(uiComp.uvScale);
 		Sprite::SetColor(uiComp.color);
+		Sprite::SetAngle(transform.rotation.z);
+
+		
+		Sprite::SetAspect(aspect);
 
 		Sprite::Draw();
 		Sprite::SetTexture(nullptr);
