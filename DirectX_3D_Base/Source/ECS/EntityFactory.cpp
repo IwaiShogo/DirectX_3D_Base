@@ -516,3 +516,15 @@ EntityID ECS::EntityFactory::CreateEnemySpawner(Coordinator* coordinator, const 
 	);
 	return spawner;
 }
+
+ECS::EntityID EntityFactory::CreateTeleporter(ECS::Coordinator* coordinator, DirectX::XMFLOAT3 position) {
+	return coordinator->CreateEntity(
+		TransformComponent(position, { 0,0,0 }, { 2.5f, 0.1f, 2.5f }),
+		// 仕様：三人称モード（ACTION_MODE）では見えないため、MESH_NONEを指定
+		RenderComponent(MESH_NONE, DirectX::XMFLOAT4(0, 0.8f, 1.0f, 1.0f)),
+		// 接触判定：物理衝突はせず、イベントのみ発生させる
+		CollisionComponent(DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f), { 0,0,0 }, COLLIDER_TRIGGER),
+		TagComponent("teleporter"),
+		TeleportComponent()
+	);
+}

@@ -391,6 +391,15 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
                 restoreType = MESH_NONE;
 #endif
             }
+#ifdef _DEBUG
+            restoreType = MESH_BOX;
+#elif defined(NDEBUG)
+            restoreType = MESH_NONE;
+#endif
+        if (tag == "teleporter")
+        {
+            isTarget = true;
+}
             if (tag == "ground" || tag == "wall" || tag == "door")
             {
                 isTarget = true;
@@ -528,14 +537,25 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID)
         }
         // 敵 (Tag または Component で判定)
         bool isGuard = false;
+        bool isTeleporter = false;
         if (m_coordinator->HasComponent<TagComponent>(entity)) {
             const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
             if (tag == "taser") isGuard = true;
+            if (tag == "teleporter") isTeleporter = true;
         }
 
         if (isGuard) {
             if (showIcons) UpdateIcon(entity, "ICO_TASER", { 1, 1, 1, 1 });
             else if (m_iconMap.count(entity)) m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false;
+        }
+        if (isTeleporter) {
+            if (showIcons) {
+                // アセットがないので、白い矩形をシアン色(水色)にして表示
+                UpdateIcon(entity, "UI_TITLE_LOGO", { 0.0f, 1.0f, 1.0f, 1.0f });
+            }
+            else if (m_iconMap.count(entity)) {
+                m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false;
+            }
         }
     }
 
