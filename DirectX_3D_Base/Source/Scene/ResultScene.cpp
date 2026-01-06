@@ -54,7 +54,12 @@ void ResultScene::Init()
 
     ECS::EntityFactory::CreateBasicCamera(m_coordinator.get(), { 0.0f, 0.0f, 0.0f });
 
-    bool isClear = s_resultData.isCleared;
+    const bool isClear = s_resultData.isCleared;
+    //  メンバに保存（CreateButtons で使う)
+    m_isClear = isClear;
+
+
+
 
     // ===== Stage unlock (persistent) =====
     // クリアした場合のみ「次ステージ」を解放（最大6）。
@@ -233,19 +238,72 @@ void ResultScene::Init()
     }
     else
     {
-        // GAME OVER 背景
+        // ========================================================
+        // GAME OVER 画面のレイアウト
+        // ========================================================
+        
+        // 背景
         m_coordinator->CreateEntity(
-            TransformComponent({ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f }, { 0,0,0 }, { (float)SCREEN_WIDTH, (float)SCREEN_HEIGHT, 1.0f }),
+            TransformComponent(
+                { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0 },
+                { 0, 0, 0 },
+                { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }
+            ),
             UIImageComponent("BG_GAME_OVER", 0.0f, true, { 1,1,1,1 })
+        );
+        // --------------------------------------------------------
+        // パラパラ漫画アニメーション（Result演出）
+        // --------------------------------------------------------
+        m_coordinator->CreateEntity(
+            TransformComponent(
+                { SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.5f, 0.0f }, // 表示位置
+                { 0.0f, 0.0f, 0.0f },
+                { 600.0f, 600.0f, 1.0f } // 1枚分のサイズ
+            ),
+            UIImageComponent(
+                "RESULT_ANIM",   // ★ 最初のフレーム
+                1.0f,
+                true,
+                { 1,1,1,1 }
+            ),
+            TagComponent("RESULT_ANIM") // ★ ResultControlSystem が拾う
         );
 
         // GAME OVER ロゴ
         m_coordinator->CreateEntity(
-            TransformComponent({ SCREEN_WIDTH * 0.3f, SCREEN_HEIGHT * 0.15f, 0.0f }, { 0,0,0 }, { 680,96,1 }),
+            TransformComponent(
+                { SCREEN_WIDTH * 0.2f, SCREEN_HEIGHT * 0.09f, 0.0f },//0.1,0.15
+                { 0.0f, 0.0f, 0.0f },
+                { 460,72,1 }//680,96
+            ),
             UIImageComponent("UI_GAME_OVER", 0.0f, true, { 1,1,1,1 })
         );
 
-        // お宝一覧
+
+        
+        // ステージ名プレート（ゲームオーバー時も表示）
+        //{
+        //    float plateW = 320.0f;
+        //    float plateH = 80.0f;
+        //    float plateX = SCREEN_WIDTH * 0.30f;
+        //    float plateY = SCREEN_HEIGHT * 0.23f;
+
+        //    m_coordinator->CreateEntity(
+        //        TransformComponent(
+        //            { plateX, plateY, 0.0f },
+        //            { 0.0f, 0.0f, 0.0f },
+        //            { plateW, plateH, 1.0f }
+        //        ),
+        //        UIImageComponent(
+        //            "BTN_BACK_STAGE_SELECT", // ← 後でステージ名画像に差し替え
+        //            1.5f,
+        //            true,
+        //            { 1.0f, 1.0f, 1.0f, 1.0f }
+        //        )
+        //    );
+        //}
+
+        // D) ゲームオーバー時：お宝一覧（順番どおり＋未取得灰色）
         {
             const auto& icons = s_resultData.orderedItemIcons;
             const auto& flags = s_resultData.orderedItemCollected;
@@ -256,8 +314,9 @@ void ResultScene::Init()
                 const float iconSize = 80.0f;
                 const float margin = 20.0f;
 
-                float baseY = SCREEN_HEIGHT * 0.45f;
-                float baseX = SCREEN_WIDTH * 0.1f;
+                // 画面下部ボタンの少し上、左から右へ並べるイメージ
+                float baseY = SCREEN_HEIGHT * 0.25f;
+                float baseX = SCREEN_WIDTH * 0.05f;
 
                 for (size_t i = 0; i < count; ++i)
                 {
@@ -274,6 +333,13 @@ void ResultScene::Init()
                 }
             }
         }
+
+        // BGM再生
+        ECS::EntityID m_gameoverBGM = ECS::EntityFactory::CreateLoopSoundEntity(
+            m_coordinator.get(),
+            "BGM_TEST",
+            0.5f
+        );
     }
 
     // 下部ボタン
@@ -400,21 +466,30 @@ void ResultScene::CreateButtons()
 
     const bool isClear = s_resultData.isCleared;
 
-    const float y = SCREEN_HEIGHT * 0.93f;
+    // ボタンの中心Y（必要ならゲームオーバーだけ少し上げてもOK）
+    const float y = SCREEN_HEIGHT * 0.94f;//0.93
 
-    const float frameW = 260.0f;
-    const float frameH = 90.0f;
+    // 土台フレームのサイズ
+    const float frameW = 210.0f;//260
+    const float frameH = 90.0f;//90
 
-    const float textW = 210.0f;
-    const float textH = 60.0f;
+    // 中の文字画像(RETRY/SELECT/TITLE) のサイズ
+    const float textW = 185.0f;//210
+    const float textH = 80.0f;//60
 
-    const float spacing = 15.0f;
+    // ボタン同士の間隔
+    const float spacing = 10.0f;//15
 
     const float totalWidth = frameW * 3.0f + spacing * 2.0f;
-    const float firstX = (SCREEN_WIDTH * 0.6f) - totalWidth * 0.5f + frameW * 0.5f;
 
-    // クリア時は通常リザルト枠、ゲームオーバー時は GAMEOVER 枠
-    const char* frameTexId = isClear ? "BTN_UNDER_RISULT" : "BTN_UNDER_GAMEOVER";
+    // 一番左のボタンの中心X
+    const float firstX = (SCREEN_WIDTH * 0.785f) - totalWidth * 0.6f + frameW * 0.5f;
+    //    const float firstX = (SCREEN_WIDTH * 0.6f) - totalWidth * 0.5f + frameW * 0.5f;
+
+    // ★ ここでクリア／ゲームオーバーで使う土台テクスチャを切り替える
+    const char* frameTexId = isClear
+        ? "BTN_UNDER_CLEAR"  // ← btn_result_normal1.png 用
+        : "BTN_UNDER_GAMEOVER";  // ← btn_result_normal.png 用
 
     auto createResultButton =
         [&](int index, const char* textTex, std::function<void()> onClick)
@@ -424,20 +499,53 @@ void ResultScene::CreateButtons()
             // 織田：frameEntityに背景フレームの情報を入れる
             EntityID frameEntity = m_coordinator->CreateEntity(
                 TransformComponent({ x, y, 0.0f }, { 0,0,0 }, { frameW, frameH, 1.0f }),
-                UIImageComponent(frameTexId, 1.5f, true, { 1,1,1,1 })
+                UIImageComponent(
+                    frameTexId,   // ← ここが切り替わる
+                    1.5f,
+                    true,
+                    { 1,1,1,1 }
+                ),
+                UIButtonComponent(
+                    ButtonState::Normal,
+                    true,
+                    nullptr,                     // ★ 背景はクリック処理しない
+                    { frameW, frameH, 1.0f }
+                ),
+                TagComponent(textTex)
             );
             // 織田：textEntityにボタンテキストの情報を入れる
             EntityID textEntity = m_coordinator->CreateEntity(
                 TransformComponent({ x, y, 0.0f }, { 0,0,0 }, { textW, textH, 1.0f }),
-                UIImageComponent(textTex, 2.0f, true, { 1,1,1,1 }),
-                UIButtonComponent(ButtonState::Normal, true, onClick)
+                UIImageComponent(
+                    textTex,
+                    2.0f,
+                    true,
+                    { 1,1,1,1 }
+                ),
+                UIButtonComponent(
+                    ButtonState::Normal,
+                    true,
+                    onClick,
+                    { textW, textH, 1.0f }//
+                ),
+                TagComponent(textTex) // 追加
             );
 
             m_buttons.push_back({ textEntity, frameEntity });// 織田：ペアにしてリストに保存
         };
 
+    // LEFT: SELECT（ステージセレクト）
     createResultButton(
         0,
+        "BTN_BACK_STAGE_SELECT",
+        []()
+        {
+            SceneManager::ChangeScene<StageSelectScene>();
+        }
+    );
+    // CENTER: RETRY
+    createResultButton(
+        1,
         "BTN_RETRY",
         []()
         {
@@ -446,20 +554,8 @@ void ResultScene::CreateButtons()
         }
     );
 
-    createResultButton(
-        1,
-        "BTN_BACK_STAGE_SELECT",
-        []()
-        {
-            // 直前のクリアで新規解放されたステージがある場合のみ、StageSelect復帰時に演出を出す
-            if (ResultScene::s_newlyUnlockedStageNo >= 2)
-            {
-                StageUnlockProgress::SetPendingRevealStage(ResultScene::s_newlyUnlockedStageNo);
-            }
-            SceneManager::ChangeScene<StageSelectScene>();
-        }
-    );
 
+    // RIGHT: TITLE
     createResultButton(
         2,
         "BTN_BACK_TITLE",

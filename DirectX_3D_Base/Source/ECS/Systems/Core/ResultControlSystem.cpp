@@ -1,5 +1,6 @@
 #include "ECS/Systems/Core/ResultControlSystem.h"
 #include "ECS/ECS.h"
+#include "ECS/EntityFactory.h"
 
 #include <ECS/Components/Core/TransformComponent.h>
 #include <ECS/Components/Core/TagComponent.h>
@@ -72,7 +73,7 @@ void ResultControlSystem::Update(float deltaTime)
     }
 
     // ---------------------------------------------------------
-    // 2. スタンプのアニメーション (全星出現後の 2.0秒あたりでドン！)
+    // 2. �X�^���v�̃A�j���[�V���� (�S���o����� 2.0�b������Ńh���I)
     //    Tag: "AnimStamp"
     // ---------------------------------------------------------
     for (auto const& entity : m_coordinator->GetActiveEntities())
@@ -145,4 +146,92 @@ void ResultControlSystem::Update(float deltaTime)
             }
         }
     }
+
+// ---------------------------------------------------------
+// 4. ���ʉ��o�F�p���p������A�j���[�V����
+//    Tag: "ResultAnim"
+// ---------------------------------------------------------
+    {
+        const float FRAME_TIME = 0.05f;
+
+        const int COLUMNS = 5; // ��
+        const int ROWS = 1; // �c
+        const int FRAME_COUNT = COLUMNS * ROWS;
+
+        int frame = static_cast<int>(m_timer / FRAME_TIME) % FRAME_COUNT;
+
+        int col = frame % COLUMNS;
+        int row = frame / COLUMNS;
+
+        float uvW = 1.0f / COLUMNS;
+        float uvH = 1.0f / ROWS;
+
+        for (auto const& entity : m_coordinator->GetActiveEntities())
+        {
+            if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+            if (!m_coordinator->HasComponent<UIImageComponent>(entity)) continue;
+
+            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity);
+            if (tag.tag != "RESULT_ANIM") continue;
+
+            auto& ui = m_coordinator->GetComponent<UIImageComponent>(entity);
+
+            ui.uvScale = { uvW, uvH };
+            ui.uvPos = { col * uvW, row * uvH };
+        }
+    }
+
+// ---------------------------------------------------------
+// Result �{�^���� Hover ���o
+// ---------------------------------------------------------
+    for (auto entity : m_coordinator->GetActiveEntities())
+    {
+        if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+        if (!m_coordinator->HasComponent<UIButtonComponent>(entity)) continue;
+        if (!m_coordinator->HasComponent<TransformComponent>(entity)) continue;
+
+        const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
+
+        if (tag != "BTN_BACK_STAGE_SELECT" &&
+            tag != "BTN_RETRY" &&
+            tag != "BTN_BACK_TITLE")
+        {
+            continue;
+        }
+
+
+        auto& btn = m_coordinator->GetComponent<UIButtonComponent>(entity);
+        auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+
+
+        // 1. �ڕW�{��
+        float targetRatio =
+            (btn.state == ButtonState::Hover) ? 1.08f : 1.0f;
+
+        // 2. ���T�C�Y �~ �{��
+        float targetX = btn.originalScale.x * targetRatio;
+        float targetY = btn.originalScale.y * targetRatio;
+
+        // 3. Lerp
+        float speed = 15.0f * deltaTime;
+        trans.scale.x += (targetX - trans.scale.x) * speed;
+        trans.scale.y += (targetY - trans.scale.y) * speed;
+
+        // ================================
+        // �� Hover �ɓ������u�Ԃ� SE �Đ�
+        // ================================
+        if (btn.prevState != ButtonState::Hover &&
+            btn.state == ButtonState::Hover)
+        {
+                // �{�^���ɃJ�[�\�������Ԃ������Ƃ�SE��炷
+                ECS::EntityFactory::CreateOneShotSoundEntity(
+                    m_coordinator,
+                    "SE_CLEAR",  // SE
+                    0.8f         // ����       
+            );
+        }
+        btn.prevState = btn.state;
+
+    }
+
 }

@@ -59,7 +59,9 @@ public:
 
 private:
     std::shared_ptr<ECS::Coordinator> m_coordinator;
-    static ResultData                 s_resultData;
+    static ResultData                 s_resultData;   
+    bool m_isClear = false;
+    ECS::EntityID m_gameoverBGM = ECS::INVALID_ENTITY_ID;
     // 直前のクリアで新規解放されたステージ番号（2..6）。演出はStageSelectへ戻るときだけ出す。
     static int                      s_newlyUnlockedStageNo;
 
