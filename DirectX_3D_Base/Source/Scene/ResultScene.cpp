@@ -74,7 +74,12 @@ void ResultScene::Init()
     // 2D カメラ（他シーンと同じく EntityFactory を使用）
     ECS::EntityFactory::CreateBasicCamera(m_coordinator.get(), { 0.0f, 0.0f, 0.0f });
 
-    bool isClear = s_resultData.isCleared;
+    const bool isClear = s_resultData.isCleared;
+    //  メンバに保存（CreateButtons で使う)
+    m_isClear = isClear;
+
+
+
 
     // ============================================================
     // 2. GAME CLEAR / GAME OVER 共通のレイアウト
@@ -290,7 +295,7 @@ void ResultScene::Init()
                         true,
                         { 1,1,1,0 }               // 最初は透明（ResultControlSystemでフェードイン）
                     ),
-                    TagComponent("AnimStamp")      // ★ これを ResultControlSystem が拾う
+                    TagComponent("AnimStamp")      // これを ResultControlSystem が拾う
                 );
             }
 
@@ -323,33 +328,49 @@ void ResultScene::Init()
             }
         }
     }
-
-
     else
     {
         // ========================================================
         // GAME OVER 画面のレイアウト
         // ========================================================
-
+        
         // 背景
         m_coordinator->CreateEntity(
             TransformComponent(
-                { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f },
-                { 0.0f, 0.0f, 0.0f },
-                { (float)SCREEN_WIDTH, (float)SCREEN_HEIGHT, 1.0f }
+                { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0 },
+                { 0, 0, 0 },
+                { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }
             ),
             UIImageComponent("BG_GAME_OVER", 0.0f, true, { 1,1,1,1 })
+        );
+        // --------------------------------------------------------
+        // パラパラ漫画アニメーション（Result演出）
+        // --------------------------------------------------------
+        m_coordinator->CreateEntity(
+            TransformComponent(
+                { SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.5f, 0.0f }, // 表示位置
+                { 0.0f, 0.0f, 0.0f },
+                { 600.0f, 600.0f, 1.0f } // 1枚分のサイズ
+            ),
+            UIImageComponent(
+                "RESULT_ANIM",   // ★ 最初のフレーム
+                1.0f,
+                true,
+                { 1,1,1,1 }
+            ),
+            TagComponent("RESULT_ANIM") // ★ ResultControlSystem が拾う
         );
 
         // GAME OVER ロゴ
         m_coordinator->CreateEntity(
             TransformComponent(
-                { SCREEN_WIDTH * 0.3f, SCREEN_HEIGHT * 0.15f, 0.0f },
+                { SCREEN_WIDTH * 0.2f, SCREEN_HEIGHT * 0.09f, 0.0f },//0.1,0.15
                 { 0.0f, 0.0f, 0.0f },
-                { 680,96,1 }
+                { 460,72,1 }//680,96
             ),
             UIImageComponent("UI_GAME_OVER", 0.0f, true, { 1,1,1,1 })
         );
+
 
         
         // ステージ名プレート（ゲームオーバー時も表示）
@@ -386,8 +407,8 @@ void ResultScene::Init()
                 const float margin = 20.0f;   // アイコン同士の間隔
 
                 // 画面下部ボタンの少し上、左から右へ並べるイメージ
-                float baseY = SCREEN_HEIGHT * 0.45f;
-                float baseX = SCREEN_WIDTH * 0.1f;
+                float baseY = SCREEN_HEIGHT * 0.25f;
+                float baseX = SCREEN_WIDTH * 0.05f;
 
                 for (size_t i = 0; i < count; ++i)
                 {
@@ -425,7 +446,12 @@ void ResultScene::Init()
             }
         }
 
-
+        // BGM再生
+        ECS::EntityID m_gameoverBGM = ECS::EntityFactory::CreateLoopSoundEntity(
+            m_coordinator.get(),
+            "BGM_TEST",
+            0.5f
+        );
     }
 
     // --------------------------------------------------------
@@ -542,28 +568,29 @@ void ResultScene::CreateButtons()
     const bool isClear = s_resultData.isCleared;
 
     // ボタンの中心Y（必要ならゲームオーバーだけ少し上げてもOK）
-    const float y = SCREEN_HEIGHT * 0.93f;
+    const float y = SCREEN_HEIGHT * 0.94f;//0.93
 
     // 土台フレームのサイズ
-    const float frameW = 260.0f;
-    const float frameH = 90.0f;
+    const float frameW = 210.0f;//260
+    const float frameH = 90.0f;//90
 
     // 中の文字画像(RETRY/SELECT/TITLE) のサイズ
-    const float textW = 210.0f;
-    const float textH = 60.0f;
+    const float textW = 185.0f;//210
+    const float textH = 80.0f;//60
 
     // ボタン同士の間隔
-    const float spacing = 15.0f;
+    const float spacing = 10.0f;//15
 
     // ３つ分の全幅（= 並べて真ん中に置くために使う）
     const float totalWidth = frameW * 3.0f + spacing * 2.0f;
 
     // 一番左のボタンの中心X
-    const float firstX = (SCREEN_WIDTH * 0.6f) - totalWidth * 0.5f + frameW * 0.5f;
+    const float firstX = (SCREEN_WIDTH * 0.785f) - totalWidth * 0.6f + frameW * 0.5f;
+    //    const float firstX = (SCREEN_WIDTH * 0.6f) - totalWidth * 0.5f + frameW * 0.5f;
 
     // ★ ここでクリア／ゲームオーバーで使う土台テクスチャを切り替える
     const char* frameTexId = isClear
-        ? "BTN_UNDER_RISULT"  // ← btn_result_normal1.png 用
+        ? "BTN_UNDER_CLEAR"  // ← btn_result_normal1.png 用
         : "BTN_UNDER_GAMEOVER";  // ← btn_result_normal.png 用
 
     auto createResultButton =
@@ -579,7 +606,14 @@ void ResultScene::CreateButtons()
                     1.5f,
                     true,
                     { 1,1,1,1 }
-                )
+                ),
+                UIButtonComponent(
+                    ButtonState::Normal,
+                    true,
+                    nullptr,                     // ★ 背景はクリック処理しない
+                    { frameW, frameH, 1.0f }
+                ),
+                TagComponent(textTex)
             );
 
             // ② 手前の文字（RETRY / SELECT / TITLE）
@@ -594,14 +628,25 @@ void ResultScene::CreateButtons()
                 UIButtonComponent(
                     ButtonState::Normal,
                     true,
-                    onClick
-                )
+                    onClick,
+                    { textW, textH, 1.0f }//
+                ),
+                TagComponent(textTex) // 追加
             );
         };
 
-    // LEFT: RETRY
+    // LEFT: SELECT（ステージセレクト）
     createResultButton(
         0,
+        "BTN_BACK_STAGE_SELECT",
+        []()
+        {
+            SceneManager::ChangeScene<StageSelectScene>();
+        }
+    );
+    // CENTER: RETRY
+    createResultButton(
+        1,
         "BTN_RETRY",
         []()
         {
@@ -610,15 +655,6 @@ void ResultScene::CreateButtons()
         }
     );
 
-    // CENTER: SELECT（ステージセレクト）
-    createResultButton(
-        1,
-        "BTN_BACK_STAGE_SELECT",
-        []()
-        {
-            SceneManager::ChangeScene<StageSelectScene>();
-        }
-    );
 
     // RIGHT: TITLE
     createResultButton(

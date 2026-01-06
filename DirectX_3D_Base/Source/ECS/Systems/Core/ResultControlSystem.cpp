@@ -1,5 +1,6 @@
 #include "ECS/Systems/Core/ResultControlSystem.h"
 #include "ECS/ECS.h"
+#include "ECS/EntityFactory.h"
 
 #include <ECS/Components/Core/TransformComponent.h>
 #include <ECS/Components/Core/TagComponent.h>
@@ -14,7 +15,7 @@ void ResultControlSystem::Update(float deltaTime)
     m_timer += deltaTime;
 
     // ---------------------------------------------------------
-    // 1. æ˜Ÿã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ (0.5ç§’é–“éš”ã§ 1ã¤ãšã¤ãƒãƒƒãƒ—)
+    // 1. ¯‚ÌƒAƒjƒ[ƒVƒ‡ƒ“ (0.5•bŠÔŠu‚Å 1‚Â‚¸‚Âƒ|ƒbƒv)
     //    Tag: "AnimStar"
     // ---------------------------------------------------------
     int starIndex = 0;
@@ -23,14 +24,14 @@ void ResultControlSystem::Update(float deltaTime)
         if (m_coordinator->HasComponent<TagComponent>(entity) &&
             m_coordinator->GetComponent<TagComponent>(entity).tag == "AnimStar")
         {
-            // å‡ºç¾ã‚¿ã‚¤ãƒŸãƒ³ã‚°: 0.5s, 1.0s, 1.5s ...
+            // oŒ»ƒ^ƒCƒ~ƒ“ƒO: 0.5s, 1.0s, 1.5s ...
             float appearTime = 0.5f + starIndex * 0.5f;
 
             if (m_timer >= appearTime)
             {
                 auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
 
-                // å‡ºç¾ã‹ã‚‰ã®çµŒéæ™‚é–“ã§ã‚¹ã‚±ãƒ¼ãƒ«ã‚’ 0 -> 1.2 -> 1.0 ã«å¤‰åŒ–
+                // oŒ»‚©‚ç‚ÌŒo‰ßŠÔ‚ÅƒXƒP[ƒ‹‚ğ 0 -> 1.2 -> 1.0 ‚É•Ï‰»
                 float t = (m_timer - appearTime) * 3.0f;
                 float scale = 0.0f;
 
@@ -46,7 +47,7 @@ void ResultControlSystem::Update(float deltaTime)
     }
 
     // ---------------------------------------------------------
-    // 2. ã‚¹ã‚¿ãƒ³ãƒ—ã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ (å…¨æ˜Ÿå‡ºç¾å¾Œã® 2.0ç§’ã‚ãŸã‚Šã§ãƒ‰ãƒ³ï¼)
+    // 2. ƒXƒ^ƒ“ƒv‚ÌƒAƒjƒ[ƒVƒ‡ƒ“ (‘S¯oŒ»Œã‚Ì 2.0•b‚ ‚½‚è‚Åƒhƒ“I)
     //    Tag: "AnimStamp"
     // ---------------------------------------------------------
     for (auto const& entity : m_coordinator->GetActiveEntities())
@@ -62,7 +63,7 @@ void ResultControlSystem::Update(float deltaTime)
 
             float t = (m_timer - appearTime) * 5.0f;
 
-            // æœ€åˆã¯ 5å€ï¼†é€æ˜ â†’ 1å€ï¼†ä¸é€æ˜ã¸
+            // Å‰‚Í 5”{•“§–¾ ¨ 1”{••s“§–¾‚Ö
             float scale = 1.0f;
             float alpha = 1.0f;
 
@@ -82,7 +83,7 @@ void ResultControlSystem::Update(float deltaTime)
         }
     }
 
-    // 3) â˜…ã‚’å–ã£ãŸè¡Œã® STAR_TEXT ã‚’æ³¢æ‰“ãŸã›ã‚‹
+    // 3) š‚ğæ‚Á‚½s‚Ì STAR_TEXT ‚ğ”g‘Å‚½‚¹‚é
     {
         const float waveStartTime = 0.8f;
 
@@ -107,6 +108,93 @@ void ResultControlSystem::Update(float deltaTime)
                 trans.scale.y = baseH * waveScale;
             }
         }
+    }
+
+// ---------------------------------------------------------
+// 4. Œ‹‰Ê‰‰oFƒpƒ‰ƒpƒ‰–Ÿ‰æƒAƒjƒ[ƒVƒ‡ƒ“
+//    Tag: "ResultAnim"
+// ---------------------------------------------------------
+    {
+        const float FRAME_TIME = 0.05f;
+
+        const int COLUMNS = 5; // ‰¡
+        const int ROWS = 1; // c
+        const int FRAME_COUNT = COLUMNS * ROWS;
+
+        int frame = static_cast<int>(m_timer / FRAME_TIME) % FRAME_COUNT;
+
+        int col = frame % COLUMNS;
+        int row = frame / COLUMNS;
+
+        float uvW = 1.0f / COLUMNS;
+        float uvH = 1.0f / ROWS;
+
+        for (auto const& entity : m_coordinator->GetActiveEntities())
+        {
+            if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+            if (!m_coordinator->HasComponent<UIImageComponent>(entity)) continue;
+
+            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity);
+            if (tag.tag != "RESULT_ANIM") continue;
+
+            auto& ui = m_coordinator->GetComponent<UIImageComponent>(entity);
+
+            ui.uvScale = { uvW, uvH };
+            ui.uvPos = { col * uvW, row * uvH };
+        }
+    }
+
+// ---------------------------------------------------------
+// Result ƒ{ƒ^ƒ“‚Ì Hover ‰‰o
+// ---------------------------------------------------------
+    for (auto entity : m_coordinator->GetActiveEntities())
+    {
+        if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+        if (!m_coordinator->HasComponent<UIButtonComponent>(entity)) continue;
+        if (!m_coordinator->HasComponent<TransformComponent>(entity)) continue;
+
+        const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
+
+        if (tag != "BTN_BACK_STAGE_SELECT" &&
+            tag != "BTN_RETRY" &&
+            tag != "BTN_BACK_TITLE")
+        {
+            continue;
+        }
+
+
+        auto& btn = m_coordinator->GetComponent<UIButtonComponent>(entity);
+        auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+
+
+        // 1. –Ú•W”{—¦
+        float targetRatio =
+            (btn.state == ButtonState::Hover) ? 1.08f : 1.0f;
+
+        // 2. Œ³ƒTƒCƒY ~ ”{—¦
+        float targetX = btn.originalScale.x * targetRatio;
+        float targetY = btn.originalScale.y * targetRatio;
+
+        // 3. Lerp
+        float speed = 15.0f * deltaTime;
+        trans.scale.x += (targetX - trans.scale.x) * speed;
+        trans.scale.y += (targetY - trans.scale.y) * speed;
+
+        // ================================
+        // š Hover ‚É“ü‚Á‚½uŠÔ‚É SE Ä¶
+        // ================================
+        if (btn.prevState != ButtonState::Hover &&
+            btn.state == ButtonState::Hover)
+        {
+                // ƒ{ƒ^ƒ“‚ÉƒJ[ƒ\ƒ‹‚ª‚©‚Ô‚³‚Á‚½‚Æ‚«SE‚ğ–Â‚ç‚·
+                ECS::EntityFactory::CreateOneShotSoundEntity(
+                    m_coordinator,
+                    "SE_CLEAR",  // SE
+                    0.8f         // ‰¹—Ê       
+            );
+        }
+        btn.prevState = btn.state;
+
     }
 
 }

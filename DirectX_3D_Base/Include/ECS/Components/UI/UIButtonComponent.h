@@ -43,6 +43,9 @@ struct UIButtonComponent
 	bool isVisible;					///< 有効か（非表示なら判定もしない想定）
 	std::function<void()> onClick;	///< クリック時のコールバック関数
 	DirectX::XMFLOAT3 originalScale; //元のサイズ
+	// 追加
+	ButtonState prevState = ButtonState::Normal;
+
 
 	UIButtonComponent()
 		: state(ButtonState::Normal)
@@ -59,6 +62,7 @@ struct UIButtonComponent
 		const DirectX::XMFLOAT3& scale = { 1.0f, 1.0f, 1.0f }
 	)
 		: state(initialState)
+		,prevState(initialState)
 		, isVisible(initialVisible)
 		, onClick(callback)
 		, originalScale(scale)

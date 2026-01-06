@@ -38,8 +38,11 @@ UI_GAME_OVER,Texture,Assets/Texture/ui_gameover.png
 BTN_BACK_STAGE_SELECT,Texture,Assets/Texture/btn_back_stage_select.png
 BTN_RETRY,Texture,Assets/Texture/btn_retry.png
 BTN_BACK_TITLE,Texture,Assets/Texture/btn_back_title.png
-BTN_UNDER_RISULT,Texture,Assets/Texture/btn_result_normal1.png
-BTN_UNDER_GAMEOVER,Texture,Assets/Texture/btn_result_normal.png
+BTN_UNDER_CLEAR,Texture,Assets/Texture/btn_result_normal.png
+BTN_UNDER_GAMEOVER,Texture,Assets/Texture/btn_result_normal1.png
 STAR_TEXT1,Texture,Assets/Texture/ui_evaluation_criteria1.png
 STAR_TEXT2,Texture,Assets/Texture/ui_evaluation_criteria2.png
 STAR_TEXT3,Texture,Assets/Texture/ui_evaluation_criteria3.png
+RESULT_ANIM,Texture,Assets/Texture/ui_gameover_animation2.png
+TEST_FADE,Texture,Assets/Texture/ui_fade.png
+TEST_FADE_CIRCLE,Texture,Assets/Texture/ui_fade_circle.png

@@ -54,5 +54,7 @@ public:
 
 private:
     std::shared_ptr<ECS::Coordinator> m_coordinator;
-    static ResultData                 s_resultData;
+    static ResultData                 s_resultData;   
+    bool m_isClear = false;
+    ECS::EntityID m_gameoverBGM = ECS::INVALID_ENTITY_ID;
 };
