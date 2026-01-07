@@ -42,7 +42,8 @@ enum class CellType
     Goal = 5,       // ゴール
     Item = 6,       // 回収アイテム
     Guard = 7,       // 警備員（敵）の初期位置
-    Taser = 8,
+	Taser = 8,  // テーザーの初期位置
+	Teleporter = 9, // テレポーターの位置
 };
 
 /**
@@ -80,6 +81,8 @@ struct MapComponent
     DirectX::XMINT2 startPos = { 0, 0 }; // プレイヤー初期位置
     DirectX::XMINT2 goalPos = { 0, 0 }; // ゴール位置
     std::vector<DirectX::XMINT2> itemPositions; // アイテムの配置位置
+    struct TeleportPair { DirectX::XMINT2 posA; DirectX::XMINT2 posB; };
+    std::vector<TeleportPair> teleportPairs;
 
     MapComponent()
     {

@@ -638,6 +638,23 @@ end_generate_loop:;
         mapComp.grid[pos.y][pos.x].type = CellType::Taser;
         taserPlaced++;
     }
+    // テレポートの配置
+    int teleportPairsPlaced = 0;
+    while (teleportPairsPlaced < config.teleportPairCount && availablePathPositions.size() >= 1)
+    {
+        // 入口と出口の2マスをリストから取得
+        DirectX::XMINT2 posA = availablePathPositions.back();
+        availablePathPositions.pop_back();
+        DirectX::XMINT2 posB = availablePathPositions.back();
+        availablePathPositions.pop_back();
+
+        // グリッドにテレポート属性を設定
+        mapComp.grid[posA.y][posA.x].type = CellType::Teleporter;
+        mapComp.grid[posB.y][posB.x].type = CellType::Teleporter;
+
+        mapComp.teleportPairs.push_back({ posA, posB });
+        teleportPairsPlaced++;
+    }
 
     // 3. その他のギミック配置 (config.gimmickCounts を利用)
     // NOTE: CellType::Gimmick の処理はMapComponent.hにCellTypeを追加した後で実装
@@ -744,6 +761,8 @@ void MapGenerationSystem::CreateMap(const std::string& stageID)
 
     stateComp.timeLimitStar = config.timeLimitStar;
     trackerComp.targetItemIDs.clear();
+    mapComp.teleportPairs.clear();
+    mapComp.itemPositions.clear();
 
     // 2. 迷路データの生成
     // MapComponent内に設定情報がコピーされる
@@ -915,6 +934,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
 {
     EntityID tracker = FindFirstEntityWithComponent<ItemTrackerComponent>(m_coordinator);
     auto& trackerComp = m_coordinator->GetComponent<ItemTrackerComponent>(tracker);
+    std::vector<EntityID> teleportEntities;
 
     // configから動的な定数を取得
     const int GRID_SIZE_X = config.gridSizeX;
@@ -1151,5 +1171,31 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                 break;
             }
         }
+    }
+    for (const auto& pair : mapComp.teleportPairs)
+    {
+
+        XMFLOAT3 posA = GetWorldPosition(pair.posA.x, pair.posA.y, config);
+        posA.x += config.tileSize / 2.0f; posA.z += config.tileSize / 2.0f;
+        // ★修正: 床の表面（2.5f付近）に出す。少し浮かせて 2.6f に設定
+        posA.y = config.tileSize / 2.0f + 0.2f;
+
+        // B地点も同様に修正
+        XMFLOAT3 posB = GetWorldPosition(pair.posB.x, pair.posB.y, config);
+        posB.x += config.tileSize / 2.0f; posB.z += config.tileSize / 2.0f;
+        posB.y = config.tileSize / 2.0f + 0.2f;
+
+        // エンティティ生成
+        ECS::EntityID entA = EntityFactory::CreateTeleporter(m_coordinator, posA);
+        ECS::EntityID entB = EntityFactory::CreateTeleporter(m_coordinator, posB);
+
+        // ★ここで相互にお互いのIDを targetEntity にセットする
+        auto& compA = m_coordinator->GetComponent<TeleportComponent>(entA);
+        auto& compB = m_coordinator->GetComponent<TeleportComponent>(entB);
+
+        compA.targetEntity = entB;
+        compB.targetEntity = entA;
+
+        printf("[Debug] Teleporter Linked: %d <-> %d\n", entA, entB);
     }
 }
