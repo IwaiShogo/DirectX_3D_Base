@@ -640,7 +640,7 @@ end_generate_loop:;
     }
     // テレポートの配置
     int teleportPairsPlaced = 0;
-    while (teleportPairsPlaced < config.teleportPairCount && availablePathPositions.size() >= 1)
+    while (teleportPairsPlaced < config.teleportPairCount && availablePathPositions.size() >= 2)
     {
         // 入口と出口の2マスをリストから取得
         DirectX::XMINT2 posA = availablePathPositions.back();

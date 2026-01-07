@@ -9,6 +9,7 @@
 #include "DirectXMath.h"
 #include <iostream>
 
+#include "Scene/StageUnlockProgress.h"
 #include <ECS/Components/Core/TransformComponent.h>
 #include <ECS/Components/UI/UIImageComponent.h>
 #include <ECS/Components/UI/UIButtonComponent.h>
@@ -79,8 +80,8 @@ void TitleScene::Init()
         ),
         EffectComponent(
             /* AssetID  */ "EFK_TITLE_SHINE",
-            /* Loop     */ true,
-            /* AutoPlay */ true,
+            /* Loop     */ false,
+            /* AutoPlay */ false,
             /* Offset   */{ 0.0f, 0.0f, -3.0f },
             /* Scale    */ 0.3f
         )
@@ -161,6 +162,24 @@ void TitleScene::Init()
         const XMFLOAT3 hitScale = { TitleLayout::BTN_BASE_SCALE.x * 0.66f, TitleLayout::BTN_BASE_SCALE.y * 0.66f, 1.0f };
         const XMFLOAT3 menuRotation = { 0.0f, 0.0f, XMConvertToRadians(-20.0f) };
 
+		// エフェクト
+        float effPosX[] = { -1.0f, 1.0f };
+        for (int i = 0; i < 2; ++i) {
+            ECS::EntityID eff = m_coordinator->CreateEntity(
+                TransformComponent(
+                    { effPosX[i], 0.0f, 0.0f }, // Z座標はカード(-3.5f)より少し手前
+                    { 0.0f, 0.0f, 0.0f },
+                    { 0.0f, 0.0f, 0.0f }
+                ),
+                EffectComponent(
+                    "EFK_TITLE_SHINE", // 一旦、既存のエフェクト名
+                    false,              // ループ
+                    false,             // 初期状態は停止
+                    { 1.0f,1.0f, 1.0f },
+                    0.5f
+                )
+            );
+        }
         // New Game ボタン
         ECS::EntityID newGame = m_coordinator->CreateEntity(
             TransformComponent(
@@ -177,7 +196,10 @@ void TitleScene::Init()
             UIButtonComponent(
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
-                /* Callback */ []() { SceneManager::ChangeScene<StageSelectScene>(); },
+                /* Callback */ []() { 
+                    StageUnlockProgress::ResetProgress();
+                    SceneManager::ChangeScene<StageSelectScene>(); 
+                },
                 /* HitScale */ hitScale
             )
         );
