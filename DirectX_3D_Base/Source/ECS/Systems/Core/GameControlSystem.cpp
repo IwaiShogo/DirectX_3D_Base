@@ -1,6 +1,6 @@
-/*****************************************************************//**
+ï»¿/*****************************************************************//**
  * @file	GameControlSystem.cpp
- * @brief	ƒQ[ƒ€‚ªI—¹‚µ‚½Œã‚Ì‹ï‘Ì“I‚ÈƒV[ƒ“ˆ—
+ * @brief	ã‚²ãƒ¼ãƒ ãŒçµ‚äº†ã—ãŸå¾Œã®å…·ä½“çš„ãªã‚·ãƒ¼ãƒ³å‡¦ç†
  *
  * @details
  *
@@ -8,16 +8,16 @@
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  *
- * @date   2025/11/06	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁF
+ * @date   2025/11/06	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼š
  *
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
+ * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- XXï¼š
  *
- * @note	iÈ—ª‰Âj
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
- // ===== ƒCƒ“ƒNƒ‹[ƒh =====
+ // ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
 #include "ECS/Systems/Core/GameControlSystem.h"
 #include "Scene/SceneManager.h"
 #include "ECS/EntityFactory.h"
@@ -39,29 +39,29 @@ std::string GetItemIconPath(const std::string& itemID)
     if (itemID == "Takara_Kaiga2")  return "ICO_TREASURE5";
     if (itemID == "Takara_Kaiga3")  return "ICO_TREASURE6";
 
-    // ƒfƒtƒHƒ‹ƒg
+    // ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆ
     return "ICO_TREASURE";
 }
 
 void GameControlSystem::Update(float deltaTime)
 {
-    // 1. ƒRƒ“ƒgƒ[ƒ‰[iGameState‚ğ‚ÂEntityj‚ğæ“¾
+    // 1. ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ©ãƒ¼ï¼ˆGameStateã‚’æŒã¤Entityï¼‰ã‚’å–å¾—
     EntityID controllerID = FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
     if (controllerID == INVALID_ENTITY_ID) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
-    // ƒ‚[ƒhØ‘ÖŒŸ’m (TopView -> Action)
+    // ãƒ¢ãƒ¼ãƒ‰åˆ‡æ›¿æ¤œçŸ¥ (TopView -> Action)
     if (state.currentMode == GameMode::ACTION_MODE && state.sequenceState == GameSequenceState::None)
     {
-        // ƒAƒNƒVƒ‡ƒ“ƒ‚[ƒh‚É“ü‚Á‚½uŠÔA“üê‰‰o‚ğŠJn
+        // ã‚¢ã‚¯ã‚·ãƒ§ãƒ³ãƒ¢ãƒ¼ãƒ‰ã«å…¥ã£ãŸç¬é–“ã€å…¥å ´æ¼”å‡ºã‚’é–‹å§‹
         StartEntranceSequence(controllerID);
     }
 
-    // ƒV[ƒPƒ“ƒXˆ—
+    // ã‚·ãƒ¼ã‚±ãƒ³ã‚¹å‡¦ç†
     if (state.sequenceState == GameSequenceState::Entering)
     {
         UpdateEntranceSequence(deltaTime, controllerID);
-        return; // ‰‰o’†‚ÍƒQ[ƒ€ƒƒWƒbƒN‚ğ~‚ß‚é
+        return; // æ¼”å‡ºä¸­ã¯ã‚²ãƒ¼ãƒ ãƒ­ã‚¸ãƒƒã‚¯ã‚’æ­¢ã‚ã‚‹
     }
     else if (state.sequenceState == GameSequenceState::Exiting)
     {
@@ -79,14 +79,16 @@ void GameControlSystem::Update(float deltaTime)
         m_uiInitialized = true;
     }
 
-    // 2. ŠeƒƒWƒbƒN‚ğ‡ŸÀs
-    // ˆ—‡˜‚ªd—v‚Å‚·: “ü—Í -> ó‘ÔXV -> ”»’è -> ‘JˆÚ -> UI•\¦
+    // 2. å„ãƒ­ã‚¸ãƒƒã‚¯ã‚’é †æ¬¡å®Ÿè¡Œ
+    // å‡¦ç†é †åºãŒé‡è¦ã§ã™: å…¥åŠ› -> çŠ¶æ…‹æ›´æ–° -> åˆ¤å®š -> é·ç§» -> UIè¡¨ç¤º
 
-    HandleInputAndStateSwitch(controllerID); // “ü—Í‚É‚æ‚éƒ‚[ƒh•ÏX
-    UpdateTimerAndRules(deltaTime, controllerID); // ŠÔŒo‰ß‚ÆƒNƒŠƒA”»’è
-    CheckSceneTransition(controllerID);      // ƒQ[ƒ€I—¹‚È‚çƒV[ƒ“‘JˆÚ
+    CheckMapGimmickTrigger(controllerID); // touch gimmick: force TopView
 
-    // ƒV[ƒ“‘JˆÚ‚ª‹N‚«‚Ä‚¢‚È‚¯‚ê‚ÎUIXV
+    HandleInputAndStateSwitch(controllerID); // å…¥åŠ›ã«ã‚ˆã‚‹ãƒ¢ãƒ¼ãƒ‰å¤‰æ›´
+    UpdateTimerAndRules(deltaTime, controllerID); // æ™‚é–“çµŒéã¨ã‚¯ãƒªã‚¢åˆ¤å®š
+    CheckSceneTransition(controllerID);      // ã‚²ãƒ¼ãƒ çµ‚äº†ãªã‚‰ã‚·ãƒ¼ãƒ³é·ç§»
+
+    // ã‚·ãƒ¼ãƒ³é·ç§»ãŒèµ·ãã¦ã„ãªã‘ã‚Œã°UIæ›´æ–°
     if (!state.isGameOver && !state.isGameClear) {
         UpdateTopViewUI(controllerID);
         UpdateScanLine(deltaTime, controllerID);
@@ -95,7 +97,7 @@ void GameControlSystem::Update(float deltaTime)
         CheckDoorUnlock(controllerID);
     }
 
-    // ‚à‚µƒvƒŒƒC’†‚È‚çƒS[ƒ‹”»’è
+    // ã‚‚ã—ãƒ—ãƒ¬ã‚¤ä¸­ãªã‚‰ã‚´ãƒ¼ãƒ«åˆ¤å®š
     if (state.sequenceState == GameSequenceState::Playing && !state.isGameOver)
     {
         EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
@@ -103,7 +105,7 @@ void GameControlSystem::Update(float deltaTime)
 
         if (playerID != INVALID_ENTITY_ID && exitDoorID != INVALID_ENTITY_ID)
         {
-            // oŒûƒhƒA‚ªŠJ‚¢‚Ä‚¢‚ÄA‚©‚ÂƒvƒŒƒCƒ„[‚ª\•ª‹ß‚Ã‚¢‚½‚ç’Eo‰‰o‚Ö
+            // å‡ºå£ãƒ‰ã‚¢ãŒé–‹ã„ã¦ã„ã¦ã€ã‹ã¤ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãŒååˆ†è¿‘ã¥ã„ãŸã‚‰è„±å‡ºæ¼”å‡ºã¸
             auto& door = m_coordinator->GetComponent<DoorComponent>(exitDoorID);
             if (door.state == DoorState::Open)
             {
@@ -111,38 +113,38 @@ void GameControlSystem::Update(float deltaTime)
                 auto& dTrans = m_coordinator->GetComponent<TransformComponent>(exitDoorID);
 
                 float distSq = XMVectorGetX(XMVector3LengthSq(XMLoadFloat3(&pTrans.position) - XMLoadFloat3(&dTrans.position)));
-                if (distSq < 2.0f * 2.0f) // 2mˆÈ“à
+                if (distSq < 2.0f * 2.0f) // 2mä»¥å†…
                 {
                     state.sequenceState = GameSequenceState::Exiting;
                     state.sequenceTimer = 0.0f;
 
-                    // ’Eo‚àƒJƒƒ‰‚ğŒÅ’èi“üê‚Æ“¯‚¶ˆÊ’u‚ÅOKA‚ ‚é‚¢‚Í‹t‘¤j
+                    // è„±å‡ºæ™‚ã‚‚ã‚«ãƒ¡ãƒ©ã‚’å›ºå®šï¼ˆå…¥å ´æ™‚ã¨åŒã˜ä½ç½®ã§OKã€ã‚ã‚‹ã„ã¯é€†å´ï¼‰
                     if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
                     {
-                        // “üê‚Æ“¯‚¶ŒvZ‚Åu•”‰®‚Ì’†‚©‚ç‹‚Á‚Ä‚¢‚­”w’†v‚ğ‰f‚·
-                        // ƒhƒA‚ÌˆÊ’u
+                        // å…¥å ´æ™‚ã¨åŒã˜è¨ˆç®—ã§ã€Œéƒ¨å±‹ã®ä¸­ã‹ã‚‰å»ã£ã¦ã„ãèƒŒä¸­ã€ã‚’æ˜ ã™
+                        // ãƒ‰ã‚¢ã®ä½ç½®
                         XMVECTOR doorPos = XMLoadFloat3(&dTrans.position);
                         float rad = dTrans.rotation.y;
 
-                        // ƒhƒA‚ÌŒü‚«ƒxƒNƒgƒ‹ (Z+ •ûŒü)
-                        // ƒvƒŒƒCƒ„[‚ª“üê‚·‚é•ûŒü(rad)‚Æ“¯‚¶Œü‚«
+                        // ãƒ‰ã‚¢ã®å‘ããƒ™ã‚¯ãƒˆãƒ« (Z+ æ–¹å‘)
+                        // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãŒå…¥å ´ã™ã‚‹æ–¹å‘(rad)ã¨åŒã˜å‘ã
                         float sinY = sin(rad);
                         float cosY = cos(rad);
                         XMVECTOR doorDir = XMVectorSet(sinY, 0.0f, cosY, 0.0f);
 
-                        // ƒJƒƒ‰‚ÌˆÊ’uŒvZ:
-                        // ƒhƒA‚©‚çu‘O•û‚Ö4mvA‚©‚Âu‚‚³2mv‚ÌˆÊ’ui•”‰®‚Ì’†‚©‚çƒhƒA‚ğŒ©‰º‚ë‚·j
+                        // ã‚«ãƒ¡ãƒ©ã®ä½ç½®è¨ˆç®—:
+                        // ãƒ‰ã‚¢ã‹ã‚‰ã€Œå‰æ–¹ã¸4mã€ã€ã‹ã¤ã€Œé«˜ã•2mã€ã®ä½ç½®ï¼ˆéƒ¨å±‹ã®ä¸­ã‹ã‚‰ãƒ‰ã‚¢ã‚’è¦‹ä¸‹ã‚ã™ï¼‰
                         XMVECTOR camPosVec = doorPos + (doorDir * 3.0f) + XMVectorSet(0.0f, 2.0f, 0.0f, 0.0f);
 
-                        // ’‹“_:
-                        // ƒhƒA‚Ì’†Si‚æ‚è­‚µãj‚ğŒ©‚é
+                        // æ³¨è¦–ç‚¹:
+                        // ãƒ‰ã‚¢ã®ä¸­å¿ƒï¼ˆã‚ˆã‚Šå°‘ã—ä¸Šï¼‰ã‚’è¦‹ã‚‹
                         XMVECTOR lookAtVec = doorPos + XMVectorSet(0.0f, 1.5f, 0.0f, 0.0f);
 
                         XMFLOAT3 camPos, lookAt;
                         XMStoreFloat3(&camPos, camPosVec);
                         XMStoreFloat3(&lookAt, lookAtVec);
 
-                        // ƒJƒƒ‰ƒVƒXƒeƒ€‚ÉƒZƒbƒg
+                        // ã‚«ãƒ¡ãƒ©ã‚·ã‚¹ãƒ†ãƒ ã«ã‚»ãƒƒãƒˆ
                         camSys->SetFixedCamera(camPos, lookAt);
                     }
 
@@ -154,20 +156,20 @@ void GameControlSystem::Update(float deltaTime)
                         auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
                         const auto& id = sound.assetID;
 
-                        // ƒAƒCƒeƒ€‘S‰ñûŒã‚Ü‚Å—¬‚ê‚Ä‚¢‚½ BGM_TEST2 ‚ğ’â~
+                        // ã‚¢ã‚¤ãƒ†ãƒ å…¨å›åå¾Œã¾ã§æµã‚Œã¦ã„ãŸ BGM_TEST2 ã‚’åœæ­¢
                         if (id == "BGM_ACTION"
-                            // ‚à‚µ BGM_TEST3 ‚à‚±‚±‚Å~‚ß‚½‚¢ê‡‚Í « ‚ğ—LŒø‚É
+                            // ã‚‚ã— BGM_TEST3 ã‚‚ã“ã“ã§æ­¢ã‚ãŸã„å ´åˆã¯ â†“ ã‚’æœ‰åŠ¹ã«
                             || id == "BGM_ALLGET")
                         {
                             sound.RequestStop();
                         }
                     }
 
-                    // ƒS[ƒ‹‰‰oŠJnSE‚ğˆê‰ñ‚¾‚¯–Â‚ç‚·
+                    // ã‚´ãƒ¼ãƒ«æ¼”å‡ºé–‹å§‹SEã‚’ä¸€å›ã ã‘é³´ã‚‰ã™
                     ECS::EntityFactory::CreateOneShotSoundEntity(
                         m_coordinator,
-                        "SE_CLEAR",  // ƒS[ƒ‹—pSE
-                        0.8f         // ‰¹—Ê‚Í‚¨D‚İ‚Å
+                        "SE_CLEAR",  // ã‚´ãƒ¼ãƒ«ç”¨SE
+                        0.8f         // éŸ³é‡ã¯ãŠå¥½ã¿ã§
                     );
                     state.sequenceState = GameSequenceState::Exiting;
                     state.sequenceTimer = 0.0f;
@@ -187,14 +189,14 @@ void GameControlSystem::TriggerCaughtSequence(ECS::EntityID guardID)
 
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
-    // ‘½dŒÄ‚Ño‚µ–h~
+    // å¤šé‡å‘¼ã³å‡ºã—é˜²æ­¢
     if (state.sequenceState == GameSequenceState::Caught || state.isGameOver) return;
 
-    // ƒXƒe[ƒg•ÏX
+    // ã‚¹ãƒ†ãƒ¼ãƒˆå¤‰æ›´
     state.sequenceState = GameSequenceState::Caught;
     state.sequenceTimer = 0.0f;
     m_catchingGuardID = guardID;
-    m_caughtAnimPlayed = false; // ƒtƒ‰ƒOEƒŠƒZƒbƒg
+    m_caughtAnimPlayed = false; // ãƒ•ãƒ©ã‚°ãƒ»ãƒªã‚»ãƒƒãƒˆ
 
     EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
 
@@ -203,26 +205,26 @@ void GameControlSystem::TriggerCaughtSequence(ECS::EntityID guardID)
         auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
         auto& gTrans = m_coordinator->GetComponent<TransformComponent>(guardID);
 
-        // 1. ƒAƒjƒ[ƒVƒ‡ƒ“‰Šú‰»
-        // Œx”õˆõ: ƒvƒŒƒCƒ„[‚ÉŒü‚©‚Á‚Ä‘–‚é
+        // 1. ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³åˆæœŸåŒ–
+        // è­¦å‚™å“¡: ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã«å‘ã‹ã£ã¦èµ°ã‚‹
         if (m_coordinator->HasComponent<AnimationComponent>(guardID)) {
             m_coordinator->GetComponent<AnimationComponent>(guardID).Play("A_GUARD_RUN");
         }
-        // ƒvƒŒƒCƒ„[: ‹Á‚­/—§‚¿~‚Ü‚é
+        // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼: é©šã/ç«‹ã¡æ­¢ã¾ã‚‹
         if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
             m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_IDLE");
         }
 
-        // 2. ƒJƒƒ‰İ’èi“ñl‚Ì—lq‚ªŒ©‚¦‚éˆÊ’u‚Öj
+        // 2. ã‚«ãƒ¡ãƒ©è¨­å®šï¼ˆäºŒäººã®æ§˜å­ãŒè¦‹ãˆã‚‹ä½ç½®ã¸ï¼‰
         if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
         {
-            // ’†ŠÔ’n“_
+            // ä¸­é–“åœ°ç‚¹
             XMVECTOR pPos = XMLoadFloat3(&pTrans.position);
             XMVECTOR gPos = XMLoadFloat3(&gTrans.position);
             XMVECTOR midPoint = (pPos + gPos) * 0.5f;
 
-            // ƒJƒƒ‰ˆÊ’u: ’†ŠÔ’n“_‚©‚ç­‚µ—£‚ê‚½êŠ
-            // (—á: ‚‚³2.5m, ‰œs‚«3.0m)
+            // ã‚«ãƒ¡ãƒ©ä½ç½®: ä¸­é–“åœ°ç‚¹ã‹ã‚‰å°‘ã—é›¢ã‚ŒãŸå ´æ‰€
+            // (ä¾‹: é«˜ã•2.5m, å¥¥è¡Œã3.0m)
             XMVECTOR camOffset = XMVectorSet(2.0f, 2.5f, -3.0f, 0.0f);
             XMVECTOR camPosVec = midPoint + camOffset;
             XMVECTOR lookAtVec = midPoint;
@@ -234,22 +236,22 @@ void GameControlSystem::TriggerCaughtSequence(ECS::EntityID guardID)
             camSys->SetFixedCamera(camPos, lookAt);
         }
 
-        // ƒvƒŒƒCƒ„[”­Œ©‰¹
+        // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ç™ºè¦‹éŸ³
         EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_FOUND");
     }
 }
 
 // ---------------------------------------------------------
-// A. ŠÔŠÇ—‚Æƒ‹[ƒ‹”»’è (‹Œ GameSceneSystem)
+// A. æ™‚é–“ç®¡ç†ã¨ãƒ«ãƒ¼ãƒ«åˆ¤å®š (æ—§ GameSceneSystem)
 // ---------------------------------------------------------
 void GameControlSystem::UpdateTimerAndRules(float deltaTime, ECS::EntityID controllerID)
 {
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
-    // Šù‚ÉI—¹‚µ‚Ä‚¢‚ê‚ÎXV‚µ‚È‚¢
+    // æ—¢ã«çµ‚äº†ã—ã¦ã„ã‚Œã°æ›´æ–°ã—ãªã„
     if (state.isGameOver || state.isGameClear) return;
 
-    // ŠÔXV
+    // æ™‚é–“æ›´æ–°
     state.elapsedTime += deltaTime;
     /*if (state.elapsedTime >= state.timeLimit)
     {
@@ -275,11 +277,11 @@ void GameControlSystem::UpdateTimerAndRules(float deltaTime, ECS::EntityID contr
 }
 
 // ---------------------------------------------------------
-// B. “ü—Í‚Æ‹“_Ø‘Ö (‹Œ StateSwitchSystem)
+// B. å…¥åŠ›ã¨è¦–ç‚¹åˆ‡æ›¿ (æ—§ StateSwitchSystem)
 // ---------------------------------------------------------
 void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
 {
-    // ƒXƒy[ƒX or A
+    // ã‚¹ãƒšãƒ¼ã‚¹ or A
     bool pressedSpace = IsKeyTrigger(VK_SPACE);
     bool pressedA = IsButtonTriggered(BUTTON_A);
 
@@ -287,25 +289,25 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
 
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
-    // ‚±‚±‚É“ü‚ê‚éFƒXƒy[ƒX / A ‚ÅSE‚ğ–Â‚ç‚·
-    // iƒgƒbƒvƒrƒ…[‰æ–Ê‚Å–Â‚ç‚µ‚½‚¢‚È‚çu”½“]‘Ov‚Ì state.currentMode ‚ğŒ©‚éj
+    // ã“ã“ã«å…¥ã‚Œã‚‹ï¼šã‚¹ãƒšãƒ¼ã‚¹ / A ã§SEã‚’é³´ã‚‰ã™
+    // ï¼ˆãƒˆãƒƒãƒ—ãƒ“ãƒ¥ãƒ¼ç”»é¢ã§é³´ã‚‰ã—ãŸã„ãªã‚‰ã€Œåè»¢å‰ã€ã® state.currentMode ã‚’è¦‹ã‚‹ï¼‰
     if (state.currentMode == GameMode::SCOUTING_MODE && (pressedSpace || pressedA))
     {
         ECS::EntityFactory::CreateOneShotSoundEntity(
             m_coordinator,
-            "SE_TOPVIEWSTART", // © Sound.csv‚ÌSE ID‚É’u‚«Š·‚¦
+            "SE_TOPVIEWSTART", // â† Sound.csvã®SE IDã«ç½®ãæ›ãˆ
             0.8f
         );
     }
-    // š’Ç‰ÁFØ‘Ö‘Oƒ‚[ƒh‚ğ•Û‘¶
+    // â˜…è¿½åŠ ï¼šåˆ‡æ›¿å‰ãƒ¢ãƒ¼ãƒ‰ã‚’ä¿å­˜
     GameMode prevMode = state.currentMode;
 
-    // ƒ‚[ƒh”½“]
+    // ãƒ¢ãƒ¼ãƒ‰åè»¢
     state.currentMode = (state.currentMode == GameMode::ACTION_MODE)
         ? GameMode::SCOUTING_MODE
         : GameMode::ACTION_MODE;
 
-    // ƒgƒbƒvƒrƒ…[ ¨ ƒAƒNƒVƒ‡ƒ“‚É‚È‚Á‚½uŠÔ‚ÉBGMØ‘Ö
+    // ãƒˆãƒƒãƒ—ãƒ“ãƒ¥ãƒ¼ â†’ ã‚¢ã‚¯ã‚·ãƒ§ãƒ³ã«ãªã£ãŸç¬é–“ã«BGMåˆ‡æ›¿
     if (prevMode == GameMode::SCOUTING_MODE && state.currentMode == GameMode::ACTION_MODE)
     {
         for (auto const& e : m_coordinator->GetActiveEntities())
@@ -313,22 +315,22 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
             if (!m_coordinator->HasComponent<SoundComponent>(e)) continue;
             auto& snd = m_coordinator->GetComponent<SoundComponent>(e);
 
-            // šƒgƒbƒvƒrƒ…[Œn‚Í‘S•”~‚ß‚éiID‚ª—h‚ê‚Ä‚Ä‚à~‚Ü‚é‚æ‚¤‚Éj
+            // â˜…ãƒˆãƒƒãƒ—ãƒ“ãƒ¥ãƒ¼ç³»ã¯å…¨éƒ¨æ­¢ã‚ã‚‹ï¼ˆIDãŒæºã‚Œã¦ã¦ã‚‚æ­¢ã¾ã‚‹ã‚ˆã†ã«ï¼‰
             if (snd.assetID == "BGM_TOPVIEW"
-                || snd.assetID == "BGM_TEST")     // © ‚à‚µƒgƒbƒvƒrƒ…[BGM‚ğ‚±‚ê‚Å“o˜^‚µ‚Ä‚é‚È‚ç’Ç‰Á
+                || snd.assetID == "BGM_TEST")     // â† ã‚‚ã—ãƒˆãƒƒãƒ—ãƒ“ãƒ¥ãƒ¼BGMã‚’ã“ã‚Œã§ç™»éŒ²ã—ã¦ã‚‹ãªã‚‰è¿½åŠ 
             {
                 snd.RequestStop();
             }
 
-            // ”O‚Ì‚½‚ßF‚·‚Å‚É–Â‚Á‚Ä‚éƒAƒNƒVƒ‡ƒ“BGM‚à~‚ß‚Äd•¡–h~
+            // å¿µã®ãŸã‚ï¼šã™ã§ã«é³´ã£ã¦ã‚‹ã‚¢ã‚¯ã‚·ãƒ§ãƒ³BGMã‚‚æ­¢ã‚ã¦é‡è¤‡é˜²æ­¢
             if (snd.assetID == "BGM_ACTION"
-                || snd.assetID == "BGM_TEST2")    // © ‚à‚µƒAƒNƒVƒ‡ƒ“BGM‚ğ‚±‚ê‚Å“o˜^‚µ‚Ä‚é‚È‚ç’Ç‰Á
+                || snd.assetID == "BGM_TEST2")    // â† ã‚‚ã—ã‚¢ã‚¯ã‚·ãƒ§ãƒ³BGMã‚’ã“ã‚Œã§ç™»éŒ²ã—ã¦ã‚‹ãªã‚‰è¿½åŠ 
             {
                 snd.RequestStop();
             }
         }
 
-        // ƒAƒNƒVƒ‡ƒ“—pBGM‚ğŠJniID‚ÍƒvƒƒWƒFƒNƒg‚É‡‚í‚¹‚éj
+        // ã‚¢ã‚¯ã‚·ãƒ§ãƒ³ç”¨BGMã‚’é–‹å§‹ï¼ˆIDã¯ãƒ—ãƒ­ã‚¸ã‚§ã‚¯ãƒˆã«åˆã‚ã›ã‚‹ï¼‰
         ECS::EntityFactory::CreateLoopSoundEntity(
             m_coordinator,
             "BGM_ACTION",
@@ -336,7 +338,11 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
         );
     }
 
-    // ”wŒi‰æ‘œ‚ÌØ‚è‘Ö‚¦
+    // Apply visuals based on the decided mode (also used by MapGimmick force-switch)
+    ApplyModeVisuals(controllerID);
+    return;
+
+    // èƒŒæ™¯ç”»åƒã®åˆ‡ã‚Šæ›¿ãˆ
     if (state.topviewBgID != INVALID_ENTITY_ID && state.tpsBgID != INVALID_ENTITY_ID)
     {
         auto& normalUI = m_coordinator->GetComponent<UIImageComponent>(state.topviewBgID);
@@ -344,14 +350,14 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
 
         if (state.currentMode == GameMode::SCOUTING_MODE)
         {
-            // ƒXƒJƒEƒeƒBƒ“ƒOiƒgƒbƒvƒrƒ…[jƒ‚[ƒh: ’Êí”wŒiON, TPS”wŒiOFF
-            // ¦‚ ‚È‚½‚ÌŠù‘¶ƒR[ƒh‚Å‚Í SCOUTING_MODE ‚ªƒgƒbƒvƒrƒ…[iBG_TOPVIEW‚ª•\¦‚³‚ê‚é‚×‚«ó‘Ôj‚¾‚Æ„‘ª‚³‚ê‚Ü‚·
+            // ã‚¹ã‚«ã‚¦ãƒ†ã‚£ãƒ³ã‚°ï¼ˆãƒˆãƒƒãƒ—ãƒ“ãƒ¥ãƒ¼ï¼‰ãƒ¢ãƒ¼ãƒ‰: é€šå¸¸èƒŒæ™¯ON, TPSèƒŒæ™¯OFF
+            // â€»ã‚ãªãŸã®æ—¢å­˜ã‚³ãƒ¼ãƒ‰ã§ã¯ SCOUTING_MODE ãŒãƒˆãƒƒãƒ—ãƒ“ãƒ¥ãƒ¼ï¼ˆBG_TOPVIEWãŒè¡¨ç¤ºã•ã‚Œã‚‹ã¹ãçŠ¶æ…‹ï¼‰ã ã¨æ¨æ¸¬ã•ã‚Œã¾ã™
             normalUI.isVisible = true;
             tpsUI.isVisible = false;
         }
         else
         {
-            // ƒAƒNƒVƒ‡ƒ“iTPSjƒ‚[ƒh: ’Êí”wŒiOFF, TPS”wŒiON
+            // ã‚¢ã‚¯ã‚·ãƒ§ãƒ³ï¼ˆTPSï¼‰ãƒ¢ãƒ¼ãƒ‰: é€šå¸¸èƒŒæ™¯OFF, TPSèƒŒæ™¯ON
             normalUI.isVisible = false;
             tpsUI.isVisible = true;
         }
@@ -364,17 +370,17 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
 
         auto& render = m_coordinator->GetComponent<RenderComponent>(entity);
         bool isTarget = false;
-        MeshType restoreType = MESH_BOX; // •œ‹A‚ÌƒfƒtƒHƒ‹ƒg
+        MeshType restoreType = MESH_BOX; // å¾©å¸°æ™‚ã®ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆ
 
-        // ƒvƒŒƒCƒ„[
+        // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼
         if (m_coordinator->HasComponent<PlayerControlComponent>(entity)) {
             isTarget = true;
             restoreType = MESH_MODEL;
         }
-        // ƒAƒCƒeƒ€
+        // ã‚¢ã‚¤ãƒ†ãƒ 
         else if (m_coordinator->HasComponent<CollectableComponent>(entity)) {
             isTarget = true;
-            restoreType = MESH_MODEL; // ƒAƒCƒeƒ€‚Í” •\¦
+            restoreType = MESH_MODEL; // ã‚¢ã‚¤ãƒ†ãƒ ã¯ç®±è¡¨ç¤º
         }
         else if (m_coordinator->HasComponent<TagComponent>(entity)) {
             const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
@@ -407,21 +413,21 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
             }
         }
 
-        // ‘ÎÛ‚Å‚ ‚ê‚Î•`‰æƒ‚[ƒh•ÏX
+        // å¯¾è±¡ã§ã‚ã‚Œã°æç”»ãƒ¢ãƒ¼ãƒ‰å¤‰æ›´
         if (isTarget)
         {
             if (isScouting) {
-                render.type = MESH_NONE; // ƒgƒbƒvƒrƒ…[‚Í•`‰æ‚µ‚È‚¢
+                render.type = MESH_NONE; // ãƒˆãƒƒãƒ—ãƒ“ãƒ¥ãƒ¼æ™‚ã¯æç”»ã—ãªã„
             }
             else {
-                render.type = restoreType; // ƒAƒNƒVƒ‡ƒ“‚ÍŒ³‚ÌŒ`ó‚Å•`‰æ
+                render.type = restoreType; // ã‚¢ã‚¯ã‚·ãƒ§ãƒ³æ™‚ã¯å…ƒã®å½¢çŠ¶ã§æç”»
             }
         }
     }
 }
 
 // ---------------------------------------------------------
-// C. ƒV[ƒ“‘JˆÚŠÇ— (‹Œ GameFlowSystem)
+// C. ã‚·ãƒ¼ãƒ³é·ç§»ç®¡ç† (æ—§ GameFlowSystem)
 // ---------------------------------------------------------
 void GameControlSystem::CheckSceneTransition(ECS::EntityID controllerID)
 {
@@ -429,7 +435,7 @@ void GameControlSystem::CheckSceneTransition(ECS::EntityID controllerID)
 
     if (state.isGameOver || state.isGameClear)
     {
-        // ƒŠƒUƒ‹ƒg—pƒf[ƒ^‚ğì¬
+        // ãƒªã‚¶ãƒ«ãƒˆç”¨ãƒ‡ãƒ¼ã‚¿ã‚’ä½œæˆ
         ResultData data;
         data.isCleared = state.isGameClear;
         data.clearTime = state.elapsedTime;
@@ -437,7 +443,7 @@ void GameControlSystem::CheckSceneTransition(ECS::EntityID controllerID)
         data.wasSpotted = state.wasSpotted;
         data.stageID = GameScene::GetStageNo();
 
-        // ItemTracker ‚©‚ç‰ñûó‹µ‚ğ‚Ü‚Æ‚ß‚Ä ResultData ‚É‹l‚ß‚é
+        // ItemTracker ã‹ã‚‰å›åçŠ¶æ³ã‚’ã¾ã¨ã‚ã¦ ResultData ã«è©°ã‚ã‚‹
         if (m_coordinator->HasComponent<ItemTrackerComponent>(controllerID))
         {
             auto& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(controllerID);
@@ -446,17 +452,17 @@ void GameControlSystem::CheckSceneTransition(ECS::EntityID controllerID)
             data.totalItems = tracker.totalItems;
             data.collectedAllOrdered = tracker.useOrderedCollection;
 
-            // ‚¢‚Á‚½‚ñ‘S•”ƒNƒŠƒA
+            // ã„ã£ãŸã‚“å…¨éƒ¨ã‚¯ãƒªã‚¢
             data.collectedItemIcons.clear();
             data.orderedItemIcons.clear();
             data.orderedItemCollected.clear();
 
-            // ƒXƒe[ƒW‚É—pˆÓ‚³‚ê‚Ä‚¢‚é‚¨•ó‚ğu‡”Ô‚Ç‚¨‚èv‚É‘–¸
+            // ã‚¹ãƒ†ãƒ¼ã‚¸ã«ç”¨æ„ã•ã‚Œã¦ã„ã‚‹ãŠå®ã‚’ã€Œé †ç•ªã©ãŠã‚Šã€ã«èµ°æŸ»
             for (const auto& targetID : tracker.targetItemIDs)
             {
                 bool isCollected = true;
 
-                // ƒV[ƒ“ã‚Ì Collectable ‚ğ’T‚µ‚Ä‰ñûó‹µ‚ğ’²‚×‚é
+                // ã‚·ãƒ¼ãƒ³ä¸Šã® Collectable ã‚’æ¢ã—ã¦å›åçŠ¶æ³ã‚’èª¿ã¹ã‚‹
                 for (auto const& entity : m_coordinator->GetActiveEntities())
                 {
                     if (!m_coordinator->HasComponent<CollectableComponent>(entity))
@@ -466,23 +472,23 @@ void GameControlSystem::CheckSceneTransition(ECS::EntityID controllerID)
                     if (col.itemID != targetID)
                         continue;
 
-                    // c‚Á‚Ä‚¢‚Ä isCollected == false ‚È‚çu–¢‰ñûv
+                    // æ®‹ã£ã¦ã„ã¦ isCollected == false ãªã‚‰ã€Œæœªå›åã€
                     if (!col.isCollected)
                         isCollected = false;
 
                     break;
                 }
 
-                // ƒAƒCƒRƒ“–¼‚É•ÏŠ·
+                // ã‚¢ã‚¤ã‚³ãƒ³åã«å¤‰æ›
                 std::string iconName = GetItemIconPath(targetID);
 
-                // ƒNƒŠƒA‰æ–Ê—pFæ‚ê‚½‚¨•ó‚¾‚¯
+                // ã‚¯ãƒªã‚¢ç”»é¢ç”¨ï¼šå–ã‚ŒãŸãŠå®ã ã‘
                 if (isCollected)
                 {
                     data.collectedItemIcons.push_back(iconName);
                 }
 
-                // ƒQ[ƒ€ƒI[ƒo[—pF‘S•” + æ‚ê‚½‚©‚Ç‚¤‚©
+                // ã‚²ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼ç”¨ï¼šå…¨éƒ¨ + å–ã‚ŒãŸã‹ã©ã†ã‹
                 data.orderedItemIcons.push_back(iconName);
                 data.orderedItemCollected.push_back(isCollected);
             }
@@ -497,36 +503,36 @@ void GameControlSystem::CheckSceneTransition(ECS::EntityID controllerID)
 
 
 
-        // ƒŠƒUƒ‹ƒgƒV[ƒ“‚Ö“n‚µ‚Ä‘JˆÚ
+        // ãƒªã‚¶ãƒ«ãƒˆã‚·ãƒ¼ãƒ³ã¸æ¸¡ã—ã¦é·ç§»
         ResultScene::SetResultData(data);
         SceneManager::ChangeScene<ResultScene>();
     }
 }
 
 // ---------------------------------------------------------
-// D. ƒgƒbƒvƒrƒ…[UIXV (‹Œ TopViewUISystem)
+// D. ãƒˆãƒƒãƒ—ãƒ“ãƒ¥ãƒ¼UIæ›´æ–° (æ—§ TopViewUISystem)
 // ---------------------------------------------------------
 void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID)
 {
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
     bool showIcons = (state.currentMode == GameMode::SCOUTING_MODE);
 
-    // 1. ƒAƒCƒRƒ“‚Ìì¬E•\¦İ’è
+    // 1. ã‚¢ã‚¤ã‚³ãƒ³ã®ä½œæˆãƒ»è¡¨ç¤ºè¨­å®š
 
-    // ƒvƒŒƒCƒ„[
+    // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼
     EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
     if (playerID != INVALID_ENTITY_ID) {
         if (showIcons) UpdateIcon(playerID, "ICO_PLAYER", { 1, 1, 1, 1 });
         else if (m_iconMap.count(playerID)) m_coordinator->GetComponent<UIImageComponent>(m_iconMap[playerID]).isVisible = false;
     }
 
-    // ‘SƒGƒ“ƒeƒBƒeƒB‘–¸ (ƒAƒCƒeƒ€E“G)
+    // å…¨ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£èµ°æŸ» (ã‚¢ã‚¤ãƒ†ãƒ ãƒ»æ•µãƒ»ã‚®ãƒŸãƒƒã‚¯)
     for (auto const& entity : m_coordinator->GetActiveEntities())
     {
-        // ƒAƒCƒeƒ€
+        // ã‚¢ã‚¤ãƒ†ãƒ 
         if (m_coordinator->HasComponent<CollectableComponent>(entity)) {
             auto& col = m_coordinator->GetComponent<CollectableComponent>(entity);
-            // –¢‰ñû‚È‚ç•\¦
+            // æœªå›åãªã‚‰è¡¨ç¤º
             if (!col.isCollected && showIcons) {
                 std::string asset = GetItemIconPath(col.itemID);
                 UpdateIcon(entity, asset, { 1, 1, 1, 1 });
@@ -535,7 +541,7 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID)
                 m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false;
             }
         }
-        // “G (Tag ‚Ü‚½‚Í Component ‚Å”»’è)
+        // æ•µ (Tag ã¾ãŸã¯ Component ã§åˆ¤å®š)
         bool isGuard = false;
         bool isTeleporter = false;
         if (m_coordinator->HasComponent<TagComponent>(entity)) {
@@ -550,7 +556,7 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID)
         }
         if (isTeleporter) {
             if (showIcons) {
-                // ƒAƒZƒbƒg‚ª‚È‚¢‚Ì‚ÅA”’‚¢‹éŒ`‚ğƒVƒAƒ“F(…F)‚É‚µ‚Ä•\¦
+                // ï¿½Aï¿½Zï¿½bï¿½gï¿½ï¿½ï¿½È‚ï¿½ï¿½Ì‚ÅAï¿½ï¿½ï¿½ï¿½ï¿½ï¿½`ï¿½ï¿½ï¿½Vï¿½Aï¿½ï¿½ï¿½F(ï¿½ï¿½ï¿½F)ï¿½É‚ï¿½ï¿½Ä•\ï¿½ï¿½
                 UpdateIcon(entity, "UI_TITLE_LOGO", { 0.0f, 1.0f, 1.0f, 1.0f });
             }
             else if (m_iconMap.count(entity)) {
@@ -559,14 +565,14 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID)
         }
     }
 
-    // 2. ƒAƒCƒRƒ“ˆÊ’u‚ÌŒvZ‚Æ“K—p
+    // 2. ã‚¢ã‚¤ã‚³ãƒ³ä½ç½®ã®è¨ˆç®—ã¨é©ç”¨
     if (!showIcons) return;
 
     EntityID cameraID = FindFirstEntityWithComponent<CameraComponent>(m_coordinator);
     if (cameraID == INVALID_ENTITY_ID) return;
     auto& camera = m_coordinator->GetComponent<CameraComponent>(cameraID);
 
-    // šC³ƒ|ƒCƒ“ƒg: s—ñ‚ğ“]’u‚µ‚ÄŒ³‚É–ß‚· (DirectXMath‚ÌŒvZ—p‚É)
+    // â˜…ä¿®æ­£ãƒã‚¤ãƒ³ãƒˆ: è¡Œåˆ—ã‚’è»¢ç½®ã—ã¦å…ƒã«æˆ»ã™ (DirectXMathã®è¨ˆç®—ç”¨ã«)
     XMMATRIX view = XMMatrixTranspose(XMLoadFloat4x4(&camera.viewMatrix));
     XMMATRIX proj = XMMatrixTranspose(XMLoadFloat4x4(&camera.projectionMatrix));
     XMMATRIX viewProj = view * proj;
@@ -584,22 +590,22 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID)
         }
         auto& targetTrans = m_coordinator->GetComponent<TransformComponent>(target);
 
-        // ƒ[ƒ‹ƒhÀ•W -> ƒXƒNƒŠ[ƒ“À•W•ÏŠ·
+        // ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ -> ã‚¹ã‚¯ãƒªãƒ¼ãƒ³åº§æ¨™å¤‰æ›
         XMVECTOR worldPos = XMLoadFloat3(&targetTrans.position);
-        // XMVector3TransformCoord ‚Í wœZ‚às‚Á‚Ä‚­‚ê‚é
+        // XMVector3TransformCoord ã¯ wé™¤ç®—ã‚‚è¡Œã£ã¦ãã‚Œã‚‹
         XMVECTOR clipPos = XMVector3TransformCoord(worldPos, viewProj);
         XMFLOAT3 ndc;
         XMStoreFloat3(&ndc, clipPos);
 
-        // NDC (-1.0 ~ 1.0) -> ƒXƒNƒŠ[ƒ“À•W (Pixel)
+        // NDC (-1.0 ~ 1.0) -> ã‚¹ã‚¯ãƒªãƒ¼ãƒ³åº§æ¨™ (Pixel)
         float screenX = (ndc.x + 1.0f) * 0.5f * SCREEN_WIDTH;
         float screenY = (1.0f - ndc.y) * 0.5f * SCREEN_HEIGHT;
 
         auto& iconTrans = m_coordinator->GetComponent<TransformComponent>(icon);
-        iconTrans.position = { screenX, screenY, 0.0f }; // Z‚Í0 (Å‘O–Ê)
+        iconTrans.position = { screenX, screenY, 0.0f }; // Zã¯0 (æœ€å‰é¢)
 
-        // ‰æ–ÊŠO(‘OŒã)‚È‚ç‰B‚·
-        // ¦ƒNƒŠƒbƒv‹óŠÔ‚ÌZ”ÍˆÍ‚ÍDirectX‚Å‚Í 0.0`1.0
+        // ç”»é¢å¤–(å‰å¾Œ)ãªã‚‰éš ã™
+        // â€»ã‚¯ãƒªãƒƒãƒ—ç©ºé–“ã®Zç¯„å›²ã¯DirectXã§ã¯ 0.0ï½1.0
         if (ndc.z < 0.0f || ndc.z > 1.0f) {
             iconUI.isVisible = false;
         }
@@ -613,7 +619,7 @@ void GameControlSystem::UpdateCaughtSequence(float deltaTime, ECS::EntityID cont
 
     EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
 
-    // Œx”õˆõ‚©ƒvƒŒƒCƒ„[‚ª‚¢‚È‚¯‚ê‚Î‘¦I—¹
+    // è­¦å‚™å“¡ã‹ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãŒã„ãªã‘ã‚Œã°å³çµ‚äº†
     if (playerID == INVALID_ENTITY_ID || m_catchingGuardID == INVALID_ENTITY_ID) {
         state.isGameOver = true;
         CheckSceneTransition(controllerID);
@@ -623,37 +629,37 @@ void GameControlSystem::UpdateCaughtSequence(float deltaTime, ECS::EntityID cont
     auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
     auto& gTrans = m_coordinator->GetComponent<TransformComponent>(m_catchingGuardID);
 
-    // --- ƒtƒF[ƒY1: Ú‹ß ---
+    // --- ãƒ•ã‚§ãƒ¼ã‚º1: æ¥è¿‘ ---
     if (!m_caughtAnimPlayed)
     {
         XMVECTOR pPos = XMLoadFloat3(&pTrans.position);
         XMVECTOR gPos = XMLoadFloat3(&gTrans.position);
 
-        // ‹——£‚Æ•ûŒü
+        // è·é›¢ã¨æ–¹å‘
         XMVECTOR dirVec = XMVectorSubtract(pPos, gPos);
 
-        // Y²i‚‚³j‚Ì·‚ğ–³‹‚µ‚ÄA…•½•ûŒü‚Ì‚İ‚ÌƒxƒNƒgƒ‹‚É‚·‚é
+        // Yè»¸ï¼ˆé«˜ã•ï¼‰ã®å·®ã‚’ç„¡è¦–ã—ã¦ã€æ°´å¹³æ–¹å‘ã®ã¿ã®ãƒ™ã‚¯ãƒˆãƒ«ã«ã™ã‚‹
         dirVec = XMVectorSetY(dirVec, 0.0f);
 
-        // …•½‹——£‚Å’·‚³‚ğÄŒvZ
+        // æ°´å¹³è·é›¢ã§é•·ã•ã‚’å†è¨ˆç®—
         float distance = XMVectorGetX(XMVector3Length(dirVec));
         dirVec = XMVector3Normalize(dirVec);
 
-        // ’â~‹——£
+        // åœæ­¢è·é›¢
         float stopDist = 1.5f;
 
         if (distance > stopDist)
         {
-            // ‹ß‚Ã‚­
+            // è¿‘ã¥ã
             float moveSpeed = 3.5f * deltaTime;
             XMVECTOR newPos = gPos + (dirVec * moveSpeed);
 
-            // ˆÚ“®Œã‚ÌYÀ•W‚ÍŒ³‚Ì‚‚³‚ğˆÛ‚·‚é (‚ß‚è‚İ–h~)
+            // ç§»å‹•å¾Œã®Yåº§æ¨™ã¯å…ƒã®é«˜ã•ã‚’ç¶­æŒã™ã‚‹ (ã‚ã‚Šè¾¼ã¿é˜²æ­¢)
             float originalY = gTrans.position.y;
             XMStoreFloat3(&gTrans.position, newPos);
-            gTrans.position.y = originalY; // ‚‚³‚ÍŒÅ’è
+            gTrans.position.y = originalY; // é«˜ã•ã¯å›ºå®š
 
-            // Œü‚«’²®
+            // å‘ãèª¿æ•´
             float dx = XMVectorGetX(dirVec);
             float dz = XMVectorGetZ(dirVec);
             gTrans.rotation.y = atan2(dx, dz);
@@ -662,30 +668,30 @@ void GameControlSystem::UpdateCaughtSequence(float deltaTime, ECS::EntityID cont
         }
         else
         {
-            // --- ƒtƒF[ƒY2: “’…••ßŠlƒAƒNƒVƒ‡ƒ“ ---
+            // --- ãƒ•ã‚§ãƒ¼ã‚º2: åˆ°ç€ï¼†æ•ç²ã‚¢ã‚¯ã‚·ãƒ§ãƒ³ ---
             m_caughtAnimPlayed = true;
-            state.sequenceTimer = 0.0f; // ƒ^ƒCƒ}[ƒŠƒZƒbƒg(ƒAƒjƒÄ¶‘Ò‚¿—p)
+            state.sequenceTimer = 0.0f; // ã‚¿ã‚¤ãƒãƒ¼ãƒªã‚»ãƒƒãƒˆ(ã‚¢ãƒ‹ãƒ¡å†ç”Ÿå¾…ã¡ç”¨)
 
-            // Œx”õˆõ: UŒ‚/•ßŠlƒ‚[ƒVƒ‡ƒ“
+            // è­¦å‚™å“¡: æ”»æ’ƒ/æ•ç²ãƒ¢ãƒ¼ã‚·ãƒ§ãƒ³
             if (m_coordinator->HasComponent<AnimationComponent>(m_catchingGuardID)) {
-                // "A_GUARD_ATTACK" ‚â "A_GUARD_CATCH" ‚È‚Ç
+                // "A_GUARD_ATTACK" ã‚„ "A_GUARD_CATCH" ãªã©
                 m_coordinator->GetComponent<AnimationComponent>(m_catchingGuardID).Play("A_GUARD_ATTACK", false);
             }
 
-            // ƒvƒŒƒCƒ„[: ‚â‚ç‚ê‚½ƒ‚[ƒVƒ‡ƒ“
+            // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼: ã‚„ã‚‰ã‚ŒãŸãƒ¢ãƒ¼ã‚·ãƒ§ãƒ³
             if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
-                // "A_PLAYER_DAMAGE" ‚â "A_PLAYER_CAUGHT"
+                // "A_PLAYER_DAMAGE" ã‚„ "A_PLAYER_CAUGHT"
                 m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_DAMAGE", false);
             }
 
-            // Œø‰Ê‰¹ (ƒoƒVƒbI‚Æ‚©)
+            // åŠ¹æœéŸ³ (ãƒã‚·ãƒƒï¼ã¨ã‹)
             EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_HIT");
         }
     }
-    // --- ƒtƒF[ƒY3: —]‰C ---
+    // --- ãƒ•ã‚§ãƒ¼ã‚º3: ä½™éŸ» ---
     else
     {
-        // ƒAƒjƒ[ƒVƒ‡ƒ“‚ªI‚í‚é‚­‚ç‚¢‚Ü‚Å‘Ò‚Â (—á: 2•b)
+        // ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãŒçµ‚ã‚ã‚‹ãã‚‰ã„ã¾ã§å¾…ã¤ (ä¾‹: 2ç§’)
         if (state.sequenceTimer > 2.0f)
         {
             state.isGameOver = true;
@@ -712,7 +718,7 @@ void GameControlSystem::UpdateScanLine(float deltaTime, ECS::EntityID controller
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
     bool isScouting = (state.currentMode == GameMode::SCOUTING_MODE);
 
-    // ƒJƒƒ‰s—ñ‚Ì€”õiŒğ·”»’è—pj
+    // ã‚«ãƒ¡ãƒ©è¡Œåˆ—ã®æº–å‚™ï¼ˆäº¤å·®åˆ¤å®šç”¨ï¼‰
     EntityID cameraID = FindFirstEntityWithComponent<CameraComponent>(m_coordinator);
     XMMATRIX viewProj = XMMatrixIdentity();
     if (cameraID != INVALID_ENTITY_ID) {
@@ -722,13 +728,13 @@ void GameControlSystem::UpdateScanLine(float deltaTime, ECS::EntityID controller
         viewProj = view * proj;
     }
 
-    // ScanLineComponent‚ğ‚Â‘SƒGƒ“ƒeƒBƒeƒB‚ğXV
-    // (–{—ˆ‚ÍSignature‚ÅƒtƒBƒ‹ƒ^ƒŠƒ“ƒO‚³‚ê‚Ä‚¢‚Ü‚·‚ªA‚±‚±‚Å‚Í‘S’Tõ‚Ü‚½‚ÍComponentManagerŒo—R‚Åæ“¾)
-    // ¦GameControlSystem‚ÌSignature‚ÉScanLineComponent‚ğ’Ç‰Á‚·‚é‚Ì‚ğ–Y‚ê‚¸‚ÉI
-    // ‚à‚µSignature‚É’Ç‰Á‚µ‚Ä‚¢‚È‚¢ê‡‚ÍAˆÈ‰º‚Ì‚æ‚¤‚ÉGetComponent‚ÅŠm”F‚µ‚Ü‚·
+    // ScanLineComponentã‚’æŒã¤å…¨ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’æ›´æ–°
+    // (æœ¬æ¥ã¯Signatureã§ãƒ•ã‚£ãƒ«ã‚¿ãƒªãƒ³ã‚°ã•ã‚Œã¦ã„ã¾ã™ãŒã€ã“ã“ã§ã¯å…¨æ¢ç´¢ã¾ãŸã¯ComponentManagerçµŒç”±ã§å–å¾—)
+    // â€»GameControlSystemã®Signatureã«ScanLineComponentã‚’è¿½åŠ ã™ã‚‹ã®ã‚’å¿˜ã‚Œãšã«ï¼
+    // ã‚‚ã—Signatureã«è¿½åŠ ã—ã¦ã„ãªã„å ´åˆã¯ã€ä»¥ä¸‹ã®ã‚ˆã†ã«GetComponentã§ç¢ºèªã—ã¾ã™
 
-    // Å“K‰»‚Ì‚½‚ßAEntityFactory‚ÅTag‚ğ‚Â‚¯‚ÄŒŸõ‚·‚é‚©A
-    // ’Pƒ‚É‘SƒGƒ“ƒeƒBƒeƒB‚©‚çComponent‚¿‚ğ’T‚·ƒ‹[ƒv‚ğ‰ñ‚µ‚Ü‚·
+    // æœ€é©åŒ–ã®ãŸã‚ã€EntityFactoryã§Tagã‚’ã¤ã‘ã¦æ¤œç´¢ã™ã‚‹ã‹ã€
+    // å˜ç´”ã«å…¨ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‹ã‚‰ComponentæŒã¡ã‚’æ¢ã™ãƒ«ãƒ¼ãƒ—ã‚’å›ã—ã¾ã™
     for (auto const& entity : m_coordinator->GetActiveEntities())
     {
         if (!m_coordinator->HasComponent<ScanLineComponent>(entity)) continue;
@@ -737,11 +743,11 @@ void GameControlSystem::UpdateScanLine(float deltaTime, ECS::EntityID controller
         auto& ui = m_coordinator->GetComponent<UIImageComponent>(entity);
         auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
 
-        // ƒ‚[ƒh‚É‚æ‚é•\¦Ø‘Ö
+        // ãƒ¢ãƒ¼ãƒ‰ã«ã‚ˆã‚‹è¡¨ç¤ºåˆ‡æ›¿
         ui.isVisible = isScouting;
         if (!isScouting) continue;
 
-        // --- 1. ˆÚ“® ---
+        // --- 1. ç§»å‹• ---
         float prevY = trans.position.y;
         float move = scan.speed * deltaTime;
 
@@ -760,30 +766,30 @@ void GameControlSystem::UpdateScanLine(float deltaTime, ECS::EntityID controller
         float currY = trans.position.y;
         trans.position.x = SCREEN_WIDTH * 0.5f;
 
-        // --- 2. Œğ·”»’è‚ÆƒGƒtƒFƒNƒg”­¶ ---
-        // ƒAƒCƒRƒ“‚ª•\¦‚³‚ê‚Ä‚¢‚éƒGƒ“ƒeƒBƒeƒBiƒ^[ƒQƒbƒgj‚É‘Î‚µ‚Ä”»’è
+        // --- 2. äº¤å·®åˆ¤å®šã¨ã‚¨ãƒ•ã‚§ã‚¯ãƒˆç™ºç”Ÿ ---
+        // ã‚¢ã‚¤ã‚³ãƒ³ãŒè¡¨ç¤ºã•ã‚Œã¦ã„ã‚‹ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ï¼ˆã‚¿ãƒ¼ã‚²ãƒƒãƒˆï¼‰ã«å¯¾ã—ã¦åˆ¤å®š
         for (auto& pair : m_iconMap) {
             EntityID target = pair.first;
             EntityID icon = pair.second;
 
-            // •\¦‚³‚ê‚Ä‚¢‚éƒAƒCƒRƒ“‚Ì‚İ‘ÎÛ
+            // è¡¨ç¤ºã•ã‚Œã¦ã„ã‚‹ã‚¢ã‚¤ã‚³ãƒ³ã®ã¿å¯¾è±¡
             if (!m_coordinator->GetComponent<UIImageComponent>(icon).isVisible) continue;
             if (!m_coordinator->HasComponent<TransformComponent>(target)) continue;
 
-            // ƒ^[ƒQƒbƒg‚ÌƒXƒNƒŠ[ƒ“YÀ•W‚ğæ“¾
+            // ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã®ã‚¹ã‚¯ãƒªãƒ¼ãƒ³Yåº§æ¨™ã‚’å–å¾—
             auto& targetTrans = m_coordinator->GetComponent<TransformComponent>(target);
             XMFLOAT3 sPos = GetScreenPosition(targetTrans.position, viewProj);
 
-            // YÀ•W‚ªˆÚ“®”ÍˆÍ‚ÉŠÜ‚Ü‚ê‚Ä‚¢‚é‚©”»’è
+            // Yåº§æ¨™ãŒç§»å‹•ç¯„å›²ã«å«ã¾ã‚Œã¦ã„ã‚‹ã‹åˆ¤å®š
             float minY = std::min(prevY, currY);
             float maxY = std::max(prevY, currY);
 
-            if (sPos.z >= 0.0f && sPos.z <= 1.0f) { // ‰æ–Ê“à‚©‚Â
+            if (sPos.z >= 0.0f && sPos.z <= 1.0f) { // ç”»é¢å†…ã‹ã¤
                 if (sPos.y >= minY && sPos.y <= maxY) {
-                    // ƒ^[ƒQƒbƒg‚Ìí—Ş‚É‰‚¶‚ÄF‚ğŒˆ’è
+                    // ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã®ç¨®é¡ã«å¿œã˜ã¦è‰²ã‚’æ±ºå®š
                     XMFLOAT4 color = { 1, 1, 1, 1 };
-                    if (m_coordinator->HasComponent<CollectableComponent>(target)) color = { 1, 1, 0, 1 }; // ‰©
-                    else if (m_coordinator->GetComponent<TagComponent>(target).tag == "taser") color = { 1, 0, 0, 1 }; // Ôi“Gj
+                    if (m_coordinator->HasComponent<CollectableComponent>(target)) color = { 1, 1, 0, 1 }; // é»„
+                    else if (m_coordinator->GetComponent<TagComponent>(target).tag == "taser") color = { 1, 0, 0, 1 }; // èµ¤ï¼ˆæ•µï¼‰
 
                     SpawnSmallSonar(sPos, color);
                 }
@@ -797,15 +803,15 @@ void GameControlSystem::UpdateSonarEffect(float deltaTime, ECS::EntityID control
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
     bool isScouting = (state.currentMode == GameMode::SCOUTING_MODE);
 
-    // 1. ƒOƒŠƒbƒh“™‚ÌƒGƒtƒFƒNƒg•\¦Ø‘Ö
-    // (Init‚âGameScene‚Å m_topViewEffects ‚ÉEntityID‚ğ“ü‚ê‚Ä‚¨‚­•K—v‚ª‚ ‚è‚Ü‚·‚ªA
-    //  ‚±‚±‚Å‚ÍŠÈˆÕ“I‚ÉuTag‚ª"TopViewEffect"‚Ì‚à‚Ìv‚ğ’T‚·‚©A¶¬‚ÉƒŠƒXƒg‚É“ü‚ê‚éˆ—‚ª•K—v‚Å‚·)
-    // ¡‰ñ‚ÍGameScene‚Å¶¬‚µ‚½ƒOƒŠƒbƒh‚ğ§Œä‚·‚é‚½‚ßA
-    // ScanLine‚Æ“¯—l‚ÉuƒRƒ“ƒ|[ƒlƒ“ƒg‚ğ‚½‚È‚¢‚¯‚Ç•\¦§Œä‚µ‚½‚¢UIv‚Ìˆµ‚¢‚É‚È‚è‚Ü‚·B
-    // è‚Áæ‚è‘‚­À‘•‚·‚é‚½‚ßAGameScene‚ÅƒOƒŠƒbƒh‚É `ScanLineComponent` (speed=0) ‚ğ‚½‚¹‚é‚Ì‚ªˆê”ÔŠÈ’P‚Å‚·B
-    // ‚»‚¤‚·‚ê‚Î UpdateScanLine ‚Ì’†‚ÅŸè‚É•\¦Ø‘Ö‚³‚ê‚Ü‚·B
+    // 1. ã‚°ãƒªãƒƒãƒ‰ç­‰ã®ã‚¨ãƒ•ã‚§ã‚¯ãƒˆè¡¨ç¤ºåˆ‡æ›¿
+    // (Initã‚„GameSceneã§ m_topViewEffects ã«EntityIDã‚’å…¥ã‚Œã¦ãŠãå¿…è¦ãŒã‚ã‚Šã¾ã™ãŒã€
+    //  ã“ã“ã§ã¯ç°¡æ˜“çš„ã«ã€ŒTagãŒ"TopViewEffect"ã®ã‚‚ã®ã€ã‚’æ¢ã™ã‹ã€ç”Ÿæˆæ™‚ã«ãƒªã‚¹ãƒˆã«å…¥ã‚Œã‚‹å‡¦ç†ãŒå¿…è¦ã§ã™)
+    // ä»Šå›ã¯GameSceneã§ç”Ÿæˆã—ãŸã‚°ãƒªãƒƒãƒ‰ã‚’åˆ¶å¾¡ã™ã‚‹ãŸã‚ã€
+    // ScanLineã¨åŒæ§˜ã«ã€Œã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã‚’æŒãŸãªã„ã‘ã©è¡¨ç¤ºåˆ¶å¾¡ã—ãŸã„UIã€ã®æ‰±ã„ã«ãªã‚Šã¾ã™ã€‚
+    // æ‰‹ã£å–ã‚Šæ—©ãå®Ÿè£…ã™ã‚‹ãŸã‚ã€GameSceneã§ã‚°ãƒªãƒƒãƒ‰ã« `ScanLineComponent` (speed=0) ã‚’æŒãŸã›ã‚‹ã®ãŒä¸€ç•ªç°¡å˜ã§ã™ã€‚
+    // ãã†ã™ã‚Œã° UpdateScanLine ã®ä¸­ã§å‹æ‰‹ã«è¡¨ç¤ºåˆ‡æ›¿ã•ã‚Œã¾ã™ã€‚
 
-    // ‚±‚±‚Å‚Íuƒ\ƒi[v‚Ìˆ—‚ÉW’†‚µ‚Ü‚·B
+    // ã“ã“ã§ã¯ã€Œã‚½ãƒŠãƒ¼ã€ã®å‡¦ç†ã«é›†ä¸­ã—ã¾ã™ã€‚
 
     if (isScouting)
     {
@@ -815,7 +821,7 @@ void GameControlSystem::UpdateSonarEffect(float deltaTime, ECS::EntityID control
             EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
             if (playerID != INVALID_ENTITY_ID && m_iconMap.count(playerID)) {
                 auto& iconTrans = m_coordinator->GetComponent<TransformComponent>(m_iconMap[playerID]);
-                // ƒ\ƒi[Entity¶¬
+                // ã‚½ãƒŠãƒ¼Entityç”Ÿæˆ
                 EntityID sonar = m_coordinator->CreateEntity(
                     TransformComponent(
                         iconTrans.position,
@@ -838,13 +844,13 @@ void GameControlSystem::UpdateSonarEffect(float deltaTime, ECS::EntityID control
         }
     }
 
-    // 2. Šù‘¶ƒ\ƒi[‚ÌXV‚Æíœ
+    // 2. æ—¢å­˜ã‚½ãƒŠãƒ¼ã®æ›´æ–°ã¨å‰Šé™¤
     std::vector<EntityID> toDestroy;
     for (auto const& entity : m_coordinator->GetActiveEntities())
     {
         if (!m_coordinator->HasComponent<SonarComponent>(entity)) continue;
 
-        // š’Ç‰Á: ƒ‚[ƒh‚ªƒgƒbƒvƒrƒ…[‚Å‚È‚¯‚ê‚Î‘¦íœ‘ÎÛ‚É‚·‚é
+        // â˜…è¿½åŠ : ãƒ¢ãƒ¼ãƒ‰ãŒãƒˆãƒƒãƒ—ãƒ“ãƒ¥ãƒ¼ã§ãªã‘ã‚Œã°å³å‰Šé™¤å¯¾è±¡ã«ã™ã‚‹
         if (!isScouting)
         {
             toDestroy.push_back(entity);
@@ -868,14 +874,14 @@ void GameControlSystem::UpdateSonarEffect(float deltaTime, ECS::EntityID control
         ui.color.w = 0.5f - (progress * progress);
     }
 
-    // íœÀs
+    // å‰Šé™¤å®Ÿè¡Œ
     for (auto id : toDestroy) m_coordinator->DestroyEntity(id);
 }
 
 void GameControlSystem::InitGameUI()
 {
-    // 1. ƒ^ƒCƒ€•\¦—pƒGƒ“ƒeƒBƒeƒB‚Ì¶¬
-    // Œ`®: MM:SS.d (—á 01:23.4) -> 7•¶š (•ª2Œ…, ƒRƒƒ“, •b2Œ…, ƒhƒbƒg, ¬”1Œ…)
+    // 1. ã‚¿ã‚¤ãƒ è¡¨ç¤ºç”¨ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®ç”Ÿæˆ
+    // å½¢å¼: MM:SS.d (ä¾‹ 01:23.4) -> 7æ–‡å­— (åˆ†2æ¡, ã‚³ãƒ­ãƒ³, ç§’2æ¡, ãƒ‰ãƒƒãƒˆ, å°æ•°1æ¡)
     for (auto id : m_timerDigits) m_coordinator->DestroyEntity(id);
     for (auto id : m_itemHUDs) m_coordinator->DestroyEntity(id);
     m_timerDigits.clear();
@@ -886,7 +892,7 @@ void GameControlSystem::InitGameUI()
     float w = 30.0f;
     float h = 50.0f;
 
-    // 7Œ…•ªì¬
+    // 7æ¡åˆ†ä½œæˆ
     for (int i = 0; i < 7; ++i) {
         EntityID digit = m_coordinator->CreateEntity(
             TransformComponent(
@@ -904,13 +910,13 @@ void GameControlSystem::UpdateGameUI(float deltaTime, ECS::EntityID controllerID
 {
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
-    // --- 1. ƒ^ƒCƒ€•\¦XV (MM:SS.d) ---
+    // --- 1. ã‚¿ã‚¤ãƒ è¡¨ç¤ºæ›´æ–° (MM:SS.d) ---
     float time = state.elapsedTime;
     int minutes = (int)(time / 60.0f);
     int seconds = (int)(time) % 60;
-    int deciseconds = (int)((time - (int)time) * 10.0f); // ¬”‘æ1ˆÊ
+    int deciseconds = (int)((time - (int)time) * 10.0f); // å°æ•°ç¬¬1ä½
 
-    // ŠeŒ…‚Ì”’l (10:ƒRƒƒ“, 11:ƒhƒbƒg ‚Æ‚·‚é)
+    // å„æ¡ã®æ•°å€¤ (10:ã‚³ãƒ­ãƒ³, 11:ãƒ‰ãƒƒãƒˆ ã¨ã™ã‚‹)
     int indices[7];
     indices[0] = (minutes / 10) % 10;
     indices[1] = minutes % 10;
@@ -920,13 +926,13 @@ void GameControlSystem::UpdateGameUI(float deltaTime, ECS::EntityID controllerID
     indices[5] = 11; // '.'
     indices[6] = deciseconds % 10;
 
-    // UVŒvZ (5—ñ3s)
+    // UVè¨ˆç®— (5åˆ—3è¡Œ)
     // 0 1 2 3 4
     // 5 6 7 8 9
     // - : .
     // ':': index=10 -> row=2, col=1
     // '.': index=11 -> row=2, col=2
-    // '-': index=12 -> row=2, col=0 (•K—v‚È‚ç)
+    // '-': index=12 -> row=2, col=0 (å¿…è¦ãªã‚‰)
 
     const float UV_UNIT_X = 1.0f / 5.0f;
     const float UV_UNIT_Y = 1.0f / 3.0f;
@@ -938,7 +944,7 @@ void GameControlSystem::UpdateGameUI(float deltaTime, ECS::EntityID controllerID
         int idx = indices[i];
         int row, col;
 
-        if (idx <= 9) { // ”š
+        if (idx <= 9) { // æ•°å­—
             row = idx / 5;
             col = idx % 5;
         }
@@ -956,13 +962,13 @@ void GameControlSystem::UpdateGameUI(float deltaTime, ECS::EntityID controllerID
         ui.uvScale = { UV_UNIT_X, UV_UNIT_Y };
     }
 
-    // --- 2. ƒAƒCƒeƒ€HUDXV ---
+    // --- 2. ã‚¢ã‚¤ãƒ†ãƒ HUDæ›´æ–° ---
     if (m_coordinator->HasComponent<ItemTrackerComponent>(controllerID))
     {
         auto& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(controllerID);
         size_t total = tracker.targetItemIDs.size();
 
-        // ‰‰ñ¶¬
+        // åˆå›ç”Ÿæˆ
         if (m_itemHUDs.size() < total)
         {
             float hudX = SCREEN_WIDTH - 60.0f;
@@ -984,7 +990,7 @@ void GameControlSystem::UpdateGameUI(float deltaTime, ECS::EntityID controllerID
             }
         }
 
-        // ó‘ÔXV
+        // çŠ¶æ…‹æ›´æ–°
         for (size_t i = 0; i < m_itemHUDs.size(); ++i)
         {
             if (i >= tracker.targetItemIDs.size()) break;
@@ -993,7 +999,7 @@ void GameControlSystem::UpdateGameUI(float deltaTime, ECS::EntityID controllerID
             auto& trans = m_coordinator->GetComponent<TransformComponent>(m_itemHUDs[i]);
             std::string targetID = tracker.targetItemIDs[i];
 
-            // ‰ñûÏ‚İ”»’è
+            // å›åæ¸ˆã¿åˆ¤å®š
             bool isCollected = true;
             bool foundInScene = false;
 
@@ -1008,27 +1014,27 @@ void GameControlSystem::UpdateGameUI(float deltaTime, ECS::EntityID controllerID
                 }
             }
 
-            // •\¦XV
+            // è¡¨ç¤ºæ›´æ–°
             if (isCollected) {
-                // Šl“¾Ï‚İ: –¾‚é‚­AƒTƒCƒYŒÅ’è
+                // ç²å¾—æ¸ˆã¿: æ˜ã‚‹ãã€ã‚µã‚¤ã‚ºå›ºå®š
                 ui.color = { 1.0f, 1.0f, 1.0f, 1.0f };
                 trans.scale = { 50, 50, 1 };
             }
             else {
-                // –¢Šl“¾: ˆÃ‚­
+                // æœªç²å¾—: æš—ã
                 ui.color = { 0.3f, 0.3f, 0.3f, 0.5f };
                 trans.scale = { 45, 45, 1 };
 
-                // š’Ç‰Á: ‡˜ƒ‚[ƒh‚ÅuŸv‚Ìƒ^[ƒQƒbƒg‚È‚çƒAƒjƒ[ƒVƒ‡ƒ“
+                // â˜…è¿½åŠ : é †åºãƒ¢ãƒ¼ãƒ‰ã§ã€Œæ¬¡ã€ã®ã‚¿ãƒ¼ã‚²ãƒƒãƒˆãªã‚‰ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³
                 if (tracker.useOrderedCollection)
                 {
-                    // currentTargetOrder‚Í1n‚Ü‚è‚È‚Ì‚ÅAƒCƒ“ƒfƒbƒNƒX(0n‚Ü‚è)‚Æ”äŠr‚·‚éÛ‚Í -1 ‚·‚é
+                    // currentTargetOrderã¯1å§‹ã¾ã‚Šãªã®ã§ã€ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹(0å§‹ã¾ã‚Š)ã¨æ¯”è¼ƒã™ã‚‹éš›ã¯ -1 ã™ã‚‹
                     if ((int)i == (tracker.currentTargetOrder - 1))
                     {
-                        // ‰©F‚­‹­’²
+                        // é»„è‰²ãå¼·èª¿
                         ui.color = { 1.0f, 1.0f, 0.5f, 1.0f };
 
-                        // ƒTƒCƒ“”g‚Å‚Ó‚í‚Ó‚íŠg‘åk¬ (45.0f ‚ğŠî€‚É +•Ï“®)
+                        // ã‚µã‚¤ãƒ³æ³¢ã§ãµã‚ãµã‚æ‹¡å¤§ç¸®å° (45.0f ã‚’åŸºæº–ã« +å¤‰å‹•)
                         float s = 50.0f + sinf(state.elapsedTime * 10.0f) * 5.0f;
                         trans.scale = { s, s, 1.0f };
                     }
@@ -1046,7 +1052,7 @@ DirectX::XMFLOAT3 GameControlSystem::GetScreenPosition(const DirectX::XMFLOAT3& 
     XMStoreFloat3(&ndc, clipPos);
 
     // NDC (-1.0 ~ 1.0) -> Screen (Pixel)
-    // Y²‚Í”½“](ã’[‚ª0)‚³‚¹‚é
+    // Yè»¸ã¯åè»¢(ä¸Šç«¯ãŒ0)ã•ã›ã‚‹
     float screenX = (ndc.x + 1.0f) * 0.5f * SCREEN_WIDTH;
     float screenY = (1.0f - ndc.y) * 0.5f * SCREEN_HEIGHT;
 
@@ -1076,7 +1082,7 @@ void GameControlSystem::SpawnSmallSonar(const XMFLOAT3& screenPos, XMFLOAT4 colo
 }
 
 // ---------------------------------------------------------
-// “üê‰‰o (StartEntranceSequence / UpdateEntranceSequence)
+// å…¥å ´æ¼”å‡º (StartEntranceSequence / UpdateEntranceSequence)
 // ---------------------------------------------------------
 void GameControlSystem::StartEntranceSequence(EntityID controllerID)
 {
@@ -1084,24 +1090,24 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
     state.sequenceState = GameSequenceState::Entering;
     state.sequenceTimer = 0.0f;
 
-    // 1. ƒvƒŒƒCƒ„[‚ğƒhƒA‚ÌŠOi‚Ü‚½‚ÍƒhƒAˆÊ’uj‚É”z’u
+    // 1. ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚’ãƒ‰ã‚¢ã®å¤–ï¼ˆã¾ãŸã¯ãƒ‰ã‚¢ä½ç½®ï¼‰ã«é…ç½®
     EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
-    EntityID doorID = FindEntranceDoor(); // ƒ^ƒO‚È‚Ç‚Å“üŒûƒhƒA‚ğ’T‚·ŠÖ”
+    EntityID doorID = FindEntranceDoor(); // ã‚¿ã‚°ãªã©ã§å…¥å£ãƒ‰ã‚¢ã‚’æ¢ã™é–¢æ•°
 
     if (playerID != INVALID_ENTITY_ID && doorID != INVALID_ENTITY_ID)
     {
         auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
         auto& dTrans = m_coordinator->GetComponent<TransformComponent>(doorID);
 
-        // --- 1. ƒvƒŒƒCƒ„[”z’u ---
+        // --- 1. ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼é…ç½® ---
         float rad = dTrans.rotation.y;
         float startDist = 5.0f;
-        // ƒhƒA‚ÌŠO‘¤(-Z•ûŒü‚Æ‰¼’è)‚É”z’u
+        // ãƒ‰ã‚¢ã®å¤–å´(-Zæ–¹å‘ã¨ä»®å®š)ã«é…ç½®
         pTrans.position.x = dTrans.position.x - sin(rad) * startDist;
         pTrans.position.z = dTrans.position.z - cos(rad) * startDist;
         pTrans.rotation.y = dTrans.rotation.y;
 
-        // --- 2. ƒJƒƒ‰ˆÊ’u‚ÌŒvZ ---
+        // --- 2. ã‚«ãƒ¡ãƒ©ä½ç½®ã®è¨ˆç®— ---
         if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
         {
             XMVECTOR doorPos = XMLoadFloat3(&dTrans.position);
@@ -1110,8 +1116,8 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
             float cosY = cos(rad);
             XMVECTOR doorDir = XMVectorSet(sinY, 0.0f, cosY, 0.0f);
 
-            // šC³A: •”‰®‚Ì“à‘¤‚É”z’u‚·‚é‚½‚ß‚Éuƒ}ƒCƒiƒXv‚É‚·‚é
-            // ‹——£‚à 2.5f ’ö“x‚É’²®
+            // â˜…ä¿®æ­£A: éƒ¨å±‹ã®å†…å´ã«é…ç½®ã™ã‚‹ãŸã‚ã«ã€Œãƒã‚¤ãƒŠã‚¹ã€ã«ã™ã‚‹
+            // è·é›¢ã‚‚ 2.5f ç¨‹åº¦ã«èª¿æ•´
             XMVECTOR camPosVec = doorPos + (doorDir * 7.5f) + XMVectorSet(0.0f, 3.0f, 0.0f, 0.0f);
 
             XMVECTOR lookAtVec = doorPos + XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
@@ -1123,34 +1129,34 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
             printf("[DEBUG] DoorPos: %.2f, %.2f, %.2f\n", dTrans.position.x, dTrans.position.y, dTrans.position.z);
             printf("[DEBUG] CamPos : %.2f, %.2f, %.2f\n", camPos.x, camPos.y, camPos.z);
 
-            // ƒVƒXƒeƒ€‚É–Ú•W‚ğƒZƒbƒg
+            // ã‚·ã‚¹ãƒ†ãƒ ã«ç›®æ¨™ã‚’ã‚»ãƒƒãƒˆ
             camSys->SetFixedCamera(camPos, lookAt);
         }
 
-        // --- 2. ƒhƒA‚ğŠJ‚¯‚é ---
+        // --- 2. ãƒ‰ã‚¢ã‚’é–‹ã‘ã‚‹ ---
         if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
             m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_OPEN", false);
         }
 
-        // ’Ê‚ê‚é‚æ‚¤‚ÉƒRƒŠƒWƒ‡ƒ“‚ğƒgƒŠƒK[‰»
+        // é€šã‚Œã‚‹ã‚ˆã†ã«ã‚³ãƒªã‚¸ãƒ§ãƒ³ã‚’ãƒˆãƒªã‚¬ãƒ¼åŒ–
         if (m_coordinator->HasComponent<CollisionComponent>(doorID)) {
             m_coordinator->GetComponent<CollisionComponent>(doorID).type = COLLIDER_TRIGGER;
         }
 
-        // ƒhƒA‚ªŠJ‚­‰¹
+        // ãƒ‰ã‚¢ãŒé–‹ãéŸ³
         EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_DOOR_OPEN");
     }
     auto& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(controllerID);
 
-    // ‘S‰ñû‚µ‚½‚ç
+    // å…¨å›åã—ãŸã‚‰
     if (tracker.collectedItems >= tracker.totalItems)
     {
-        // oŒûƒhƒA‚ğ’T‚µ‚ÄŠJ‚¯‚é
+        // å‡ºå£ãƒ‰ã‚¢ã‚’æ¢ã—ã¦é–‹ã‘ã‚‹
         EntityID exitDoor = FindExitDoor();
         if (exitDoor != INVALID_ENTITY_ID)
         {
             auto& door = m_coordinator->GetComponent<DoorComponent>(exitDoor);
-            if (door.isLocked) // ‚Ü‚¾ŠJ‚¢‚Ä‚È‚¯‚ê‚Î
+            if (door.isLocked) // ã¾ã é–‹ã„ã¦ãªã‘ã‚Œã°
             {
                 door.isLocked = false;
                 door.state = DoorState::Open;
@@ -1158,8 +1164,8 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
                 m_coordinator->GetComponent<AnimationComponent>(exitDoor).Play("A_DOOR_OPEN", false);
                 m_coordinator->GetComponent<CollisionComponent>(exitDoor).type = COLLIDER_TRIGGER;
 
-                // š ‘SƒAƒCƒeƒ€‰ñûŒã‚ÌBGMØ‚è‘Ö‚¦ -------------------
-                // 1. Šù‘¶‚ÌBGM‚ğ~‚ß‚é
+                // â˜… å…¨ã‚¢ã‚¤ãƒ†ãƒ å›åå¾Œã®BGMåˆ‡ã‚Šæ›¿ãˆ -------------------
+                // 1. æ—¢å­˜ã®BGMã‚’æ­¢ã‚ã‚‹
                 for (auto const& entity : m_coordinator->GetActiveEntities())
                 {
                     if (!m_coordinator->HasComponent<SoundComponent>(entity))
@@ -1167,25 +1173,25 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
 
                     auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
 
-                    // ƒAƒNƒVƒ‡ƒ“—pBGM (assetID = "BGM_TEST2") ‚ğ’â~
+                    // ã‚¢ã‚¯ã‚·ãƒ§ãƒ³ç”¨BGM (assetID = "BGM_TEST2") ã‚’åœæ­¢
                     if (sound.assetID == "BGM_ACTION")
                     {
                         sound.RequestStop();
                     }
                 }
-                // 2. ƒNƒŠƒA‘Ò‹@—pBGMiBGM_TEST3j‚ğÄ¶ŠJn
+                // 2. ã‚¯ãƒªã‚¢å¾…æ©Ÿç”¨BGMï¼ˆBGM_TEST3ï¼‰ã‚’å†ç”Ÿé–‹å§‹
                 ECS::EntityID clearBgm = ECS::EntityFactory::CreateLoopSoundEntity(
                     m_coordinator,
-                    "BGM_TEST3",  // š Sound.csv ‚É“o˜^‚³‚ê‚Ä‚¢‚éID
-                    0.5f          // ‰¹—Ê‚ÍD‚İ‚Å
+                    "BGM_TEST3",  // â˜… Sound.csv ã«ç™»éŒ²ã•ã‚Œã¦ã„ã‚‹ID
+                    0.5f          // éŸ³é‡ã¯å¥½ã¿ã§
                 );
 
-                // •K—v‚È‚çƒ^ƒO‚ğ•t‚¯‚Ä‚¨‚­i‚ ‚Æ‚Å~‚ß‚½‚¢—pj
+                // å¿…è¦ãªã‚‰ã‚¿ã‚°ã‚’ä»˜ã‘ã¦ãŠãï¼ˆã‚ã¨ã§æ­¢ã‚ãŸã„æ™‚ç”¨ï¼‰
                 if (m_coordinator->HasComponent<TagComponent>(clearBgm))
                 {
                     m_coordinator->GetComponent<TagComponent>(clearBgm).tag = "BGM_CLEAR";
                 }
-                // ‰¹‚âƒƒbƒZ[ƒWu’Eo‚¹‚æIv‚È‚Ç‚ğo‚·
+                // éŸ³ã‚„ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã€Œè„±å‡ºã›ã‚ˆï¼ã€ãªã©ã‚’å‡ºã™
             }
         }
     }
@@ -1202,33 +1208,33 @@ void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID control
 
     auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
 
-    // --- 1. “üêˆÚ“® (0.0s ~ 2.5s) ---
-    // šŠÔ‚ğ 2.0f -> 2.5f ‚É‰„‚Î‚µ‚ÄA‚æ‚è‰œ‚Öi‚Ü‚¹‚é
+    // --- 1. å…¥å ´ç§»å‹• (0.0s ~ 2.5s) ---
+    // â˜…æ™‚é–“ã‚’ 2.0f -> 2.5f ã«å»¶ã°ã—ã¦ã€ã‚ˆã‚Šå¥¥ã¸é€²ã¾ã›ã‚‹
     if (state.sequenceTimer < 2.5f)
     {
-        // ƒAƒjƒ[ƒVƒ‡ƒ“Ä¶ (•à‚«)
+        // ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å†ç”Ÿ (æ­©ã)
         if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
             m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_RUN");
         }
 
-        // ƒvƒŒƒCƒ„[‚ªŒü‚¢‚Ä‚¢‚é•ûŒü(‰ñ“])‚Éi‚Ş
+        // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãŒå‘ã„ã¦ã„ã‚‹æ–¹å‘(å›è»¢)ã«é€²ã‚€
         float speed = 4.0f * deltaTime;
         float rad = pTrans.rotation.y;
 
         pTrans.position.x += sin(rad) * speed;
         pTrans.position.z += cos(rad) * speed;
     }
-    // --- 2. ƒhƒA•Â½ & ‘Ò‹@ (2.5s ~ 3.5s) ---
-    // šˆÚ“®‚ªI‚í‚Á‚½‚çAƒhƒA‚ğ•Â‚ß‚Ä­‚µ‘Ò‚Â
+    // --- 2. ãƒ‰ã‚¢é–‰é– & å¾…æ©Ÿ (2.5s ~ 3.5s) ---
+    // â˜…ç§»å‹•ãŒçµ‚ã‚ã£ãŸã‚‰ã€ãƒ‰ã‚¢ã‚’é–‰ã‚ã¦å°‘ã—å¾…ã¤
     else if (state.sequenceTimer < 4.5f)
     {
-        // ‘Ò‹@ƒ‚[ƒVƒ‡ƒ“
+        // å¾…æ©Ÿãƒ¢ãƒ¼ã‚·ãƒ§ãƒ³
         if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
             m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_IDLE");
         }
 
-        // š‚±‚ÌƒtƒF[ƒY‚É“ü‚Á‚½uŠÔ(1‰ñ‚¾‚¯)ƒhƒA‚ğ•Â‚ß‚é
-        // (‘OƒtƒŒ[ƒ€‚Ü‚Å‚Í 2.5f –¢–‚¾‚Á‚½ê‡)
+        // â˜…ã“ã®ãƒ•ã‚§ãƒ¼ã‚ºã«å…¥ã£ãŸç¬é–“(1å›ã ã‘)ãƒ‰ã‚¢ã‚’é–‰ã‚ã‚‹
+        // (å‰ãƒ•ãƒ¬ãƒ¼ãƒ ã¾ã§ã¯ 2.5f æœªæº€ã ã£ãŸå ´åˆ)
         if (state.sequenceTimer - deltaTime < 2.5f)
         {
             EntityID doorID = FindEntranceDoor();
@@ -1236,53 +1242,53 @@ void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID control
                 if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
                     m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE", false);
                 }
-                // ƒRƒŠƒWƒ‡ƒ“‚ğ•Ç‚É–ß‚· (•Â‚¶‚ß‚é)
+                // ã‚³ãƒªã‚¸ãƒ§ãƒ³ã‚’å£ã«æˆ»ã™ (é–‰ã˜è¾¼ã‚ã‚‹)
                 if (m_coordinator->HasComponent<CollisionComponent>(doorID)) {
                     m_coordinator->GetComponent<CollisionComponent>(doorID).type = COLLIDER_STATIC;
                 }
-                // •Â‚Ü‚é‰¹
+                // é–‰ã¾ã‚‹éŸ³
                 EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_DOOR_CLOSE");
             }
         }
     }
-    // --- 3. ‰‰oI—¹ & ‘€ìŠJn (3.5sˆÈ~) ---
+    // --- 3. æ¼”å‡ºçµ‚äº† & æ“ä½œé–‹å§‹ (3.5sä»¥é™) ---
     else
     {
-        // ƒJƒƒ‰‚ğ”wŒã‚É–ß‚· (‘O‰ñ‚Ì‰ñ“š‚Å’Ç‰Á‚µ‚½ƒŠƒZƒbƒgˆ—)
+        // ã‚«ãƒ¡ãƒ©ã‚’èƒŒå¾Œã«æˆ»ã™ (å‰å›ã®å›ç­”ã§è¿½åŠ ã—ãŸãƒªã‚»ãƒƒãƒˆå‡¦ç†)
         if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
         {
             camSys->ReleaseFixedCamera();
             camSys->ResetCameraAngle(pTrans.rotation.y, 0.6f);
         }
 
-        // š‚±‚±‚Å‰‚ß‚Ä‘€ì‰Â”\‚É‚È‚é
+        // â˜…ã“ã“ã§åˆã‚ã¦æ“ä½œå¯èƒ½ã«ãªã‚‹
         state.sequenceState = GameSequenceState::Playing;
     }
 }
 
 // ---------------------------------------------------------
-// ƒAƒCƒeƒ€ƒRƒ“ƒv‚ÌƒhƒAŠJ•ú
+// ã‚¢ã‚¤ãƒ†ãƒ ã‚³ãƒ³ãƒ—æ™‚ã®ãƒ‰ã‚¢é–‹æ”¾
 // ---------------------------------------------------------
 void GameControlSystem::CheckDoorUnlock(EntityID controllerID)
 {
-    // ItemTracker‚ª–³‚¢ê‡‚ÍˆÀ‘S‚É”²‚¯‚é
+    // ItemTrackerãŒç„¡ã„å ´åˆã¯å®‰å…¨ã«æŠœã‘ã‚‹
     if (!m_coordinator->HasComponent<ItemTrackerComponent>(controllerID)) return;
 
     auto& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(controllerID);
 
-    // ‘S‰ñû‚µ‚½‚ç
+    // å…¨å›åã—ãŸã‚‰
     if (tracker.collectedItems >= tracker.totalItems)
     {
-        // oŒûƒhƒA‚ğ’T‚µ‚ÄŠJ‚¯‚é
+        // å‡ºå£ãƒ‰ã‚¢ã‚’æ¢ã—ã¦é–‹ã‘ã‚‹
         EntityID exitDoor = FindExitDoor();
         if (exitDoor != INVALID_ENTITY_ID)
         {
             auto& door = m_coordinator->GetComponent<DoorComponent>(exitDoor);
 
-            // ‚Ü‚¾ŠJ‚¢‚Ä‚È‚¯‚ê‚Îi= 1‰ñ‚¾‚¯Às‚³‚ê‚éj
+            // ã¾ã é–‹ã„ã¦ãªã‘ã‚Œã°ï¼ˆ= 1å›ã ã‘å®Ÿè¡Œã•ã‚Œã‚‹ï¼‰
             if (door.isLocked)
             {
-                // ƒhƒA‰ğùEŠJ‚­
+                // ãƒ‰ã‚¢è§£éŒ ãƒ»é–‹ã
                 door.isLocked = false;
                 door.state = DoorState::Open;
 
@@ -1295,7 +1301,7 @@ void GameControlSystem::CheckDoorUnlock(EntityID controllerID)
                     m_coordinator->GetComponent<CollisionComponent>(exitDoor).type = COLLIDER_TRIGGER;
                 }
 
-                // ‚¢‚Ü–Â‚Á‚Ä‚éBGM‚ğ~‚ß‚éi•K—v‚É‰‚¶‚ÄID’Ç‰Á‚µ‚ÄOKj
+                // ã„ã¾é³´ã£ã¦ã‚‹BGMã‚’æ­¢ã‚ã‚‹ï¼ˆå¿…è¦ã«å¿œã˜ã¦IDè¿½åŠ ã—ã¦OKï¼‰
                 for (auto const& entity : m_coordinator->GetActiveEntities())
                 {
                     if (!m_coordinator->HasComponent<SoundComponent>(entity)) continue;
@@ -1309,14 +1315,14 @@ void GameControlSystem::CheckDoorUnlock(EntityID controllerID)
                     }
                 }
 
-                // ‘S‰ñûBGM‚ÖØ‚è‘Ö‚¦
+                // å…¨å›åBGMã¸åˆ‡ã‚Šæ›¿ãˆ
                 ECS::EntityFactory::CreateLoopSoundEntity(
                     m_coordinator,
-                    "BGM_TEST3", // © ‘S‰ñûŒã‚É—¬‚µ‚½‚¢BGM‚ÌID
+                    "BGM_TEST3", // â† å…¨å›åå¾Œã«æµã—ãŸã„BGMã®ID
                     0.5f
                 );
 
-                // ”CˆÓF‘S‰ñûSE‚ğ–Â‚ç‚µ‚½‚¢‚È‚ç
+                // ä»»æ„ï¼šå…¨å›åSEã‚’é³´ã‚‰ã—ãŸã„ãªã‚‰
                 // ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST2", 0.8f);
             }
         }
@@ -1324,7 +1330,7 @@ void GameControlSystem::CheckDoorUnlock(EntityID controllerID)
 }
 
 // ---------------------------------------------------------
-// ’Eo‰‰o (ƒS[ƒ‹ÚG‚ÉŒÄ‚Î‚ê‚é)
+// è„±å‡ºæ¼”å‡º (ã‚´ãƒ¼ãƒ«æ¥è§¦æ™‚ã«å‘¼ã°ã‚Œã‚‹)
 // ---------------------------------------------------------
 void GameControlSystem::UpdateExitSequence(float deltaTime, EntityID controllerID)
 {
@@ -1339,28 +1345,28 @@ void GameControlSystem::UpdateExitSequence(float deltaTime, EntityID controllerI
         auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
         auto& dTrans = m_coordinator->GetComponent<TransformComponent>(exitDoorID);
 
-        // --- 1. ˆÚ“®ƒtƒF[ƒY (0.0s ~ 4.0s) ---
+        // --- 1. ç§»å‹•ãƒ•ã‚§ãƒ¼ã‚º (0.0s ~ 4.0s) ---
         if (state.sequenceTimer < 4.0f)
         {
-            // •à‚«ƒ‚[ƒVƒ‡ƒ“
+            // æ­©ããƒ¢ãƒ¼ã‚·ãƒ§ãƒ³
             if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
                 m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_RUN");
             }
 
-            // šƒ€[ƒ“ƒEƒH[ƒN‘Îô:
-            // uƒhƒA‚Ö‚ÌƒxƒNƒgƒ‹v‚Å‚Í‚È‚­AuƒhƒA‚Ì‹tŒü‚«(‘Şo•ûŒü)v‚Ö‰ñ“]‚µA‚»‚Ì‘O•û‚Öi‚Ş
+            // â˜…ãƒ ãƒ¼ãƒ³ã‚¦ã‚©ãƒ¼ã‚¯å¯¾ç­–:
+            // ã€Œãƒ‰ã‚¢ã¸ã®ãƒ™ã‚¯ãƒˆãƒ«ã€ã§ã¯ãªãã€ã€Œãƒ‰ã‚¢ã®é€†å‘ã(é€€å‡ºæ–¹å‘)ã€ã¸å›è»¢ã—ã€ãã®å‰æ–¹ã¸é€²ã‚€
 
-            // –Ú•W‚ÌŒü‚«: ƒhƒA‚ÌŒü‚«‚Ì”½‘Î (•”‰®‚ÌŠO‚Ö)
+            // ç›®æ¨™ã®å‘ã: ãƒ‰ã‚¢ã®å‘ãã®åå¯¾ (éƒ¨å±‹ã®å¤–ã¸)
             float targetRot = dTrans.rotation.y + XM_PI;
 
-            // Œü‚«‚Ì•âŠÔ
+            // å‘ãã®è£œé–“
             float currentRot = pTrans.rotation.y;
             float diff = targetRot - currentRot;
             while (diff > XM_PI) diff -= XM_2PI;
             while (diff < -XM_PI) diff += XM_2PI;
             pTrans.rotation.y += diff * 5.0f * deltaTime;
 
-            // ˆÚ“® (Œü‚¢‚Ä‚¢‚é•ûŒü‚Ö)
+            // ç§»å‹• (å‘ã„ã¦ã„ã‚‹æ–¹å‘ã¸)
             float walkSpeed = 2.0f * deltaTime;
             float rad = pTrans.rotation.y;
             float moveX = sin(rad) * walkSpeed;
@@ -1369,19 +1375,19 @@ void GameControlSystem::UpdateExitSequence(float deltaTime, EntityID controllerI
             pTrans.position.x += moveX;
             pTrans.position.z += moveZ;
 
-            // ˆÊ’u•â³ (ƒhƒA‚Ì³–Êƒ‰ƒCƒ“‚ÉŠñ‚¹‚é)
-            // ƒhƒA‚Æ‚ÌX²(‰¡)ƒYƒŒ‚ğŠÈˆÕ“I‚ÉC³
+            // ä½ç½®è£œæ­£ (ãƒ‰ã‚¢ã®æ­£é¢ãƒ©ã‚¤ãƒ³ã«å¯„ã›ã‚‹)
+            // ãƒ‰ã‚¢ã¨ã®Xè»¸(æ¨ª)ã‚ºãƒ¬ã‚’ç°¡æ˜“çš„ã«ä¿®æ­£
             XMVECTOR doorPosV = XMLoadFloat3(&dTrans.position);
             XMVECTOR playerPosV = XMLoadFloat3(&pTrans.position);
             XMVECTOR toDoor = XMVectorSubtract(doorPosV, playerPosV);
-            // ¦Œµ–§‚ÈŒvZ‚ÍÈ—ª‚µA‚±‚±‚Å‚Íui‚Şv‚±‚Æ‚ğ—Dæ‚µ‚Ä‚¢‚Ü‚·
+            // â€»å³å¯†ãªè¨ˆç®—ã¯çœç•¥ã—ã€ã“ã“ã§ã¯ã€Œé€²ã‚€ã€ã“ã¨ã‚’å„ªå…ˆã—ã¦ã„ã¾ã™
         }
 
-        // --- 2. ƒhƒA‚ğ•Â‚ß‚é (2.5•bŒo‰ßŒã‚È‚ÇAƒvƒŒƒCƒ„[‚ªo‚½Œã) ---
-        // š’Ç‰Á: ƒS[ƒ‹‚àƒhƒA‚ğ•Â‚ß‚éˆ—
+        // --- 2. ãƒ‰ã‚¢ã‚’é–‰ã‚ã‚‹ (2.5ç§’çµŒéå¾Œãªã©ã€ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãŒå‡ºãŸå¾Œ) ---
+        // â˜…è¿½åŠ : ã‚´ãƒ¼ãƒ«æ™‚ã‚‚ãƒ‰ã‚¢ã‚’é–‰ã‚ã‚‹å‡¦ç†
         if (state.sequenceTimer > 2.5f)
         {
-            // ƒhƒA‚ªŠJ‚¢‚Ä‚¢‚ê‚Î•Â‚ß‚é
+            // ãƒ‰ã‚¢ãŒé–‹ã„ã¦ã„ã‚Œã°é–‰ã‚ã‚‹
             bool isOpen = false;
             if (m_coordinator->HasComponent<CollisionComponent>(exitDoorID)) {
                 if (m_coordinator->GetComponent<CollisionComponent>(exitDoorID).type == COLLIDER_TRIGGER) {
@@ -1401,7 +1407,7 @@ void GameControlSystem::UpdateExitSequence(float deltaTime, EntityID controllerI
         }
     }
 
-    // --- 3. I—¹”»’è (ŠÔ‚ğ’·‚­) ---
+    // --- 3. çµ‚äº†åˆ¤å®š (æ™‚é–“ã‚’é•·ã) ---
     if (state.sequenceTimer > 5.0f)
     {
         state.isGameClear = true;
@@ -1421,6 +1427,206 @@ EntityID GameControlSystem::FindEntranceDoor()
 
 EntityID GameControlSystem::FindExitDoor()
 {
-    // “ü—ÍƒhƒA‚ğoŒû‚Æ‚µ‚Ä‚àg‚¤‚½‚ßAEntrance‚Æ“¯‚¶‚à‚Ì‚ğ’T‚·
+    // å…¥åŠ›ãƒ‰ã‚¢ã‚’å‡ºå£ã¨ã—ã¦ã‚‚ä½¿ã†ãŸã‚ã€Entranceã¨åŒã˜ã‚‚ã®ã‚’æ¢ã™
     return FindEntranceDoor();
+}
+// ---------------------------------------------------------
+// MapGimmick / forced mode switch helpers
+// ---------------------------------------------------------
+bool GameControlSystem::IsAABBOverlap(ECS::EntityID a, ECS::EntityID b)
+{
+    if (a == ECS::INVALID_ENTITY_ID || b == ECS::INVALID_ENTITY_ID) return false;
+    if (!m_coordinator) return false;
+
+    if (!m_coordinator->HasComponent<TransformComponent>(a) || !m_coordinator->HasComponent<TransformComponent>(b)) return false;
+    if (!m_coordinator->HasComponent<CollisionComponent>(a) || !m_coordinator->HasComponent<CollisionComponent>(b)) return false;
+
+    const auto& ta = m_coordinator->GetComponent<TransformComponent>(a);
+    const auto& tb = m_coordinator->GetComponent<TransformComponent>(b);
+    const auto& ca = m_coordinator->GetComponent<CollisionComponent>(a);
+    const auto& cb = m_coordinator->GetComponent<CollisionComponent>(b);
+
+    auto makeMinMax = [](const TransformComponent& t, const CollisionComponent& c, DirectX::XMFLOAT3& outMin, DirectX::XMFLOAT3& outMax)
+        {
+            const float cx = t.position.x + c.offset.x;
+            const float cy = t.position.y + c.offset.y;
+            const float cz = t.position.z + c.offset.z;
+
+            outMin = { cx - c.size.x, cy - c.size.y, cz - c.size.z };
+            outMax = { cx + c.size.x, cy + c.size.y, cz + c.size.z };
+        };
+
+    DirectX::XMFLOAT3 amin, amax, bmin, bmax;
+    makeMinMax(ta, ca, amin, amax);
+    makeMinMax(tb, cb, bmin, bmax);
+
+    const bool overlapX = (amin.x <= bmax.x) && (amax.x >= bmin.x);
+    const bool overlapY = (amin.y <= bmax.y) && (amax.y >= bmin.y);
+    const bool overlapZ = (amin.z <= bmax.z) && (amax.z >= bmin.z);
+
+    return overlapX && overlapY && overlapZ;
+}
+
+void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID)
+{
+    auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+
+    // Background switch
+    if (state.topviewBgID != INVALID_ENTITY_ID && state.tpsBgID != INVALID_ENTITY_ID)
+    {
+        auto& normalUI = m_coordinator->GetComponent<UIImageComponent>(state.topviewBgID);
+        auto& tpsUI = m_coordinator->GetComponent<UIImageComponent>(state.tpsBgID);
+
+        if (state.currentMode == GameMode::SCOUTING_MODE)
+        {
+            normalUI.isVisible = true;
+            tpsUI.isVisible = false;
+        }
+        else
+        {
+            normalUI.isVisible = false;
+            tpsUI.isVisible = true;
+        }
+    }
+
+    const bool isScouting = (state.currentMode == GameMode::SCOUTING_MODE);
+
+    for (auto const& entity : m_coordinator->GetActiveEntities())
+    {
+        if (!m_coordinator->HasComponent<RenderComponent>(entity)) continue;
+
+        auto& render = m_coordinator->GetComponent<RenderComponent>(entity);
+
+        bool isTarget = false;
+        bool keepVisibleInScouting = false; // TopViewã§ã‚‚è¡¨ç¤ºã‚’ç¶­æŒã™ã‚‹å¯¾è±¡ï¼ˆå£/åºŠ/æ‰‰ãªã©ï¼‰
+        MeshType restoreTypeAction = render.type;   // ACTION_MODE ã¸æˆ»ã™æ™‚ã®å‹
+        MeshType restoreTypeScouting = MESH_NONE;   // SCOUTING_MODE ã§ã®è¡¨ç¤ºå‹ï¼ˆæ—¢å®šã¯éè¡¨ç¤ºï¼‰
+
+        // Player
+        if (m_coordinator->HasComponent<PlayerControlComponent>(entity))
+        {
+            isTarget = true;
+            keepVisibleInScouting = false;
+            restoreTypeAction = MESH_MODEL;
+            restoreTypeScouting = MESH_NONE;
+        }
+        // Items
+        else if (m_coordinator->HasComponent<CollectableComponent>(entity))
+        {
+            isTarget = true;
+            keepVisibleInScouting = false;
+            restoreTypeAction = MESH_MODEL;
+            restoreTypeScouting = MESH_NONE;
+        }
+        else if (m_coordinator->HasComponent<TagComponent>(entity))
+        {
+            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
+
+            if (tag == "guard")
+            {
+                isTarget = true;
+                keepVisibleInScouting = false;
+                restoreTypeAction = MESH_MODEL;
+                restoreTypeScouting = MESH_NONE;
+            }
+            else if (tag == "taser")
+            {
+                isTarget = true;
+                keepVisibleInScouting = false;
+#ifdef _DEBUG
+                restoreTypeAction = MESH_BOX;
+#else
+                restoreTypeAction = MESH_NONE;
+#endif
+                restoreTypeScouting = MESH_NONE;
+            }
+            else if (tag == "map_gimmick")
+            {
+                isTarget = true;
+                keepVisibleInScouting = false;
+#ifdef _DEBUG
+                restoreTypeAction = MESH_BOX;
+#else
+                restoreTypeAction = MESH_NONE;
+#endif
+                restoreTypeScouting = MESH_NONE;
+            }
+            else if (tag == "ground" || tag == "wall")
+            {
+                // â˜…é‡è¦:
+                // EntityFactory ã¯ ground/wall ã‚’ MESH_BOX ã§ç”Ÿæˆã—ã¦ã„ã‚‹ãŒã€ModelComponent(M_CORRIDORç­‰)ã‚‚ä»˜ã„ã¦ã„ã‚‹ã€‚
+                // å¤œã£ã½ã„è¦‹ãŸç›®ï¼ˆãƒ†ã‚¯ã‚¹ãƒãƒ£/é™°å½±ï¼‰ã‚’ç¶­æŒã—ãŸã„ã®ã§ ACTION_MODE ã§ã¯ MESH_MODEL ã§æç”»ã™ã‚‹ã€‚
+                // TopView ã¯è¦‹ã‚„ã™ã•å„ªå…ˆã§ BOX è¡¨ç¤ºã«ã™ã‚‹ï¼ˆå¿…è¦ãªã‚‰ MODEL ã§ã‚‚OKï¼‰ã€‚
+                isTarget = true;
+                keepVisibleInScouting = true;
+
+                restoreTypeAction = MESH_MODEL;   // ã‚²ãƒ¼ãƒ ç”»é¢ï¼ˆæš—ã„/å¤œï¼‰ã‚’ç¶­æŒ
+                restoreTypeScouting = MESH_BOX;   // TopViewã¯åˆ†ã‹ã‚Šã‚„ã™ã
+            }
+            else if (tag == "door")
+            {
+                isTarget = true;
+                keepVisibleInScouting = true;
+
+                restoreTypeAction = MESH_MODEL;
+                restoreTypeScouting = MESH_MODEL;
+            }
+        }
+
+        if (!isTarget) continue;
+
+        if (isScouting)
+        {
+            render.type = keepVisibleInScouting ? restoreTypeScouting : MESH_NONE;
+        }
+        else
+        {
+            render.type = restoreTypeAction;
+        }
+    }
+}
+
+
+
+void GameControlSystem::CheckMapGimmickTrigger(ECS::EntityID controllerID)
+{
+    auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+
+    // Actionä¸­ã«è¸ã‚“ã ã‚‰TopViewã¸ï¼ˆTopViewä¸­ã¯ç„¡è¦–ï¼‰
+    if (state.currentMode != GameMode::ACTION_MODE) return;
+
+    // å…¥å ´/é€€å ´/æ•ç²æ¼”å‡ºä¸­ã¯ç„¡è¦–
+    if (state.sequenceState != GameSequenceState::Playing) return;
+
+    ECS::EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+    if (playerID == ECS::INVALID_ENTITY_ID) return;
+
+    for (auto const& e : m_coordinator->GetActiveEntities())
+    {
+        if (!m_coordinator->HasComponent<TagComponent>(e)) continue;
+        auto& tag = m_coordinator->GetComponent<TagComponent>(e).tag;
+        if (tag != "map_gimmick") continue;
+
+        if (!IsAABBOverlap(playerID, e)) continue;
+
+        // Force switch to TopView
+        state.currentMode = GameMode::SCOUTING_MODE;
+
+        // One-shot SE (use an existing ID you already have)
+        ECS::EntityFactory::CreateOneShotSoundEntity(
+            m_coordinator,
+            "SE_TOPVIEWSTART",
+            0.8f
+        );
+
+        ApplyModeVisuals(controllerID);
+
+        // Prevent re-trigger spam: mark used + shrink collider
+        tag = "map_gimmick_used";
+        if (m_coordinator->HasComponent<CollisionComponent>(e))
+        {
+            m_coordinator->GetComponent<CollisionComponent>(e).size = { 0.0f, 0.0f, 0.0f };
+        }
+        break;
+    }
 }

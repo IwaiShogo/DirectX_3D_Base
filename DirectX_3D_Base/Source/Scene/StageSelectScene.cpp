@@ -442,6 +442,7 @@ void StageSelectScene::Init()
 		UIImageComponent("UI_STAGE_MAPSIRO", baseDepth + 2.0f) // 0.95f -> baseDepth + 2.0f
 	);
 	m_detailUIEntities.push_back(mapSiro);
+	m_stageMapSiroEntity = mapSiro;
 
 	// フレーム
 	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
@@ -1212,6 +1213,9 @@ void StageSelectScene::SwitchState(bool toDetail)
 	{
 		if (!wasDetail)
 		{
+			// 選択ステージに応じて「城(手前)」のテクスチャを差し替える
+			ApplyStageMapTextureByStageId(m_selectedStageID);
+
 			BeginDetailAppear();
 			m_shootingStarTimer = 0.0f;
 			std::uniform_real_distribution<float> dist(m_shootingStarIntervalMin, m_shootingStarIntervalMax);
@@ -1232,6 +1236,102 @@ void StageSelectScene::SwitchState(bool toDetail)
 			}
 		}
 	}
+}
+
+
+//--------------------------------------------------------------
+// Stage Map Texture (per-stage)
+//  - TextureList.csv の AssetID: Stage_1 .. Stage_6 を使用
+//--------------------------------------------------------------
+int StageSelectScene::StageIdToStageNo(const std::string& stageId) const
+{
+	// 期待: "ST_001" .. "ST_006"
+	if (stageId.size() >= 6 && stageId.rfind("ST_", 0) == 0)
+	{
+		// "001" を読む
+		try
+		{
+			int n = std::stoi(stageId.substr(3));
+			return n;
+		}
+		catch (...) {}
+	}
+
+	// 互換: "Stage_1" などが来た場合
+	if (stageId.rfind("Stage_", 0) == 0)
+	{
+		try
+		{
+			int n = std::stoi(stageId.substr(6));
+			return n;
+		}
+		catch (...) {}
+	}
+
+	return -1;
+}
+
+std::string StageSelectScene::GetStageMapTextureAssetId(int stageNo) const
+{
+	if (stageNo >= 1 && stageNo <= 6)
+	{
+		return std::string("Stage_") + std::to_string(stageNo);
+	}
+	// フォールバック（従来の城）
+	return "UI_STAGE_MAPSIRO";
+}
+
+void StageSelectScene::ApplyStageMapTextureByStageId(const std::string& stageId)
+{
+	if (!m_coordinator) return;
+
+	const int stageNo = StageIdToStageNo(stageId);
+	const std::string texId = GetStageMapTextureAssetId(stageNo);
+
+	// 対象が無ければ何もしない
+	if (m_stageMapSiroEntity == (ECS::EntityID)-1) return;
+	if (!m_coordinator->HasComponent<TransformComponent>(m_stageMapSiroEntity)) return;
+	if (!m_coordinator->HasComponent<UIImageComponent>(m_stageMapSiroEntity)) return;
+
+	// いったん「同じ場所に作り直す」方式で安全に差し替え
+	const ECS::EntityID oldId = m_stageMapSiroEntity;
+
+	const auto oldTr = m_coordinator->GetComponent<TransformComponent>(oldId);
+	const auto oldUi = m_coordinator->GetComponent<UIImageComponent>(oldId);
+
+	const ECS::EntityID newId = m_coordinator->CreateEntity(
+		TransformComponent(oldTr.position, oldTr.rotation, oldTr.scale),
+		UIImageComponent(texId, oldUi.depth)
+	);
+
+	// 表示状態と色を引き継ぐ（詳細出現演出/フェードと干渉しない程度に）
+	if (m_coordinator->HasComponent<UIImageComponent>(newId))
+	{
+		auto& ui = m_coordinator->GetComponent<UIImageComponent>(newId);
+		ui.isVisible = oldUi.isVisible;
+		ui.color = oldUi.color;
+		ui.depth = oldUi.depth;
+	}
+
+	// m_detailUIEntities 内のIDを差し替え（無効IDを残さない）
+	for (auto& id : m_detailUIEntities)
+	{
+		if (id == oldId)
+		{
+			id = newId;
+			break;
+		}
+	}
+
+	// Transform キャッシュも更新（詳細のふわっと出現に効く）
+	m_detailBaseScale.erase(oldId);
+	m_detailBasePos.erase(oldId);
+	CacheDetailBaseTransform(newId);
+
+	// 旧Entityを破棄
+	m_coordinator->DestroyEntity(oldId);
+
+	m_stageMapSiroEntity = newId;
 }
 
 void StageSelectScene::CacheDetailBaseTransform(ECS::EntityID id)
