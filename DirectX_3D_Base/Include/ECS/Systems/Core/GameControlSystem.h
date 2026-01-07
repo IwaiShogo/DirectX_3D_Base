@@ -1,4 +1,4 @@
-/*****************************************************************//**
+ï»¿/*****************************************************************//**
  * @file	GameControlSystem.h
  * @brief
  *
@@ -8,28 +8,28 @@
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  *
- * @date	2025/12/05	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁF
+ * @date	2025/12/05	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼š
  *
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
+ * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- XXï¼š
  *
- * @note	iÈ—ª‰Âj
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
 #ifndef ___GAME_CONTROL_SYSTEM_H___
 #define ___GAME_CONTROL_SYSTEM_H___
 
- // ===== ƒCƒ“ƒNƒ‹[ƒh =====
+ // ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
 #include "ECS/ECS.h"
-#include "Scene/SceneManager.h" // ƒV[ƒ“‘JˆÚ‚Ì‚½‚ß
+#include "Scene/SceneManager.h" // ã‚·ãƒ¼ãƒ³é·ç§»ã®ãŸã‚
 #include <unordered_map>
 #include <DirectXMath.h>
 
 /**
  * @class GameControlSystem
- * @brief ƒQ[ƒ€ƒI[ƒo[/ƒNƒŠƒA”»’è‚ğó‚¯æ‚èAƒV[ƒ“‘JˆÚiƒŠƒgƒ‰ƒC/ŸƒXƒe[ƒWj‚ğÀs‚·‚é
- * ˆ—‘ÎÛ: GameStateComponent ‚ğ‚Â Entity
+ * @brief ã‚²ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼/ã‚¯ãƒªã‚¢åˆ¤å®šã‚’å—ã‘å–ã‚Šã€ã‚·ãƒ¼ãƒ³é·ç§»ï¼ˆãƒªãƒˆãƒ©ã‚¤/æ¬¡ã‚¹ãƒ†ãƒ¼ã‚¸ï¼‰ã‚’å®Ÿè¡Œã™ã‚‹
+ * å‡¦ç†å¯¾è±¡: GameStateComponent ã‚’æŒã¤ Entity
  */
 class GameControlSystem
     : public ECS::System
@@ -54,11 +54,11 @@ public:
     void TriggerCaughtSequence(ECS::EntityID guardID);
 
 private:
-    // --- “à•”ˆ——pƒwƒ‹ƒp[ŠÖ” ---
-    void UpdateTimerAndRules(float deltaTime, ECS::EntityID controllerID); // ŠÔEŸ”s”»’è
-    void HandleInputAndStateSwitch(ECS::EntityID controllerID);            // “ü—ÍE‹“_Ø‘Ö
-    void CheckSceneTransition(ECS::EntityID controllerID);                 // ƒV[ƒ“‘JˆÚ
-    void UpdateTopViewUI(ECS::EntityID controllerID);                      // UIXV
+    // --- å†…éƒ¨å‡¦ç†ç”¨ãƒ˜ãƒ«ãƒ‘ãƒ¼é–¢æ•° ---
+    void UpdateTimerAndRules(float deltaTime, ECS::EntityID controllerID); // æ™‚é–“ãƒ»å‹æ•—åˆ¤å®š
+    void HandleInputAndStateSwitch(ECS::EntityID controllerID);            // å…¥åŠ›ãƒ»è¦–ç‚¹åˆ‡æ›¿
+    void CheckSceneTransition(ECS::EntityID controllerID);                 // ã‚·ãƒ¼ãƒ³é·ç§»
+    void UpdateTopViewUI(ECS::EntityID controllerID);                      // UIæ›´æ–°
     void UpdateCaughtSequence(float deltaTime, ECS::EntityID controllerID);
 
     void UpdateIcon(ECS::EntityID target, std::string iconAsset, DirectX::XMFLOAT4 color);
@@ -67,13 +67,19 @@ private:
     void InitGameUI();
     void UpdateGameUI(float deltaTime, ECS::EntityID controllerID);
 
-    // À•W•ÏŠ·ƒwƒ‹ƒp[
+    // --- MapGimmick (touch to open TopView map) ---
+    void CheckMapGimmickTrigger(ECS::EntityID controllerID);
+    void ApplyModeVisuals(ECS::EntityID controllerID);
+    bool IsAABBOverlap(ECS::EntityID a, ECS::EntityID b);
+
+
+    // åº§æ¨™å¤‰æ›ãƒ˜ãƒ«ãƒ‘ãƒ¼
     DirectX::XMFLOAT3 GetScreenPosition(
         const DirectX::XMFLOAT3& worldPos,
         const DirectX::XMMATRIX& viewProj
     );
 
-    // ƒXƒLƒƒƒ“ƒ‰ƒCƒ“ÚG‚Ìƒ\ƒi[”­¶ˆ—
+    // ã‚¹ã‚­ãƒ£ãƒ³ãƒ©ã‚¤ãƒ³æ¥è§¦æ™‚ã®ã‚½ãƒŠãƒ¼ç™ºç”Ÿå‡¦ç†
     void SpawnSmallSonar(
         const DirectX::XMFLOAT3& screenPos,
         DirectX::XMFLOAT4 color
@@ -91,21 +97,21 @@ private:
 
     ECS::EntityID FindExitDoor();
 
-    // UIƒAƒCƒRƒ“ŠÇ——pƒ}ƒbƒv (‘ÎÛEntityID -> ƒAƒCƒRƒ“EntityID)
+    // UIã‚¢ã‚¤ã‚³ãƒ³ç®¡ç†ç”¨ãƒãƒƒãƒ— (å¯¾è±¡EntityID -> ã‚¢ã‚¤ã‚³ãƒ³EntityID)
     std::unordered_map<ECS::EntityID, ECS::EntityID> m_iconMap;
-    // ƒOƒŠƒbƒh‚È‚Ç‚ÌƒGƒtƒFƒNƒg—pEntityŠÇ—
+    // ã‚°ãƒªãƒƒãƒ‰ãªã©ã®ã‚¨ãƒ•ã‚§ã‚¯ãƒˆç”¨Entityç®¡ç†
     std::vector<ECS::EntityID> m_topViewEffects;
-    float m_sonarSpawnTimer = 0.0f; // ƒ\ƒi[”­¶ŠÔŠuŠÇ—
-    const float SONAR_INTERVAL = 2.0f; // 1•b‚²‚Æ‚É”­¶
+    float m_sonarSpawnTimer = 0.0f; // ã‚½ãƒŠãƒ¼ç™ºç”Ÿé–“éš”ç®¡ç†
+    const float SONAR_INTERVAL = 2.0f; // 1ç§’ã”ã¨ã«ç™ºç”Ÿ
 
-    // UIŠÇ——p
+    // UIç®¡ç†ç”¨
     bool m_uiInitialized = false;
-    std::vector<ECS::EntityID> m_timerDigits; // ƒ^ƒCƒ€•\¦—p‚ÌŒ…EntityƒŠƒXƒg
-    std::vector<ECS::EntityID> m_itemHUDs;    // ƒAƒCƒeƒ€HUD‚ÌEntityƒŠƒXƒg
+    std::vector<ECS::EntityID> m_timerDigits; // ã‚¿ã‚¤ãƒ è¡¨ç¤ºç”¨ã®æ¡Entityãƒªã‚¹ãƒˆ
+    std::vector<ECS::EntityID> m_itemHUDs;    // ã‚¢ã‚¤ãƒ†ãƒ HUDã®Entityãƒªã‚¹ãƒˆ
 
-    // •ß‚Ü‚¦‚½Œx”õˆõ‚ÌID‚ğˆê•Û‘¶—p
+    // æ•ã¾ãˆãŸè­¦å‚™å“¡ã®IDã‚’ä¸€æ™‚ä¿å­˜ç”¨
     ECS::EntityID m_catchingGuardID = ECS::INVALID_ENTITY_ID;
-    bool m_caughtAnimPlayed = false; // •ßŠlƒAƒjƒ[ƒVƒ‡ƒ“Ä¶Ï‚İƒtƒ‰ƒO
+    bool m_caughtAnimPlayed = false; // æ•ç²ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å†ç”Ÿæ¸ˆã¿ãƒ•ãƒ©ã‚°
 };
 
 #endif // !___GAME_CONTROL_SYSTEM_H___

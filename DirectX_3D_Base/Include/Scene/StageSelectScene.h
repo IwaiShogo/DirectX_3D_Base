@@ -170,6 +170,11 @@ private:
 	ECS::EntityID m_stageMapEntity = (ECS::EntityID)-1;
 	ECS::EntityID m_stageMapSiroEntity = (ECS::EntityID)-1; // 城(手前)
 
+	// ===== Stage Map Texture (per-stage) =====
+	int StageIdToStageNo(const std::string& stageId) const;
+	std::string GetStageMapTextureAssetId(int stageNo) const;
+	void ApplyStageMapTextureByStageId(const std::string& stageId);
+
 	// ===== Shooting Star instance =====
 	struct ShootingStarInstance
 	{

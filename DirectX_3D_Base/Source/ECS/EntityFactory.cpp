@@ -360,6 +360,39 @@ EntityID ECS::EntityFactory::CreateTaser(Coordinator* coordinator, const DirectX
 	return taser;
 }
 
+
+
+EntityID ECS::EntityFactory::CreateMapGimmick(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+{
+	ECS::EntityID gimmick = coordinator->CreateEntity(
+		TagComponent(
+			/* Tag */    "map_gimmick"
+		),
+		TransformComponent(
+			/* Position */	position,
+			/* Rotation */	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale */	XMFLOAT3(3.0f, 3.0f, 3.0f)
+		),
+		RenderComponent(
+			/* MeshType */	MESH_NONE,
+			/* Color */	XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
+		),
+		RigidBodyComponent(
+			/* Velocity */		XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Acceleration */	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass */			0.0f,
+			/* Friction */		0.5f,
+			/* Restitution */	0.1f
+		),
+		CollisionComponent(
+			/* Size */			XMFLOAT3(2.5f, 2.5f, 2.5f),
+			/* Offset */		XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType */	COLLIDER_STATIC
+		)
+	);
+
+	return gimmick;
+}
 EntityID ECS::EntityFactory::CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume)
 {
 	EntityID entity = coordinator->CreateEntity(
@@ -516,3 +549,4 @@ EntityID ECS::EntityFactory::CreateEnemySpawner(Coordinator* coordinator, const 
 	);
 	return spawner;
 }
+
