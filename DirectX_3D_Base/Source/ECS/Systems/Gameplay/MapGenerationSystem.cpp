@@ -599,7 +599,7 @@ end_generate_loop:;
     std::shuffle(availablePathPositions.begin(), availablePathPositions.end(), s_generator);
 
     // 1. アイテム (config.itemCount) の配置
-    const int ITEMS_TO_PLACE = config.itemCount;
+    const int ITEMS_TO_PLACE = config.items.size();
     trackerComp.totalItems = ITEMS_TO_PLACE;
 
     // 配置可能な数が足りない場合は、リストのサイズを上限とする
@@ -627,24 +627,53 @@ end_generate_loop:;
         guardsPlaced++;
     }
 
+    //テーザーの配置
+    const int TASER_TO_PLACE = config.taserCount;
+    int taserPlaced = 0;
+    while (taserPlaced < TASER_TO_PLACE && !availablePathPositions.empty())
+    {
+        XMINT2 pos = availablePathPositions.back();
+        availablePathPositions.pop_back();
+
+        mapComp.grid[pos.y][pos.x].type = CellType::Taser;
+        taserPlaced++;
+    }
+    // テレポートの配置
+    int teleportPairsPlaced = 0;
+    while (teleportPairsPlaced < config.teleportPairCount && availablePathPositions.size() >= 2)
+    {
+        // 入口と出口の2マスをリストから取得
+        DirectX::XMINT2 posA = availablePathPositions.back();
+        availablePathPositions.pop_back();
+        DirectX::XMINT2 posB = availablePathPositions.back();
+        availablePathPositions.pop_back();
+
+        // グリッドにテレポート属性を設定
+        mapComp.grid[posA.y][posA.x].type = CellType::Teleporter;
+        mapComp.grid[posB.y][posB.x].type = CellType::Teleporter;
+
+        mapComp.teleportPairs.push_back({ posA, posB });
+        teleportPairsPlaced++;
+    }
+
     // 3. その他のギミック配置 (config.gimmickCounts を利用)
     // NOTE: CellType::Gimmick の処理はMapComponent.hにCellTypeを追加した後で実装
 
-    for (const auto& pair : config.gimmickCounts)
-    {
-        CellType gimmickType = pair.first;
-        int count = pair.second;
+    //for (const auto& pair : config.gimmicks.size())
+    //{
+    //    CellType gimmickType = pair.first;
+    //    int count = pair.second;
 
-        // availablePathPositionsが空になるまで、配置を試みる
-        for (int i = 0; i < count && !availablePathPositions.empty(); ++i)
-        {
-            XMINT2 pos = availablePathPositions.back();
-            availablePathPositions.pop_back();
+    //    // availablePathPositionsが空になるまで、配置を試みる
+    //    for (int i = 0; i < count && !availablePathPositions.empty(); ++i)
+    //    {
+    //        XMINT2 pos = availablePathPositions.back();
+    //        availablePathPositions.pop_back();
 
-            mapComp.grid[pos.y][pos.x].type = gimmickType;
-            // 必要に応じて、追加のギミック位置リストをMapComponentに追加可能
-        }
-    }
+    //        mapComp.grid[pos.y][pos.x].type = gimmickType;
+    //        // 必要に応じて、追加のギミック位置リストをMapComponentに追加可能
+    //    }
+    //}
 }
 
 /**
@@ -728,6 +757,12 @@ void MapGenerationSystem::CreateMap(const std::string& stageID)
 
     auto& mapComp = m_coordinator->GetComponent<MapComponent>(mapEntity);
     auto& trackerComp = m_coordinator->GetComponent<ItemTrackerComponent>(mapEntity);
+    auto& stateComp = m_coordinator->GetComponent<GameStateComponent>(mapEntity);
+
+    stateComp.timeLimitStar = config.timeLimitStar;
+    trackerComp.targetItemIDs.clear();
+    mapComp.teleportPairs.clear();
+    mapComp.itemPositions.clear();
 
     // 2. 迷路データの生成
     // MapComponent内に設定情報がコピーされる
@@ -737,8 +772,14 @@ void MapGenerationSystem::CreateMap(const std::string& stageID)
     mapComp.wallHeight = config.wallHeight;
     mapComp.startPos = { 1, 1 };
     mapComp.goalPos = { config.gridSizeX - 2, config.gridSizeY - 2 };
+    trackerComp.useOrderedCollection = config.useOrderedCollection;
+    trackerComp.currentTargetOrder = 1;
+    trackerComp.collectedItems = 0;
+    trackerComp.totalItems = 0;
 
     MazeGenerator::Generate(mapComp, trackerComp, config);
+
+    m_itemSpawnIndex = 0;
 
     // 3. 3D空間へのEntity配置
     SpawnMapEntities(mapComp, config);
@@ -891,6 +932,10 @@ void MapGenerationSystem::DrawDebugLines()
  */
 void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStageConfig& config)
 {
+    EntityID tracker = FindFirstEntityWithComponent<ItemTrackerComponent>(m_coordinator);
+    auto& trackerComp = m_coordinator->GetComponent<ItemTrackerComponent>(tracker);
+    std::vector<EntityID> teleportEntities;
+
     // configから動的な定数を取得
     const int GRID_SIZE_X = config.gridSizeX;
     const int GRID_SIZE_Y = config.gridSizeY;
@@ -902,6 +947,81 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
     // --------------------------------------------------------------------------------
     // グリッドサイズを動的に変更
     std::vector<std::vector<bool>> processed(GRID_SIZE_Y, std::vector<bool>(GRID_SIZE_X, false));
+    XMINT2 doorGridPos = { -1, -1 };
+
+    // ====================================================================
+    // 0. ドアの生成 (壁より先に配置し、壁生成をブロックする)
+    // ====================================================================
+    auto SpawnDoorAt = [&](XMINT2 targetPos) {
+        int dx[] = { -1, 1, 0, 0 };
+        int dy[] = { 0, 0, -1, 1 };
+        float angles[] = { 90.0f, -90.0f, 0.0f, 180.0f };
+
+        for (int i = 0; i < 4; ++i)
+        {
+            int nx = targetPos.x + dx[i];
+            int ny = targetPos.y + dy[i];
+
+            // グリッド範囲内チェック
+            if (nx >= 0 && nx < GRID_SIZE_X && ny >= 0 && ny < GRID_SIZE_Y)
+            {
+                // 外周かつ壁である場所を探す
+                bool isOuter = (nx == 0 || nx == GRID_SIZE_X - 1 || ny == 0 || ny == GRID_SIZE_Y - 1);
+
+                // ★修正: 外周でなくても、スタート地点の隣接壁ならOKにする（条件緩和）
+                // ただし、部屋の壁ではなく「迷路の外壁」であることを確認したい場合は isOuter を維持
+                // ここではデバッグのため「壁ならOK」としつつ、外周優先にするロジックも考えられるが、
+                // まずは isOuter && Wall で見つかるはず。見つからないなら nx, ny の計算か Wall 判定が怪しい。
+
+                if (isOuter && mapComp.grid[ny][nx].type == CellType::Wall)
+                {
+                    // 座標計算
+                    XMFLOAT3 basePos = GetWorldPosition(nx, ny, config);
+                    XMFLOAT3 centerPos = basePos;
+                    centerPos.x += TILE_SIZE / 2.0f;
+                    centerPos.z += TILE_SIZE / 2.0f;
+
+                    // 1. ドア生成
+                    XMFLOAT3 doorPos = centerPos;
+                    doorPos.y = TILE_SIZE / 2.0f;
+
+                    float radianAngle = DirectX::XMConvertToRadians(angles[i]);
+                    EntityFactory::CreateDoor(m_coordinator, doorPos, radianAngle, true);
+
+                    // 2. ドア直下の床
+                    XMFLOAT3 groundPos = centerPos;
+                    groundPos.y = -0.01f;
+                    EntityFactory::CreateGround(m_coordinator, groundPos, XMFLOAT3(TILE_SIZE, TILE_SIZE, TILE_SIZE));
+
+                    // 3. 外側の花道 (進入路)
+                    for (int k = 1; k <= 3; ++k)
+                    {
+                        XMFLOAT3 outPos = centerPos;
+                        // 方向ベクトルを加算 (dx, dy は -1, 0, 1 なので、TILE_SIZE を掛ける)
+                        outPos.x += (dx[i] * TILE_SIZE) * k;
+                        outPos.z += (dy[i] * TILE_SIZE) * k;
+                        outPos.y = -0.01f;
+                        EntityFactory::CreateGround(m_coordinator, outPos, XMFLOAT3(TILE_SIZE, TILE_SIZE, TILE_SIZE));
+                    }
+
+                    // フラグ更新
+                    processed[ny][nx] = true;
+                    doorGridPos = { nx, ny }; // ★重要: 座標を記憶
+
+                    return; // 生成完了
+                }
+            }
+        }
+        // ループを抜けてもここに来る＝ドア生成失敗
+        printf("Error: Failed to spawn door adjacent to Start(%d, %d)\n", targetPos.x, targetPos.y);
+        };
+
+    // スタート地点の隣接する「外周」にドアを作る
+    // このドアを入場・脱出兼用とする
+    SpawnDoorAt(mapComp.startPos);
+
+    // ゴール地点のドア生成は削除 (兼用するため)
+    // SpawnDoorAt(mapComp.goalPos, false);
 
     // --------------------------------------------------------------------
     // 1. 床Entityの生成
@@ -917,44 +1037,22 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                 continue;
             }
 
-            // X軸方向への結合を試みる (Path/特殊セルは全て床として結合)
-            int endX = x;
-            while (endX + 1 < GRID_SIZE_X && // GRID_SIZE_X を使用
-                !processed[y][endX + 1] &&
-                mapComp.grid[y][endX + 1].type != CellType::Wall &&
-                mapComp.grid[y][endX + 1].type != CellType::Unvisited)
-            {
-                endX++;
-            }
+            // 座標計算
+            XMFLOAT3 basePos = GetWorldPosition(x, y, config);
+            XMFLOAT3 centerPos = basePos;
+            centerPos.x += TILE_SIZE / 2.0f; // マスの中心へ
+            centerPos.z += TILE_SIZE / 2.0f;
+            centerPos.y = -0.01f;
 
-            // 結合 Entityの生成
-            int segmentLength = endX - x + 1;
-            float worldLength = (float)segmentLength * TILE_SIZE;
-
-            // グリッドの左下隅の座標を取得
-            XMFLOAT3 segmentStartPos = GetWorldPosition(x, y, config); // <--- configを渡す
-
-            // Entityの中心座標を計算
-            XMFLOAT3 segmentCenterPos = segmentStartPos;
-            segmentCenterPos.x += worldLength / 2.0f; // Entityの長さの半分をオフセット
-            segmentCenterPos.z += TILE_SIZE / 2.0f;
-
-            // Y座標のオフセット 
-            segmentCenterPos.y = -0.01f;
-
-            // 床 Entityの生成
+            // 床 Entityの生成 (サイズは常に 1x1タイル分)
             EntityFactory::CreateGround(
                 m_coordinator,
-                segmentCenterPos,
-                XMFLOAT3(worldLength, TILE_SIZE, TILE_SIZE) // X: 長さ, Y: TILE_SIZE (厚さ), Z: TILE_SIZE (幅)
+                centerPos,
+                XMFLOAT3(TILE_SIZE, TILE_SIZE, TILE_SIZE) // X, Z ともに TILE_SIZE 固定
             );
 
-            // 処理済みフラグの更新
-            for (int i = x; i <= endX; ++i)
-            {
-                processed[y][i] = true;
-            }
-            x = endX;
+            // このマスを処理済みにする
+            processed[y][x] = true;
         }
     }
 
@@ -965,57 +1063,41 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
     // 処理済みフラグをリセットして壁の結合に再利用
     processed.assign(GRID_SIZE_Y, std::vector<bool>(GRID_SIZE_X, false));
 
+    if (doorGridPos.x != -1 && doorGridPos.y != -1)
+    {
+        processed[doorGridPos.y][doorGridPos.x] = true;
+    }
+
     for (int y = 0; y < GRID_SIZE_Y; ++y)
     {
         for (int x = 0; x < GRID_SIZE_X; ++x)
         {
             if (mapComp.grid[y][x].type != CellType::Wall || processed[y][x]) continue;
 
-            // X軸方向への結合を試みる (Wallセルのみ)
-            int endX = x;
-            while (endX + 1 < GRID_SIZE_X && // GRID_SIZE_X を使用
-                !processed[y][endX + 1] &&
-                mapComp.grid[y][endX + 1].type == CellType::Wall)
-            {
-                endX++;
-            }
-
-            // 壁 Entityの生成
-            int segmentLength = endX - x + 1;
-            float worldLength = (float)segmentLength * TILE_SIZE;
-
-            // グリッドの左下隅の座標を取得
-            XMFLOAT3 segmentStartPos = GetWorldPosition(x, y, config); // <--- configを渡す
-
-            // Entityの中心座標を計算
-            XMFLOAT3 segmentCenterPos = segmentStartPos;
-            segmentCenterPos.x += worldLength / 2.0f; // Entityの長さの半分をオフセット
-
-            segmentCenterPos.z += TILE_SIZE / 2.0f;
-
-            // Y座標のオフセット 
-            segmentCenterPos.y = WALL_HEIGHT / 2.0f;
+            // 座標計算
+            XMFLOAT3 basePos = GetWorldPosition(x, y, config);
+            XMFLOAT3 centerPos = basePos;
+            centerPos.x += TILE_SIZE / 2.0f;
+            centerPos.z += TILE_SIZE / 2.0f;
+            centerPos.y = WALL_HEIGHT / 2.0f;
 
             // 壁 Entityの生成
             EntityFactory::CreateWall(
                 m_coordinator,
-                segmentCenterPos,
-                XMFLOAT3(worldLength, WALL_HEIGHT, TILE_SIZE), // X: 長さ, Y: 高さ, Z: TILE_SIZE (厚さ)
-                0.0f // 回転なし
+                centerPos,
+                XMFLOAT3(TILE_SIZE, WALL_HEIGHT, TILE_SIZE), // X, Z ともに TILE_SIZE 固定
+                0.0f
             );
 
-            // 処理済みフラグの更新
-            for (int i = x; i <= endX; ++i)
-            {
-                processed[y][i] = true;
-            }
-            x = endX;
+            // このマスを処理済みにする
+            processed[y][x] = true;
         }
     }
 
     // --------------------------------------------------------------------
     // 3. 特殊 Entityの配置（単独セル）
     // --------------------------------------------------------------------
+
     for (int y = 0; y < GRID_SIZE_Y; ++y) // GRID_SIZE_Y を使用
     {
         for (int x = 0; x < GRID_SIZE_X; ++x) // GRID_SIZE_X を使用
@@ -1028,6 +1110,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
             case CellType::Goal:
             case CellType::Item:
             case CellType::Guard:
+            case CellType::Taser:
                 // TODO: CellType::Room に配置するギミックがある場合はここに追加
                 // case CellType::Teleporter: 
             {
@@ -1038,21 +1121,49 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                 cellCenter.z += TILE_SIZE / 2.0f;
 
                 // 特殊オブジェクトのY座標を床の表面に合わせる (TILE_SIZE / 2.0f = プレイヤー/アイテムの中心)
-                cellCenter.y = TILE_SIZE / 2.0f;
+                cellCenter.y = TILE_SIZE / 1.3f;
 
                 if (cell.type == CellType::Start) {
                     EntityFactory::CreatePlayer(m_coordinator, cellCenter);
-                    EntityFactory::CreateGoal(m_coordinator, cellCenter);
-                    EntityFactory::CreateGuard(m_coordinator, cellCenter);
+                    //EntityFactory::CreateGoal(m_coordinator, cellCenter);
+                    EntityFactory::CreateEnemySpawner(m_coordinator, cellCenter, 3.0f);
                 }
                 else if (cell.type == CellType::Goal) {
                     //EntityFactory::CreateGoal(m_coordinator, cellCenter);
                 }
                 else if (cell.type == CellType::Item) {
-                    EntityFactory::CreateCollectable(m_coordinator, cellCenter);
+
+                    // configからアイテムリストを取得
+                    std::string itemID = "Unknown";
+                    if (m_itemSpawnIndex < config.items.size()) {
+                        itemID = config.items[m_itemSpawnIndex];
+                    }
+                    else
+                    {
+                        if (!config.items.empty()) itemID = config.items.back();
+                    }
+
+                    trackerComp.targetItemIDs.push_back(itemID);
+
+                    //配列itemPositions内でインデックスを探して順序番号を決める
+                    int orderIndex = 0;
+                    //設定で順序モードが有効な時番号を振る
+                    if (config.useOrderedCollection)
+                    {
+                        orderIndex = m_itemSpawnIndex + 1;
+                    }
+
+                    EntityFactory::CreateCollectable(m_coordinator, cellCenter, orderIndex, itemID);
+
+                    m_itemSpawnIndex++;
                 }
                 else if (cell.type == CellType::Guard) {
                     //EntityFactory::CreateGuard(m_coordinator, cellCenter);
+                }
+                else if (cell.type == CellType::Taser) {
+                    XMFLOAT3 taserPos = cellCenter;
+                    taserPos.y += 0.0f;
+                    EntityFactory::CreateTaser(m_coordinator, taserPos);
                 }
             }
             break;
@@ -1060,5 +1171,31 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                 break;
             }
         }
+    }
+    for (const auto& pair : mapComp.teleportPairs)
+    {
+
+        XMFLOAT3 posA = GetWorldPosition(pair.posA.x, pair.posA.y, config);
+        posA.x += config.tileSize / 2.0f; posA.z += config.tileSize / 2.0f;
+        // ★修正: 床の表面（2.5f付近）に出す。少し浮かせて 2.6f に設定
+        posA.y = config.tileSize / 2.0f + 0.2f;
+
+        // B地点も同様に修正
+        XMFLOAT3 posB = GetWorldPosition(pair.posB.x, pair.posB.y, config);
+        posB.x += config.tileSize / 2.0f; posB.z += config.tileSize / 2.0f;
+        posB.y = config.tileSize / 2.0f + 0.2f;
+
+        // エンティティ生成
+        ECS::EntityID entA = EntityFactory::CreateTeleporter(m_coordinator, posA);
+        ECS::EntityID entB = EntityFactory::CreateTeleporter(m_coordinator, posB);
+
+        // ★ここで相互にお互いのIDを targetEntity にセットする
+        auto& compA = m_coordinator->GetComponent<TeleportComponent>(entA);
+        auto& compB = m_coordinator->GetComponent<TeleportComponent>(entB);
+
+        compA.targetEntity = entB;
+        compB.targetEntity = entA;
+
+        printf("[Debug] Teleporter Linked: %d <-> %d\n", entA, entB);
     }
 }

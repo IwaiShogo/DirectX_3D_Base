@@ -1,6 +1,6 @@
-/*****************************************************************//**
+ï»¿/*****************************************************************//**
  * @file	AssetManager.cpp
- * @brief	AssetManagerƒNƒ‰ƒX‚Ì’è‹`‚Æœq‚Ìì¬
+ * @brief	AssetManagerã‚¯ãƒ©ã‚¹ã®å®šç¾©ã¨éª¨å­ã®ä½œæˆ
  * 
  * @details	
  * 
@@ -8,35 +8,36 @@
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  * 
- * @date	2025/11/18	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁF
+ * @date	2025/11/18	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼š
  * 
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
+ * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- XXï¼š
  * 
- * @note	iÈ—ª‰Âj
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
-// ===== ƒCƒ“ƒNƒ‹[ƒh =====
+// ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
 #include "Systems/AssetManager.h"
+#include "Systems/DirectX/ShaderList.h"
 
-// ƒVƒ“ƒOƒ‹ƒgƒ“ƒCƒ“ƒXƒ^ƒ“ƒX‚Ì‰Šú‰»
+// ã‚·ãƒ³ã‚°ãƒ«ãƒˆãƒ³ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã®åˆæœŸåŒ–
 Asset::AssetManager* Asset::AssetManager::s_instance = nullptr;
 
 namespace Asset
 {
 	// ----------------------------------------
-	// ƒwƒ‹ƒp[ŠÖ”
+	// ãƒ˜ãƒ«ãƒ‘ãƒ¼é–¢æ•°
 	// ----------------------------------------
 	/**
 	 * [bool - LoadAssetListInternal]
-	 * @brief	”Ä—p“I‚ÈCSV“Ç‚İ‚İ‚ÆAssetInfo‚Ö‚Ì•ÏŠ·Aƒ}ƒbƒv‚Ö‚ÌŠi”[‚ğs‚¤ƒwƒ‹ƒp[ŠÖ”B
+	 * @brief	æ±ç”¨çš„ãªCSVèª­ã¿è¾¼ã¿ã¨AssetInfoã¸ã®å¤‰æ›ã€ãƒãƒƒãƒ—ã¸ã®æ ¼ç´ã‚’è¡Œã†ãƒ˜ãƒ«ãƒ‘ãƒ¼é–¢æ•°ã€‚
 	 * 
-	 * @param	[in] csvPath “Ç‚İ‚ŞCSVƒtƒ@ƒCƒ‹‚ÌƒpƒX
-	 * @param	[in] targetMap Ši”[‘ÎÛ‚Ìƒ}ƒbƒvim_modelMap‚È‚Çj
-	 * @param	[in] type ƒAƒZƒbƒg‚Ìí—ŞiAssetType::Model‚È‚Çj
-	 * @return	true.¬Œ÷ false.¸”s
-	 * @note	iÈ—ª‰Âj
+	 * @param	[in] csvPath èª­ã¿è¾¼ã‚€CSVãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ‘ã‚¹
+	 * @param	[in] targetMap æ ¼ç´å¯¾è±¡ã®ãƒãƒƒãƒ—ï¼ˆm_modelMapãªã©ï¼‰
+	 * @param	[in] type ã‚¢ã‚»ãƒƒãƒˆã®ç¨®é¡ï¼ˆAssetType::Modelãªã©ï¼‰
+	 * @return	true.æˆåŠŸ false.å¤±æ•—
+	 * @note	ï¼ˆçœç•¥å¯ï¼‰
 	 */
 	bool AssetManager::LoadAssetListInternal(
 		const std::string& csvPath,
@@ -48,15 +49,15 @@ namespace Asset
 
 		try
 		{
-			// CSVLoader::Load‚ğg‚Á‚Äƒf[ƒ^‚ğæ“¾
+			// CSVLoader::Loadã‚’ä½¿ã£ã¦ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—
 			Utility::CSVLoader::Data csvData = Utility::CSVLoader::Load(csvPath);
 
-			// ƒwƒbƒ_[s‚ğƒXƒLƒbƒvi1s–Új
+			// ãƒ˜ãƒƒãƒ€ãƒ¼è¡Œã‚’ã‚¹ã‚­ãƒƒãƒ—ï¼ˆ1è¡Œç›®ï¼‰
 			for (size_t i = 1; i < csvData.size(); ++i)
 			{
 				const auto& row = csvData[i];
 
-				// •K—v‚ÈƒJƒ‰ƒ€”iAssetID, AssetType, FilePathj‚ª‘µ‚Á‚Ä‚¢‚é‚©Šm”F
+				// å¿…è¦ãªã‚«ãƒ©ãƒ æ•°ï¼ˆAssetID, AssetType, FilePathï¼‰ãŒæƒã£ã¦ã„ã‚‹ã‹ç¢ºèª
 				if (row.size() < 3)
 				{
 					std::cerr << "Warning: Skipping row " << i + 1 << " in " << csvPath
@@ -66,10 +67,10 @@ namespace Asset
 
 				AssetInfo info;
 				info.assetID = row[0];
-				info.filePath = row[2]; // 3—ñ–Ú (ƒCƒ“ƒfƒbƒNƒX2) ‚ªƒtƒ@ƒCƒ‹ƒpƒX
-				info.type = type;       // ŒÄ‚Ño‚µ‘¤‚Åw’è‚³‚ê‚½ƒ^ƒCƒv‚ğİ’è
+				info.filePath = row[2]; // 3åˆ—ç›® (ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹2) ãŒãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹
+				info.type = type;       // å‘¼ã³å‡ºã—å´ã§æŒ‡å®šã•ã‚ŒãŸã‚¿ã‚¤ãƒ—ã‚’è¨­å®š
 
-				// ID‚ªŠù‚É“o˜^‚³‚ê‚Ä‚¢‚È‚¢‚©Šm”Fid•¡–h~j
+				// IDãŒæ—¢ã«ç™»éŒ²ã•ã‚Œã¦ã„ãªã„ã‹ç¢ºèªï¼ˆé‡è¤‡é˜²æ­¢ï¼‰
 				if (targetMap.count(info.assetID))
 				{
 					std::cerr << "Warning: Duplicate Asset ID found: " << info.assetID
@@ -96,7 +97,7 @@ namespace Asset
 	}
 
 	// ----------------------------------------
-	// CSV“Ç‚İ‚İŠÖ˜A‚ÌƒCƒ“ƒ^[ƒtƒF[ƒX
+	// CSVèª­ã¿è¾¼ã¿é–¢é€£ã®ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ãƒ¼ã‚¹
 	// ----------------------------------------
 	bool AssetManager::LoadModelList(const std::string& csvPath)
 	{
@@ -113,8 +114,18 @@ namespace Asset
 		return LoadAssetListInternal(csvPath, m_soundMap, AssetType::Sound);
 	}
 
+	bool AssetManager::LoadAnimationList(const std::string& csvPath)
+	{
+		return LoadAssetListInternal(csvPath, m_animationMap, AssetType::Animation);
+	}
+
+	bool AssetManager::LoadEffectList(const std::string& csvPath)
+	{
+		return LoadAssetListInternal(csvPath, m_effectMap, AssetType::Effect);
+	}
+
 	// ----------------------------------------
-	// ƒAƒZƒbƒgƒpƒXæ“¾ƒCƒ“ƒ^[ƒtƒFƒX
+	// ã‚¢ã‚»ãƒƒãƒˆãƒ‘ã‚¹å–å¾—ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ã‚¹
 	// ----------------------------------------
 	std::string AssetManager::GetModelPath(const std::string& assetID) const
 	{
@@ -148,9 +159,31 @@ namespace Asset
 		std::cerr << "Error: Model Asset ID '" << assetID << "' not found." << std::endl;
 		return "";
 	}
+
+	std::string AssetManager::GetAnimationPath(const std::string& assetID) const
+	{
+		auto it = m_animationMap.find(assetID);
+		if (it != m_animationMap.end())
+		{
+			return it->second.filePath;
+		}
+		std::cerr << "Error: Animation Asset ID '" << assetID << "' not found." << std::endl;
+		return "";
+	}
+
+	std::string AssetManager::GetEffectPath(const std::string& assetID) const
+	{
+		auto it = m_effectMap.find(assetID);
+		if (it != m_effectMap.end())
+		{
+			return it->second.filePath;
+		}
+		std::cerr << "Error: Effect Asset ID '" << assetID << "' not found." << std::endl;
+		return "";
+	}
 	
 	// ----------------------------------------
-	// ƒŠƒ\[ƒXƒ[ƒhƒCƒ“ƒ^ƒtƒF[ƒX
+	// ãƒªã‚½ãƒ¼ã‚¹ãƒ­ãƒ¼ãƒ‰ã‚¤ãƒ³ã‚¿ãƒ•ã‚§ãƒ¼ã‚¹
 	// ----------------------------------------
 	AssetInfo* AssetManager::LoadModel(const std::string& assetID, float scale, Model::Flip flip)
 	{
@@ -163,28 +196,28 @@ namespace Asset
 
 		AssetInfo& info = it->second;
 
-		// yƒLƒƒƒbƒVƒ…ƒ`ƒFƒbƒNz: Šù‚Éƒ[ƒhÏ‚İ‚È‚ç‚»‚ê‚ğ•Ô‚·
+		// ã€ã‚­ãƒ£ãƒƒã‚·ãƒ¥ãƒã‚§ãƒƒã‚¯ã€‘: æ—¢ã«ãƒ­ãƒ¼ãƒ‰æ¸ˆã¿ãªã‚‰ãã‚Œã‚’è¿”ã™
 		if (info.pResource != nullptr)
 		{
 			// std::cout << "Model '" << assetID << "' already loaded. Returning cached resource." << std::endl;
 			return &info;
 		}
 
-		// yV‹Kƒ[ƒhz: ƒtƒ@ƒCƒ‹ƒpƒX‚ğæ“¾‚µAƒ[ƒh‚·‚é
+		// ã€æ–°è¦ãƒ­ãƒ¼ãƒ‰ã€‘: ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹ã‚’å–å¾—ã—ã€ãƒ­ãƒ¼ãƒ‰ã™ã‚‹
 		const std::string& filePath = info.filePath;
 
 		Model* newModel = new Model();
 
 		if (newModel->Load(filePath.c_str(), scale, flip))
 		{
-			info.pResource = newModel; // ¬Œ÷‚µ‚½‚çƒ|ƒCƒ“ƒ^‚ğƒLƒƒƒbƒVƒ…
+			info.pResource = newModel; // æˆåŠŸã—ãŸã‚‰ãƒã‚¤ãƒ³ã‚¿ã‚’ã‚­ãƒ£ãƒƒã‚·ãƒ¥
 			std::cout << "Model '" << assetID << "' loaded successfully from " << filePath << std::endl;
 			return &info;
 		}
 		else
 		{
 			std::cerr << "Error: Failed to load model file: " << filePath << std::endl;
-			delete newModel; // ƒ[ƒh¸”s‚ÍƒCƒ“ƒXƒ^ƒ“ƒX‚ğ‰ğ•ú
+			delete newModel; // ãƒ­ãƒ¼ãƒ‰å¤±æ•—æ™‚ã¯ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’è§£æ”¾
 			return nullptr;
 		}
 	}
@@ -200,31 +233,31 @@ namespace Asset
 
 		AssetInfo& info = it->second;
 
-		// yƒLƒƒƒbƒVƒ…ƒ`ƒFƒbƒNz: Šù‚Éƒ[ƒhÏ‚İ‚È‚ç‚»‚ê‚ğ•Ô‚·
+		// ã€ã‚­ãƒ£ãƒƒã‚·ãƒ¥ãƒã‚§ãƒƒã‚¯ã€‘: æ—¢ã«ãƒ­ãƒ¼ãƒ‰æ¸ˆã¿ãªã‚‰ãã‚Œã‚’è¿”ã™
 		if (info.pResource != nullptr)
 		{
 			return &info;
 		}
 
-		// yV‹Kƒ[ƒhz: ƒtƒ@ƒCƒ‹ƒpƒX‚ğæ“¾‚µATexture‚ğƒ[ƒh‚·‚é
+		// ã€æ–°è¦ãƒ­ãƒ¼ãƒ‰ã€‘: ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹ã‚’å–å¾—ã—ã€Textureã‚’ãƒ­ãƒ¼ãƒ‰ã™ã‚‹
 		const std::string& filePath = info.filePath;
 
-		// Texture ‚Íƒq[ƒv‚ÉŠm•Û‚µApResource ‚ÉŠi”[‚·‚é
-		// TextureƒNƒ‰ƒX‚ªAƒŠƒ\[ƒX‰ğ•ú‚ğƒfƒXƒgƒ‰ƒNƒ^‚Å’S‚¤‚±‚Æ‚ğ‘O’ñ‚Æ‚µ‚Ü‚·B
+		// Texture ã¯ãƒ’ãƒ¼ãƒ—ã«ç¢ºä¿ã—ã€pResource ã«æ ¼ç´ã™ã‚‹
+		// Textureã‚¯ãƒ©ã‚¹ãŒã€ãƒªã‚½ãƒ¼ã‚¹è§£æ”¾ã‚’ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ã§æ‹…ã†ã“ã¨ã‚’å‰æã¨ã—ã¾ã™ã€‚
 		Texture* newTexture = new Texture();
 
-		// Texture::Load() ‚ÌƒVƒOƒlƒ`ƒƒ‚ğ‰¼’è (Texture.h‚Ì\‘¢‚ÉˆË‘¶)
+		// Texture::Load() ã®ã‚·ã‚°ãƒãƒãƒ£ã‚’ä»®å®š (Texture.hã®æ§‹é€ ã«ä¾å­˜)
 		HRESULT hr = newTexture->Create(filePath.c_str());
 		if (!hr)
 		{
-			info.pResource = newTexture; // ¬Œ÷‚µ‚½‚çƒ|ƒCƒ“ƒ^‚ğƒLƒƒƒbƒVƒ… (void*)
+			info.pResource = newTexture; // æˆåŠŸã—ãŸã‚‰ãƒã‚¤ãƒ³ã‚¿ã‚’ã‚­ãƒ£ãƒƒã‚·ãƒ¥ (void*)
 			std::cout << "Texture '" << assetID << "' loaded successfully from " << filePath << std::endl;
 			return &info;
 		}
 		else
 		{
 			std::cerr << "Error: Failed to load texture file: " << filePath << std::endl;
-			delete newTexture; // ƒ[ƒh¸”s‚ÍƒCƒ“ƒXƒ^ƒ“ƒX‚ğ‰ğ•ú
+			delete newTexture; // ãƒ­ãƒ¼ãƒ‰å¤±æ•—æ™‚ã¯ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’è§£æ”¾
 			return nullptr;
 		}
 	}
@@ -240,41 +273,84 @@ namespace Asset
 
 		AssetInfo& info = it->second;
 
-		// yƒLƒƒƒbƒVƒ…ƒ`ƒFƒbƒNzFŠù‚Éƒ[ƒhÏ‚İ‚È‚ç‚»‚ê‚ğ•Ô‚·
+		// ã€ã‚­ãƒ£ãƒƒã‚·ãƒ¥ãƒã‚§ãƒƒã‚¯ã€‘ï¼šæ—¢ã«ãƒ­ãƒ¼ãƒ‰æ¸ˆã¿ãªã‚‰ãã‚Œã‚’è¿”ã™
 		if (info.pResource != nullptr)
 		{
 			return &info;
 		}
 
-		// yV‹Kƒ[ƒhz: ƒtƒ@ƒCƒ‹ƒpƒX‚ğæ“¾‚µASoundEffect‚ğƒ[ƒh‚·‚é
+		// ã€æ–°è¦ãƒ­ãƒ¼ãƒ‰ã€‘: ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹ã‚’å–å¾—ã—ã€SoundEffectã‚’ãƒ­ãƒ¼ãƒ‰ã™ã‚‹
 		const std::string& filePath = info.filePath;
 
-		// SoundEffect ‚Íƒq[ƒv‚ÉŠm•Û‚µApResource ‚ÉŠi”[‚·‚é
+		// SoundEffect ã¯ãƒ’ãƒ¼ãƒ—ã«ç¢ºä¿ã—ã€pResource ã«æ ¼ç´ã™ã‚‹
 		Audio::SoundEffect* newSound = new Audio::SoundEffect();
 
- 		if (newSound->Load(filePath)) // SoundEffect::Load()‚ğŒÄ‚Ño‚·
+ 		if (newSound->Load(filePath)) // SoundEffect::Load()ã‚’å‘¼ã³å‡ºã™
 		{
-			info.pResource = newSound; // ¬Œ÷‚µ‚½‚çƒ|ƒCƒ“ƒ^‚ğƒLƒƒƒbƒVƒ… (void*)
+			info.pResource = newSound; // æˆåŠŸã—ãŸã‚‰ãƒã‚¤ãƒ³ã‚¿ã‚’ã‚­ãƒ£ãƒƒã‚·ãƒ¥ (void*)
 			std::cout << "Sound '" << assetID << "' loaded successfully from " << filePath << std::endl;
 			return &info;
 		}
 		else
 		{
 			std::cerr << "Error: Failed to load sound file: " << filePath << std::endl;
-			delete newSound; // ƒ[ƒh¸”s‚ÍƒCƒ“ƒXƒ^ƒ“ƒX‚ğ‰ğ•ú
+			delete newSound; // ãƒ­ãƒ¼ãƒ‰å¤±æ•—æ™‚ã¯ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’è§£æ”¾
 			return nullptr;
 		}
 	}
 
+	Effekseer::EffectRef AssetManager::LoadEffect(const std::string& assetID)
+	{
+		// 1. æ—¢ã«ãƒ­ãƒ¼ãƒ‰æ¸ˆã¿ãªã‚‰ãƒãƒƒãƒ—ã‹ã‚‰è¿”ã™
+		auto it = m_effectRefMap.find(assetID);
+		if (it != m_effectRefMap.end())
+		{
+			return it->second;
+		}
+
+		// 2. CSVæƒ…å ±ã‹ã‚‰ãƒ‘ã‚¹ã‚’å–å¾—
+		auto infoIt = m_effectMap.find(assetID); // ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‘ã‚¹ç”¨ãƒãƒƒãƒ—
+		if (infoIt == m_effectMap.end())
+		{
+			std::cerr << "Error: Effect Asset ID '" << assetID << "' not registered." << std::endl;
+			return nullptr;
+		}
+
+		if (m_effekseerManager == nullptr)
+		{
+			return nullptr;
+		}
+
+		const std::string& filePath = infoIt->second.filePath;
+		std::wstring wFilePath(filePath.begin(), filePath.end());
+
+		// 3. ãƒ­ãƒ¼ãƒ‰ (ã‚¹ãƒãƒ¼ãƒˆãƒã‚¤ãƒ³ã‚¿ãŒè¿”ã‚‹)
+		Effekseer::EffectRef effect = Effekseer::Effect::Create(m_effekseerManager, (const char16_t*)wFilePath.c_str());
+
+		if (effect != nullptr)
+		{
+			// 4. ãƒãƒƒãƒ—ã«ä¿å­˜ (å‚ç…§ã‚«ã‚¦ãƒ³ãƒˆ+1)
+			m_effectRefMap[assetID] = effect;
+
+			// AssetInfoã®pResourceã¯ä½¿ã‚ãªã„ (nullptrã®ã¾ã¾ã«ã™ã‚‹ã‹ã€ç›®å°ã‚’å…¥ã‚Œã‚‹)
+			infoIt->second.pResource = (void*)1;
+
+			std::cout << "Effect '" << assetID << "' loaded." << std::endl;
+			return effect;
+		}
+
+		return nullptr;
+	}
+
 	// ----------------------------------------
-	// ƒLƒƒƒbƒVƒ…‰ğ•úŠÖ”
+	// ã‚­ãƒ£ãƒƒã‚·ãƒ¥è§£æ”¾é–¢æ•°
 	// ----------------------------------------
 	void AssetManager::UnloadAll()
 	{
 		std::cout << "AssetManager: Starting resource unloading..." << std::endl;
 
 		// ----------------------------------------------------
-		// ƒwƒ‹ƒp[ƒeƒ“ƒvƒŒ[ƒg‚ğg—p‚µ‚Ä‰ğ•úˆ—‚ğ‹¤’Ê‰»
+		// ãƒ˜ãƒ«ãƒ‘ãƒ¼ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆã‚’ä½¿ç”¨ã—ã¦è§£æ”¾å‡¦ç†ã‚’å…±é€šåŒ–
 		// ----------------------------------------------------
 		auto unloadMap = [this](auto& assetMap, const std::string& typeName) {
 			size_t releasedCount = 0;
@@ -283,7 +359,7 @@ namespace Asset
 				AssetInfo& info = pair.second;
 				if (info.pResource != nullptr)
 				{
-					// ƒ‚ƒfƒ‹‚Í new Model() ‚ÅŠm•Û‚³‚ê‚Ä‚¢‚é‚½‚ß delete
+					// ãƒ¢ãƒ‡ãƒ«ã¯ new Model() ã§ç¢ºä¿ã•ã‚Œã¦ã„ã‚‹ãŸã‚ delete
 					if (info.type == AssetType::Model)
 					{
 						delete static_cast<Model*>(info.pResource);
@@ -304,14 +380,37 @@ namespace Asset
 				}
 			}
 			std::cout << "AssetManager: Unloaded " << releasedCount << " " << typeName << " resources." << std::endl;
-			assetMap.clear(); // ƒ}ƒbƒv‚©‚ç‘S‚Ä‚ÌƒGƒ“ƒgƒŠ‚ğíœ
+			assetMap.clear(); // ãƒãƒƒãƒ—ã‹ã‚‰å…¨ã¦ã®ã‚¨ãƒ³ãƒˆãƒªã‚’å‰Šé™¤
 			};
 
-		// ÀÛ‚É‚ÍŒ^ˆÀ‘S‚ğŠm•Û‚·‚é•K—v‚ª‚ ‚è‚Ü‚·‚ªAModel‚É‚Â‚¢‚Ä‚Í new/delete ‚ªŠmÀ‚È‚½‚ßÀ‘•‚µ‚Ü‚·B
+		m_effectRefMap.clear();
+
+		// pResourceãƒ•ãƒ©ã‚°ã®ãƒªã‚»ãƒƒãƒˆ
+		for (auto& pair : m_effectMap) pair.second.pResource = nullptr;
+
+		std::cout << "AssetManager: Effects unloaded." << std::endl;
+
+		// å®Ÿéš›ã«ã¯å‹å®‰å…¨ã‚’ç¢ºä¿ã™ã‚‹å¿…è¦ãŒã‚ã‚Šã¾ã™ãŒã€Modelã«ã¤ã„ã¦ã¯ new/delete ãŒç¢ºå®ŸãªãŸã‚å®Ÿè£…ã—ã¾ã™ã€‚
 		unloadMap(m_modelMap, "Model");
 		unloadMap(m_textureMap, "Texture");
 		unloadMap(m_soundMap, "Sound");
 
 		std::cout << "AssetManager: Resource unloading completed." << std::endl;
+	}
+
+	void AssetManager::UnloadEffects()
+	{
+		// ã‚¹ãƒãƒ¼ãƒˆãƒã‚¤ãƒ³ã‚¿(EffectRef)ã®ãƒãƒƒãƒ—ã‚’ã‚¯ãƒªã‚¢ã™ã‚‹ã ã‘ã§ã€
+		// å‚ç…§ã‚«ã‚¦ãƒ³ãƒˆãŒæ¸›ã‚Šã€è‡ªå‹•çš„ã«ãƒªã‚½ãƒ¼ã‚¹ãŒè§£æ”¾ã•ã‚Œã¾ã™ã€‚
+		size_t count = m_effectRefMap.size();
+		m_effectRefMap.clear();
+
+		// AssetInfoå´ã®ãƒ€ãƒŸãƒ¼ãƒ•ãƒ©ã‚°ã‚‚ãƒªã‚»ãƒƒãƒˆï¼ˆå¿µã®ãŸã‚ï¼‰
+		for (auto& pair : m_effectMap)
+		{
+			pair.second.pResource = nullptr;
+		}
+
+		std::cout << "AssetManager: Unloaded " << count << " Effect resources." << std::endl;
 	}
 }

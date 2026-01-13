@@ -21,6 +21,9 @@
 #define ___GUARD_AI_SYSTEM_H___
 
 #include "ECS/ECS.h"
+#include "ECS/Components/Gameplay/MapComponent.h"
+#include "ECS/Components/Core/TransformComponent.h"
+#include "ECS/Components/Gimmick/GuardComponent.h"
 
 /**
  * struct   AStarNode
@@ -69,15 +72,31 @@ class GuardAISystem : public ECS::System
 private:
     ECS::Coordinator* m_coordinator = nullptr;
 
-    // ヘルパー関数の宣言を private セクションに移動
-    DirectX::XMINT2 FindNextTargetGridPos(DirectX::XMINT2 startGrid, DirectX::XMINT2 targetGrid, const MapComponent& mapComp);
+    // 経路全体を返すように変更
+    std::vector<DirectX::XMINT2> FindPath(
+        DirectX::XMINT2 startGrid,
+        DirectX::XMINT2 targetGrid,
+        const MapComponent& mapComp
+    );
+
+    // パススムージング（String Pulling法）
+    std::vector<DirectX::XMFLOAT3> SmoothPath(
+        const std::vector<DirectX::XMINT2>& gridPath,
+        const MapComponent& mapComp
+    );
 
     DirectX::XMINT2 GetGridPosition(const DirectX::XMFLOAT3& worldPos, const MapComponent& mapComp);
+
+    bool RaycastHitWall(const DirectX::XMFLOAT3& start, const DirectX::XMFLOAT3& end, const MapComponent& mapComp);
+
+    bool IsTargetInSight(const TransformComponent& guardTransform, const GuardComponent& guardInfo, const TransformComponent& targetTransform, const MapComponent& mapComp);
+
 public:
     void Init(ECS::Coordinator* coordinator) override
     {
         m_coordinator = coordinator;
     }
+
 
     void Update(float deltaTime) override;
 };

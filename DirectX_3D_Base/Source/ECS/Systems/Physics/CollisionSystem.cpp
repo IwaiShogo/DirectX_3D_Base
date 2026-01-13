@@ -19,6 +19,7 @@
 
  // ===== インクルード =====
 #include "ECS/ECS.h"
+#include "ECS/EntityFactory.h"
 #include <algorithm>
 #include <cmath>
 
@@ -222,7 +223,7 @@ void CollisionSystem::Update(float deltaTime)
 	GameStateComponent& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
 	// ゲームが既に終了していたら、衝突チェックをスキップ
-	if (state.isGameOver || state.isCleared) return;
+	if (state.isGameOver || state.isGameClear) return;
 
 	// Deferred destruction list (アイテム回収による破壊の遅延)
 	std::vector<ECS::EntityID> entitiesToDestroy;
@@ -289,6 +290,8 @@ void CollisionSystem::Update(float deltaTime)
 
 				if (!guard.isActive) continue;
 
+				ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST5");
+
 				state.isGameOver = true;
 				// ゲームオーバー時は、すぐにリターンし、他の処理（アイテム回収など）を停止
 				return;
@@ -301,8 +304,18 @@ void CollisionSystem::Update(float deltaTime)
 
 				if (tracker.totalItems > 0 && tracker.collectedItems == tracker.totalItems)
 				{
-					state.isCleared = true;
+					ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST4");
+
+					state.isGameClear = true;
 				}
+			}
+			if (tagB.tag == "taser")
+			{
+				ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST6");
+				
+				state.isGameOver = true;
+				
+				return;
 			}
 		}
 	}

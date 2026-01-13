@@ -28,6 +28,7 @@
 #include <unordered_map>
 
 #include "Scene.h"
+#include "StageSelectScene.h"
 #include "GameScene.h"
 #include "TitleScene.h"
 #include "ResultScene.h"

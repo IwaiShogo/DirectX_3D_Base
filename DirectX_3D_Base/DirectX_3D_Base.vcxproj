@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -112,11 +112,13 @@
       <ConformanceMode>true</ConformanceMode>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(ProjectDir)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>Default</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)External\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(ProjectDir)External\dll\*.dll" "$(OutDir)" /Y /I /D</Command>
@@ -136,6 +138,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)External\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(ProjectDir)External\dll\*.dll" "$(OutDir)" /Y /I /D
@@ -143,26 +146,38 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Include\ECS\Systems\Rendering\FlickerSystem.cpp" />
     <ClCompile Include="Source\ECS\ECSInitializer.cpp" />
     <ClCompile Include="Source\ECS\EntityFactory.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\AudioSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\BasicCameraSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\CameraControlSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\Core\GameFlowSystem.cpp" />
-    <ClCompile Include="Source\ECS\Systems\Core\StateSwitchSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\GameControlSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\LifeTimeSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\ResultControlSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\ScreenTransitionSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\TitleControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gameplay\CollectionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gameplay\MapGenerationSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gameplay\PlayerControlSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Gameplay\EnemySpawnSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gimmick\GuardAISystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Physics\CollisionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Physics\PhysicsSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Rendering\AnimationSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Rendering\DebugDrawSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Rendering\EffectSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Rendering\RenderSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\UI\CursorSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\UI\UIInputSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\UI\UIRenderSystem.cpp" />
     <ClCompile Include="Source\Main.cpp" />
+    <ClCompile Include="Source\Scene\FadeManager.cpp" />
     <ClCompile Include="Source\Scene\GameScene.cpp" />
     <ClCompile Include="Source\Scene\ResultScene.cpp" />
     <ClCompile Include="Source\Scene\SceneManager.cpp" />
     <ClCompile Include="Source\Scene\StageSelectScene.cpp" />
+    <ClCompile Include="Source\Scene\StageUnlockProgress.cpp" />
     <ClCompile Include="Source\Scene\TitleScene.cpp" />
     <ClCompile Include="Source\Systems\AssetManager.cpp" />
     <ClCompile Include="Source\Systems\DirectX\DirectX.cpp" />
@@ -178,29 +193,45 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\Systems\XAudio2\SoundEngine.cpp" />
     <ClCompile Include="Source\Works\_geometory.cpp" />
     <ClCompile Include="Source\Works\_model.cpp" />
+    <ClCompile Include="TeleportSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\JSON\json.hpp" />
     <ClInclude Include="Include\ECS\AllSystems.h" />
     <ClInclude Include="Include\ECS\ComponentManager.h" />
     <ClInclude Include="Include\ECS\ComponentRegistry.h" />
+    <ClInclude Include="Include\ECS\Components\Core\BasicCameraComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\CameraComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\GameStateComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\LifeTimeComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\OneShotSoundComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\PlayerControlComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\ScreenTransitionComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\SoundComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\TagComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Core\TitleControllerComponent.h" />
     <ClInclude Include="Include\ECS\Components\Core\TransformComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gameplay\CollectableComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Gameplay\EnemySpawnComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gameplay\ItemTrackerComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gameplay\MapComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gameplay\PlayerControlComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Gimmick\DoorComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gimmick\GuardComponent.h" />
     <ClInclude Include="Include\ECS\Components\Physics\CollisionComponent.h" />
     <ClInclude Include="Include\ECS\Components\Physics\RigidBodyComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\DebugComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Rendering\EffectComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Rendering\FlickerComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\ModelComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Rendering\PointLightComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\RenderComponent.h" />
+    <ClInclude Include="Include\ECS\Components\UI\FloatingComponent.h" />
+    <ClInclude Include="Include\ECS\Components\UI\ScanLineComponent.h" />
+    <ClInclude Include="Include\ECS\Components\UI\SonarComponent.h" />
+    <ClInclude Include="Include\ECS\Components\UI\UICursorComponent.h" />
     <ClInclude Include="Include\ECS\Components\UI\UIImageComponent.h" />
+    <ClInclude Include="Include\ECS\Components\UI\UIButtonComponent.h" />
     <ClInclude Include="Include\ECS\Coordinator.h" />
     <ClInclude Include="Include\ECS\ECS.h" />
     <ClInclude Include="Include\ECS\ECSInitializer.h" />
@@ -208,26 +239,39 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\EntityManager.h" />
     <ClInclude Include="Include\ECS\SystemManager.h" />
     <ClInclude Include="Include\ECS\Systems\Core\AudioSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\BasicCameraSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\CameraControlSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\Core\GameFlowSystem.h" />
-    <ClInclude Include="Include\ECS\Systems\Core\StateSwitchSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\GameControlSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\LifeTimeSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\ResultControlSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\ScreenTransition.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\ScreenTransitionSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\TitleControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gameplay\CollectionSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gameplay\MapGenerationSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gameplay\PlayerControlSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Gameplay\EnemySpawnSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Gimmick\GuardAISystem.h" />
     <ClInclude Include="Include\ECS\Systems\Physics\CollisionSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Physics\PhysicsSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Rendering\DebugDrawSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Rendering\EffectSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Rendering\FlickerSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Rendering\RenderSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\UI\CursorSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\UI\FloatingSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\UI\UIInputSystem.h" />
     <ClInclude Include="Include\ECS\Systems\UI\UIRenderSystem.h" />
     <ClInclude Include="Include\ECS\AllComponents.h" />
     <ClInclude Include="Include\ECS\Types.h" />
     <ClInclude Include="Include\Main.h" />
+    <ClInclude Include="Include\Scene\FadeManager.h" />
     <ClInclude Include="Include\Scene\GameScene.h" />
     <ClInclude Include="Include\Scene\ResultScene.h" />
     <ClInclude Include="Include\Scene\Scene.h" />
     <ClInclude Include="Include\Scene\SceneManager.h" />
     <ClInclude Include="Include\Scene\StageSelectScene.h" />
+    <ClInclude Include="Include\Scene\StageUnlockProgress.h" />
     <ClInclude Include="Include\Scene\TitleScene.h" />
     <ClInclude Include="Include\Systems\AssetManager.h" />
     <ClInclude Include="Include\Systems\Camera.h" />
@@ -243,10 +287,14 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\Systems\XAudio2\SoundEffect.h" />
     <ClInclude Include="Include\Systems\XAudio2\SoundEngine.h" />
     <ClInclude Include="Include\Utility\CSVLoader.h" />
+    <ClInclude Include="TeleportComponent.h" />
+    <ClInclude Include="TeleportSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
     <None Include="Assets\Config\map_config.json" />
+    <None Include="Assets\CSV\AnimationList.csv" />
+    <None Include="Assets\CSV\EffectList.csv" />
     <None Include="Assets\CSV\ModelList.csv" />
     <None Include="Assets\CSV\SoundList.csv" />
     <None Include="Assets\CSV\TextureList.csv" />

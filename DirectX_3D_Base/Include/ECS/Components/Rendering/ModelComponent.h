@@ -52,16 +52,6 @@ struct ModelComponent
 		{
 			// キャッシュされたリソースポインタを取得し、Model*にキャスト
 			pModel = static_cast<Model*>(pAssetInfo->pResource);
-
-			// 既存のシェーダー設定ロジックを再利用
-			VertexShader* pVS = ShaderList::GetVS(ShaderList::VS_WORLD);
-			PixelShader* pPS = ShaderList::GetPS(ShaderList::PS_LAMBERT);
-
-			ShaderList::SetLight(DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f), DirectX::XMFLOAT3(-1.0f, -1.0f, -1.0f));
-
-			// モデルに設定
-			pModel->SetVertexShader(pVS);
-			pModel->SetPixelShader(pPS);
 		}
 		else
 		{

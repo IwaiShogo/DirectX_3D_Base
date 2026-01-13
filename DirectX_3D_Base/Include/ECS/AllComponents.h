@@ -30,8 +30,12 @@
 // @folder		Core
 // @component	カメラ
 #include "ECS/Components/Core/CameraComponent.h"
+// @component	固定カメラ
+#include "ECS/Components/Core/BasicCameraComponent.h"
 // @component	位置・回転・スケール
 #include "ECS/Components/Core/TransformComponent.h"
+// @component	SceneTitle管理
+#include "ECS/Components/Core/TitleControllerComponent.h"
 // @component	カメラ切り替え
 #include "ECS/Components/Core/GameStateComponent.h"
 // @component	タグ
@@ -40,6 +44,12 @@
 #include "ECS/Components/Core/SoundComponent.h"
 // @conponent	単発サウンド
 #include "ECS/Components/Core/OneShotSoundComponent.h"
+// @component	生存時間
+#include "ECS/Components/Core/LifeTimeComponent.h"
+
+#include "ECS/Components/Core/PlayerControlComponent.h"
+
+#include "ECS/Components/Core/ScreenTransitionComponent.h"
 
 // @folder		Rendering
 // @component	描画
@@ -48,6 +58,14 @@
 #include "ECS/Components/Rendering/DebugComponent.h"
 // @component	モデル描画
 #include "ECS/Components/Rendering/ModelComponent.h"
+// @component	アニメーション
+#include "ECS/Components/Rendering/AnimationComponent.h"
+// @component	エフェクト
+#include "ECS/Components/Rendering/EffectComponent.h"
+// @component	点光源
+#include "ECS/Components/Rendering/PointLightComponent.h"
+// @component	点滅
+#include "ECS/Components/Rendering/FlickerComponent.h"
 
 // @folder		Physics
 // @component	衝突判定
@@ -58,6 +76,16 @@
 // @folder		UI
 // @component	画像UI
 #include "ECS/Components/UI/UIImageComponent.h"
+// @component	UIカーソル識別用
+#include "ECS/Components/UI/UICursorComponent.h"
+// @component
+#include "ECS/Components/UI/UIButtonComponent.h"
+// @component	スキャンライン
+#include "ECS/Components/UI/ScanLineComponent.h"
+// @component	ソナー
+#include "ECS/Components/UI/SonarComponent.h"
+
+#include "ECS/Components/UI/FloatingComponent.h"
 
 // @folder		Gameplay
 // @component	プレイヤー入力制御
@@ -68,9 +96,15 @@
 #include "ECS/Components/Gameplay/ItemTrackerComponent.h"
 // @component	マップ管理
 #include "ECS/Components/Gameplay/MapComponent.h"
+// @component	エネミーの生成遅延
+#include "ECS/Components/Gameplay/EnemySpawnComponent.h"
 
 // @folder		Gimmick
 // @component	警備員AI
 #include "ECS/Components/Gimmick/GuardComponent.h"
+// @component	ドア
+#include "ECS/Components/Gimmick/DoorComponent.h"
+// @component	テレポーター
+#include "ECS/Components/Gimmick/Teleportcomponent.h"
 
 #endif // !___ALL_COMPONENTS_H___

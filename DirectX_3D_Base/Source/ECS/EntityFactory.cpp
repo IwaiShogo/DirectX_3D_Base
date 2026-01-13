@@ -1,73 +1,42 @@
 /*****************************************************************//**
  * @file	EntityFactory.cpp
- * @brief	“Á’è‚ÌƒGƒ“ƒeƒBƒeƒBiƒvƒŒƒCƒ„[A’n–Ê‚È‚Çj‚Ì¶¬ƒƒWƒbƒN‚ğW–ñ‚·‚éƒwƒ‹ƒp[ƒNƒ‰ƒX‚ÌÀ‘•
+ * @brief	ç‰¹å®šã®ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ï¼ˆãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã€åœ°é¢ãªã©ï¼‰ã®ç”Ÿæˆãƒ­ã‚¸ãƒƒã‚¯ã‚’é›†ç´„ã™ã‚‹ãƒ˜ãƒ«ãƒ‘ãƒ¼ã‚¯ãƒ©ã‚¹ã®å®Ÿè£…
  *
  * @details
- * Component‚Ì‹ï‘Ì“I‚È’lİ’è‚ğ‚±‚±‚ÉW–ñ‚µAƒV[ƒ“ƒR[ƒh‚ğƒVƒ“ƒvƒ‹‚É‚·‚éB
+ * Componentã®å…·ä½“çš„ãªå€¤è¨­å®šã‚’ã“ã“ã«é›†ç´„ã—ã€ã‚·ãƒ¼ãƒ³ã‚³ãƒ¼ãƒ‰ã‚’ã‚·ãƒ³ãƒ—ãƒ«ã«ã™ã‚‹ã€‚
  *
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  *
- * @date	2025/11/09	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁFƒGƒ“ƒeƒBƒeƒB¶¬‚ÌÃ“IÀ‘•‚ğì¬B
+ * @date	2025/11/09	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼šã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ç”Ÿæˆã®é™çš„å®Ÿè£…ã‚’ä½œæˆã€‚
  *
- * @update	2025/11/08	ÅIXV“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁFŒx”õˆõAI‚Ì’Ç‰Á
+ * @update	2025/11/08	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼šè­¦å‚™å“¡AIã®è¿½åŠ 
  *
- * @note	iÈ—ª‰Âj
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
- // ===== ƒCƒ“ƒNƒ‹[ƒh =====
+ // ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
 #include "ECS/EntityFactory.h"
 #include "ECS/ECSInitializer.h"
-#include "ECS/ECS.h" // ‚·‚×‚Ä‚ÌƒRƒ“ƒ|[ƒlƒ“ƒg‚ÆCoordinator‚ÉƒAƒNƒZƒX‚·‚é‚½‚ß
-#include "Main.h" // METER‚È‚Ç‚Ì’è”‚ÉƒAƒNƒZƒX
+#include "ECS/ECS.h" // ã™ã¹ã¦ã®ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã¨Coordinatorã«ã‚¢ã‚¯ã‚»ã‚¹ã™ã‚‹ãŸã‚
+#include "Main.h" // METERãªã©ã®å®šæ•°ã«ã‚¢ã‚¯ã‚»ã‚¹
+
 
 using namespace ECS;
 using namespace DirectX;
 
 /**
- * @brief ‘S‚Ä‚Ìƒfƒ‚—pƒGƒ“ƒeƒBƒeƒB‚ğ¶¬‚µAECS‚É“o˜^‚·‚é (GameScene::Init()‚©‚çŒÄ‚Î‚ê‚é)
- * @param coordinator - ƒGƒ“ƒeƒBƒeƒB‚Ì¶¬‚Æ“o˜^‚ğs‚¤Coordinator
- */
-void EntityFactory::CreateAllDemoEntities(Coordinator* coordinator)
-{
-	// 1. Map Entity (Game Controller) ‚Ìì¬‚Æ‰Šú‰»
-	ECS::EntityID mapEntityID = coordinator->CreateEntity(
-		TagComponent("game_controller"),
-		MapComponent(), // 50x50‚ÌƒGƒŠƒA‚ÅBSP/MST‚ğ¶¬
-		GameStateComponent(GameMode::SCOUTING_MODE),
-		ItemTrackerComponent(),
-		DebugComponent() // F1ƒL[‚É‚æ‚éƒfƒoƒbƒO‹@”\‚ÌƒgƒOƒ‹—p
-	);
-
-	// 2. MapGenerationSystem‚ğŒÄ‚Ño‚µABSP/MST‚ğ¶¬
-	auto mapGenSystem = ECSInitializer::GetSystem<MapGenerationSystem>();
-	if (mapGenSystem)
-	{
-		// MapGenerationSystem::GenerateMap‚ªBSP/MST‚ğÀs‚µAMapComponent.layout‚ğXV‚·‚é
-		mapGenSystem->CreateMap("ST_001");
-	}
-	else
-	{
-		// ƒ}ƒbƒv¶¬ƒVƒXƒeƒ€‚ªŒ©‚Â‚©‚ç‚È‚¢ê‡‚Íˆ—‚ğ’†’f
-		// throw std::runtime_error("MapGenerationSystem is not registered!");
-		return;
-	}
-
-	CreateUITestEntity(coordinator, { 0.9f, 0.0f }, { 0.5f, 1.0f }, "UI_TEST");
-}
-
-/**
- * @brief ƒvƒŒƒCƒ„[ƒGƒ“ƒeƒBƒeƒB‚ğ¶¬‚·‚é
- * @param coordinator - ƒGƒ“ƒeƒBƒeƒB‚Ì¶¬‚Æ“o˜^‚ğs‚¤Coordinator
- * @param position - ‰ŠúˆÊ’u
- * @return EntityID - ¶¬‚³‚ê‚½ƒvƒŒƒCƒ„[ƒGƒ“ƒeƒBƒeƒBID
+ * @brief ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç”Ÿæˆã™ã‚‹
+ * @param coordinator - ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®ç”Ÿæˆã¨ç™»éŒ²ã‚’è¡Œã†Coordinator
+ * @param position - åˆæœŸä½ç½®
+ * @return EntityID - ç”Ÿæˆã•ã‚ŒãŸãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ID
  */
 EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& position)
 {
-	// 1. ƒvƒŒƒCƒ„[ƒGƒ“ƒeƒBƒeƒB‚ğ¶¬
+	// 1. ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç”Ÿæˆ
 	EntityID player = coordinator->CreateEntity(
 		TagComponent(
 			/* Tag	*/	"player"
@@ -78,13 +47,19 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_MODEL,
+			/* MeshType	*/	MESH_NONE,
 			/* Color	*/	XMFLOAT4(0.3f, 0.3f, 1.0f, 1.0f)
 		),
 		ModelComponent(
-			/* Path		*/	"P_PLAYER",
+			/* Path		*/	"M_PLAYER",
 			/* Scale	*/	0.1f,
 			/* Flip		*/	Model::None
+		),
+		AnimationComponent(
+			{
+				"A_PLAYER_IDLE",
+				"A_PLAYER_RUN"
+			}
 		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -95,16 +70,31 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 		),
 		CollisionComponent(
 			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
-			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.5f, 0.0f),
 			/* ColliderType	*/	COLLIDER_DYNAMIC
 		),
 		PlayerControlComponent(
 			/* MoveSpeed	*/	9.0f
+		),
+		PointLightComponent(0.9f, 0.4f, 1.0f, 5.0f, { 0.0f, 0.5f, 0.0f }),
+		EffectComponent(
+			"EFK_ALERT",
+			true,
+			false,
+			{ 0.0f, 1.3f, 0.0f },
+			0.1f
 		)
 	);
 
-	// 2. ƒvƒŒƒCƒ„[‚É’Ç]‚·‚éƒJƒƒ‰ƒGƒ“ƒeƒBƒeƒB¶¬iŒã‘±ƒXƒeƒbƒv1-3‚Ì€”õj
-	// CameraComponent‚ÍA’Ç]ƒƒWƒbƒN‚ğCameraControlSystem‚É“`‚¦‚éî•ñ‚ğ•Û‚·‚é‚Æ‰¼’è
+	auto& anim = coordinator->GetComponent<AnimationComponent>(player);
+	anim.Play("A_PLAYER_IDLE");
+
+	auto& ctrl = coordinator->GetComponent<PlayerControlComponent>(player);
+	ctrl.animState = PlayerAnimState::Idle;
+
+
+	// 2. ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã«è¿½å¾“ã™ã‚‹ã‚«ãƒ¡ãƒ©ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ç”Ÿæˆï¼ˆå¾Œç¶šã‚¹ãƒ†ãƒƒãƒ—1-3ã®æº–å‚™ï¼‰
+	// CameraComponentã¯ã€è¿½å¾“ãƒ­ã‚¸ãƒƒã‚¯ã‚’CameraControlSystemã«ä¼ãˆã‚‹æƒ…å ±ã‚’ä¿æŒã™ã‚‹ã¨ä»®å®š
 	EntityID playerCamera = coordinator->CreateEntity(
 		CameraComponent(
 			/* FocusID		*/	player,
@@ -118,7 +108,7 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 		)
 	);
 
-	// 3. PlayerControlComponent‚ÉƒJƒƒ‰ID‚ğƒŠƒ“ƒN
+	// 3. PlayerControlComponentã«ã‚«ãƒ¡ãƒ©IDã‚’ãƒªãƒ³ã‚¯
 	coordinator->GetComponent<PlayerControlComponent>(player).attachedCameraID = playerCamera;
 
 
@@ -126,63 +116,76 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 }
 
 /**
- * [EntityID - CreateGameController]
- * @brief	ƒQ[ƒ€‚Ìó‘ÔiGameModej‚ğŠÇ—‚·‚é‚½‚ß‚ÌEntity‚ğ¶¬‚·‚é
- *
- * @param	[in] coordinator
- * @return	¶¬‚³‚ê‚½EntityID
- */
-EntityID EntityFactory::CreateGameController(Coordinator* coordinator)
-{
-	// GameStateComponent‚Ì‚İ‚ğ‚ÂEntity
-	EntityID controller = coordinator->CreateEntity(
-		GameStateComponent(GameMode::SCOUTING_MODE),	// ‰Šúƒ‚[ƒh‚Í’ã@ƒ‚[ƒh
-		ItemTrackerComponent()
-	);
-
-	return controller;
-}
-
-/**
  * [EntityID - CreateCollectable]
- * @brief	‰ñûƒAƒCƒeƒ€Entity‚ğ¶¬
+ * @brief	å›åã‚¢ã‚¤ãƒ†ãƒ Entityã‚’ç”Ÿæˆ
  *
  * @param	[in] coordinator
  * @param	[in] position
- * @return	¶¬‚³‚ê‚½EntityID
+ * @return	ç”Ÿæˆã•ã‚ŒãŸEntityID
  */
-EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const DirectX::XMFLOAT3& position, int orderIndex, const std::string& itemID)
 {
+	std::string modelPath = "M_TREASURE1";
+	DirectX::XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	if (itemID == "Takara_Daiya") { modelPath = "M_TREASURE1"; }
+	else if (itemID == "Takara_Crystal") { modelPath = "M_TREASURE2"; }
+	else if (itemID == "Takara_Yubiwa") { modelPath = "M_TREASURE3"; }
+	else if (itemID == "Takara_Kaiga1") { modelPath = "M_TREASURE4"; }
+	else if (itemID == "Takara_Kaiga2") { modelPath = "M_TREASURE5"; }
+	else if (itemID == "Takara_Kaiga3") { modelPath = "M_TREASURE6"; }
+
 	ECS::EntityID entity = coordinator->CreateEntity(
 		TagComponent(
 			/* Tag	*/	"item"
 		),
 		TransformComponent(
 			/* Position	*/	position,
-			/* Rotation	*/	XMFLOAT3(45.0f, 45.0f, 45.0f),
+			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f)
+			/* MeshType	*/	MESH_NONE,
+			/* Color	*/	color
 		),
-		CollectableComponent(1.0f)
+		ModelComponent(
+			/* Path		*/	modelPath,
+			/* Scale	*/	0.1f,
+			/* Flip		*/	Model::None
+		),
+		CollectableComponent(1.0f, orderIndex, itemID),
+		//æµ®éŠã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆ
+		FloatingComponent(
+			/* Amplitude */ 0.5f,     // ä¸Šä¸‹ 0.5 ã®ç¯„å›²ã§æºã‚Œã‚‹
+			/* Speed     */ 2.0f,     // é€Ÿåº¦
+			/* InitialY  */ position.y - 1 // åŸºæº–ã¨ãªã‚‹é«˜ã•ï¼ˆé…ç½®ä½ç½®ï¼‰
+		),
+		PointLightComponent(0.0f, 5.0f, 0.0f, 5.0f),
+		EffectComponent(
+			"EFK_TREASURE_GLOW",
+			true,
+			true,
+			{ 0.0f, 0.0f, 0.0f },
+			0.3f
+		)
 	);
+
 
 	return entity;
 }
 
 /**
- * @brief ƒQ[ƒ€ƒ[ƒ‹ƒh‚ÌÃ“I‚È’n–ÊƒGƒ“ƒeƒBƒeƒB‚ğ¶¬‚·‚é
- * @param coordinator - ƒGƒ“ƒeƒBƒeƒB‚Ì¶¬‚Æ“o˜^‚ğs‚¤Coordinator
- * @param position - ˆÊ’u
- * @param scale - ƒXƒP[ƒ‹
- * @return EntityID - ¶¬‚³‚ê‚½’n–ÊƒGƒ“ƒeƒBƒeƒBID
+ * @brief ã‚²ãƒ¼ãƒ ãƒ¯ãƒ¼ãƒ«ãƒ‰ã®é™çš„ãªåœ°é¢ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç”Ÿæˆã™ã‚‹
+ * @param coordinator - ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®ç”Ÿæˆã¨ç™»éŒ²ã‚’è¡Œã†Coordinator
+ * @param position - ä½ç½®
+ * @param scale - ã‚¹ã‚±ãƒ¼ãƒ«
+ * @return EntityID - ç”Ÿæˆã•ã‚ŒãŸåœ°é¢ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ID
  */
 EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& position, const XMFLOAT3& scale)
 {
-	// GameScene::CreateDemoEntities()‚©‚ç’n–Ê‚ÌƒƒWƒbƒN‚ğˆÚ“®
+	// GameScene::CreateDemoEntities()ã‹ã‚‰åœ°é¢ã®ãƒ­ã‚¸ãƒƒã‚¯ã‚’ç§»å‹•
 	ECS::EntityID ground = coordinator->CreateEntity(
+		TagComponent("ground"),
 		TransformComponent(
 			/* Position	*/	position,
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -190,12 +193,17 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
 		),
 		RenderComponent(
 			/* MeshType	*/	MESH_BOX,
-			/* Color	*/	XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f)
+			/* Color	*/	XMFLOAT4(0.6f, 0.6f, 0.6f, 1.0f)
+		),
+		ModelComponent(
+			/* Path		*/	"M_CORRIDOR",
+			/* Scale	*/	0.25f,
+			/* Flip		*/	Model::None
 		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Mass			*/	0.0f, // Ã“IƒIƒuƒWƒFƒNƒg
+			/* Mass			*/	0.0f, // é™çš„ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
 			/* Friction		*/	0.8f,
 			/* Restitution	*/	0.2f
 		),
@@ -210,11 +218,11 @@ EntityID EntityFactory::CreateGround(Coordinator* coordinator, const XMFLOAT3& p
 
 /*
  * [EntityID - CreateGuard]
- * @brief	Œx”õˆõEntity‚ğ¶¬
+ * @brief	è­¦å‚™å“¡Entityã‚’ç”Ÿæˆ
  *
  * @param	[in] coordinator
  * @param	[in] position
- * @return	¶¬‚³‚ê‚½EntityID
+ * @return	ç”Ÿæˆã•ã‚ŒãŸEntityID
  */
 
 EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
@@ -229,14 +237,20 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_BOX,
+			/* MeshType	*/	MESH_MODEL,
 			/* Color	*/	XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)
 		),
-		//ModelComponent(
-		//	/* Path		*/	"Assets/Model/AD/modelkari.fbx",
-		//	/* Scale	*/	0.1f,
-		//	/* Flip		*/	Model::None
-		//),
+		ModelComponent(
+			/* Path		*/	"M_GUARD",
+			/* Scale	*/	0.1f,
+			/* Flip		*/	Model::None
+		),
+		AnimationComponent(
+			{
+				"A_GUARD_RUN",
+				"A_GUARD_WALK"
+			}
+		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -247,27 +261,31 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 		GuardComponent(
 			/* predictionDistance	*/	1.0f,
 			/* isActive				*/	false,
-			/* delayBeforeChase		*/	3.0f,
-			/* chaseSpeed			*/	9.0f
+			/* delayBeforeChase		*/	0.1f,
+			/* chaseSpeed			*/	25.0f
 		),
 		CollisionComponent(
 			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
-			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Offset		*/	XMFLOAT3(0.0f, 0.5f, 0.0f),
 			/* ColliderType	*/	COLLIDER_DYNAMIC
-		)
+		),
+		PointLightComponent(5.0f, 0.0f, 0.0f, 7.0f, { 0.0f, 0.5f, 0.3f })
 	);
+
+	auto& anim = coordinator->GetComponent<AnimationComponent>(guard);
+	anim.Play("A_GUARD_RUN");
 
 	return guard;
 }
 
 /**
- * @brief ƒQ[ƒ€ƒ[ƒ‹ƒh‚ÌÃ“I‚È•ÇƒGƒ“ƒeƒBƒeƒB‚ğ¶¬‚·‚é
+ * @brief ã‚²ãƒ¼ãƒ ãƒ¯ãƒ¼ãƒ«ãƒ‰ã®é™çš„ãªå£ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç”Ÿæˆã™ã‚‹
  *
- * @param [in] coordinator - ƒGƒ“ƒeƒBƒeƒB‚Ì¶¬‚Æ“o˜^‚ğs‚¤Coordinator
- * @param [in] position - ˆÊ’u
- * @param [in] scale - ƒXƒP[ƒ‹
- * @param [in] color - ƒ{ƒbƒNƒX‚ÌFiƒfƒtƒHƒ‹ƒg‚ÅBackrooms‚Ì‰©Fj
- * @return EntityID - ¶¬‚³‚ê‚½•ÇƒGƒ“ƒeƒBƒeƒBID
+ * @param [in] coordinator - ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®ç”Ÿæˆã¨ç™»éŒ²ã‚’è¡Œã†Coordinator
+ * @param [in] position - ä½ç½®
+ * @param [in] scale - ã‚¹ã‚±ãƒ¼ãƒ«
+ * @param [in] color - ãƒœãƒƒã‚¯ã‚¹ã®è‰²ï¼ˆãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã§Backroomsã®é»„è‰²ï¼‰
+ * @return EntityID - ç”Ÿæˆã•ã‚ŒãŸå£ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ID
  */
 EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY)
 {
@@ -281,13 +299,18 @@ EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX:
 			/* Scale	*/	scale
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_BOX, // MESH_BOX‚Å‰¼•`‰æ
+			/* MeshType	*/	MESH_BOX, // MESH_BOXã§ä»®æç”»
 			/* Color	*/	XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f)
+		),
+		ModelComponent(
+			/* Path		*/	"M_WALL",
+			/* Scale	*/	0.25f,
+			/* Flip		*/	Model::None
 		),
 		RigidBodyComponent(
 			/* Velocity	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Accel	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Mass		*/	0.0f, // yd—vz¿—Ê0.0f‚ÅÃ“IƒIƒuƒWƒFƒNƒgi“®‚©‚È‚¢•Çj‚Æ‚µ‚Ä’è‹`
+			/* Mass		*/	0.0f, // ã€é‡è¦ã€‘è³ªé‡0.0fã§é™çš„ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆï¼ˆå‹•ã‹ãªã„å£ï¼‰ã¨ã—ã¦å®šç¾©
 			/* Friction	*/	0.5f,
 			/* Restit.	*/	0.0f
 		),
@@ -301,52 +324,75 @@ EntityID ECS::EntityFactory::CreateWall(Coordinator* coordinator, const DirectX:
 	return entity;
 }
 
-/**
- * [EntityID - CreateGoal]
- * @brief	ƒS[ƒ‹ƒGƒ“ƒeƒBƒeƒB‚Ì¶¬
- *
- * @param	[in] coordinator
- * @param	[in] position
- * @param	[in] scale
- * @return	¶¬‚³‚ê‚½ƒGƒ“ƒeƒBƒeƒB
- */
-EntityID ECS::EntityFactory::CreateGoal(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+EntityID ECS::EntityFactory::CreateTaser(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
 {
-	EntityID goal = coordinator->CreateEntity(
+	ECS::EntityID taser = coordinator->CreateEntity(
 		TagComponent(
-			/* Tag	*/	"goal"
+			/* Tag */    "taser"
 		),
 		TransformComponent(
 			/* Position	*/	position,
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
+			/* Scale	*/	XMFLOAT3(3.0f, 3.0f, 3.0f)
 		),
 		RenderComponent(
-			/* MeshType	*/	MESH_BOX, // MESH_BOX‚Å‰¼•`‰æ
-			/* Color	*/	XMFLOAT4(0.3f, 1.0f, 0.3f, 1.0f)
+			/* MeshType	*/	MESH_NONE,                   // ç«‹æ–¹ä½“ã‚’æŒ‡å®š
+			/* Color	*/	XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f) // é’è‰² (R,G,B,A)
 		),
-		//ModelComponent(
-		//	/* Path		*/	"Assets/Model/Item/yubiwakana.fbx",
-		//	/* Scale	*/	0.1f,
-		//	/* Flip		*/	Model::None
-		//),
+		ModelComponent(
+			/* Path		*/	"M_TASER",
+			/* Scale	*/	0.25f,
+			/* Flip		*/	Model::None
+		),
 		RigidBodyComponent(
 			/* Velocity		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
 			/* Acceleration	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Mass			*/	0.0f, // Ã“IƒIƒuƒWƒFƒNƒg
-			/* Friction		*/	0.8f,
-			/* Restitution	*/	0.2f
+			/* Mass			*/	1.0f,
+			/* Friction		*/	0.5f,
+			/* Restitution	*/	0.1f
 		),
 		CollisionComponent(
-			/* Size			*/	XMFLOAT3(0.5f, 0.5f, 0.5f),
+			/* Size			*/	XMFLOAT3(2.5f, 2.5f, 2.5f), // Scale 1.0ã®åŠåˆ†
 			/* Offset		*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType	*/	COLLIDER_TRIGGER
+			/* ColliderType	*/	COLLIDER_DYNAMIC
+		)
+	);
+	return taser;
+}
+
+
+
+EntityID ECS::EntityFactory::CreateMapGimmick(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+{
+	ECS::EntityID gimmick = coordinator->CreateEntity(
+		TagComponent(
+			/* Tag */    "map_gimmick"
+		),
+		TransformComponent(
+			/* Position */	position,
+			/* Rotation */	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Scale */	XMFLOAT3(3.0f, 3.0f, 3.0f)
+		),
+		RenderComponent(
+			/* MeshType */	MESH_NONE,
+			/* Color */	XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
+		),
+		RigidBodyComponent(
+			/* Velocity */		XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Acceleration */	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Mass */			0.0f,
+			/* Friction */		0.5f,
+			/* Restitution */	0.1f
+		),
+		CollisionComponent(
+			/* Size */			XMFLOAT3(2.5f, 2.5f, 2.5f),
+			/* Offset */		XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* ColliderType */	COLLIDER_STATIC
 		)
 	);
 
-	return goal;
+	return gimmick;
 }
-
 EntityID ECS::EntityFactory::CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume)
 {
 	EntityID entity = coordinator->CreateEntity(
@@ -363,21 +409,155 @@ EntityID ECS::EntityFactory::CreateOneShotSoundEntity(Coordinator* coordinator, 
 	return entity;
 }
 
-EntityID ECS::EntityFactory::CreateUITestEntity(Coordinator* coordinator, const DirectX::XMFLOAT2& position, const DirectX::XMFLOAT2& size, const std::string& assetID)
+EntityID ECS::EntityFactory::CreateLoopSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume)
 {
 	EntityID entity = coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"ui"
-		),
+		TagComponent("BGM"),
+		SoundComponent()//ã‚µã‚¦ãƒ³ãƒ‰ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆ
+	);
+
+	//ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆå€¤è¨­å®š
+	auto& sound = coordinator->GetComponent<SoundComponent>(entity);
+	sound.assetID = assetID;
+	sound.type = SoundType::BGM;
+	sound.RequestPlay(volume, XAUDIO2_LOOP_INFINITE);
+	return entity;
+}
+
+EntityID ECS::EntityFactory::CreateTitleSceneEntity(Coordinator* coordinator)
+{
+	EntityID entity = coordinator->CreateEntity(
+		TitleControllerComponent{}
+	);
+	return entity;
+}
+
+void ECS::EntityFactory::GenerateStageFromConfig(ECS::Coordinator* coordinator, const std::string& stageId)
+{
+	// 1. ã‚²ãƒ¼ãƒ ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ©ãƒ¼ï¼ˆMapComponentæŒã¡ï¼‰ã‚’ä½œã‚‹
+	ECS::EntityID mapEntityID = coordinator->CreateEntity(
+		TagComponent("game_controller"),
+		MapComponent(),
+		GameStateComponent(GameMode::SCOUTING_MODE),
+		ItemTrackerComponent(),
+		DebugComponent()
+	);
+
+	// 2. MapGenerationSystem ã‚’å‘¼ã³å‡ºã—ã¦ã€æŒ‡å®šã•ã‚ŒãŸID (ST_006ãªã©) ã§ãƒãƒƒãƒ—ã‚’ä½œã‚‹
+	auto mapGenSystem = ECSInitializer::GetSystem<MapGenerationSystem>();
+	if (mapGenSystem)
+	{
+		// â˜…ã“ã“ã§å¼•æ•°ã® stageId ã‚’ä½¿ã†ã“ã¨ã§ã€æ­£ã—ãé›£æ˜“åº¦ãŒå¤‰ã‚ã‚Šã¾ã™
+		mapGenSystem->CreateMap(stageId);
+	}
+
+	// 3. ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ä½œæˆ (ãƒãƒƒãƒ—ç”Ÿæˆå´ã§ã‚„ã£ã¦ã„ãªã„å ´åˆ)
+//	CreatePlayer(coordinator, XMFLOAT3(2.5f, 0.0f, 2.5f));
+}
+
+EntityID ECS::EntityFactory::CreateBasicCamera(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+{
+	EntityID entity = coordinator->CreateEntity(
 		TransformComponent(
-			/* Position	*/	XMFLOAT3(position.x, position.y, 0.0f),
+			/* Position	*/	position,
 			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale	*/	XMFLOAT3(size.x, size.y, 1.0f)
+			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
-		UIImageComponent(
-			/* AssetID	*/	assetID
-		)
+		BasicCameraComponent(),
+		PointLightComponent(2.0f, 1.8f, 1.4f, 30.0f, { 0.0f, 0.0f, 0.0f })
 	);
 
 	return entity;
+}
+
+EntityID EntityFactory::CreateOneShotEffect(Coordinator* coordinator, const std::string& assetID, const DirectX::XMFLOAT3& position, float duration, float scale)
+{
+	EntityID entity = coordinator->CreateEntity(
+		TagComponent("effect"),
+		TransformComponent(
+			position,
+			{ 0.0f, 0.0f, 0.0f },
+			{ 1.0f, 1.0f, 1.0f }
+		),
+		// ã‚¨ãƒ•ã‚§ã‚¯ãƒˆå†ç”Ÿã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆ
+		EffectComponent(
+			assetID,
+			false,  // ãƒ«ãƒ¼ãƒ—ãªã—
+			true,   // ç”Ÿæˆæ™‚ã«å³å†ç”Ÿ
+			{ 0,0,0 },
+			scale
+		),
+		// å¯¿å‘½ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆ (æ™‚é–“ãŒæ¥ãŸã‚‰Entityã”ã¨æ¶ˆæ»…)
+		LifeTimeComponent(duration)
+	);
+
+	return entity;
+}
+
+EntityID ECS::EntityFactory::CreateDoor(Coordinator* coordinator, const DirectX::XMFLOAT3& position, float rotationY, bool isEntrance)
+{
+	EntityID door = coordinator->CreateEntity(
+		TagComponent("door"),
+		TransformComponent(
+			position,
+			XMFLOAT3(0.0f, rotationY, 0.0f),
+			XMFLOAT3(1.0f, 1.0f, 1.0f) // ãƒ¢ãƒ‡ãƒ«ã«åˆã‚ã›ã¦ã‚¹ã‚±ãƒ¼ãƒ«èª¿æ•´
+		),
+		RenderComponent(MESH_MODEL, XMFLOAT4(1, 1, 1, 1)),
+		ModelComponent("M_DOOR", 0.25f, Model::None), // "M_DOOR"ã¯ãƒ­ãƒ¼ãƒ‰æ¸ˆã¿ã¨ã™ã‚‹
+		AnimationComponent({ "A_DOOR_OPEN", "A_DOOR_CLOSE" }), // ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å
+		DoorComponent(isEntrance, isEntrance), // å…¥å£ãªã‚‰ãƒ­ãƒƒã‚¯ãªã—ã€å‡ºå£ãªã‚‰ãƒ­ãƒƒã‚¯ã‚ã‚Š
+		CollisionComponent(
+			XMFLOAT3(5.0f, 5.0f, 0.5f), // å£ã¨åŒã˜ãã‚‰ã„ã®ã‚µã‚¤ã‚º
+			XMFLOAT3(0.0f, 0.0f, 0.0f),
+			COLLIDER_STATIC // é–‰ã¾ã£ã¦ã„ã‚‹æ™‚ã¯å£æ‰±ã„
+		),
+		RigidBodyComponent(
+			XMFLOAT3(0.0f, 0.0f, 0.0f), // é€Ÿåº¦
+			XMFLOAT3(0.0f, 0.0f, 0.0f), // åŠ é€Ÿåº¦
+			0.0f,  // è³ªé‡0 = é™çš„ï¼ˆæŠ¼ã•ã‚Œã¦ã‚‚å‹•ã‹ãªã„ï¼‰
+			0.5f,  // æ‘©æ“¦
+			0.0f   // åç™º
+		),
+		EffectComponent(
+			"EFK_DOOR",
+			true,
+			true,
+			{ 0.0f, 0.0f, 0.0f },
+			0.5f
+		)
+	);
+
+	// åˆæœŸã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ï¼ˆé–‰ã˜ãŸçŠ¶æ…‹ï¼‰
+	auto& anim = coordinator->GetComponent<AnimationComponent>(door);
+	anim.Play("A_DOOR_CLOSE", false, 100.0f);
+
+	return door;
+}
+
+EntityID ECS::EntityFactory::CreateEnemySpawner(Coordinator* coordinator, const DirectX::XMFLOAT3& position, float delayTime)
+{
+	EntityID spawner = coordinator->CreateEntity(
+		TagComponent("spawner"),
+		TransformComponent(position, { 0,0,0 }, { 1,1,1 }),
+
+		// RenderComponentã¯ç„¡ã—ï¼ˆè¦‹ãˆãªã„ï¼‰
+		// RigidBodyã‚‚ç„¡ã—ï¼ˆç‰©ç†å¹²æ¸‰ã—ãªã„ï¼‰
+
+		// ã‚¹ãƒãƒ¼ãƒ³æƒ…å ± (ä¾‹: 3ç§’å¾Œã«Guardã‚’å‡ºã™)
+		EnemySpawnComponent(EnemyType::Guard, delayTime, 1.5f)
+	);
+	return spawner;
+}
+
+ECS::EntityID EntityFactory::CreateTeleporter(ECS::Coordinator* coordinator, DirectX::XMFLOAT3 position) {
+	return coordinator->CreateEntity(
+		TransformComponent(position, { 0,0,0 }, { 2.5f, 0.1f, 2.5f }),
+		// ä»•æ§˜ï¼šä¸‰äººç§°ãƒ¢ãƒ¼ãƒ‰ï¼ˆACTION_MODEï¼‰ã§ã¯è¦‹ãˆãªã„ãŸã‚ã€MESH_NONEã‚’æŒ‡å®š
+		RenderComponent(MESH_NONE, DirectX::XMFLOAT4(0, 0.8f, 1.0f, 1.0f)),
+		// æ¥è§¦åˆ¤å®šï¼šç‰©ç†è¡çªã¯ã›ãšã€ã‚¤ãƒ™ãƒ³ãƒˆã®ã¿ç™ºç”Ÿã•ã›ã‚‹
+		CollisionComponent(DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f), { 0,0,0 }, COLLIDER_TRIGGER),
+		TagComponent("teleporter"),
+		TeleportComponent()
+	);
 }

@@ -21,7 +21,16 @@
 #include "ECS/ECSInitializer.h"
 #include "ECS/Systems/Gameplay/PlayerControlSystem.h"
 #include "ECS/ECS.h"
-#include "Scene/ResultScene.h"
+#include "ECS/EntityFactory.h"
+
+#include "ECS/Components/Rendering/AnimationComponent.h"
+#include "ECS/Components/Gameplay/PlayerControlComponent.h"
+#include "ECS/Components/Physics/RigidBodyComponent.h"
+#include "ECS/Components/Core/TransformComponent.h"
+#include "ECS/Components/Core/GameStateComponent.h"
+#include "ECS/Systems/Core/CameraControlSystem.h"
+#include <cmath>
+
 #include <iostream>
 
 using namespace DirectX;
@@ -45,11 +54,27 @@ void PlayerControlSystem::Update(float deltaTime)
 	
 	if (gameControllerID != ECS::INVALID_ENTITY_ID)
 	{
-		if (m_coordinator->GetComponent<GameStateComponent>(gameControllerID).currentMode == GameMode::SCOUTING_MODE)
+		auto& state = m_coordinator->GetComponent<GameStateComponent>(gameControllerID);
+
+		// 条件: 
+		// 1. 偵察モード (SCOUTING_MODE) の場合
+		// 2. プレイ中 (Playing) ではない場合 (Entering:入場演出, Exiting:脱出演出)
+		bool isScouting = (state.currentMode == GameMode::SCOUTING_MODE);
+		bool isCutscene = (state.sequenceState != GameSequenceState::Playing);
+
+		if (isScouting || isCutscene)
 		{
-			auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(gameControllerID);
-			rigidBody.velocity.x = 0.0f;
-			rigidBody.velocity.y = 0.0f;
+			// プレイヤーエンティティ全ての動きを止める
+			for (auto const& entity : m_entities)
+			{
+				auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(entity);
+				// 慣性で滑らないように速度をゼロにする
+				rigidBody.velocity.x = 0.0f;
+				rigidBody.velocity.z = 0.0f;
+				// rigidBody.velocity.y = 0.0f; // 重力落下はさせたい場合はYは触らない
+			}
+
+			// ここでリターンして、以降のキー入力処理を行わない
 			return;
 		}
 	}
@@ -108,6 +133,7 @@ void PlayerControlSystem::Update(float deltaTime)
 		auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
 		auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(entity);
 		auto& playerControl = m_coordinator->GetComponent<PlayerControlComponent>(entity);
+		auto& animComp = m_coordinator->GetComponent<AnimationComponent>(entity); 
 
 		// =====================================
 		// 1. 移動 (カメラ基準での移動)
@@ -165,6 +191,36 @@ void PlayerControlSystem::Update(float deltaTime)
 			// 入力なし -> 停止
 			rigidBody.velocity.x = 0.0f;
 			rigidBody.velocity.z = 0.0f;
+		}
+
+		// =====================================
+	   // 2. アニメーション状態の決定
+	   // =====================================
+	   // 速度から「動いているか」を判定（わずかな誤差も考えて閾値を設ける）
+		const float moveThreshold = 0.01f;
+		bool isMoving =
+			(std::fabs(rigidBody.velocity.x) > moveThreshold) ||
+			(std::fabs(rigidBody.velocity.z) > moveThreshold);
+
+		PlayerAnimState desiredState = isMoving
+			? PlayerAnimState::Run
+			: PlayerAnimState::Idle;
+
+		// 状態に変化があるときだけ AnimationComponent に命令を送る
+		if (desiredState != playerControl.animState)
+		{
+			playerControl.animState = desiredState;
+
+			if (desiredState == PlayerAnimState::Run)
+			{
+				// 走りアニメへ
+				animComp.PlayBlend("A_PLAYER_RUN", 0.3f);
+			}
+			else
+			{
+				// 待機アニメへ
+				animComp.PlayBlend("A_PLAYER_IDLE", 0.3f);
+			}
 		}
 	}
 }

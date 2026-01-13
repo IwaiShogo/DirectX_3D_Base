@@ -18,9 +18,10 @@
  *********************************************************************/
 
 // ===== インクルード =====
-#include "ECS/AllComponents.h"
-#include "ECS/AllSystems.h"
+#include "ECS/ECS.h"
 #include "ECS/ECSInitializer.h"
+#include "ECS/EntityFactory.h"
+#include "Systems/Geometory.h"
 
 #include <DirectXMath.h>
 #include <algorithm>
@@ -59,127 +60,137 @@ struct XMINT2Comparer
 };
 
 // --------------------------------------------------------------------------------
-// A*探索ロジックの本体 (ステップ2-1)
+// A* 探索: ゴールまでの全経路を返す
 // --------------------------------------------------------------------------------
-
-/**
- * @brief A*アルゴリズムを使用して、スタートからゴールまでの最短経路を探索する
- * @param startGrid - 探索開始グリッド座標
- * @param targetGrid - 探索目標グリッド座標 (プレイヤー位置)
- * @param mapComp - マップデータ
- * @return 経路の次のステップとなるグリッド座標。経路が見つからない場合は無効な座標(-1, -1)
- */
-XMINT2 GuardAISystem::FindNextTargetGridPos(
-    XMINT2 startGrid,
-    XMINT2 targetGrid,
-    const MapComponent& mapComp
-)
+std::vector<XMINT2> GuardAISystem::FindPath(XMINT2 startGrid, XMINT2 targetGrid, const MapComponent& mapComp)
 {
-    // マップの境界チェック (スタートとターゲットが有効なグリッド内か)
+    // ... (境界チェックなどは既存と同じ) ...
     const int MAX_INDEX_X = mapComp.gridSizeX - 1;
     const int MAX_INDEX_Y = mapComp.gridSizeY - 1;
     if (startGrid.x <= 0 || startGrid.x >= MAX_INDEX_X || startGrid.y <= 0 || startGrid.y >= MAX_INDEX_Y ||
         targetGrid.x <= 0 || targetGrid.x >= MAX_INDEX_X || targetGrid.y <= 0 || targetGrid.y >= MAX_INDEX_Y)
     {
-        return { -1, -1 }; // 無効な位置
+        return {}; // 空のパス
     }
 
-    // 1. ノード管理セットの初期化
-    // Open Set: 優先度キュー (fCostの最も低いノードを優先)
+    // A*のセットアップ
     std::priority_queue<AStarNode, std::vector<AStarNode>, std::greater<AStarNode>> openSet;
-
-    // 全ノード情報を保持するマップ (グリッド座標をキーとする)
     std::map<XMINT2, AStarNode, XMINT2Comparer> allNodes;
 
-    // 2. スタートノードの初期化
     AStarNode startNode;
     startNode.gridPos = startGrid;
     startNode.gCost = 0.0f;
-    startNode.hCost = (float)std::abs(targetGrid.x - startGrid.x) + std::abs(targetGrid.y - startGrid.y); // マンハッタン距離
+    startNode.hCost = (float)std::abs(targetGrid.x - startGrid.x) + std::abs(targetGrid.y - startGrid.y);
     startNode.fCost = startNode.hCost;
-    startNode.parentPos = { startGrid.x, startGrid.y }; // 親は自分自身とする
+    startNode.parentPos = startGrid; // 親は自分
 
     openSet.push(startNode);
     allNodes[startGrid] = startNode;
 
-    // 3. 探索ループ
     while (!openSet.empty())
     {
-        // 3-1. Open SetからFコストが最小のノードを取り出す
         AStarNode current = openSet.top();
         openSet.pop();
 
-        // ノードは複数回キューに入れられる可能性があるので、allNodesで最新情報を確認
-        if (current.fCost > allNodes.at(current.gridPos).fCost) {
-            continue;
-        }
+        if (current.fCost > allNodes.at(current.gridPos).fCost) continue;
 
-        // 3-2. 終了判定: ゴールに到達
+        // ゴール到達
         if (current.gridPos == targetGrid)
         {
-            // 4. 経路の復元と次のターゲットの特定
-            XMINT2 currentPos = targetGrid;
-            XMINT2 nextTarget = currentPos;
-
-            // 親ノードを辿り、スタートの次に来るノードを見つける
-            while (allNodes.at(currentPos).parentPos.x != currentPos.x || allNodes.at(currentPos).parentPos.y != currentPos.y)
+            // --- 経路復元 ---
+            std::vector<XMINT2> path;
+            XMINT2 curr = targetGrid;
+            while (!(curr == startGrid))
             {
-                // 次のターゲット（スタートの隣）まで親を辿り続ける
-                if (allNodes.at(currentPos).parentPos == startGrid)
-                {
-                    // スタートの親に到達したとき、currentPosがスタートの次のノードである
-                    nextTarget = currentPos;
-                    break;
-                }
-                currentPos = allNodes.at(currentPos).parentPos;
+                path.push_back(curr);
+                curr = allNodes.at(curr).parentPos;
             }
-            return nextTarget;
+            // path.push_back(startGrid); // スタート地点は含めなくて良い（現在地なので）
+            std::reverse(path.begin(), path.end()); // ゴール→スタート順なので反転
+            return path;
         }
 
-        // 3-3. 隣接ノードの探索
-        int directions[4][2] = { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } }; // 4方向移動 (上下左右)
-
+        // 隣接ノード探索
+        int directions[4][2] = { { 0, 1 }, { 0, -1 }, { 1, 0 }, { -1, 0 } };
         for (int i = 0; i < 4; ++i)
         {
             XMINT2 neighborPos = { current.gridPos.x + directions[i][0], current.gridPos.y + directions[i][1] };
 
-            // 境界チェック
+            // 壁チェック
             if (neighborPos.x <= 0 || neighborPos.x >= mapComp.gridSizeX - 1 ||
-                neighborPos.y <= 0 || neighborPos.y >= mapComp.gridSizeY - 1)
-            {
-                continue;
-            }
+                neighborPos.y <= 0 || neighborPos.y >= mapComp.gridSizeY - 1) continue;
 
-            // 壁チェック: 壁セルは移動不可
-            CellType cellType = mapComp.grid[neighborPos.y][neighborPos.x].type;
-            if (cellType == CellType::Wall || cellType == CellType::Unvisited)
-            {
-                continue;
-            }
+            CellType type = mapComp.grid[neighborPos.y][neighborPos.x].type;
+            if (type == CellType::Wall || type == CellType::Unvisited) continue;
 
-            // 暫定Gコストの計算 (今回は直線移動なので+1.0f)
             float newGCost = current.gCost + 1.0f;
 
-            // 隣接ノードがallNodesに存在しないか、または新しいGコストが既存より小さい場合
             if (allNodes.find(neighborPos) == allNodes.end() || newGCost < allNodes.at(neighborPos).gCost)
             {
-                // ノードの更新または新規作成
-                AStarNode& neighborNode = allNodes[neighborPos];
-
+                AStarNode neighborNode;
                 neighborNode.gridPos = neighborPos;
                 neighborNode.gCost = newGCost;
                 neighborNode.hCost = (float)std::abs(targetGrid.x - neighborPos.x) + std::abs(targetGrid.y - neighborPos.y);
                 neighborNode.fCost = neighborNode.gCost + neighborNode.hCost;
                 neighborNode.parentPos = current.gridPos;
 
-                // Open Setに追加 (更新の場合はOpen Setに古い情報が残るが、Fコストチェックでスキップされる)
+                allNodes[neighborPos] = neighborNode;
                 openSet.push(neighborNode);
             }
         }
     }
+    return {}; // 見つからなかった
+}
 
-    // 経路が見つからなかった場合
-    return { -1, -1 };
+// --------------------------------------------------------------------------------
+// パススムージング (String Pulling)
+// --------------------------------------------------------------------------------
+std::vector<XMFLOAT3> GuardAISystem::SmoothPath(const std::vector<XMINT2>& gridPath, const MapComponent& mapComp)
+{
+    if (gridPath.empty()) return {};
+
+    std::vector<XMFLOAT3> worldPath;
+
+    // グリッド座標 -> ワールド座標への変換ヘルパー
+    auto ToWorld = [&](XMINT2 g) -> XMFLOAT3 {
+        // MapGenerationSystem::GetWorldPositionの簡易版
+        // グリッドの中心座標を返す
+        float x = (float)g.x * mapComp.tileSize - ((mapComp.gridSizeX / 2.0f) * mapComp.tileSize) + 0.5f * mapComp.tileSize + mapComp.tileSize / 2.0f;
+        float z = (float)g.y * mapComp.tileSize - ((mapComp.gridSizeY / 2.0f) * mapComp.tileSize) + 1.0f * mapComp.tileSize + mapComp.tileSize / 2.0f;
+        return XMFLOAT3(x, 0.0f, z);
+        };
+
+    // 最初のポイントを追加
+    worldPath.push_back(ToWorld(gridPath[0]));
+
+    // チェック開始点
+    XMFLOAT3 currentCheckPoint = worldPath[0];
+    int checkIndex = 0;
+
+    // パスを間引く
+    for (size_t i = 1; i < gridPath.size(); ++i)
+    {
+        XMFLOAT3 nextPoint = ToWorld(gridPath[i]);
+
+        // 現在のチェック点から、次の次の点へ直接行けるか確認
+        // 壁にぶつかるなら、一つ前の点（i-1）を経由地点として確定する
+        if (RaycastHitWall(currentCheckPoint, nextPoint, mapComp))
+        {
+            // 壁に当たった -> i-1番目の点は必須
+            // (ただしi-1がcurrentCheckPointと同じならスキップ)
+            if (i - 1 > checkIndex) {
+                XMFLOAT3 wayPoint = ToWorld(gridPath[i - 1]);
+                worldPath.push_back(wayPoint);
+                currentCheckPoint = wayPoint;
+                checkIndex = (int)i - 1;
+            }
+        }
+    }
+
+    // 最後のゴール地点は必ず追加
+    worldPath.push_back(ToWorld(gridPath.back()));
+
+    return worldPath;
 }
 
 // --------------------------------------------------------------------------------
@@ -213,6 +224,111 @@ XMINT2 GuardAISystem::GetGridPosition(const XMFLOAT3& worldPos, const MapCompone
 }
 
 // --------------------------------------------------------------------------------
+// ヘルパー関数: 2点間のレイキャストで壁があるかチェック
+// --------------------------------------------------------------------------------
+bool GuardAISystem::RaycastHitWall(
+    const DirectX::XMFLOAT3& start,
+    const DirectX::XMFLOAT3& end,
+    const MapComponent& mapComp
+)
+{
+    XMVECTOR startV = XMLoadFloat3(&start);
+    XMVECTOR endV = XMLoadFloat3(&end);
+    XMVECTOR dirV = endV - startV;
+    float dist = XMVectorGetX(XMVector3Length(dirV));
+
+    if (dist < 0.001f) return false; // 同じ位置なら壁はないとみなす
+
+    dirV = XMVector3Normalize(dirV);
+
+    // レイキャストのステップ幅 (タイルの半分程度)
+    float stepSize = mapComp.tileSize * 0.5f;
+    int steps = static_cast<int>(dist / stepSize);
+
+    for (int i = 0; i <= steps; ++i)
+    {
+        XMVECTOR currentPosV = startV + dirV * (float)i * stepSize;
+        XMFLOAT3 currentPos;
+        XMStoreFloat3(&currentPos, currentPosV);
+
+        XMINT2 gridPos = GetGridPosition(currentPos, mapComp);
+
+        // グリッド範囲内チェック
+        if (gridPos.x >= 0 && gridPos.x < mapComp.gridSizeX &&
+            gridPos.y >= 0 && gridPos.y < mapComp.gridSizeY)
+        {
+            if (mapComp.grid[gridPos.y][gridPos.x].type == CellType::Wall)
+            {
+                return true; // 壁にヒット
+            }
+        }
+    }
+
+    return false; // 壁にヒットしなかった
+}
+
+// --------------------------------------------------------------------------------
+// ターゲットが視界内か判定 (距離、角度、遮蔽物)
+// --------------------------------------------------------------------------------
+bool GuardAISystem::IsTargetInSight(
+    const TransformComponent& guardTransform,
+    const GuardComponent& guardInfo,
+    const TransformComponent& targetTransform,
+    const MapComponent& mapComp
+)
+{
+    // 1. 距離判定
+    XMVECTOR guardPos = XMLoadFloat3(&guardTransform.position);
+    XMVECTOR targetPos = XMLoadFloat3(&targetTransform.position);
+    XMVECTOR toTarget = targetPos - guardPos;
+
+    // 高さ無視
+    toTarget = XMVectorSetY(toTarget, 0.0f);
+
+    XMVECTOR distSqVec = XMVector3LengthSq(toTarget);
+    float distSq;
+    XMStoreFloat(&distSq, distSqVec);
+
+    if (distSq > guardInfo.viewRange * guardInfo.viewRange)
+    {
+        return false; // 範囲外
+    }
+
+    // 2. 角度判定
+    XMVECTOR toTargetDir = XMVector3Normalize(toTarget);
+    float yawRad = guardTransform.rotation.y;
+
+    float dirX = std::sin(yawRad);
+    float dirZ = std::cos(yawRad);
+    XMVECTOR forwardDir = XMVectorSet(dirX, 0.0f, dirZ, 0.0f);
+
+    XMVECTOR dotVec = XMVector3Dot(forwardDir, toTargetDir);
+    float dot;
+    XMStoreFloat(&dot, dotVec);
+
+    float angleThreshold = std::cos(XMConvertToRadians(guardInfo.viewAngle * 0.5f));
+
+    if (dot < angleThreshold)
+    {
+        return false; // 視野角外
+    }
+
+    // 3. 遮蔽物判定 (Raycast)
+    // 自身の位置(少し上)からターゲットの位置(少し上)へレイを飛ばす
+    XMFLOAT3 rayStart = guardTransform.position;
+    rayStart.y += 0.5f; // 目の高さ
+    XMFLOAT3 rayEnd = targetTransform.position;
+    rayEnd.y += 0.5f;
+
+    if (RaycastHitWall(rayStart, rayEnd, mapComp))
+    {
+        return false; // 壁に遮られた
+    }
+
+    return true; // 全ての条件をクリア
+}
+
+// --------------------------------------------------------------------------------
 // GuardAISystem::Update() の本体
 // --------------------------------------------------------------------------------
 
@@ -223,15 +339,62 @@ void GuardAISystem::Update(float deltaTime)
     if (mapEntity == INVALID_ENTITY_ID) return;
 
     const MapComponent& mapComp = m_coordinator->GetComponent<MapComponent>(mapEntity);
-    const GameStateComponent& gameStateComp = m_coordinator->GetComponent<GameStateComponent>(mapEntity);
+    GameStateComponent& gameStateComp = m_coordinator->GetComponent<GameStateComponent>(mapEntity);
 
     // プレイヤーエンティティの検索 (追跡目標)
-    EntityID playerEntity = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
-    if (playerEntity == INVALID_ENTITY_ID) return;
+    EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+    if (playerID == INVALID_ENTITY_ID) return;
 
-    // プレイヤーのTransformComponentを取得
-    const TransformComponent& playerTransform = m_coordinator->GetComponent<TransformComponent>(playerEntity);
-    XMINT2 playerGridPos = GetGridPosition(playerTransform.position, mapComp);
+    auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
+    auto& pEffect = m_coordinator->GetComponent<EffectComponent>(playerID);
+
+    // 2. 「近くに警備員がいるか？」フラグをリセット
+    bool isAnyGuardClose = false;
+    float alertDistance = 15.0f; // 10m以内なら反応
+
+    // 3. 全ての警備員をチェック
+    for (auto const& entity : m_entities)
+    {
+        // 警備員タグまたはコンポーネントを持つエンティティのみ対象
+        if (!m_coordinator->HasComponent<GuardComponent>(entity)) continue;
+
+        auto& gTrans = m_coordinator->GetComponent<TransformComponent>(entity);
+
+        // 距離計算
+        float dx = pTrans.position.x - gTrans.position.x;
+        float dy = pTrans.position.y - gTrans.position.y;
+        float dz = pTrans.position.z - gTrans.position.z;
+        float distSq = dx * dx + dy * dy + dz * dz;
+
+        // もし1体でも近くにいたらフラグを立ててループ終了
+        if (distSq < alertDistance * alertDistance)
+        {
+            isAnyGuardClose = true;
+            break;
+        }
+    }
+
+
+    // 4. フラグに基づいてプレイヤーのエフェクトを制御
+    if (isAnyGuardClose)
+    {
+        // 危険なのに、まだ再生していなければ -> 再生
+        if (pEffect.handle == 0)
+        {
+            pEffect.requestPlay = true;
+        }
+    }
+    else
+    {
+        // 安全なのに、まだ再生中なら -> 停止
+        // (少し余裕を持たせたい場合は、ここでの判定距離を12mなどにする手もあります)
+        if (pEffect.handle != 0)
+        {
+            pEffect.requestStop = true;
+        }
+    }
+
+    XMINT2 playerGridPos = GetGridPosition(pTrans.position, mapComp);
 
     // 動的マップサイズを取得
     const int GRID_SIZE_X = mapComp.gridSizeX;
@@ -262,7 +425,7 @@ void GuardAISystem::Update(float deltaTime)
         {
             //// 追跡開始遅延時間を設定（例: 3秒）
             //guardComp.delayBeforeChase = 3.0f;
-
+          
             // 警備員がまだアクティブでない場合のみ初期配置とタイマー処理を行う
             if (!guardComp.isActive)
             {
@@ -275,6 +438,8 @@ void GuardAISystem::Update(float deltaTime)
                 {
                     // 遅延時間経過後、AI追跡を有効化
                     guardComp.isActive = true;
+                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_FAINDPLAYER");
+
                     // 以降、AI追跡ロジックに移行
                 }
                 else
@@ -286,106 +451,204 @@ void GuardAISystem::Update(float deltaTime)
             }
         }
 
+        // -------------------------------------------------------------
+        // 視界判定とゲームオーバー処理
+        // -------------------------------------------------------------
+        // 警備員がアクティブで、かつアクションモードの場合のみ判定
+        if (guardComp.isActive && gameStateComp.currentMode == GameMode::ACTION_MODE)
+        {
+#ifdef _DEBUG
+            // 1. 基本情報の準備
+            float viewRange = guardComp.viewRange;
+            float halfAngleRad = DirectX::XMConvertToRadians(guardComp.viewAngle * 0.5f);
+            float currentYawRad = guardTransform.rotation.y;
+
+            // 始点（足元より少し上）
+            DirectX::XMFLOAT3 startPos = guardTransform.position;
+            startPos.y += 0.5f;
+
+            // 色の設定
+            DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 0.0f, 1.0f }; // 赤
+            if (IsTargetInSight(guardTransform, guardComp, pTrans, mapComp))
+            {
+                color = { 1.0f, 0.0f, 0.0f, 1.0f }; // 黄色
+            }
+
+            // 2. 扇の描画（分割して線を引く）
+            // 左端の角度
+            float startAngle = currentYawRad - halfAngleRad;
+            // 右端の角度
+            float endAngle = currentYawRad + halfAngleRad;
+
+            // 分割数（この数が多いほど滑らかな円になります）
+            const int SEGMENTS = 16;
+            float stepAngle = (endAngle - startAngle) / SEGMENTS;
+
+            // 左端の点を計算
+            DirectX::XMFLOAT3 prevPos = {
+                startPos.x + std::sin(startAngle) * viewRange,
+                startPos.y,
+                startPos.z + std::cos(startAngle) * viewRange
+            };
+
+            // 中心から左端への線
+            Geometory::AddLine(startPos, prevPos, color);
+
+            // 弧を描くループ
+            for (int i = 1; i <= SEGMENTS; ++i)
+            {
+                float angle = startAngle + (stepAngle * i);
+
+                // 次の点の座標
+                DirectX::XMFLOAT3 nextPos = {
+                    startPos.x + std::sin(angle) * viewRange,
+                    startPos.y,
+                    startPos.z + std::cos(angle) * viewRange
+                };
+
+                // 前の点から次の点へ線を引く（これで円弧になる）
+                Geometory::AddLine(prevPos, nextPos, color);
+
+                prevPos = nextPos;
+            }
+
+            // 右端から中心への線（最後に閉じる）
+            Geometory::AddLine(startPos, prevPos, color);
+#endif
+
+            // -------------------------------------------------------------
+            // 視界判定とゲームオーバー処理
+            // -------------------------------------------------------------
+            if (IsTargetInSight(guardTransform, guardComp, pTrans, mapComp))
+            {
+                // --- プレイヤー発見時の処理 ---
+
+                // 1. 発見音/接触音の再生
+                //ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST5");
+
+                // 2. ゲームオーバーフラグを立てる (CollisionSystemと同じ処理)
+                if (auto gameCtrl = ECS::ECSInitializer::GetSystem<GameControlSystem>())
+                {
+                    gameCtrl->TriggerCaughtSequence(entity);
+                }
+
+                // 3. 以降の処理を行わず、即座に関数を抜ける
+                // (これによりGameControlSystemが次のフレームでリスタート処理を行います)
+                return;
+            }
+        }
+
         XMINT2 guardGridPos = GetGridPosition(guardTransform.position, mapComp);
 
         // ------------------------------------------------------------------
         // 1. 目標到達判定とパス再計算の必要性チェック
         // ------------------------------------------------------------------
-        bool needsPathRecalc = !guardComp.isPathCalculated;
-
-        // 目標が有効なワールド座標として設定されているかチェック (GuardComponent::targetGridPosはXZ平面の座標)
-        if (guardComp.isPathCalculated)
+        // --- プレイヤー追跡ロジック ---
+        if (guardComp.isActive && gameStateComp.currentMode == GameMode::ACTION_MODE)
         {
-            // 現在位置と目標位置のXZ平面の距離を計算
-            XMVECTOR currentPos = XMLoadFloat3(&guardTransform.position);
-            XMVECTOR targetPos = XMVectorSet(guardComp.targetGridPos.x, guardTransform.position.y, guardComp.targetGridPos.y, 1.0f); // XZをX, Zに設定
-
-            // 距離の2乗を計算 (平方根を避けて高速化)
-            float distanceSq = XMVectorGetX(XMVector3LengthSq(currentPos - targetPos));
-
-            // 目標グリッドへの到達判定閾値 (TILE_SIZE=2.0f の0.1倍程度)
-            constexpr float ARRIVAL_THRESHOLD_SQ = 0.05f * 0.05f; // 0.05m以内を到達と見なす
-
-            if (distanceSq < ARRIVAL_THRESHOLD_SQ)
+            // 1. パスの再計算 (一定時間ごと)
+            guardComp.pathRecalcTimer -= deltaTime;
+            if (guardComp.pathRecalcTimer <= 0.0f)
             {
-                // 目標地点に到達したと見なし、次のフレームで再計算が必要
-                needsPathRecalc = true;
-                guardComp.isPathCalculated = false; // パスを無効化
-                guardRigidBody.velocity = XMFLOAT3(0.0f, 0.0f, 0.0f); // 一旦停止
+                guardComp.pathRecalcTimer = guardComp.PATH_RECALC_INTERVAL;
+
+                XMINT2 guardGrid = GetGridPosition(guardTransform.position, mapComp);
+                XMINT2 playerGrid = GetGridPosition(pTrans.position, mapComp);
+
+                // A* で全経路取得
+                std::vector<XMINT2> rawPath = FindPath(guardGrid, playerGrid, mapComp);
+
+                // スムージング
+                guardComp.path = SmoothPath(rawPath, mapComp);
+                guardComp.currentPathIndex = 0;
             }
-        }
 
-        // ------------------------------------------------------------------
-        // 2. パス再計算の実行
-        // ------------------------------------------------------------------
-        // パス再計算が必要、または、グリッドが変わった場合（移動が遅い場合などに備え、ここでは単純化のため到達判定に任せる）
-        if (needsPathRecalc)
-        {
-            // A*探索を実行し、次の目標グリッド座標を取得
-            XMINT2 nextTarget = FindNextTargetGridPos(
-                guardGridPos,
-                playerGridPos,
-                mapComp
-            );
+            // 2. パス追従 (Steering: Seek)
+            if (!guardComp.path.empty() && guardComp.currentPathIndex < guardComp.path.size())
+            {
+                XMFLOAT3 targetPos = guardComp.path[guardComp.currentPathIndex];
 
-            const float MAP_CENTER_OFFSET_X = (mapComp.gridSizeX / 2.0f) * mapComp.tileSize; // 20.0f
-            const float MAP_CENTER_OFFSET_Y = (mapComp.gridSizeY / 2.0f) * mapComp.tileSize;
-            const float X_ADJUSTMENT = 0.5f * mapComp.tileSize; // 1.0f
-            const float Z_ADJUSTMENT = 1.0f * mapComp.tileSize; // 2.0f
+                // 現在地からターゲットへのベクトル
+                XMVECTOR myPos = XMLoadFloat3(&guardTransform.position);
+                XMVECTOR targetV = XMLoadFloat3(&targetPos);
+                XMVECTOR toTarget = targetV - myPos;
+                toTarget = XMVectorSetY(toTarget, 0.0f); // Y軸無視
 
-            // 探索結果をGuardComponentに保存 (ステップ2-2のロジックを再利用)
-            guardComp.nextTargetGridPos = nextTarget;
+                float distSq = XMVectorGetX(XMVector3LengthSq(toTarget));
 
-            if (nextTarget.x != -1) {
-                // MapGenerationSystem::GetWorldPosition の逆算を避け、
-                // MapGenerationSystem のGetWorldPositionが返すセルの角座標 + TILE_SIZE/2.0f が中心と仮定
+                // ウェイポイント到達判定 (半径1.0m以内なら次へ)
+                // ゴール地点(最後)の場合は厳密に判定
+                float threshold = (guardComp.currentPathIndex == guardComp.path.size() - 1) ? 0.5f : 1.0f;
 
-                // 【注意】ここでは MapGenerationSystem::GetWorldPosition が直接利用できないため、
-                // ワールド座標の再計算ロジック（GetGridPositionの逆）を一時的に使用します。
+                if (distSq < threshold * threshold)
+                {
+                    // 次のポイントへ
+                    guardComp.currentPathIndex++;
+                    // まだパスが残っているなら、今の速度を維持してスムーズに移行したいので velocity はゼロにしない
+                }
+                else
+                {
+                    // --- ステアリング移動 ---
+                    XMVECTOR desiredDir = XMVector3Normalize(toTarget);
 
-                // X座標: (グリッドX * TILE_SIZE - MAP_CENTER_OFFSET + X_ADJUSTMENT) + TILE_SIZE/2.0f
-                float targetWorldX = (float)nextTarget.x * mapComp.tileSize - MAP_CENTER_OFFSET_X + X_ADJUSTMENT + mapComp.tileSize / 2.0f;
-                // Z座標: (グリッドY * TILE_SIZE - MAP_CENTER_OFFSET + Z_ADJUSTMENT) + TILE_SIZE/2.0f
-                float targetWorldZ = (float)nextTarget.y * mapComp.tileSize - MAP_CENTER_OFFSET_Y + Z_ADJUSTMENT + mapComp.tileSize / 2.0f;
+                    // 加速・旋回処理
+                    // 現在の速度ベクトル
+                    XMVECTOR currentVel = XMLoadFloat3(&guardRigidBody.velocity);
 
-                guardComp.targetGridPos.x = targetWorldX; // ワールドX
-                guardComp.targetGridPos.y = targetWorldZ; // ワールドZ (ComponentではYと命名)
+                    // 簡易ステアリング: 即座に方向を変えず、補間する
+                    // Lerpで「現在の進行方向」から「行きたい方向」へ徐々に近づける
+                    // 係数を調整することで旋回性能が変わる (0.1f くらいが鈍くて人間っぽい)
+                    XMVECTOR newVel = XMVectorLerp(currentVel, desiredDir * guardComp.speed, 5.0f * deltaTime);
 
-                guardComp.isPathCalculated = true;
+                    // 速度更新
+                    XMStoreFloat3(&guardRigidBody.velocity, newVel);
+
+                    // --- 向きの更新 ---
+                    // 移動方向を向く
+                    if (distSq > 0.01f)
+                    {
+                        // 2. 「速度」ではなく「目的地への方向」を使って角度を計算する
+                        XMVECTOR dirVec = XMLoadFloat3(&targetPos) - XMLoadFloat3(&guardTransform.position);
+                        dirVec = XMVectorSetY(dirVec, 0.0f); // 高さは無視
+                        dirVec = XMVector3Normalize(dirVec);
+
+                        // atan2 の結果はラジアン
+                        float targetAngle = std::atan2(XMVectorGetX(dirVec), XMVectorGetZ(dirVec));
+
+                        // ★重要: Transformにはラジアンが入っている前提なので、変換せずそのまま使う
+                        float currentAngle = guardTransform.rotation.y;
+
+                        // 角度差の計算
+                        float diff = targetAngle - currentAngle;
+
+                        // -PI ~ PI に補正 (最短経路で回転させる)
+                        while (diff <= -XM_PI) diff += XM_2PI;
+                        while (diff > XM_PI) diff -= XM_2PI;
+
+                        // 少しずつ回転 (補間)
+                        float rotSpeed = 5.0f * deltaTime;
+
+                        // デッドゾーン (差がごく僅かなら回転しない)
+                        if (std::abs(diff) > 0.001f)
+                        {
+                            if (std::abs(diff) < rotSpeed) {
+                                currentAngle = targetAngle;
+                            }
+                            else {
+                                currentAngle += (diff > 0) ? rotSpeed : -rotSpeed;
+                            }
+
+                            // ★重要: ラジアンのまま保存する (ConvertToDegreesを削除)
+                            guardTransform.rotation.y = currentAngle;
+                        }
+                    }
+                }
             }
-            else {
-                guardComp.isPathCalculated = false;
+            else
+            {
+                // パスがない、または終了 -> 停止
+                guardRigidBody.velocity = { 0,0,0 };
             }
-        }
-
-        // ------------------------------------------------------------------
-        // 3. 移動ロジック (ステップ3-2の内容を統合)
-        // ------------------------------------------------------------------
-        if (guardComp.isPathCalculated)
-        {
-            // 目標座標へ向かう方向ベクトルを計算
-            XMVECTOR currentPos = XMLoadFloat3(&guardTransform.position);
-            XMVECTOR targetPos = XMVectorSet(guardComp.targetGridPos.x, guardTransform.position.y, guardComp.targetGridPos.y, 1.0f);
-
-            // 方向ベクトル
-            XMVECTOR direction = targetPos - currentPos;
-
-            // Y軸（高さ）方向の移動は無視し、XZ平面の移動のみ考慮
-            direction = XMVectorSetY(direction, 0.0f);
-
-            // 正規化
-            XMVECTOR normalizedDirection = XMVector3Normalize(direction);
-
-            // 速度を設定 (GuardComponent::speed を利用)
-            XMVECTOR velocity = normalizedDirection * guardComp.speed;
-
-            // RigidBodyComponentに反映
-            XMStoreFloat3(&guardRigidBody.velocity, velocity);
-
-            // 向きの更新（Z軸方向の回転を計算）
-            // 方向ベクトルをXZ平面の回転角度に変換
-            float angle = std::atan2(XMVectorGetX(normalizedDirection), XMVectorGetZ(normalizedDirection));
-            guardTransform.rotation.y = XMConvertToDegrees(angle);
         }
     }
 }

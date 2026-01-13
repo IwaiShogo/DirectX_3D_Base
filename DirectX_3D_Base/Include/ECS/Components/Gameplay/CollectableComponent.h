@@ -22,6 +22,7 @@
 
 // ===== インクルード =====
 #include <cstdint>
+#include <string>
 
 /**
  * @struct	CollectableComponent
@@ -31,9 +32,11 @@ struct CollectableComponent
 {
 	bool isCollected = false;
 	float collectionRadius = 0.5f;
+	int orderIndex = 0;//0なら順序無し1以上なら順序あり
+	std::string itemID;
 
-	CollectableComponent(float radius)
-		: collectionRadius(radius) {}
+	CollectableComponent(float radius, int order = 0, std::string id = "")
+		: collectionRadius(radius), orderIndex(order), itemID(id) {}
 };
 
 // Component登録

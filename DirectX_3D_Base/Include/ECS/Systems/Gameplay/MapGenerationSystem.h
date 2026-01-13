@@ -28,6 +28,9 @@
 #include <iostream>
 #include "External/JSON/json.hpp"
 
+#include "ECS/Components/Gameplay/MapComponent.h"
+#include "ECS/Components/Gameplay/ItemTrackerComponent.h"
+
 using json = nlohmann::json;
 
 /**
@@ -45,12 +48,24 @@ struct MapStageConfig
 	int maxRoomSize = 3;		// 最大部屋サイズ（奇数）
 	int maxRoomCount = 5;		// 最大配置部屋数
 
-	int itemCount = 3;			// 配置するアイテムの総数
 	int guardCount = 1;			// 配置する警備員の総数
+    int taserCount = 3;         // 配置するテーザーの総数
 
-	std::map<CellType, int> gimmickCounts;
+	int teleportPairCount = 0;    // 配置するテレポーターの総数
 
+    //アイテム順序モードオン/オフ
 	float minPathPercentage = 0.25f;
+    bool useOrderedCollection = false;
+
+    float timeLimitStar = 180.0f;   // 評価用タイムリミット
+    std::vector<std::string> items;
+
+    // ギミック情報
+    struct GimmickInfo {
+        std::string type;
+        int count;
+    };
+    std::vector<GimmickInfo> gimmicks;
 };
 
 class MapConfigLoader final
@@ -80,48 +95,63 @@ public:
 
         try
         {
-            json jsonData;
-            file >> jsonData; // パース実行
+			json j;
+			file >> j;
 
-            // 指定されたStageIDが存在するかチェック
-            if (jsonData.contains(stageID))
-            {
-                const auto& stageData = jsonData[stageID];
+			if (j.contains(stageID))
+			{
+				auto& val = j[stageID];
 
-                // 各パラメータを読み込む (存在しない場合はデフォルト値のまま)
-                if (stageData.contains("gridSizeX")) config.gridSizeX = stageData["gridSizeX"];
-                if (stageData.contains("gridSizeY")) config.gridSizeY = stageData["gridSizeY"];
-                if (stageData.contains("tileSize")) config.tileSize = stageData["tileSize"];
-                if (stageData.contains("wallHeight")) config.wallHeight = stageData["wallHeight"];
+				// 基本設定
+				config.gridSizeX = val.value("gridSizeX", 20);
+				config.gridSizeY = val.value("gridSizeY", 20);
+				config.tileSize = val.value("tileSize", 5.0f);
+				config.wallHeight = val.value("wallHeight", 20.0f);
 
-                if (stageData.contains("minRoomSize")) config.minRoomSize = stageData["minRoomSize"];
-                if (stageData.contains("maxRoomSize")) config.maxRoomSize = stageData["maxRoomSize"];
-                if (stageData.contains("maxRoomCount")) config.maxRoomCount = stageData["maxRoomCount"];
+				config.minRoomSize = val.value("minRoomSize", 3);
+				config.maxRoomSize = val.value("maxRoomSize", 6);
+				config.maxRoomCount = val.value("maxRoomCount", 5);
 
-                if (stageData.contains("itemCount")) config.itemCount = stageData["itemCount"];
-                if (stageData.contains("guardCount")) config.guardCount = stageData["guardCount"];
-                if (stageData.contains("minPathPercentage")) config.minPathPercentage = stageData["minPathPercentage"];
+				config.guardCount = val.value("guardCount", 1);
+				config.teleportPairCount = val.value("teleportPairCount", 0);
+				config.minPathPercentage = val.value("minPathPercentage", 0.3f);
+				config.useOrderedCollection = val.value("useOrderedCollection", false);
 
-                // ギミック情報の読み込み (拡張用)
-                if (stageData.contains("gimmicks"))
-                {
-                    for (const auto& gimmick : stageData["gimmicks"])
-                    {
-                        std::string typeName = gimmick["type"];
-                        int count = gimmick["count"];
+				// ★追加: タイムリミット読み込み
+				config.timeLimitStar = val.value("timeLimitStar", 180.0f);
 
-                        // 文字列からCellTypeへの変換が必要だが、
-                        // 現状は対応表がないため例としてコメントアウト
-                        // if (typeName == "Teleporter") config.gimmickCounts[CellType::Teleporter] = count;
-                    }
-                }
+				// ★追加: アイテムリスト読み込み
+				if (val.contains("items") && val["items"].is_array())
+				{
+					for (const auto& item : val["items"]) {
+						config.items.push_back(item.get<std::string>());
+					}
+				}
+				// 旧互換: itemsがない場合は itemCount だけ読んでダミーを入れる等の対応も可
+				else if (val.contains("itemCount"))
+				{
+					int count = val.value("itemCount", 3);
+					for (int k = 0; k < count; ++k) config.items.push_back("Takara_Ring");
+				}
 
-                printf("[Info] Loaded stage config for: %s\n", stageID.c_str());
-            }
-            else
-            {
-                printf("[Warning] Stage ID '%s' not found in config. Using default.\n", stageID.c_str());
-            }
+				// ギミック読み込み
+				if (val.contains("gimmicks") && val["gimmicks"].is_array())
+				{
+					for (auto& gim : val["gimmicks"])
+					{
+						MapStageConfig::GimmickInfo info;
+						info.type = gim.value("type", "");
+						info.count = gim.value("count", 0);
+						config.gimmicks.push_back(info);
+					}
+				}
+
+				printf("[Info] Loaded stage config for: %s\n", stageID.c_str());
+			}
+			else
+			{
+				printf("[Warning] Stage ID '%s' not found in config. Using default.\n", stageID.c_str());
+			}
         }
         catch (const json::parse_error& e)
         {
@@ -157,6 +187,7 @@ class MapGenerationSystem
 {
 private:
 	ECS::Coordinator* m_coordinator = nullptr;
+	int m_itemSpawnIndex = 0;
 
 public:
 	void Init(ECS::Coordinator* coordinator) override { m_coordinator = coordinator; }

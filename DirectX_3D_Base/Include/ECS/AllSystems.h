@@ -26,18 +26,30 @@
 // @folder	Core
 // @system	カメラ操作
 #include "ECS/Systems/Core/CameraControlSystem.h"
-// @system	カメラ切り替え
-#include "ECS/Systems/Core/StateSwitchSystem.h"
+// @system	固定カメラ
+#include "ECS/Systems/Core/BasicCameraSystem.h"
 // @system	ゲーム終了時の処理
-#include "ECS/Systems/Core/GameFlowSystem.h"
+#include "ECS/Systems/Core/GameControlSystem.h"
 // @system	オーディオ
 #include "ECS/Systems/Core/AudioSystem.h"
+// @system	タイトルコントローラー
+#include "ECS/Systems/Core/TitleControlSystem.h"
+// @system	生存時間
+#include "ECS/Systems/Core/LifeTimeSystem.h"
+
+#include "ECS/Systems/Core/ScreenTransitionSystem.h"
 
 // @folder	Rendering
 // @system	描画
 #include "ECS/Systems/Rendering/RenderSystem.h"
 // @system	デバッグ
 #include "ECS/Systems/Rendering/DebugDrawSystem.h"
+// @system	アニメーション
+#include "ECS/Systems/Rendering/AnimationSystem.h"
+// @system	エフェクト
+#include "ECS/Systems/Rendering/EffectSystem.h"
+// @system	点滅
+#include "ECS/Systems/Rendering/FlickerSystem.h"
 
 // @folder	Physics
 // @system	衝突判定
@@ -48,7 +60,12 @@
 // @folder	UI
 // @system	画像UI
 #include "ECS/Systems/UI/UIRenderSystem.h"
+// @system	UI入力
+#include "ECS/Systems/UI/UIInputSystem.h"
+// @system	カーソルUI
+#include "ECS/Systems/UI/CursorSystem.h"
 
+#include "ECS/Systems/UI/FloatingSystem.h"
 // @folder	Gameplay
 // @system	プレイヤー入力制御
 #include "ECS/Systems/Gameplay/PlayerControlSystem.h"
@@ -56,8 +73,12 @@
 #include "ECS/Systems/Gameplay/CollectionSystem.h"
 // @system	マップ生成
 #include "ECS/Systems/Gameplay/MapGenerationSystem.h"
+// @system	生成を遅らせる
+#include "ECS/Systems/Gameplay/EnemySpawnSystem.h"
 
 // @system	警備員AI
 #include "ECS/Systems/Gimmick/GuardAISystem.h"
+// @system	テレポーター
+#include "ECS/Systems/Gimmick/TeleportSystem.h"
 
 #endif // !___ALL_SYSTEM_H___
