@@ -3,8 +3,4 @@ EFK_TREASURE_GLOW,Effect,Assets/Effect/effect_shine.efkefc
 EFK_TITLE_SHINE,Effect,Assets/Effect/effect_title_shine.efkefc
 EFK_DOOR,Effect,Assets/Effect/effect_door.efkefc
 EFK_ALERT,Effect,Assets/Effect/effect_alert.efkefc
-EFK_SHOOTINGSTAR,Effect,Assets/Effect/effect_nagare_star.efkefc
-EFK_SHOOTINGSTARPYUU,Effect,Assets/Effect/effect_nagare_pyun.efkefc
-EFK_SHOOTINGSTARANDPUN,Effect,Assets/Effect/effect_nagareboshi.efkefc
-EFK_SELECTBACK,Effect,Assets/Effect/effect_buttonselect_blue_1_2.efkefc
-EFK_SELECTOK,Effect,Assets/Effect/effect_buttonselect_yellow_1_2.efkefc
+EFK_TITLE_SHINE2,Effect,Assets/Effect/effect_title_shine2.efkefc
