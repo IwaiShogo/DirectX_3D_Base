@@ -12,6 +12,7 @@
     "timeLimitStar": 180.0,
     "minPathPercentage": 0.5,
     "useOrderedCollection": true,
+    "teleportPairCount": 1,
     "items": [
       "Takara_Yubiwa"
     ],
