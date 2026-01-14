@@ -266,6 +266,11 @@ private:
 	void EnsureDebugEffectOnMap(); // ★追加：切り分け用にGLOWを常駐
 	bool GetUIRect(ECS::EntityID id, float& left, float& top, float& right, float& bottom) const;
 
+	std::vector<std::pair<ECS::EntityID, float>> m_activeEyeLights;
+	float m_eyeLightTimer = 0.0f;
+	float m_eyeLightNextInterval = 0.0f;
+	void UpdateEyeLight(float dt);
+
 };
 
 #endif // !___STAGE_SELECT_SCENE_H___
