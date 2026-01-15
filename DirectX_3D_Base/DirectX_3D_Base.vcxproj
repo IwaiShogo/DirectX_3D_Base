@@ -164,6 +164,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\ECS\Systems\Gameplay\PlayerControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gameplay\EnemySpawnSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Gimmick\GuardAISystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Gimmick\TeleportSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Physics\CollisionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Physics\PhysicsSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Rendering\AnimationSystem.cpp" />
@@ -195,7 +196,6 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\Systems\XAudio2\SoundEngine.cpp" />
     <ClCompile Include="Source\Works\_geometory.cpp" />
     <ClCompile Include="Source\Works\_model.cpp" />
-    <ClCompile Include="TeleportSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\JSON\json.hpp" />
@@ -220,6 +220,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Components\Gameplay\PlayerControlComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gimmick\DoorComponent.h" />
     <ClInclude Include="Include\ECS\Components\Gimmick\GuardComponent.h" />
+    <ClInclude Include="Include\ECS\Components\Gimmick\TeleportComponent.h" />
     <ClInclude Include="Include\ECS\Components\Physics\CollisionComponent.h" />
     <ClInclude Include="Include\ECS\Components\Physics\RigidBodyComponent.h" />
     <ClInclude Include="Include\ECS\Components\Rendering\DebugComponent.h" />
