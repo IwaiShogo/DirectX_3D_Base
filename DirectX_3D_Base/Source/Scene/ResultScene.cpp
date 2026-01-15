@@ -24,6 +24,7 @@
 #include <ECS/Systems/Core/ResultControlSystem.h>
 
 #include <DirectXMath.h>
+#include <cctype>
 #include <iostream>
 
 using namespace DirectX;
@@ -36,6 +37,62 @@ bool       ResultScene::isClear = false;
 int        ResultScene::finalItenCount = 0;
 ResultData ResultScene::s_resultData = {};
 int        ResultScene::s_newlyUnlockedStageNo = -1;
+
+// Stage progress / best-time update is handled when ResultData is set.
+static bool g_progressHandled = false;
+
+void ResultScene::SetResultData(const ResultData& data)
+{
+    s_resultData = data;
+    // Reset per-result flag
+    g_progressHandled = false;
+
+    // Default: no newly unlocked stage
+    s_newlyUnlockedStageNo = -1;
+
+    if (s_resultData.isCleared)
+    {
+        // Unlock next stage (if any)
+        s_newlyUnlockedStageNo = StageUnlockProgress::UnlockNextStageFromClearedStageID(s_resultData.stageID);
+
+        // Update BEST TIME (fastest only)
+        const int clearedStageNo = [](const std::string& sid) -> int
+            {
+                int v = 0;
+                bool inDigits = false;
+                for (char ch : sid)
+                {
+                    if (std::isdigit(static_cast<unsigned char>(ch)))
+                    {
+                        inDigits = true;
+                        v = v * 10 + (ch - '0');
+                    }
+                    else if (inDigits)
+                    {
+                        break;
+                    }
+                }
+                return (v >= 1 && v <= 6) ? v : -1;
+            }(s_resultData.stageID);
+
+        StageUnlockProgress::UpdateBestTimeIfFaster(clearedStageNo, s_resultData.clearTime);
+
+        // Update STARS (起動中のみで初期化。リザルトで取った分だけ点灯)
+        {
+            const std::uint8_t addMask =
+                (s_resultData.wasSpotted ? 0 : 0x1) |
+                (s_resultData.collectedAllOrdered ? 0x2 : 0) |
+                (s_resultData.clearedInTime ? 0x4 : 0);
+            if (addMask != 0)
+            {
+                StageUnlockProgress::UpdateStageStarMaskOr(clearedStageNo, addMask);
+            }
+        }
+    }
+
+    g_progressHandled = true;
+}
+
 
 namespace
 {
@@ -58,16 +115,10 @@ void ResultScene::Init()
     //  メンバに保存（CreateButtons で使う)
     m_isClear = isClear;
 
-
-
-
-    // ===== Stage unlock (persistent) =====
-    // クリアした場合のみ「次ステージ」を解放（最大6）。
-    // ※演出(浮かび上がり)は StageSelect に戻るときだけ出すので、ここでは pending はセットしない。
-    s_newlyUnlockedStageNo = -1;
-    if (s_resultData.isCleared)
+    // Stage progress / best-time update (safety: if SetResultData wasn't called)
+    if (!g_progressHandled)
     {
-        s_newlyUnlockedStageNo = StageUnlockProgress::UnlockNextStageFromClearedStageID(s_resultData.stageID);
+        ResultScene::SetResultData(s_resultData);
     }
 
 
@@ -241,7 +292,7 @@ void ResultScene::Init()
         // ========================================================
         // GAME OVER 画面のレイアウト
         // ========================================================
-        
+
         // 背景
         m_coordinator->CreateEntity(
             TransformComponent(
@@ -280,7 +331,7 @@ void ResultScene::Init()
         );
 
 
-        
+
         // ステージ名プレート（ゲームオーバー時も表示）
         //{
         //    float plateW = 320.0f;
@@ -430,12 +481,23 @@ void ResultScene::Draw()
 
 void ResultScene::CreateTimeDisplay(float time, DirectX::XMFLOAT2 pos)
 {
-    int tInt = static_cast<int>(time * 10.0f);
-    int min = (tInt / 600) % 100;
-    int sec = (tInt / 10) % 60;
-    int dsec = tInt % 10;
+    int digits[7] = { 10,10,11,10,10,12,10 }; // --:--.-
+    if (time > 0.05f)
+    {
+        int tInt = static_cast<int>(time * 10.0f);
+        int min = (tInt / 600) % 100;
+        int sec = (tInt / 10) % 60;
+        int dsec = tInt % 10;
 
-    int digits[] = { min / 10, min % 10, 11, sec / 10, sec % 10, 12, dsec };
+        digits[0] = min / 10;
+        digits[1] = min % 10;
+        digits[2] = 11; // ':'
+        digits[3] = sec / 10;
+        digits[4] = sec % 10;
+        digits[5] = 12; // '.'
+        digits[6] = dsec;
+    }
+
 
     float w = 40.0f;
     float h = 60.0f;
