@@ -147,6 +147,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Include\ECS\Systems\Rendering\FlickerSystem.cpp" />
+    <ClCompile Include="OpeningScene.cpp" />
     <ClCompile Include="Source\ECS\ECSInitializer.cpp" />
     <ClCompile Include="Source\ECS\EntityFactory.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\AudioSystem.cpp" />
@@ -154,6 +155,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\ECS\Systems\Core\CameraControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\GameControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\LifeTimeSystem.cpp" />
+    <ClCompile Include="Source\ECS\Systems\Core\OpeningControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\ResultControlSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\ScreenTransitionSystem.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\TitleControlSystem.cpp" />
@@ -243,6 +245,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\ECS\Systems\Core\CameraControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\GameControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\LifeTimeSystem.h" />
+    <ClInclude Include="Include\ECS\Systems\Core\OpeningControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\ResultControlSystem.h" />
     <ClInclude Include="Include\ECS\Systems\Core\ScreenTransition.h" />
     <ClInclude Include="Include\ECS\Systems\Core\ScreenTransitionSystem.h" />
@@ -287,6 +290,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\Systems\XAudio2\SoundEffect.h" />
     <ClInclude Include="Include\Systems\XAudio2\SoundEngine.h" />
     <ClInclude Include="Include\Utility\CSVLoader.h" />
+    <ClInclude Include="OpeningScene.h" />
     <ClInclude Include="TeleportComponent.h" />
     <ClInclude Include="TeleportSystem.h" />
   </ItemGroup>

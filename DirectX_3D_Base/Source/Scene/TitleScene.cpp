@@ -197,11 +197,7 @@ void TitleScene::Init()
             UIButtonComponent(
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
-                /* Callback */ []() {
-                    // 「はじめから」：進捗を完全初期化してからステージセレクトへ
-                    StageUnlockProgress::ResetAllAndSave();
-                    SceneManager::ChangeScene<StageSelectScene>();
-                },
+                /* Callback */ []() { SceneManager::ChangeScene<OpeningScene>(); },//StageSelectScene
                 /* HitScale */ hitScale
             )
         );
