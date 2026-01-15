@@ -2197,11 +2197,11 @@ void StageSelectScene::UpdateEyeLight(float dt)
 		// SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720 想定
 		std::vector<DirectX::XMFLOAT2> points = {
 			{ SCREEN_WIDTH * 0.21f, SCREEN_HEIGHT * 0.33f }, // 1. 元の場所
-			{ SCREEN_WIDTH * 0.42f,   SCREEN_HEIGHT * 0.33f   }, // 2. 左上あたり
-			{ SCREEN_WIDTH * 0.63f,   SCREEN_HEIGHT * 0.33f   }, // 3. 右上あたり
-			{ SCREEN_WIDTH * 0.21f,   SCREEN_HEIGHT * 0.66f   }, // 4. 左下あたり
-			{ SCREEN_WIDTH * 0.42f,   SCREEN_HEIGHT * 0.66f   }, // 5. 右下あたり
-			{ SCREEN_WIDTH * 0.63f,   SCREEN_HEIGHT * 0.66f   }  // 6. 中央上（タイトル付近）
+			//{ SCREEN_WIDTH * 0.42f,   SCREEN_HEIGHT * 0.33f   }, // 2. 左上あたり
+			//{ SCREEN_WIDTH * 0.63f,   SCREEN_HEIGHT * 0.33f   }, // 3. 右上あたり
+			//{ SCREEN_WIDTH * 0.21f,   SCREEN_HEIGHT * 0.66f   }, // 4. 左下あたり
+			//{ SCREEN_WIDTH * 0.42f,   SCREEN_HEIGHT * 0.66f   }, // 5. 右下あたり
+			//{ SCREEN_WIDTH * 0.63f,   SCREEN_HEIGHT * 0.66f   }  // 6. 中央上（タイトル付近）
 		};
 
 		// リストの中からランダムに1つ選ぶ

@@ -49,7 +49,7 @@ struct MapStageConfig
 	int maxRoomCount = 5;		// 最大配置部屋数
 
 	int guardCount = 1;			// 配置する警備員の総数
-    int taserCount = 3;         // 配置するテーザーの総数
+    int taserCount = 1;         // 配置するテーザーの総数
 
 	int teleportPairCount = 0;    // 配置するテレポーターの総数
 
