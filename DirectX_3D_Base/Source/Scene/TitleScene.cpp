@@ -177,7 +177,7 @@ void TitleScene::Init()
             UIButtonComponent(
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
-                /* Callback */ []() { SceneManager::ChangeScene<StageSelectScene>(); },
+                /* Callback */ []() { SceneManager::ChangeScene<OpeningScene>(); },//StageSelectScene
                 /* HitScale */ hitScale
             )
         );

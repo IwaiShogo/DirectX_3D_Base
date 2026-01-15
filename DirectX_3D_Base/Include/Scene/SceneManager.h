@@ -31,6 +31,7 @@
 #include "StageSelectScene.h"
 #include "GameScene.h"
 #include "TitleScene.h"
+#include "OpeningScene.h"
 #include "ResultScene.h"
  /**
   * @class SceneManager

@@ -193,6 +193,12 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         TagComponent, UIButtonComponent
 
     );
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        OpeningControlSystem,
+        TagComponent, UIButtonComponent
+
+    );
 
     // 2. VXeo^ƃVOl`ݒ
     REGISTER_SYSTEM_AND_INIT(

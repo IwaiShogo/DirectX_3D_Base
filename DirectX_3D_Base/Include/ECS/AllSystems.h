@@ -34,6 +34,8 @@
 #include "ECS/Systems/Core/AudioSystem.h"
 // @system	タイトルコントローラー
 #include "ECS/Systems/Core/TitleControlSystem.h"
+// @system オープニングコントロールシステム
+#include "ECS/Systems/Core/OpeningControlSystem.h"
 // @system	生存時間
 #include "ECS/Systems/Core/LifeTimeSystem.h"
 
