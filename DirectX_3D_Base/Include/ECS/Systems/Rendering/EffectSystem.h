@@ -41,6 +41,8 @@ public:
 	void SetScreenSpaceCamera(float screenW, float screenH);
 	void ClearOverrideCamera();
 
+	void StopEffectImmediate(ECS::EntityID entityID);
+
 private:
 	ECS::Coordinator* m_coordinator = nullptr;
 	EffekseerRenderer::RendererRef m_renderer;

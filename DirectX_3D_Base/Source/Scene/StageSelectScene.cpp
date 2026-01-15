@@ -440,6 +440,7 @@ void StageSelectScene::Init()
 // UI_STAGE_MAP (BACK=10.0, SIRO=9.0)
 	// Draw関数内で depth > 100000.0f のものは 3D描画後に重ねて描画されます。
 	const float baseDepth = 110000.0f;
+	//const float baseDepth = 20.0f;
 
 	// UI_STAGE_MAP (BACK=10.0, SIRO=9.0)
 	EntityID mapBack = m_coordinator->CreateEntity(
@@ -782,6 +783,7 @@ void StageSelectScene::Update(float deltaTime)
 
 	UpdateShootingStar(dtSec);
 	UpdateActiveShootingStars(dtSec);
+	UpdateEyeLight(dtSec);
 	UpdateUISelectFx(dtSec);
 	UpdateDetailAppear(dtSec);
 	UpdateButtonHoverScale(dtSec);
@@ -862,149 +864,332 @@ void StageSelectScene::Update(float deltaTime)
 
 void StageSelectScene::Draw()
 {
-	auto ui = ECSInitializer::GetSystem<UIRenderSystem>();
-	auto rs = ECSInitializer::GetSystem<RenderSystem>();
-	auto fx = ECSInitializer::GetSystem<EffectSystem>();
+	//auto ui = ECSInitializer::GetSystem<UIRenderSystem>();
+	//auto rs = ECSInitializer::GetSystem<RenderSystem>();
+	//auto fx = ECSInitializer::GetSystem<EffectSystem>();
 
-	// UIレンダラが無い場合は従来通り
-	if (!ui)
+	//// UIレンダラが無い場合は従来通り
+	//if (!ui)
+	//{
+	//	if (rs) { rs->DrawSetup(); rs->DrawEntities(); }
+	//	if (fx) fx->Render();
+	//	return;
+	//}
+
+	//// -----------------------------------------
+	//// 目的：
+	//// - 「カードアニメーション（3D）」をUIより前に出す
+	//// - ただし画面遷移フェード（黒塗りオーバーレイ）は最前面に残す
+	//// 実装：
+	////   1) UI背景(depth<=0)
+	////   2) 通常UI(0<depth<=kOverlayDepthStart)  ※この上に3Dを描く
+	////   3) 3D
+	////   4) オーバーレイUI(depth>kOverlayDepthStart) ※フェードなど
+	//// -----------------------------------------
+	//const float kOverlayDepthStart = 100000.0f; // フェード(=200000)は確実にここより上
+
+	//struct VisState { ECS::EntityID id; bool uiVis; bool btnVis; };
+	//std::vector<VisState> savedStates;
+
+	//std::vector<ECS::EntityID> allTargets = m_listUIEntities;
+	//allTargets.insert(allTargets.end(), m_detailUIEntities.begin(), m_detailUIEntities.end());
+	//if (m_cursorEntity != (ECS::EntityID)-1) allTargets.push_back(m_cursorEntity);
+
+	//// 背景
+	//if (m_listBgEntity != (ECS::EntityID)-1) allTargets.push_back(m_listBgEntity);
+
+	//// フェード（オーバーレイ）も対象に入れてパス制御する
+	//if (m_transitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_transitionEntity);
+	//if (m_blackTransitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_blackTransitionEntity);
+
+	//for (auto id : allTargets)
+	//{
+	//	if (id == (ECS::EntityID)-1) continue;
+
+	//	VisState s{ id,false,false };
+	//	if (m_coordinator->HasComponent<UIImageComponent>(id))
+	//		s.uiVis = m_coordinator->GetComponent<UIImageComponent>(id).isVisible;
+	//	if (m_coordinator->HasComponent<UIButtonComponent>(id))
+	//		s.btnVis = m_coordinator->GetComponent<UIButtonComponent>(id).isVisible;
+
+	//	savedStates.push_back(s);
+	//}
+
+	//auto SetVisible = [&](ECS::EntityID id, bool v)
+	//	{
+	//		if (id == (ECS::EntityID)-1) return;
+	//		if (m_coordinator->HasComponent<UIImageComponent>(id))
+	//			m_coordinator->GetComponent<UIImageComponent>(id).isVisible = v;
+	//		if (m_coordinator->HasComponent<UIButtonComponent>(id))
+	//			m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = v;
+	//	};
+
+	//auto GetDepth = [&](ECS::EntityID id) -> float
+	//	{
+	//		if (!m_coordinator->HasComponent<UIImageComponent>(id)) return 0.0f;
+	//		return m_coordinator->GetComponent<UIImageComponent>(id).depth;
+	//	};
+
+	//auto DrawUIOnce = [&]()
+	//	{
+	//		ui->Render(true);
+	//		ui->Render(false);
+	//	};
+
+	//// 1) UI背景パス（depth <= 0）
+	//for (const auto& s : savedStates)
+	//{
+	//	if (s.id == (ECS::EntityID)-1) continue;
+
+	//	bool draw = false;
+	//	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+	//	{
+	//		const float d = GetDepth(s.id);
+	//		draw = (d <= 0.0f) && s.uiVis;
+	//	}
+	//	SetVisible(s.id, draw);
+	//}
+	//DrawUIOnce();
+
+	//// 2) 通常UI（0 < depth <= kOverlayDepthStart）
+	//for (const auto& s : savedStates)
+	//{
+	//	if (s.id == (ECS::EntityID)-1) continue;
+
+	//	bool draw = false;
+	//	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+	//	{
+	//		const float d = GetDepth(s.id);
+	//		draw = (d > 0.0f && d <= kOverlayDepthStart) && s.uiVis;
+	//	}
+	//	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+	//	{
+	//		const float d = GetDepth(s.id);
+	//		draw = draw || (s.btnVis && (d > 0.0f && d <= kOverlayDepthStart));
+	//	}
+	//	SetVisible(s.id, draw);
+	//}
+	//DrawUIOnce();
+
+	//// 3) 3D（カードアニメーションをUIの上に）
+	//if (rs)
+	//{
+	//	rs->DrawSetup();
+	//	rs->DrawEntities();
+	//}
+
+	//if (fx)
+	//{
+	//	fx->Render();
+	//}
+
+	//// 4) オーバーレイUI（depth > kOverlayDepthStart）※フェードなど
+	//for (const auto& s : savedStates)
+	//{
+	//	if (s.id == (ECS::EntityID)-1) continue;
+
+	//	bool draw = false;
+	//	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+	//	{
+	//		const float d = GetDepth(s.id);
+	//		draw = (d > kOverlayDepthStart) && s.uiVis;
+	//	}
+	//	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+	//	{
+	//		const float d = GetDepth(s.id);
+	//		draw = draw || (s.btnVis && (d > kOverlayDepthStart));
+	//	}
+	//	SetVisible(s.id, draw);
+	//}
+	//DrawUIOnce();
+
+	//// 5) 復元
+	//for (const auto& s : savedStates)
+	//{
+	//	if (s.id == (ECS::EntityID)-1) continue;
+	//	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+	//		m_coordinator->GetComponent<UIImageComponent>(s.id).isVisible = s.uiVis;
+	//	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+	//		m_coordinator->GetComponent<UIButtonComponent>(s.id).isVisible = s.btnVis;
+	//}
+
+auto ui = ECSInitializer::GetSystem<UIRenderSystem>();
+auto rs = ECSInitializer::GetSystem<RenderSystem>();
+auto fx = ECSInitializer::GetSystem<EffectSystem>();
+
+// UIレンダラが無い場合は従来通り
+if (!ui)
+{
+	if (rs) { rs->DrawSetup(); rs->DrawEntities(); }
+	if (fx) fx->Render();
+	return;
+}
+
+// -----------------------------------------
+// 描画順序の制御 (レイヤー分け)
+// Layer 1: 背景UI (depth <= 0)
+// Layer 2: 通常UI (0 < depth <= 100,000)
+// Layer 3: 3Dモデル (カードなど)
+// Layer 4: 詳細UI (100,000 < depth < 200,000) ★ここを作る
+// Layer 5: エフェクト (詳細UIの上、フェードの下) ★ここで描画
+// Layer 6: フェード (depth >= 200,000)
+// -----------------------------------------
+
+const float kNormalUIEnd = 100000.0f;
+const float kFadeStart = 200000.0f; // フェード開始ライン
+
+struct VisState { ECS::EntityID id; bool uiVis; bool btnVis; };
+std::vector<VisState> savedStates;
+
+std::vector<ECS::EntityID> allTargets = m_listUIEntities;
+allTargets.insert(allTargets.end(), m_detailUIEntities.begin(), m_detailUIEntities.end());
+if (m_cursorEntity != (ECS::EntityID)-1) allTargets.push_back(m_cursorEntity);
+if (m_listBgEntity != (ECS::EntityID)-1) allTargets.push_back(m_listBgEntity);
+if (m_transitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_transitionEntity);
+if (m_blackTransitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_blackTransitionEntity);
+
+// 現在の表示状態を保存
+for (auto id : allTargets)
+{
+	if (id == (ECS::EntityID)-1) continue;
+	VisState s{ id,false,false };
+	if (m_coordinator->HasComponent<UIImageComponent>(id))
+		s.uiVis = m_coordinator->GetComponent<UIImageComponent>(id).isVisible;
+	if (m_coordinator->HasComponent<UIButtonComponent>(id))
+		s.btnVis = m_coordinator->GetComponent<UIButtonComponent>(id).isVisible;
+	savedStates.push_back(s);
+}
+
+auto SetVisible = [&](ECS::EntityID id, bool v)
 	{
-		if (rs) { rs->DrawSetup(); rs->DrawEntities(); }
-		if (fx) fx->Render();
-		return;
-	}
-
-	// -----------------------------------------
-	// 目的：
-	// - 「カードアニメーション（3D）」をUIより前に出す
-	// - ただし画面遷移フェード（黒塗りオーバーレイ）は最前面に残す
-	// 実装：
-	//   1) UI背景(depth<=0)
-	//   2) 通常UI(0<depth<=kOverlayDepthStart)  ※この上に3Dを描く
-	//   3) 3D
-	//   4) オーバーレイUI(depth>kOverlayDepthStart) ※フェードなど
-	// -----------------------------------------
-	const float kOverlayDepthStart = 100000.0f; // フェード(=200000)は確実にここより上
-
-	struct VisState { ECS::EntityID id; bool uiVis; bool btnVis; };
-	std::vector<VisState> savedStates;
-
-	std::vector<ECS::EntityID> allTargets = m_listUIEntities;
-	allTargets.insert(allTargets.end(), m_detailUIEntities.begin(), m_detailUIEntities.end());
-	if (m_cursorEntity != (ECS::EntityID)-1) allTargets.push_back(m_cursorEntity);
-
-	// 背景
-	if (m_listBgEntity != (ECS::EntityID)-1) allTargets.push_back(m_listBgEntity);
-
-	// フェード（オーバーレイ）も対象に入れてパス制御する
-	if (m_transitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_transitionEntity);
-	if (m_blackTransitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_blackTransitionEntity);
-
-	for (auto id : allTargets)
-	{
-		if (id == (ECS::EntityID)-1) continue;
-
-		VisState s{ id,false,false };
+		if (id == (ECS::EntityID)-1) return;
 		if (m_coordinator->HasComponent<UIImageComponent>(id))
-			s.uiVis = m_coordinator->GetComponent<UIImageComponent>(id).isVisible;
+			m_coordinator->GetComponent<UIImageComponent>(id).isVisible = v;
 		if (m_coordinator->HasComponent<UIButtonComponent>(id))
-			s.btnVis = m_coordinator->GetComponent<UIButtonComponent>(id).isVisible;
+			m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = v;
+	};
 
-		savedStates.push_back(s);
-	}
-
-	auto SetVisible = [&](ECS::EntityID id, bool v)
-		{
-			if (id == (ECS::EntityID)-1) return;
-			if (m_coordinator->HasComponent<UIImageComponent>(id))
-				m_coordinator->GetComponent<UIImageComponent>(id).isVisible = v;
-			if (m_coordinator->HasComponent<UIButtonComponent>(id))
-				m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = v;
-		};
-
-	auto GetDepth = [&](ECS::EntityID id) -> float
-		{
-			if (!m_coordinator->HasComponent<UIImageComponent>(id)) return 0.0f;
-			return m_coordinator->GetComponent<UIImageComponent>(id).depth;
-		};
-
-	auto DrawUIOnce = [&]()
-		{
-			ui->Render(true);
-			ui->Render(false);
-		};
-
-	// 1) UI背景パス（depth <= 0）
-	for (const auto& s : savedStates)
+auto GetDepth = [&](ECS::EntityID id) -> float
 	{
-		if (s.id == (ECS::EntityID)-1) continue;
+		if (!m_coordinator->HasComponent<UIImageComponent>(id)) return 0.0f;
+		return m_coordinator->GetComponent<UIImageComponent>(id).depth;
+	};
 
-		bool draw = false;
-		if (m_coordinator->HasComponent<UIImageComponent>(s.id))
-		{
-			const float d = GetDepth(s.id);
-			draw = (d <= 0.0f) && s.uiVis;
-		}
-		SetVisible(s.id, draw);
-	}
-	DrawUIOnce();
-
-	// 2) 通常UI（0 < depth <= kOverlayDepthStart）
-	for (const auto& s : savedStates)
+auto DrawUIOnce = [&]()
 	{
-		if (s.id == (ECS::EntityID)-1) continue;
+		ui->Render(true);
+		ui->Render(false);
+	};
 
-		bool draw = false;
-		if (m_coordinator->HasComponent<UIImageComponent>(s.id))
-		{
-			const float d = GetDepth(s.id);
-			draw = (d > 0.0f && d <= kOverlayDepthStart) && s.uiVis;
-		}
-		if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
-		{
-			const float d = GetDepth(s.id);
-			draw = draw || (s.btnVis && (d > 0.0f && d <= kOverlayDepthStart));
-		}
-		SetVisible(s.id, draw);
-	}
-	DrawUIOnce();
-
-	// 3) 3D（カードアニメーションをUIの上に）
-	if (rs)
+// ------------------------------------------------------
+// 1) 背景UI (depth <= 0)
+// ------------------------------------------------------
+for (const auto& s : savedStates)
+{
+	if (s.id == (ECS::EntityID)-1) continue;
+	bool draw = false;
+	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
 	{
-		rs->DrawSetup();
-		rs->DrawEntities();
+		const float d = GetDepth(s.id);
+		draw = (d <= 0.0f) && s.uiVis;
 	}
+	SetVisible(s.id, draw);
+}
+DrawUIOnce();
 
-	// 4) オーバーレイUI（depth > kOverlayDepthStart）※フェードなど
-	for (const auto& s : savedStates)
+// ------------------------------------------------------
+// 2) 通常UI (0 < depth <= 100,000)
+// ------------------------------------------------------
+for (const auto& s : savedStates)
+{
+	if (s.id == (ECS::EntityID)-1) continue;
+	bool draw = false;
+	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
 	{
-		if (s.id == (ECS::EntityID)-1) continue;
-
-		bool draw = false;
-		if (m_coordinator->HasComponent<UIImageComponent>(s.id))
-		{
-			const float d = GetDepth(s.id);
-			draw = (d > kOverlayDepthStart) && s.uiVis;
-		}
-		if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
-		{
-			const float d = GetDepth(s.id);
-			draw = draw || (s.btnVis && (d > kOverlayDepthStart));
-		}
-		SetVisible(s.id, draw);
+		const float d = GetDepth(s.id);
+		draw = (d > 0.0f && d <= kNormalUIEnd) && s.uiVis;
 	}
-	DrawUIOnce();
-
-	// 5) 復元
-	for (const auto& s : savedStates)
+	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
 	{
-		if (s.id == (ECS::EntityID)-1) continue;
-		if (m_coordinator->HasComponent<UIImageComponent>(s.id))
-			m_coordinator->GetComponent<UIImageComponent>(s.id).isVisible = s.uiVis;
-		if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
-			m_coordinator->GetComponent<UIButtonComponent>(s.id).isVisible = s.btnVis;
+		const float d = GetDepth(s.id);
+		draw = draw || (s.btnVis && (d > 0.0f && d <= kNormalUIEnd));
 	}
+	SetVisible(s.id, draw);
+}
+DrawUIOnce();
+
+// ------------------------------------------------------
+// 3) 3Dモデル (カードアニメーションなど)
+// ------------------------------------------------------
+if (rs)
+{
+	rs->DrawSetup();
+	rs->DrawEntities();
+}
+
+// ------------------------------------------------------
+// 4) 詳細UIなど (100,000 < depth < 200,000)
+// ★ここが重要：エフェクトより先に描画して「下敷き」にする
+// ------------------------------------------------------
+for (const auto& s : savedStates)
+{
+	if (s.id == (ECS::EntityID)-1) continue;
+	bool draw = false;
+	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+	{
+		const float d = GetDepth(s.id);
+		draw = (d > kNormalUIEnd && d < kFadeStart) && s.uiVis;
+	}
+	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+	{
+		const float d = GetDepth(s.id);
+		draw = draw || (s.btnVis && (d > kNormalUIEnd && d < kFadeStart));
+	}
+	SetVisible(s.id, draw);
+}
+DrawUIOnce();
+
+// ------------------------------------------------------
+// 5) エフェクト描画
+// ★詳細UIの上、かつフェード(200,000)の下に描画される
+// ------------------------------------------------------
+if (fx)
+{
+	fx->Render();
+}
+
+// ------------------------------------------------------
+// 6) フェードなど (depth >= 200,000)
+// ------------------------------------------------------
+for (const auto& s : savedStates)
+{
+	if (s.id == (ECS::EntityID)-1) continue;
+	bool draw = false;
+	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+	{
+		const float d = GetDepth(s.id);
+		draw = (d >= kFadeStart) && s.uiVis;
+	}
+	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+	{
+		const float d = GetDepth(s.id);
+		draw = draw || (s.btnVis && (d >= kFadeStart));
+	}
+	SetVisible(s.id, draw);
+}
+DrawUIOnce();
+
+// ------------------------------------------------------
+// 復元
+// ------------------------------------------------------
+for (const auto& s : savedStates)
+{
+	if (s.id == (ECS::EntityID)-1) continue;
+	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+		m_coordinator->GetComponent<UIImageComponent>(s.id).isVisible = s.uiVis;
+	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+		m_coordinator->GetComponent<UIButtonComponent>(s.id).isVisible = s.btnVis;
+}
 }
 
 void StageSelectScene::UpdateShootingStar(float dt)
@@ -1309,7 +1494,28 @@ void StageSelectScene::SwitchState(bool toDetail)
 
 	// 演出関連
 	if (toDetail)
-	{
+	{// ============================================================
+        // ★修正: エフェクトシステム経由で「即時停止」してから削除
+        // ============================================================
+		auto effectSystem = ECSInitializer::GetSystem<EffectSystem>();
+
+		for (auto& pair : m_activeEyeLights)
+		{
+			if (pair.first != (ECS::EntityID)-1)
+			{
+				// 1. まずエフェクトを止める (これで画面から消えます)
+				if (effectSystem)
+				{
+					effectSystem->StopEffectImmediate(pair.first);
+				}
+
+				// 2. その後、Entityを削除
+				m_coordinator->DestroyEntity(pair.first);
+			}
+		}
+		m_activeEyeLights.clear();
+		// ============================================================
+
 		if (!wasDetail)
 		{
 			// 選択ステージに応じて「城(手前)」のテクスチャを差し替える
@@ -1320,6 +1526,9 @@ void StageSelectScene::SwitchState(bool toDetail)
 			std::uniform_real_distribution<float> dist(m_shootingStarIntervalMin, m_shootingStarIntervalMax);
 			m_nextShootingStarWait = dist(m_rng);
 			m_spawnStarOnEnterDetail = true;
+
+			m_eyeLightTimer = 0.0f;
+			m_eyeLightNextInterval = 1.0f; // 最初は1秒後に光る
 		}
 	}
 	else
@@ -1945,6 +2154,79 @@ bool StageSelectScene::GetUIRect(ECS::EntityID id, float& left, float& top, floa
 	return true;
 }
 
+void StageSelectScene::UpdateEyeLight(float dt)
+{
+	// --------------------------------------------------------
+	// 1. 既存のエフェクトの寿命管理（自動消滅）
+	// --------------------------------------------------------
+	for (int i = (int)m_activeEyeLights.size() - 1; i >= 0; --i)
+	{
+		auto& pair = m_activeEyeLights[i];
+		pair.second -= dt; // 寿命を減らす
+
+		// 寿命切れ、またはEntityが既に無効ならリストから削除
+		if (pair.second <= 0.0f || pair.first == (ECS::EntityID)-1)
+		{
+			if (pair.first != (ECS::EntityID)-1)
+			{
+				m_coordinator->DestroyEntity(pair.first);
+			}
+			m_activeEyeLights.erase(m_activeEyeLights.begin() + i);
+		}
+	}
+	// 詳細モード以外や、遷移中は再生しない
+	if (m_isDetailMode) return;
+	if (ScreenTransition::IsBusy(m_coordinator.get(), m_transitionEntity) ||
+		ScreenTransition::IsBusy(m_coordinator.get(), m_blackTransitionEntity)) return;
+
+	// タイマー更新
+	m_eyeLightTimer += dt;
+
+	// 待ち時間を経過したら生成
+	if (m_eyeLightTimer >= m_eyeLightNextInterval)
+	{
+		// 次回の設定（例: 2.0秒 〜 4.0秒 の間でランダム）
+		m_eyeLightTimer = 0.0f;
+		std::uniform_real_distribution<float> dist(0.5f, 1.5f);
+		m_eyeLightNextInterval = dist(m_rng);
+
+		// ============================================================
+		// ★追加: 光らせたい場所のリスト（6箇所）
+		// ============================================================
+		// ※画面上の好きな座標(ピクセル)に書き換えてください
+		// SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720 想定
+		std::vector<DirectX::XMFLOAT2> points = {
+			{ SCREEN_WIDTH * 0.21f, SCREEN_HEIGHT * 0.33f }, // 1. 元の場所
+			{ SCREEN_WIDTH * 0.42f,   SCREEN_HEIGHT * 0.33f   }, // 2. 左上あたり
+			{ SCREEN_WIDTH * 0.63f,   SCREEN_HEIGHT * 0.33f   }, // 3. 右上あたり
+			{ SCREEN_WIDTH * 0.21f,   SCREEN_HEIGHT * 0.66f   }, // 4. 左下あたり
+			{ SCREEN_WIDTH * 0.42f,   SCREEN_HEIGHT * 0.66f   }, // 5. 右下あたり
+			{ SCREEN_WIDTH * 0.63f,   SCREEN_HEIGHT * 0.66f   }  // 6. 中央上（タイトル付近）
+		};
+
+		// リストの中からランダムに1つ選ぶ
+		std::uniform_int_distribution<int> idxDist(0, (int)points.size() - 1);
+		int idx = idxDist(m_rng);
+
+		float cx = points[idx].x;
+		float cy = points[idx].y;
+
+		// --- エフェクト生成 ---
+		ECS::EntityID fxEntity = m_coordinator->CreateEntity(
+			TagComponent("effect_eyeslight"),
+			TransformComponent({ cx, cy, 0.0f}, { 0,0,0 }, { 1,1,1 }),
+			EffectComponent(
+				"EFK_EYESLIGHT", // ★アセットID (要登録)
+				false,           // ループしない（1回再生）
+				true,            // 生成時に即再生
+				{ 0,0,0 },       // オフセット
+				5.0f            // ★スケール (大きすぎる場合は 1.0f 等に調整)
+			)
+		);
+		m_activeEyeLights.push_back({ fxEntity, 2.0f });
+	}
+}
+
 void StageSelectScene::EnsureDebugEffectOnMap()
 {
 	if (!m_debugShowGlowOnMap) return;
@@ -2190,7 +2472,7 @@ void StageSelectScene::SpawnShootingStar()
 	std::uniform_real_distribution<float> ydist(yMin, yMax);
 	const float x = START_X;
 	const float y = ydist(m_rng);
-	const float z = 9.5f; // MAPBACK(10.0) と MAPSIRO(9.0) の間
+	const float z = 0.0f; // MAPBACK(10.0) と MAPSIRO(9.0) の間
 
 	// ★サイズ（必要ならここで一括調整）
 	const float starScale = 5.0f;

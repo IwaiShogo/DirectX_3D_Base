@@ -286,4 +286,9 @@ namespace StageUnlockProgress
 		g_pendingReveal = -1;
 		return v;
 	}
+	void ResetProgress()
+	{
+		g_maxUnlocked = 1; // ステージ1のみ解放状態にする
+		Save();            // その状態でファイルに書き込む
+	}
 }

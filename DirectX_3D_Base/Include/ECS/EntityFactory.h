@@ -67,6 +67,8 @@ namespace ECS
 
 		static EntityID CreateEnemySpawner(Coordinator* coordinator, const DirectX::XMFLOAT3& position, float delayTime);
 
+		static EntityID CreateTeleporter(ECS::Coordinator* coordinator, DirectX::XMFLOAT3 position);
+
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止
 		EntityFactory() = delete;

@@ -397,6 +397,15 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
                 restoreType = MESH_NONE;
 #endif
             }
+#ifdef _DEBUG
+            restoreType = MESH_BOX;
+#elif defined(NDEBUG)
+            restoreType = MESH_NONE;
+#endif
+        if (tag == "teleporter")
+        {
+            isTarget = true;
+}
             if (tag == "ground" || tag == "wall" || tag == "door")
             {
                 isTarget = true;
@@ -534,49 +543,24 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID)
         }
         // 敵 (Tag または Component で判定)
         bool isGuard = false;
+        bool isTeleporter = false;
         if (m_coordinator->HasComponent<TagComponent>(entity)) {
             const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
             if (tag == "taser") isGuard = true;
+            if (tag == "teleporter") isTeleporter = true;
         }
 
         if (isGuard) {
             if (showIcons) UpdateIcon(entity, "ICO_TASER", { 1, 1, 1, 1 });
             else if (m_iconMap.count(entity)) m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false;
         }
-
-        // --- Map-check gimmick: TopView で「確認できる場所」を表示 ---
-        // Tag: "map_gimmick" の位置に、緑色のマーカーを出す
-        // ※専用アイコンが無い場合でも、既存の ICO_TREASURE を流用して視認性を確保する
-        if (m_coordinator->HasComponent<TagComponent>(entity))
-        {
-            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
-
-            if (tag == "map_gimmick")
-            {
-                if (showIcons)
-                {
-                    // 既存アイコンを流用（色で差別化）
-                    UpdateIcon(entity, "ICO_TREASURE", { 0.2f, 1.0f, 0.2f, 1.0f });
-
-                    // 少し大きめにして「ここがギミック地点」と分かるようにする
-                    auto it = m_iconMap.find(entity);
-                    if (it != m_iconMap.end() && m_coordinator->HasComponent<TransformComponent>(it->second))
-                    {
-                        m_coordinator->GetComponent<TransformComponent>(it->second).scale = DirectX::XMFLOAT3(44.0f, 44.0f, 1.0f);
-                    }
-                }
-                else if (m_iconMap.count(entity))
-                {
-                    m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false;
-                }
+        if (isTeleporter) {
+            if (showIcons) {
+                // �A�Z�b�g���Ȃ��̂ŁA������`���V�A���F(���F)�ɂ��ĕ\��
+                UpdateIcon(entity, "UI_TITLE_LOGO", { 0.0f, 1.0f, 1.0f, 1.0f });
             }
-            else if (tag == "map_gimmick_used")
-            {
-                // 1回踏んだ後はTopView側でも消す
-                if (m_iconMap.count(entity))
-                {
-                    m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false;
-                }
+            else if (m_iconMap.count(entity)) {
+                m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false;
             }
         }
     }
