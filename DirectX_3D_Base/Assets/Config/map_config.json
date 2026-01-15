@@ -11,12 +11,12 @@
     "maxRoomCount": 4,
     "timeLimitStar": 180.0,
     "minPathPercentage": 0.5,
-    "useOrderedCollection": true,
-    "teleportPairCount": 1,
+    "useOrderedCollection": false,
+    "teleportPairCount": 0,
     "items": [
       "Takara_Yubiwa"
     ],
-    "guardCount": 1,
+    "guardCount": 0,
     "gimmicks": []
   },
   "ST_002": {
@@ -29,18 +29,14 @@
     "minRoomSize": 3,
     "maxRoomSize": 3,
     "maxRoomCount": 4,
-    "timeLimitStar": 60.0,
+    "timeLimitStar": 180.0,
     "minPathPercentage": 0.5,
     "useOrderedCollection": true,
     "items": [
       "Takara_Yubiwa",
-      "Takara_Daiya",
-      "Takara_Crystal",
-      "Takara_Kaiga1",
-      "Takara_Kaiga2",
-      "Takara_Kaiga3"
+      "Takara_Daiya"
     ],
-    "guardCount": 1,
+    "guardCount": 0,
     "gimmicks": []
   },
   "ST_003": {
@@ -53,18 +49,14 @@
     "minRoomSize": 3,
     "maxRoomSize": 3,
     "maxRoomCount": 4,
-    "timeLimitStar": 60.0,
+    "timeLimitStar": 180.0,
     "minPathPercentage": 0.5,
-    "useOrderedCollection": false,
+    "useOrderedCollection": true,
     "items": [
       "Takara_Yubiwa",
-      "Takara_Daiya",
-      "Takara_Crystal",
-      "Takara_Kaiga1",
-      "Takara_Kaiga2",
-      "Takara_Kaiga3"
+      "Takara_Daiya"
     ],
-    "guardCount": 1,
+    "guardCount": 0,
     "gimmicks": []
   },
   "ST_004": {

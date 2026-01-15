@@ -8,7 +8,6 @@
 #include "ECS/ECSInitializer.h"
 #include "DirectXMath.h"
 #include <iostream>
-
 #include "Scene/StageUnlockProgress.h"
 #include <ECS/Components/Core/TransformComponent.h>
 #include <ECS/Components/UI/UIImageComponent.h>
@@ -45,6 +44,8 @@ void TitleScene::Init()
 {
     m_coordinator = std::make_shared<ECS::Coordinator>();
     ECS::ECSInitializer::InitECS(m_coordinator);
+
+    StageUnlockProgress::Load();
 
     TitleControllerComponent titleCtrl;
     titleCtrl.camStartPos = XMFLOAT3(0.0f, 2.5f, -9.8f);
@@ -211,10 +212,7 @@ void TitleScene::Init()
             UIButtonComponent(
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
-                /* Callback */ []() { 
-                    StageUnlockProgress::ResetProgress();
-                    SceneManager::ChangeScene<StageSelectScene>(); 
-                },
+                /* Callback */ []() { SceneManager::ChangeScene<OpeningScene>(); },//StageSelectScene
                 /* HitScale */ hitScale
             )
         );

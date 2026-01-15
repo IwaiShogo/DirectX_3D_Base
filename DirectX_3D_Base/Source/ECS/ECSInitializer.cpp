@@ -200,6 +200,12 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         ResultControlSystem,
         TagComponent, UIButtonComponent
     );
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        OpeningControlSystem,
+        TagComponent, UIButtonComponent
+
+    );
 
     // 浮遊システムの設定
     REGISTER_SYSTEM_AND_INIT(
