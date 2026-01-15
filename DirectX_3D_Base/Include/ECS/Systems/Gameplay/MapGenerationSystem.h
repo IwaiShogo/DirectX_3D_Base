@@ -49,7 +49,9 @@ struct MapStageConfig
 	int maxRoomCount = 5;		// 最大配置部屋数
 
 	int guardCount = 1;			// 配置する警備員の総数
-    int taserCount = 3;         // 配置するテーザーの総数
+    int taserCount = 1;         // 配置するテーザーの総数
+
+	int teleportPairCount = 0;    // 配置するテレポーターの総数
 
     //アイテム順序モードオン/オフ
 	float minPathPercentage = 0.25f;
@@ -111,6 +113,7 @@ public:
 				config.maxRoomCount = val.value("maxRoomCount", 5);
 
 				config.guardCount = val.value("guardCount", 1);
+				config.teleportPairCount = val.value("teleportPairCount", 0);
 				config.minPathPercentage = val.value("minPathPercentage", 0.3f);
 				config.useOrderedCollection = val.value("useOrderedCollection", false);
 

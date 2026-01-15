@@ -195,6 +195,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\Systems\XAudio2\SoundEngine.cpp" />
     <ClCompile Include="Source\Works\_geometory.cpp" />
     <ClCompile Include="Source\Works\_model.cpp" />
+    <ClCompile Include="TeleportSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="External\JSON\json.hpp" />
@@ -290,6 +291,8 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\Systems\XAudio2\SoundEngine.h" />
     <ClInclude Include="Include\Utility\CSVLoader.h" />
     <ClInclude Include="OpeningScene.h" />
+    <ClInclude Include="TeleportComponent.h" />
+    <ClInclude Include="TeleportSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />

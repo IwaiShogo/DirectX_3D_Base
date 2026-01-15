@@ -95,3 +95,8 @@ FADE_WHITE,Texture,Assets/Texture/white.png
 OP_TXT_TSUGI,Texture,Assets/Texture/optxt/op_illust_tsugi.png
 OP_TXT_HE,Texture,Assets/Texture/optxt/op_illust__he.png
 OP_BUTTON,Texture,Assets/Texture/op_button.png
+Stage_1,Texture,Assets/Texture/ui_stagemap_castle2.png
+Stage_2,Texture,Assets/Texture/ui_stagemap_castle3.png
+Stage_3,Texture,Assets/Texture/ui_stagemap_castle4.png
+Stage_4,Texture,Assets/Texture/ui_stagemap_castle5.png
+Stage_5,Texture,Assets/Texture/ui_stagemap_castle6.png

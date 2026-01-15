@@ -22,7 +22,7 @@ struct TitleControllerComponent
     //タイトルロゴ用
     float TitlelogoFadeTimer;    // ロゴのフェード用タイマー
     float TitlelogoFadeDuration; // ロゴのフェードにかける時間
-
+	
     //カード
     bool isCardEnabled; // trueでカード表示、falseで非表示
     DirectX::XMFLOAT3 cardOriginalScale; //カード元のスケール保存
@@ -31,7 +31,9 @@ struct TitleControllerComponent
     float uiAnimTimer;                //UIアニメーション経過時間
     float uiAnimDuration;             //アニメーションにかかる時間
     std::vector<float> menuTargetYs;  //各ボタン目的Y座標 
-
+    //UIエンティティ
+    std::vector<ECS::EntityID> buttonEffectEntities;
+	bool effectTriggered = false; //エフェクト発生フラグ
     //回転角度0
     float startRotY;
     float endRotY;

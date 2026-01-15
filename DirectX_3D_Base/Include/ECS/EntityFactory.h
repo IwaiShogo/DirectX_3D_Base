@@ -21,7 +21,7 @@
 #ifndef ___ENTITY_FACTORY_H___
 #define ___ENTITY_FACTORY_H___
 
-// ===== インクルード =====
+ // ===== インクルード =====
 #include "Coordinator.h"
 #include "Types.h"
 #include <DirectXMath.h> // コンポーネントの初期値設定に必要
@@ -47,9 +47,12 @@ namespace ECS
 		static EntityID CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY);
 
 		static EntityID CreateTaser(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
+		static EntityID CreateMapGimmick(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
+
+
 
 		static EntityID CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume = 1.0f);
-		
+
 		static EntityID CreateLoopSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume = 1.0f);
 
 		static EntityID CreateTitleSceneEntity(Coordinator* coordinator);
@@ -63,6 +66,8 @@ namespace ECS
 		static EntityID CreateDoor(Coordinator* coordinator, const DirectX::XMFLOAT3& position, float rotationY, bool isEntrance);
 
 		static EntityID CreateEnemySpawner(Coordinator* coordinator, const DirectX::XMFLOAT3& position, float delayTime);
+
+		static EntityID CreateTeleporter(ECS::Coordinator* coordinator, DirectX::XMFLOAT3 position);
 
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止

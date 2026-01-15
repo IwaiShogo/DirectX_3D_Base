@@ -80,5 +80,7 @@
 
 // @system	警備員AI
 #include "ECS/Systems/Gimmick/GuardAISystem.h"
+// @system	テレポーター
+#include "ECS/Systems/Gimmick/TeleportSystem.h"
 
 #endif // !___ALL_SYSTEM_H___

@@ -146,6 +146,9 @@
     <ClCompile Include="Source\ECS\Systems\Core\OpeningControlSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
+    <ClCompile Include="TeleportSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Gimmick</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\Scene\GameScene.h">
@@ -422,6 +425,12 @@
     </ClInclude>
     <ClInclude Include="Include\ECS\Systems\Core\OpeningControlSystem.h">
       <Filter>Header Files\ECS\Systems\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="TeleportComponent.h">
+      <Filter>Header Files\ECS\Components\Gimmick</Filter>
+    </ClInclude>
+    <ClInclude Include="TeleportSystem.h">
+      <Filter>Header Files\ECS\Systems\Gimmick</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

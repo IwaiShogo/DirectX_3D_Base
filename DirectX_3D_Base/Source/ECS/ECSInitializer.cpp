@@ -140,6 +140,14 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* Components   */  GuardComponent, TransformComponent, RigidBodyComponent
     );
 
+    // @system  TeleportSystem
+    // @brief   テレポート判定と移動の実行
+    REGISTER_SYSTEM_AND_INIT(
+        /* Coordinator  */  coordinator,
+        /* System       */  TeleportSystem,
+        /* Components   */  TeleportComponent, TransformComponent
+    );
+
     // @system UIInoutSystem
     // @brief  }EXJ[\̔
     REGISTER_SYSTEM_AND_INIT(

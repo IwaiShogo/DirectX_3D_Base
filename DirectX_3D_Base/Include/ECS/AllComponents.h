@@ -104,5 +104,7 @@
 #include "ECS/Components/Gimmick/GuardComponent.h"
 // @component	ドア
 #include "ECS/Components/Gimmick/DoorComponent.h"
+// @component	テレポーター
+#include "ECS/Components/Gimmick/Teleportcomponent.h"
 
 #endif // !___ALL_COMPONENTS_H___

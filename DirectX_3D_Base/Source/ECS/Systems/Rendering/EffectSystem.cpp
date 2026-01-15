@@ -87,6 +87,26 @@ void EffectSystem::ClearOverrideCamera()
 	m_hasOverride = false;
 }
 
+void EffectSystem::StopEffectImmediate(ECS::EntityID entityID)
+{
+	// 指定したEntityが EffectComponent を持っているか確認
+	if (m_coordinator && m_coordinator->HasComponent<EffectComponent>(entityID))
+	{
+		auto& effectComp = m_coordinator->GetComponent<EffectComponent>(entityID);
+
+		// 再生中のハンドルがあれば停止
+		// ★修正: m_manager を直接書かず、 "!= nullptr" を付けて比較します
+		if (effectComp.handle != -1 && m_manager != nullptr)
+		{
+			if (m_manager->Exists(effectComp.handle))
+			{
+				m_manager->StopEffect(effectComp.handle);
+			}
+			effectComp.handle = -1;
+		}
+	}
+}
+
 void EffectSystem::Update(float deltaTime)
 {
 	// -----------------------------
