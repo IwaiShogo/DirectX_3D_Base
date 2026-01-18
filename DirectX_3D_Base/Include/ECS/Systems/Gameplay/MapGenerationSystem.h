@@ -1,6 +1,6 @@
 /*****************************************************************//**
  * @file	MapGenerationSystem.h
- * @brief	MapComponent‚Ì–À˜Hƒf[ƒ^‚ğ¶¬‚µA‘Î‰‚·‚é3DƒGƒ“ƒeƒBƒeƒB‚ğ¶¬E”z’u‚·‚éƒVƒXƒeƒ€B
+ * @brief	MapComponentã®è¿·è·¯ãƒ‡ãƒ¼ã‚¿ã‚’ç”Ÿæˆã—ã€å¯¾å¿œã™ã‚‹3Dã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’ç”Ÿæˆãƒ»é…ç½®ã™ã‚‹ã‚·ã‚¹ãƒ†ãƒ ã€‚
  *
  * @details
  *
@@ -8,19 +8,19 @@
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  *
- * @date	2025/11/06	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁFMapGenerationSystem‚Ì’è‹`B–À˜H¶¬‚ÆEntity”z’u‚Ì–ğŠ„‚ğ‚ÂB
+ * @date	2025/11/06	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼šMapGenerationSystemã®å®šç¾©ã€‚è¿·è·¯ç”Ÿæˆã¨Entityé…ç½®ã®å½¹å‰²ã‚’æŒã¤ã€‚
  *
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
+ * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- XXï¼š
  *
- * @note	iÈ—ª‰Âj
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
 #ifndef ___MAP_GENERATION_SYSTEM_H___
 #define ___MAP_GENERATION_SYSTEM_H___
 
-// ===== ƒCƒ“ƒNƒ‹[ƒh =====
+// ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
 #include "ECS/ECS.h"
 #include <random>
 #include <stack>
@@ -35,32 +35,29 @@ using json = nlohmann::json;
 
 /**
  * @struct	MapStageConfig
- * @brief	ƒXƒe[ƒW–ˆ‚Ìƒ}ƒbƒv¶¬ƒpƒ‰ƒ[ƒ^‚ğ’è‹`‚·‚é\‘¢‘Ì
+ * @brief	ã‚¹ãƒ†ãƒ¼ã‚¸æ¯ã®ãƒãƒƒãƒ—ç”Ÿæˆãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’å®šç¾©ã™ã‚‹æ§‹é€ ä½“
  */
 struct MapStageConfig
 {
-	int gridSizeX = 20;			// ƒOƒŠƒbƒhƒTƒCƒYi‰¡•j
-	int gridSizeY = 20;			// ƒOƒŠƒbƒhƒTƒCƒYic•j
-	float tileSize = 5.0f;		// 1ƒZƒ‹“–‚½‚è‚Ìƒ[ƒ‹ƒhƒTƒCƒY
-	float wallHeight = 20.0f;	// •Ç‚Ì‚‚³
+	int gridSizeX = 20;			// ã‚°ãƒªãƒƒãƒ‰ã‚µã‚¤ã‚ºï¼ˆæ¨ªå¹…ï¼‰
+	int gridSizeY = 20;			// ã‚°ãƒªãƒƒãƒ‰ã‚µã‚¤ã‚ºï¼ˆç¸¦å¹…ï¼‰
+	float tileSize = 5.0f;		// 1ã‚»ãƒ«å½“ãŸã‚Šã®ãƒ¯ãƒ¼ãƒ«ãƒ‰ã‚µã‚¤ã‚º
+	float wallHeight = 20.0f;	// å£ã®é«˜ã•
 
-	int minRoomSize = 3;		// Å¬•”‰®ƒTƒCƒYiŠï”j
-	int maxRoomSize = 3;		// Å‘å•”‰®ƒTƒCƒYiŠï”j
-	int maxRoomCount = 5;		// Å‘å”z’u•”‰®”
+	int minRoomSize = 3;		// æœ€å°éƒ¨å±‹ã‚µã‚¤ã‚ºï¼ˆå¥‡æ•°ï¼‰
+	int maxRoomSize = 3;		// æœ€å¤§éƒ¨å±‹ã‚µã‚¤ã‚ºï¼ˆå¥‡æ•°ï¼‰
+	int maxRoomCount = 5;		// æœ€å¤§é…ç½®éƒ¨å±‹æ•°
 
-	int guardCount = 1;			// ”z’u‚·‚éŒx”õˆõ‚Ì‘”
-    int taserCount = 1;         // ”z’u‚·‚éƒe[ƒU[‚Ì‘”
+	int guardCount = 1;			// é…ç½®ã™ã‚‹è­¦å‚™å“¡ã®ç·æ•°
 
-	int teleportPairCount = 0;    // ”z’u‚·‚éƒeƒŒƒ|[ƒ^[‚Ì‘”
-
-    //ƒAƒCƒeƒ€‡˜ƒ‚[ƒhƒIƒ“/ƒIƒt
+    //ã‚¢ã‚¤ãƒ†ãƒ é †åºãƒ¢ãƒ¼ãƒ‰ã‚ªãƒ³/ã‚ªãƒ•
 	float minPathPercentage = 0.25f;
     bool useOrderedCollection = false;
 
-    float timeLimitStar = 180.0f;   // •]‰¿—pƒ^ƒCƒ€ƒŠƒ~ƒbƒg
+    float timeLimitStar = 180.0f;   // è©•ä¾¡ç”¨ã‚¿ã‚¤ãƒ ãƒªãƒŸãƒƒãƒˆ
     std::vector<std::string> items;
 
-    // ƒMƒ~ƒbƒNî•ñ
+    // ã‚®ãƒŸãƒƒã‚¯æƒ…å ±
     struct GimmickInfo {
         std::string type;
         int count;
@@ -74,23 +71,23 @@ public:
 
 	/**
 	 * [MapStageConfig - Load]
-	 * @brief	w’è‚³‚ê‚½ƒXƒe[ƒWID‚Ìİ’è‚ğJSONƒtƒ@ƒCƒ‹‚©‚ç“Ç‚İ‚Ş
+	 * @brief	æŒ‡å®šã•ã‚ŒãŸã‚¹ãƒ†ãƒ¼ã‚¸IDã®è¨­å®šã‚’JSONãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰èª­ã¿è¾¼ã‚€
 	 * 
-	 * @param	[in] stageID “Ç‚İ‚İ‚½‚¢ƒXƒe[ƒW‚ÌID
-	 * @return	¬Œ÷‚µ‚½ê‡‚ÌMapStageConfigA¸”s‚µ‚½ê‡‚ÍƒfƒtƒHƒ‹ƒg’l
+	 * @param	[in] stageID èª­ã¿è¾¼ã¿ãŸã„ã‚¹ãƒ†ãƒ¼ã‚¸ã®ID
+	 * @return	æˆåŠŸã—ãŸå ´åˆã®MapStageConfigã€å¤±æ•—ã—ãŸå ´åˆã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå€¤
 	 */
 	static MapStageConfig Load(const std::string& stageID)
 	{
-        MapStageConfig config; // ƒfƒtƒHƒ‹ƒg’l‚Å‰Šú‰»
+        MapStageConfig config; // ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå€¤ã§åˆæœŸåŒ–
 
-        // JSONƒtƒ@ƒCƒ‹‚ÌƒpƒX (Àsƒtƒ@ƒCƒ‹‚©‚ç‚Ì‘Š‘ÎƒpƒX)
+        // JSONãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ‘ã‚¹ (å®Ÿè¡Œãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰ã®ç›¸å¯¾ãƒ‘ã‚¹)
         const std::string filePath = "Assets/Config/map_config.json";
 
         std::ifstream file(filePath);
         if (!file.is_open())
         {
             printf("[Error] Failed to open stage config file: %s\n", filePath.c_str());
-            return config; // ƒtƒ@ƒCƒ‹‚ªŠJ‚¯‚È‚¢ê‡‚ÍƒfƒtƒHƒ‹ƒgİ’è‚ğ•Ô‚·
+            return config; // ãƒ•ã‚¡ã‚¤ãƒ«ãŒé–‹ã‘ãªã„å ´åˆã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆè¨­å®šã‚’è¿”ã™
         }
 
         try
@@ -102,7 +99,7 @@ public:
 			{
 				auto& val = j[stageID];
 
-				// Šî–{İ’è
+				// åŸºæœ¬è¨­å®š
 				config.gridSizeX = val.value("gridSizeX", 20);
 				config.gridSizeY = val.value("gridSizeY", 20);
 				config.tileSize = val.value("tileSize", 5.0f);
@@ -113,28 +110,27 @@ public:
 				config.maxRoomCount = val.value("maxRoomCount", 5);
 
 				config.guardCount = val.value("guardCount", 1);
-				config.teleportPairCount = val.value("teleportPairCount", 0);
 				config.minPathPercentage = val.value("minPathPercentage", 0.3f);
 				config.useOrderedCollection = val.value("useOrderedCollection", false);
 
-				// š’Ç‰Á: ƒ^ƒCƒ€ƒŠƒ~ƒbƒg“Ç‚İ‚İ
+				// â˜…è¿½åŠ : ã‚¿ã‚¤ãƒ ãƒªãƒŸãƒƒãƒˆèª­ã¿è¾¼ã¿
 				config.timeLimitStar = val.value("timeLimitStar", 180.0f);
 
-				// š’Ç‰Á: ƒAƒCƒeƒ€ƒŠƒXƒg“Ç‚İ‚İ
+				// â˜…è¿½åŠ : ã‚¢ã‚¤ãƒ†ãƒ ãƒªã‚¹ãƒˆèª­ã¿è¾¼ã¿
 				if (val.contains("items") && val["items"].is_array())
 				{
 					for (const auto& item : val["items"]) {
 						config.items.push_back(item.get<std::string>());
 					}
 				}
-				// ‹ŒŒİŠ·: items‚ª‚È‚¢ê‡‚Í itemCount ‚¾‚¯“Ç‚ñ‚Åƒ_ƒ~[‚ğ“ü‚ê‚é“™‚Ì‘Î‰‚à‰Â
+				// æ—§äº’æ›: itemsãŒãªã„å ´åˆã¯ itemCount ã ã‘èª­ã‚“ã§ãƒ€ãƒŸãƒ¼ã‚’å…¥ã‚Œã‚‹ç­‰ã®å¯¾å¿œã‚‚å¯
 				else if (val.contains("itemCount"))
 				{
 					int count = val.value("itemCount", 3);
 					for (int k = 0; k < count; ++k) config.items.push_back("Takara_Ring");
 				}
 
-				// ƒMƒ~ƒbƒN“Ç‚İ‚İ
+				// ã‚®ãƒŸãƒƒã‚¯èª­ã¿è¾¼ã¿
 				if (val.contains("gimmicks") && val["gimmicks"].is_array())
 				{
 					for (auto& gim : val["gimmicks"])
@@ -165,22 +161,22 @@ public:
 class MazeGenerator final
 {
 public:
-	// C++11/14‚Å•W€“I‚È—”¶¬‹@
+	// C++11/14ã§æ¨™æº–çš„ãªä¹±æ•°ç”Ÿæˆæ©Ÿ
 	static std::mt19937 s_generator;
 
 	/**
-	 * @brief –À˜H¶¬ƒƒWƒbƒN‚Ì–{‘ÌBMapComponent‚Ìgrid‚ğ‘‚«Š·‚¦‚éB
-	 * @param mapComp - –À˜Hƒf[ƒ^‚ğ‘‚«‚ŞMapComponent‚Ö‚ÌQÆ
+	 * @brief è¿·è·¯ç”Ÿæˆãƒ­ã‚¸ãƒƒã‚¯ã®æœ¬ä½“ã€‚MapComponentã®gridã‚’æ›¸ãæ›ãˆã‚‹ã€‚
+	 * @param mapComp - è¿·è·¯ãƒ‡ãƒ¼ã‚¿ã‚’æ›¸ãè¾¼ã‚€MapComponentã¸ã®å‚ç…§
 	 */
 	static void Generate(MapComponent& mapComp, ItemTrackerComponent& trackerComp, const MapStageConfig& config);
 private:
-	// Ä‹A“IƒoƒbƒNƒgƒ‰ƒbƒJ[‚Ìƒwƒ‹ƒp[ŠÖ”
+	// å†å¸°çš„ãƒãƒƒã‚¯ãƒˆãƒ©ãƒƒã‚«ãƒ¼ã®ãƒ˜ãƒ«ãƒ‘ãƒ¼é–¢æ•°
 	static void RecursiveBacktracker(MapComponent& mapComp, const MapStageConfig& config, int x, int y);
 };
 
 /**
  * @class MapGenerationSystem
- * @brief MapComponent‚ÉŠî‚Ã‚«Aƒ‰ƒ“ƒ_ƒ€‚ÈƒOƒŠƒbƒh\‘¢‚ğ¶¬‚·‚é
+ * @brief MapComponentã«åŸºã¥ãã€ãƒ©ãƒ³ãƒ€ãƒ ãªã‚°ãƒªãƒƒãƒ‰æ§‹é€ ã‚’ç”Ÿæˆã™ã‚‹
  */
 class MapGenerationSystem
 	: public ECS::System

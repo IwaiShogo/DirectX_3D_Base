@@ -627,53 +627,55 @@ end_generate_loop:;
         guardsPlaced++;
     }
 
-    //テーザーの配置
-    const int TASER_TO_PLACE = config.taserCount;
-    int taserPlaced = 0;
-    while (taserPlaced < TASER_TO_PLACE && !availablePathPositions.empty())
+    // 3. 汎用ギミック配置ロジック
+    for (const auto& gimmick : config.gimmicks)
     {
-        XMINT2 pos = availablePathPositions.back();
-        availablePathPositions.pop_back();
+        int placedCount = 0;
 
-        mapComp.grid[pos.y][pos.x].type = CellType::Taser;
-        taserPlaced++;
+        // 指定された個数分配置を試みる
+        while (placedCount < gimmick.count && !availablePathPositions.empty())
+        {
+            // --- [Case: Taser] ---
+            if (gimmick.type == "Taser")
+            {
+                XMINT2 pos = availablePathPositions.back();
+                availablePathPositions.pop_back();
+
+                mapComp.grid[pos.y][pos.x].type = CellType::Taser;
+                placedCount++;
+            }
+            // --- [Case: Teleporter] ---
+            else if (gimmick.type == "Teleporter")
+            {
+                // テレポーターはペア(2箇所)が必要なので、空きが2つ以上あるか確認
+                if (availablePathPositions.size() < 2)
+                {
+                    printf("[Warning] Not enough space for Teleporter pair.\n");
+                    break;
+                }
+
+                // 入口と出口の2マスをリストから取得
+                XMINT2 posA = availablePathPositions.back();
+                availablePathPositions.pop_back();
+                XMINT2 posB = availablePathPositions.back();
+                availablePathPositions.pop_back();
+
+                // グリッドにテレポート属性を設定
+                mapComp.grid[posA.y][posA.x].type = CellType::Teleporter;
+                mapComp.grid[posB.y][posB.x].type = CellType::Teleporter;
+
+                mapComp.teleportPairs.push_back({ posA, posB });
+                placedCount++;
+            }
+            // --- [Case: その他 (将来的な拡張)] ---
+            else
+            {
+                // 未定義のタイプが指定された場合の警告
+                printf("[Warning] Unknown gimmick type in config: %s\n", gimmick.type.c_str());
+                break; // 無限ループ防止のためbreak
+            }
+        }
     }
-    // テレポートの配置
-    int teleportPairsPlaced = 0;
-    while (teleportPairsPlaced < config.teleportPairCount && availablePathPositions.size() >= 2)
-    {
-        // 入口と出口の2マスをリストから取得
-        DirectX::XMINT2 posA = availablePathPositions.back();
-        availablePathPositions.pop_back();
-        DirectX::XMINT2 posB = availablePathPositions.back();
-        availablePathPositions.pop_back();
-
-        // グリッドにテレポート属性を設定
-        mapComp.grid[posA.y][posA.x].type = CellType::Teleporter;
-        mapComp.grid[posB.y][posB.x].type = CellType::Teleporter;
-
-        mapComp.teleportPairs.push_back({ posA, posB });
-        teleportPairsPlaced++;
-    }
-
-    // 3. その他のギミック配置 (config.gimmickCounts を利用)
-    // NOTE: CellType::Gimmick の処理はMapComponent.hにCellTypeを追加した後で実装
-
-    //for (const auto& pair : config.gimmicks.size())
-    //{
-    //    CellType gimmickType = pair.first;
-    //    int count = pair.second;
-
-    //    // availablePathPositionsが空になるまで、配置を試みる
-    //    for (int i = 0; i < count && !availablePathPositions.empty(); ++i)
-    //    {
-    //        XMINT2 pos = availablePathPositions.back();
-    //        availablePathPositions.pop_back();
-
-    //        mapComp.grid[pos.y][pos.x].type = gimmickType;
-    //        // 必要に応じて、追加のギミック位置リストをMapComponentに追加可能
-    //    }
-    //}
 }
 
 /**
@@ -1125,11 +1127,9 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
 
                 if (cell.type == CellType::Start) {
                     EntityFactory::CreatePlayer(m_coordinator, cellCenter);
-                    //EntityFactory::CreateGoal(m_coordinator, cellCenter);
                     EntityFactory::CreateEnemySpawner(m_coordinator, cellCenter, 3.0f);
                 }
                 else if (cell.type == CellType::Goal) {
-                    //EntityFactory::CreateGoal(m_coordinator, cellCenter);
                 }
                 else if (cell.type == CellType::Item) {
 

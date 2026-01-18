@@ -681,7 +681,7 @@ void GameControlSystem::UpdateCaughtSequence(float deltaTime, ECS::EntityID cont
             // プレイヤー: やられたモーション
             if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
                 // "A_PLAYER_DAMAGE" や "A_PLAYER_CAUGHT"
-                m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_DAMAGE", false);
+                m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_CAUGHT", false);
             }
 
             // 効果音 (バシッ！とか)

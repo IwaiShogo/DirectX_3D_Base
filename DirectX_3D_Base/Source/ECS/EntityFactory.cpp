@@ -58,7 +58,8 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 		AnimationComponent(
 			{
 				"A_PLAYER_IDLE",
-				"A_PLAYER_RUN"
+				"A_PLAYER_RUN",
+				"A_PLAYER_CAUGHT"
 			}
 		),
 		RigidBodyComponent(
@@ -248,7 +249,8 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 		AnimationComponent(
 			{
 				"A_GUARD_RUN",
-				"A_GUARD_WALK"
+				"A_GUARD_WALK",
+				"A_GUARD_ATTACK"
 			}
 		),
 		RigidBodyComponent(
