@@ -147,7 +147,6 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Include\ECS\Systems\Rendering\FlickerSystem.cpp" />
-    <ClCompile Include="OpeningScene.cpp" />
     <ClCompile Include="Source\ECS\ECSInitializer.cpp" />
     <ClCompile Include="Source\ECS\EntityFactory.cpp" />
     <ClCompile Include="Source\ECS\Systems\Core\AudioSystem.cpp" />
@@ -177,6 +176,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Scene\FadeManager.cpp" />
     <ClCompile Include="Source\Scene\GameScene.cpp" />
+    <ClCompile Include="Source\Scene\OpeningScene.cpp" />
     <ClCompile Include="Source\Scene\ResultScene.cpp" />
     <ClCompile Include="Source\Scene\SceneManager.cpp" />
     <ClCompile Include="Source\Scene\StageSelectScene.cpp" />
@@ -271,6 +271,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\Main.h" />
     <ClInclude Include="Include\Scene\FadeManager.h" />
     <ClInclude Include="Include\Scene\GameScene.h" />
+    <ClInclude Include="Include\Scene\OpeningScene.h" />
     <ClInclude Include="Include\Scene\ResultScene.h" />
     <ClInclude Include="Include\Scene\Scene.h" />
     <ClInclude Include="Include\Scene\SceneManager.h" />
@@ -291,7 +292,6 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\Systems\XAudio2\SoundEffect.h" />
     <ClInclude Include="Include\Systems\XAudio2\SoundEngine.h" />
     <ClInclude Include="Include\Utility\CSVLoader.h" />
-    <ClInclude Include="OpeningScene.h" />
     <ClInclude Include="TeleportComponent.h" />
     <ClInclude Include="TeleportSystem.h" />
   </ItemGroup>

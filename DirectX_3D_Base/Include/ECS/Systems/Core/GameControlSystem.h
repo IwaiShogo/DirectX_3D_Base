@@ -112,6 +112,14 @@ private:
     // 捕まえた警備員のIDを一時保存用
     ECS::EntityID m_catchingGuardID = ECS::INVALID_ENTITY_ID;
     bool m_caughtAnimPlayed = false; // 捕獲アニメーション再生済みフラグ
+
+    // --- 演出用メンバ ---
+    std::vector<ECS::EntityID> m_mosaicTiles; // 分割された画像タイルたち
+    ECS::EntityID m_blackBackID = ECS::INVALID_ENTITY_ID; // 隙間埋め用の黒背景
+
+    // 関数宣言の追加
+    void StartMosaicSequence(ECS::EntityID controllerID);
+    void UpdateMosaicSequence(float deltaTime, ECS::EntityID controllerID);
 };
 
 #endif // !___GAME_CONTROL_SYSTEM_H___
