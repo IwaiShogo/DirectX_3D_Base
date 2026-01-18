@@ -17,7 +17,16 @@
       "Takara_Yubiwa"
     ],
     "guardCount": 1,
-    "gimmicks": []
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 0
+      },
+      {
+        "type": "Teleporter",
+        "count": 0
+      }
+    ]
   },
   "ST_002": {
     "name": "Stage 2",
