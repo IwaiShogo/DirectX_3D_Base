@@ -552,7 +552,9 @@ EntityID ECS::EntityFactory::CreateEnemySpawner(Coordinator* coordinator, const 
 	return spawner;
 }
 
-ECS::EntityID EntityFactory::CreateTeleporter(ECS::Coordinator* coordinator, DirectX::XMFLOAT3 position) {
+
+ECS::EntityID EntityFactory::CreateTeleporter(ECS::Coordinator* coordinator, DirectX::XMFLOAT3 position)
+{
 	return coordinator->CreateEntity(
 		TransformComponent(position, { 0,0,0 }, { 2.5f, 0.1f, 2.5f }),
 		// 仕様：三人称モード（ACTION_MODE）では見えないため、MESH_NONEを指定
