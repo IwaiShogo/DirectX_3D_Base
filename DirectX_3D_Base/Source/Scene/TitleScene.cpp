@@ -78,7 +78,7 @@ void TitleScene::Init()
             /* Flags   */ Model::ZFlip
         ),
         EffectComponent(
-            /* AssetID  */ "EFK_STAMP",
+            /* AssetID  */ "EFK_TITLE_SHINE",
             /* Loop     */ true,
             /* AutoPlay */ true,
             /* Offset   */{ 0.0f, 0.0f, -3.0f },

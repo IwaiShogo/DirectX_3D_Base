@@ -132,7 +132,7 @@ void ResultControlSystem::Update(float deltaTime)
                     
                     EffectComponent(
                         "EFK_STAMP",
-                        true,
+                        false,
                         true,
                         DirectX::XMFLOAT3{ 0,0,0 },
                         1.0f
