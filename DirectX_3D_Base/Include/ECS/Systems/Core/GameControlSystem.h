@@ -72,18 +72,49 @@ private:
     void ApplyModeVisuals(ECS::EntityID controllerID);
     bool IsAABBOverlap(ECS::EntityID a, ECS::EntityID b);
 
-    // --- ポーズ画面用 ---
-    void TogglePause(ECS::EntityID controllerID);
-    void CreatePauseUI();
-    void DestroyPauseUI();
-    void UpdatePauseSlider();
+    // --- ポーズ画面用ステート管理 ---
+    enum class PauseState {
+        Hidden,     // 非表示
+        AnimateIn,  // 出現アニメーション中
+        Active,     // 操作可能状態
+        AnimateOut, // 退場アニメーション中
+        Transitioning   // フェードアウト待ち
+    };
+    PauseState m_pauseState = PauseState::Hidden;
+    std::function<void()> m_pendingTransition = nullptr;
+    float m_pauseTimer = 0.0f;
 
+    // --- ポーズUIエレメントID (アニメーション制御用) ---
+    ECS::EntityID m_pauseBgOverlayID = ECS::INVALID_ENTITY_ID;   // 全画面半透明背景
+    ECS::EntityID m_pauseDecoSlashID = ECS::INVALID_ENTITY_ID;   // 斜めの黒い帯
+    ECS::EntityID m_pauseDecoLineID = ECS::INVALID_ENTITY_ID;    // 斜めの白い線
+
+    // メニュー項目 (ボタン、バー、つまみ、カーソル)
+    struct PauseMenuItems {
+        ECS::EntityID btnReverse = ECS::INVALID_ENTITY_ID;
+        ECS::EntityID btnStage = ECS::INVALID_ENTITY_ID;
+        ECS::EntityID btnRetry = ECS::INVALID_ENTITY_ID;
+        ECS::EntityID sliderBar = ECS::INVALID_ENTITY_ID;
+        ECS::EntityID sliderKnob = ECS::INVALID_ENTITY_ID;
+        ECS::EntityID cursor = ECS::INVALID_ENTITY_ID;
+    } m_pauseItems;
+
+    // ボタンID と その背景(装飾)ID の対応マップ
+    std::unordered_map<ECS::EntityID, ECS::EntityID> m_btnBgMap;
+
+    // 全要素リスト (一括破棄用)
     std::vector<ECS::EntityID> m_pauseUIEntities;
-    ECS::EntityID m_sensitivityKnobID = ECS::INVALID_ENTITY_ID;
-    ECS::EntityID m_sensitivityBarID = ECS::INVALID_ENTITY_ID;
 
-    // スライダー操作用フラグ
     bool m_isDraggingSlider = false;
+
+    // --- 関数宣言の更新 ---
+    void TogglePauseRequest(); // 名前変更: リクエストを送るだけ
+    void UpdatePauseSequence(float deltaTime, ECS::EntityID controllerID); // 統合更新関数
+    void CreateStylePauseUI(); // 新しいUI生成関数
+    void DestroyPauseUI();
+    void UpdatePauseSliderState(); // 名前変更: スライダーの状態更新
+    // ヘルパー関数: 装飾付きボタンの生成
+    ECS::EntityID CreateStyledButton(float x, float y, const std::string& assetID, std::function<void()> onClick);
 
     // 座標変換ヘルパー
     DirectX::XMFLOAT3 GetScreenPosition(

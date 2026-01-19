@@ -334,6 +334,15 @@ bool GuardAISystem::IsTargetInSight(
 
 void GuardAISystem::Update(float deltaTime)
 {
+    if (m_coordinator)
+    {
+        ECS::EntityID stateID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
+        if (stateID != ECS::INVALID_ENTITY_ID)
+        {
+            if (m_coordinator->GetComponent<GameStateComponent>(stateID).isPaused) return;
+        }
+    }
+
     // MapComponent‚ğ‚ÂEntity (GameController) ‚ğŒŸõ
     EntityID mapEntity = FindFirstEntityWithComponent<MapComponent>(m_coordinator);
     if (mapEntity == INVALID_ENTITY_ID) return;

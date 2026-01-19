@@ -20,6 +20,7 @@
  // ===== インクルード =====
 #include "ECS/Systems/Core/GameControlSystem.h"
 #include "Scene/SceneManager.h"
+#include "Scene/FadeManager.h"
 #include "ECS/EntityFactory.h"
 #include "ECS/ECSInitializer.h"
 
@@ -57,14 +58,19 @@ void GameControlSystem::Update(float deltaTime)
 
     if (IsKeyTrigger(VK_ESCAPE) || IsButtonTriggered(BUTTON_START))
     {
-        TogglePause(controllerID);
+        TogglePauseRequest();
     }
 
-    // ポーズ中は更新を停止
-    if (state.isPaused)
+    // ポーズ状態が Hidden 以外なら、ポーズシーケンスを更新
+    if (m_pauseState != PauseState::Hidden)
     {
-        UpdatePauseSlider();
+        UpdatePauseSequence(deltaTime, controllerID);
+        state.isPaused = true;
         return;
+    }
+    else
+    {
+        state.isPaused = false;
     }
 
     // シーケンス処理
@@ -1395,116 +1401,502 @@ bool GameControlSystem::IsAABBOverlap(ECS::EntityID a, ECS::EntityID b)
 }
 
 // ---------------------------------------------------------
-// ポーズ切り替え
+// ポーズ切り替えリクエスト
 // ---------------------------------------------------------
-void GameControlSystem::TogglePause(ECS::EntityID controllerID)
+void GameControlSystem::TogglePauseRequest()
 {
-    auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
-    state.isPaused = !state.isPaused;
-
-    if (state.isPaused)
-    {
-        CreatePauseUI();
-        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_SYSTEM_OPEN"); // 仮
+    if (m_pauseState == PauseState::Hidden) {
+        // 出現開始
+        m_pauseState = PauseState::AnimateIn;
+        m_pauseTimer = 0.0f;
+        CreateStylePauseUI(); // UI生成
+        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_SYSTEM_OPEN");
     }
-    else
+    else if (m_pauseState == PauseState::Active) {
+        // 退場開始
+        m_pauseState = PauseState::AnimateOut;
+        m_pauseTimer = 0.0f;
+        // 退場SEがあれば鳴らす
+    }
+    // アニメーション中は入力を無視する
+}
+
+// ---------------------------------------------------------
+// ヘルパー: 装飾付きスタイリッシュボタンの生成
+// ---------------------------------------------------------
+ECS::EntityID GameControlSystem::CreateStyledButton(float targetX, float targetY, const std::string& assetID, std::function<void()> onClick)
+{
+    // 統一する傾き角度 (10度)
+    float tiltDeg = 10.0f;
+    float tiltRad = XMConvertToRadians(tiltDeg);
+
+    // 1. 背景プレート (メインの黒帯)
+    float plateW = 420.0f;
+    float plateH = 60.0f;
+
+    ECS::EntityID bgID = m_coordinator->CreateEntity(
+        TransformComponent(
+            { targetX - 500.0f, targetY, 0.0f },
+            { 0.0f, 0.0f, tiltRad }, // 文字と同じ角度をつける
+            { plateW, plateH, 1.0f }
+        ),
+        UIImageComponent("FADE_WHITE", 11.5f, true, { 0.1f, 0.1f, 0.1f, 0.9f }) // 濃いグレー
+    );
+    m_pauseUIEntities.push_back(bgID);
+
+    // 2. アクセントライン (ボタンの下を走る細い線)
+    ECS::EntityID lineID = m_coordinator->CreateEntity(
+        TransformComponent(
+            { targetX - 500.0f, targetY + 25.0f, 0.0f }, // 少し下にずらす
+            { 0.0f, 0.0f, tiltRad },
+            { plateW * 0.9f, 3.0f, 1.0f } // 幅は少し短く、細く
+        ),
+        UIImageComponent("FADE_WHITE", 11.6f, true, { 0.5f, 0.5f, 0.5f, 0.0f }) // 最初は透明
+    );
+    m_pauseUIEntities.push_back(lineID);
+
+    // 3. ボタン文字 (前景)
+    ECS::EntityID btnID = m_coordinator->CreateEntity(
+        TransformComponent(
+            { targetX - 600.0f, targetY, 0.0f },
+            { 0.0f, 0.0f, tiltRad }, // 文字も傾ける
+            { 320.0f, 64.0f, 1.0f }
+        ),
+        UIImageComponent(assetID, 12.0f, true, { 0.8f, 0.8f, 0.8f, 1.0f }), // 未選択時は少し暗く
+        UIButtonComponent(ButtonState::Normal, true, onClick)
+    );
+    m_pauseUIEntities.push_back(btnID);
+
+    // マップに登録
+    m_btnBgMap[btnID] = bgID;
+    // ラインIDは bgID + 1 と仮定して管理（簡易実装）
+    // (CreateEntityが連番であることを利用しています)
+
+    return btnID;
+}
+
+// ---------------------------------------------------------
+// スタイリッシュポーズUIの生成
+// ---------------------------------------------------------
+void GameControlSystem::CreateStylePauseUI()
+{
+    m_pauseUIEntities.clear();
+    m_btnBgMap.clear();
+
+    float tiltRad = XMConvertToRadians(10.0f);
+
+    // 1. 全画面オーバーレイ
+    m_pauseBgOverlayID = m_coordinator->CreateEntity(
+        TransformComponent({ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f }, { 0,0,0 }, { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }),
+        UIImageComponent("FADE_WHITE", 10.0f, true, { 0.0f, 0.0f, 0.0f, 0.0f })
+    );
+    m_pauseUIEntities.push_back(m_pauseBgOverlayID);
+
+    // 2. 左側の装飾 (SLASH EDGE)
+    float slashW = SCREEN_WIDTH * 0.5f;
+    float slashH = SCREEN_HEIGHT * 2.5f;
+    float startX = -slashW;
+
+    // メイン黒帯
+    m_pauseDecoSlashID = m_coordinator->CreateEntity(
+        TransformComponent(
+            { startX, SCREEN_HEIGHT * 0.5f, 0.0f },
+            { 0.0f, 0.0f, tiltRad },
+            { slashW, slashH, 1.0f }
+        ),
+        UIImageComponent("FADE_WHITE", 11.0f, true, { 0.02f, 0.02f, 0.02f, 0.90f })
+    );
+    m_pauseUIEntities.push_back(m_pauseDecoSlashID);
+
+    // アクセントライン
+    m_pauseDecoLineID = m_coordinator->CreateEntity(
+        TransformComponent(
+            { startX, SCREEN_HEIGHT * 0.5f, 0.0f },
+            { 0.0f, 0.0f, tiltRad },
+            { 8.0f, slashH, 1.0f }
+        ),
+        UIImageComponent("FADE_WHITE", 11.1f, true, { 1.0f, 0.2f, 0.4f, 1.0f })
+    );
+    m_pauseUIEntities.push_back(m_pauseDecoLineID);
+
+    // セレクター
+    ECS::EntityID selector = m_coordinator->CreateEntity(
+        TransformComponent({ -200.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, XM_PIDIV4 }, { 20.0f, 20.0f, 1.0f }),
+        UIImageComponent("FADE_WHITE", 12.5f, true, { 0.0f, 1.0f, 1.0f, 0.0f })
+    );
+    m_pauseUIEntities.push_back(selector);
+
+    // 3. メニュー項目の生成
+    float baseY = SCREEN_HEIGHT * 0.35f;
+    float gapY = 110.0f;
+
+    auto GetXForY = [&](float y) {
+        float tan10 = tanf(tiltRad);
+        return (SCREEN_WIDTH * 0.25f) - ((y - SCREEN_HEIGHT * 0.5f) * tan10);
+        };
+
+    // [戻る]
+    float y1 = baseY;
+    m_pauseItems.btnReverse = CreateStyledButton(GetXForY(y1), y1, "BTN_REBERSE", [this]() {
+        // 戻るだけ（遷移なし）
+        m_pendingTransition = nullptr;
+        m_pauseState = PauseState::AnimateOut;
+        });
+    // 少し小さく
+    if (m_pauseItems.btnReverse != INVALID_ENTITY_ID) {
+        auto& trans = m_coordinator->GetComponent<TransformComponent>(m_pauseItems.btnReverse);
+        trans.scale = { 260.0f, 52.0f, 1.0f };
+    }
+
+    // [リトライ]
+    float y2 = baseY + gapY;
+    m_pauseItems.btnRetry = CreateStyledButton(GetXForY(y2), y2, "BTN_RETRY", [this]() {
+        // リトライ予約
+        m_pendingTransition = []() { SceneManager::ChangeScene<GameScene>(); };
+        m_pauseState = PauseState::AnimateOut;
+        });
+
+    // [ステージセレクト]
+    float y3 = baseY + gapY * 2.0f;
+    m_pauseItems.btnStage = CreateStyledButton(GetXForY(y3), y3, "BTN_BACK_STAGE_SELECT", [this]() {
+        // ステージ選択予約
+        m_pendingTransition = []() { SceneManager::ChangeScene<StageSelectScene>(); };
+        m_pauseState = PauseState::AnimateOut;
+        });
+
+    // --- スライダー ---
+    float sliderY = baseY + gapY * 3.2f;
+    m_pauseItems.sliderBar = m_coordinator->CreateEntity(
+        TransformComponent({ -500.0f, sliderY, 0.0f }, { 0.0f, 0.0f, tiltRad }, { 400, 6, 1 }),
+        UIImageComponent("FADE_WHITE", 12.0f, true, { 0.3f, 0.3f, 0.3f, 1.0f })
+    );
+    m_pauseUIEntities.push_back(m_pauseItems.sliderBar);
+
+    m_pauseItems.sliderKnob = m_coordinator->CreateEntity(
+        TransformComponent({ -500.0f, sliderY, 0.0f }, { 0.0f, 0.0f, tiltRad }, { 16, 32, 1 }),
+        UIImageComponent("FADE_WHITE", 12.1f, true, { 1.0f, 1.0f, 1.0f, 1.0f })
+    );
+    m_pauseUIEntities.push_back(m_pauseItems.sliderKnob);
+
+    // カーソル
+    m_pauseItems.cursor = m_coordinator->CreateEntity(
+        TransformComponent({ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f }, { 0,0,0 }, { 64, 64, 1 }),
+        UIImageComponent("ICO_CURSOR", 20.0f, true, { 1, 1, 1, 1 }),
+        UICursorComponent(8.0f)
+    );
+    m_pauseUIEntities.push_back(m_pauseItems.cursor);
+}
+
+// ---------------------------------------------------------
+// ポーズシーケンス更新 (フェード撤廃・即遷移版)
+// ---------------------------------------------------------
+void GameControlSystem::UpdatePauseSequence(float deltaTime, ECS::EntityID controllerID)
+{
+    m_pauseTimer += deltaTime;
+    float tiltRad = XMConvertToRadians(10.0f);
+    float tanTilt = tanf(tiltRad);
+
+    const float ANIM_IN_DURATION = 0.35f;
+    const float ANIM_OUT_DURATION = 0.25f;
+
+    ECS::EntityID selectorID = (m_pauseUIEntities.size() > 3) ? m_pauseUIEntities[3] : INVALID_ENTITY_ID;
+
+    // ------------------------------------------------------
+    // [フェーズ1] 出現 (AnimateIn)
+    // ------------------------------------------------------
+    if (m_pauseState == PauseState::AnimateIn)
     {
-        DestroyPauseUI();
+        float t = std::min(1.0f, m_pauseTimer / ANIM_IN_DURATION);
+        float ease = 1.0f - powf(1.0f - t, 4.0f);
+
+        if (m_pauseBgOverlayID != INVALID_ENTITY_ID)
+            m_coordinator->GetComponent<UIImageComponent>(m_pauseBgOverlayID).color.w = t * 0.4f;
+
+        float slashW = SCREEN_WIDTH * 0.5f;
+        float startX = -slashW;
+        float targetX = SCREEN_WIDTH * 0.1f;
+        float curX = startX + (targetX - startX) * ease;
+
+        if (m_pauseDecoSlashID != INVALID_ENTITY_ID)
+            m_coordinator->GetComponent<TransformComponent>(m_pauseDecoSlashID).position.x = curX;
+
+        if (m_pauseDecoLineID != INVALID_ENTITY_ID)
+            m_coordinator->GetComponent<TransformComponent>(m_pauseDecoLineID).position.x = curX + slashW * 0.5f;
+
+        std::vector<ECS::EntityID> items = {
+            m_pauseItems.btnReverse, m_pauseItems.btnRetry, m_pauseItems.btnStage, m_pauseItems.sliderBar
+        };
+
+        auto GetTargetX = [&](float y) {
+            return (SCREEN_WIDTH * 0.25f) - ((y - SCREEN_HEIGHT * 0.5f) * tanTilt);
+            };
+
+        for (size_t i = 0; i < items.size(); ++i)
+        {
+            if (items[i] == INVALID_ENTITY_ID) continue;
+            float delay = i * 0.05f;
+            float itemT = std::max(0.0f, std::min(1.0f, (m_pauseTimer - delay) / (ANIM_IN_DURATION * 0.8f)));
+            float c1 = 1.70158f; float c3 = c1 + 1.0f;
+            float itemEase = 1.0f + c3 * powf(itemT - 1.0f, 3.0f) + c1 * powf(itemT - 1.0f, 2.0f);
+
+            auto& trans = m_coordinator->GetComponent<TransformComponent>(items[i]);
+            float finalX = GetTargetX(trans.position.y);
+            float startItemX = -600.0f;
+            trans.position.x = startItemX + (finalX - startItemX) * itemEase;
+
+            if (m_btnBgMap.count(items[i])) {
+                auto& bgTrans = m_coordinator->GetComponent<TransformComponent>(m_btnBgMap[items[i]]);
+                bgTrans.position.x = trans.position.x - 30.0f;
+                EntityID lineID = m_btnBgMap[items[i]] + 1;
+                if (m_coordinator->HasComponent<TransformComponent>(lineID))
+                    m_coordinator->GetComponent<TransformComponent>(lineID).position.x = trans.position.x - 30.0f;
+            }
+        }
+        UpdatePauseSliderState();
+        if (m_pauseTimer >= ANIM_IN_DURATION + 0.2f) m_pauseState = PauseState::Active;
+    }
+    // ------------------------------------------------------
+    // [フェーズ2] 操作中 (Active)
+    // ------------------------------------------------------
+    else if (m_pauseState == PauseState::Active)
+    {
+        UpdatePauseSliderState();
+
+        float targetSelectorY = -9999.0f;
+        float targetSelectorX = -9999.0f;
+        bool anyHover = false;
+
+        std::vector<ECS::EntityID> btns = { m_pauseItems.btnReverse, m_pauseItems.btnRetry, m_pauseItems.btnStage };
+        auto GetBaseX = [&](float y) {
+            return (SCREEN_WIDTH * 0.25f) - ((y - SCREEN_HEIGHT * 0.5f) * tanTilt);
+            };
+
+        for (auto btnID : btns)
+        {
+            if (btnID == INVALID_ENTITY_ID) continue;
+            auto& btnComp = m_coordinator->GetComponent<UIButtonComponent>(btnID);
+            auto& btnTrans = m_coordinator->GetComponent<TransformComponent>(btnID);
+            auto& btnUI = m_coordinator->GetComponent<UIImageComponent>(btnID);
+
+            ECS::EntityID bgID = m_btnBgMap[btnID];
+            ECS::EntityID lineID = bgID + 1;
+            auto& bgTrans = m_coordinator->GetComponent<TransformComponent>(bgID);
+            auto& bgUI = m_coordinator->GetComponent<UIImageComponent>(bgID);
+
+            float baseX = GetBaseX(btnTrans.position.y);
+
+            if (btnComp.state == ButtonState::Hover || btnComp.state == ButtonState::Pressed)
+            {
+                // Hover演出
+                float slideDist = 20.0f;
+                float slideX = slideDist * cosf(tiltRad);
+
+                btnTrans.position.x += ((baseX + slideX) - btnTrans.position.x) * 15.0f * deltaTime;
+                btnUI.color = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+                bgUI.color = { 0.1f, 0.1f, 0.1f, 1.0f };
+                float targetScaleW = 460.0f;
+                bgTrans.scale.x += (targetScaleW - bgTrans.scale.x) * 20.0f * deltaTime;
+                bgTrans.position.x = btnTrans.position.x - 30.0f;
+
+                if (m_coordinator->HasComponent<UIImageComponent>(lineID)) {
+                    auto& lineUI = m_coordinator->GetComponent<UIImageComponent>(lineID);
+                    auto& lineTrans = m_coordinator->GetComponent<TransformComponent>(lineID);
+                    float flash = 0.5f + 0.5f * sinf(m_pauseTimer * 20.0f);
+                    lineUI.color = { 0.0f, 1.0f, 1.0f, flash };
+                    lineTrans.scale.x += (460.0f - lineTrans.scale.x) * 20.0f * deltaTime;
+                    lineTrans.position.x = bgTrans.position.x;
+                }
+
+                anyHover = true;
+                targetSelectorY = btnTrans.position.y + 15.0f;
+                targetSelectorX = btnTrans.position.x - 200.0f;
+            }
+            else
+            {
+                // Normal
+                btnUI.color = { 0.6f, 0.6f, 0.6f, 0.9f };
+                btnTrans.position.x += (baseX - btnTrans.position.x) * 15.0f * deltaTime;
+
+                bgUI.color = { 0.1f, 0.1f, 0.1f, 0.7f };
+                bgTrans.scale.x += (420.0f - bgTrans.scale.x) * 15.0f * deltaTime;
+                bgTrans.position.x = btnTrans.position.x - 30.0f;
+
+                if (m_coordinator->HasComponent<UIImageComponent>(lineID)) {
+                    auto& lineUI = m_coordinator->GetComponent<UIImageComponent>(lineID);
+                    auto& lineTrans = m_coordinator->GetComponent<TransformComponent>(lineID);
+                    float breath = 0.2f + 0.1f * sinf(m_pauseTimer * 2.0f);
+                    lineUI.color = { 1.0f, 1.0f, 1.0f, breath * 0.5f };
+                    lineTrans.scale.x += (420.0f - lineTrans.scale.x) * 10.0f * deltaTime;
+                    lineTrans.position.x = bgTrans.position.x;
+                }
+            }
+        }
+
+        if (selectorID != INVALID_ENTITY_ID) {
+            auto& selTrans = m_coordinator->GetComponent<TransformComponent>(selectorID);
+            auto& selUI = m_coordinator->GetComponent<UIImageComponent>(selectorID);
+            selTrans.rotation.z += 2.0f * deltaTime;
+            if (anyHover) {
+                selUI.color.w += (1.0f - selUI.color.w) * 10.0f * deltaTime;
+                selTrans.position.y += (targetSelectorY - selTrans.position.y) * 10.0f * deltaTime;
+                selTrans.position.x += (targetSelectorX - selTrans.position.x) * 10.0f * deltaTime;
+            }
+            else {
+                selUI.color.w += (0.0f - selUI.color.w) * 10.0f * deltaTime;
+            }
+        }
+    }
+    // ------------------------------------------------------
+    // [フェーズ3] 退場 (AnimateOut)
+    // ------------------------------------------------------
+    else if (m_pauseState == PauseState::AnimateOut)
+    {
+        float t = std::min(1.0f, m_pauseTimer / ANIM_OUT_DURATION);
+        float ease = t * t * t;
+
+        if (m_pauseBgOverlayID != INVALID_ENTITY_ID)
+            m_coordinator->GetComponent<UIImageComponent>(m_pauseBgOverlayID).color.w = 0.4f * (1.0f - t);
+
+        float moveDist = 2000.0f * ease;
+
+        if (m_pauseDecoSlashID != INVALID_ENTITY_ID)
+            m_coordinator->GetComponent<TransformComponent>(m_pauseDecoSlashID).position.x -= moveDist;
+        if (m_pauseDecoLineID != INVALID_ENTITY_ID)
+            m_coordinator->GetComponent<TransformComponent>(m_pauseDecoLineID).position.x -= moveDist * 1.2f;
+        if (selectorID != INVALID_ENTITY_ID)
+            m_coordinator->GetComponent<TransformComponent>(selectorID).position.x -= moveDist;
+
+        std::vector<ECS::EntityID> items = {
+            m_pauseItems.btnReverse, m_pauseItems.btnRetry, m_pauseItems.btnStage,
+            m_pauseItems.sliderBar, m_pauseItems.sliderKnob
+        };
+        for (auto id : items) {
+            if (id == INVALID_ENTITY_ID) continue;
+            auto& trans = m_coordinator->GetComponent<TransformComponent>(id);
+            trans.position.x -= moveDist;
+            if (m_btnBgMap.count(id)) {
+                m_coordinator->GetComponent<TransformComponent>(m_btnBgMap[id]).position.x -= moveDist;
+                EntityID lineID = m_btnBgMap[id] + 1;
+                if (m_coordinator->HasComponent<TransformComponent>(lineID))
+                    m_coordinator->GetComponent<TransformComponent>(lineID).position.x -= moveDist;
+            }
+        }
+
+        // アニメーション終了時の処理 (フェードなしで即実行)
+        if (m_pauseTimer >= ANIM_OUT_DURATION)
+        {
+            if (m_pendingTransition != nullptr)
+            {
+                DestroyPauseUI();
+                m_pauseState = PauseState::Hidden;
+                m_pendingTransition(); // シーン遷移
+                m_pendingTransition = nullptr;
+            }
+            else
+            {
+                // 戻るボタン等
+                DestroyPauseUI();
+                m_pauseState = PauseState::Hidden;
+            }
+        }
     }
 }
 
 // ---------------------------------------------------------
-// ポーズUI生成
+// スライダーの状態更新 (位置修正版)
 // ---------------------------------------------------------
-void GameControlSystem::CreatePauseUI()
+void GameControlSystem::UpdatePauseSliderState()
 {
-    m_pauseUIEntities.clear();
+    if (m_pauseItems.sliderKnob == INVALID_ENTITY_ID || m_pauseItems.sliderBar == INVALID_ENTITY_ID) return;
 
-    float cx = SCREEN_WIDTH * 0.5f;
-    float cy = SCREEN_HEIGHT * 0.5f;
+    auto& knobTrans = m_coordinator->GetComponent<TransformComponent>(m_pauseItems.sliderKnob);
+    auto& knobUI = m_coordinator->GetComponent<UIImageComponent>(m_pauseItems.sliderKnob);
+    auto& barTrans = m_coordinator->GetComponent<TransformComponent>(m_pauseItems.sliderBar);
+    auto& barUI = m_coordinator->GetComponent<UIImageComponent>(m_pauseItems.sliderBar);
 
-    // 1. 背景 (BG_STAGE_SELECT)
-    m_pauseUIEntities.push_back(m_coordinator->CreateEntity(
-        TransformComponent({ cx, cy, 0.0f }, { 0,0,0 }, { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }),
-        UIImageComponent("BG_STAGE_SELECT", 10.0f, true, { 0.8f, 0.8f, 0.8f, 1.0f }) // 少し暗く
-    ));
+    float barW = barTrans.scale.x;
+    float barLeft = barTrans.position.x - barW * 0.5f;
+    float barRight = barTrans.position.x + barW * 0.5f;
 
-    // 2. ステージセレクトボタン (UIButtonComponent活用)
-    m_pauseUIEntities.push_back(m_coordinator->CreateEntity(
-        TransformComponent({ cx, cy - 80.0f, 0.0f }, { 0,0,0 }, { 300, 60, 1 }),
-        UIImageComponent("BTN_BACK_STAGE_SELECT", 11.0f, true, { 1,1,1,1 }),
-        UIButtonComponent(
-            ButtonState::Normal,
-            true,
-            [this]() { // onClick
-                // ポーズUIを消してから遷移
-                DestroyPauseUI();
-                SceneManager::ChangeScene<StageSelectScene>();
+    float tiltRad = XMConvertToRadians(10.0f);
+    float tanTilt = tanf(tiltRad);
+
+    // --- 入力処理 ---
+    if (m_pauseState == PauseState::Active)
+    {
+        EntityID cursorID = m_pauseItems.cursor;
+        if (cursorID != INVALID_ENTITY_ID)
+        {
+            auto& cursorTrans = m_coordinator->GetComponent<TransformComponent>(cursorID);
+            auto& cursorComp = m_coordinator->GetComponent<UICursorComponent>(cursorID);
+
+            bool isTrigger = cursorComp.isTriggered;
+            bool isHold = IsMousePress(0) || IsButtonPress(BUTTON_A);
+
+            if (isTrigger) {
+                float cx = cursorTrans.position.x;
+                float cy = cursorTrans.position.y;
+                if (cx >= barLeft - 40 && cx <= barRight + 40 &&
+                    std::abs(cy - barTrans.position.y) < 60) {
+                    m_isDraggingSlider = true;
+                    // SE
+                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_SYSTEM_OPEN", 1.0f);
+                }
             }
-        )
-    ));
+            if (!isHold) m_isDraggingSlider = false;
 
-    // 3. リトライボタン
-    m_pauseUIEntities.push_back(m_coordinator->CreateEntity(
-        TransformComponent({ cx, cy + 20.0f, 0.0f }, { 0,0,0 }, { 300, 60, 1 }),
-        UIImageComponent("BTN_RETRY", 11.0f, true, { 1,1,1,1 }),
-        UIButtonComponent(
-            ButtonState::Normal,
-            true,
-            [this]() {
-                DestroyPauseUI();
-                SceneManager::ChangeScene<GameScene>();
+            if (m_isDraggingSlider) {
+                float cx = cursorTrans.position.x;
+                float newX = std::max(barLeft, std::min(barRight, cx));
+
+                float t = (newX - barLeft) / barW;
+                float minSens = 0.001f, maxSens = 0.02f;
+                float newSens = minSens + (maxSens - minSens) * t;
+
+                if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>()) {
+                    camSys->SetMouseSensitivity(newSens);
+                }
             }
-        )
-    ));
+        }
+    }
 
-    // 4. マウス感度スライダー (カスタムUI)
-    // タイトル文字的なものが欲しければ追加可能
-
-    // 4-a. バー (土台)
-    float barY = cy + 150.0f;
-    float barW = 400.0f;
-    m_sensitivityBarID = m_coordinator->CreateEntity(
-        TransformComponent({ cx, barY, 0.0f }, { 0,0,0 }, { barW, 10.0f, 1 }),
-        UIImageComponent("FADE_WHITE", 11.0f, true, { 0.3f, 0.3f, 0.3f, 1.0f }) // グレー
-    );
-    m_pauseUIEntities.push_back(m_sensitivityBarID);
-
-    // 4-b. つまみ (現在値から計算)
+    // --- 位置同期 (補正強化) ---
     float currentSens = 0.005f;
     if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>()) {
         currentSens = camSys->GetMouseSensitivity();
     }
-
-    // 感度範囲設定 (例: 0.001 ~ 0.02)
-    float minSens = 0.001f;
-    float maxSens = 0.02f;
+    float minSens = 0.001f, maxSens = 0.02f;
     float t = (currentSens - minSens) / (maxSens - minSens);
-    t = std::max(0.0f, std::min(1.0f, t)); // Clamp
+    t = std::max(0.0f, std::min(1.0f, t));
 
-    float knobX = (cx - barW * 0.5f) + (barW * t);
+    // X座標
+    knobTrans.position.x = barLeft + (barW * t);
 
-    m_sensitivityKnobID = m_coordinator->CreateEntity(
-        TransformComponent({ knobX, barY, 0.0f }, { 0,0,0 }, { 20.0f, 40.0f, 1 }),
-        UIImageComponent("FADE_WHITE", 12.0f, true, { 1.0f, 1.0f, 1.0f, 1.0f }) // 白
-    );
-    m_pauseUIEntities.push_back(m_sensitivityKnobID);
+    // Y座標計算: バーの中心からのズレに基づく
+    // バーの中心は barTrans.position.x, barTrans.position.y
+    float diffX = knobTrans.position.x - barTrans.position.x;
 
-    // カーソルエンティティ
-    m_pauseUIEntities.push_back(m_coordinator->CreateEntity(
-        TransformComponent(
-            { cx, cy, 0.0f },     // 初期位置（画面中央）
-            { 0,0,0 },
-            { 32.0f, 32.0f, 1.0f } // カーソルの当たり判定サイズ (32x32)
-        ),
-        UIImageComponent(
-            "ICO_CURSOR",         // アセットID (無い場合は "UI_WHITE" などで代用確認)
-            20.0f,               // 最前面 (ボタンより手前)
-            true,
-            { 1, 1, 1, 1 }
-        ),
-        UICursorComponent(5.0f)  // カーソル機能 (スティック感度 5.0)
-    ));
+    // 回転座標補正
+    // 10度傾いているので、Xが中心から離れるほどYも下がる
+    float diffY = diffX * tanTilt;
+
+    // つまみが左上に浮くのを防ぐため、少し下・右にずらす
+    float manualOffsetY = 5.0f;
+    float manualOffsetX = 3.0f;
+
+    knobTrans.position.y = barTrans.position.y - diffY + manualOffsetY;
+    knobTrans.position.x += manualOffsetX; // 最終調整
+
+    // 演出
+    if (m_isDraggingSlider) {
+        knobUI.color = { 1.0f, 1.0f, 0.0f, 1.0f };
+        knobTrans.scale = { 20.0f, 40.0f, 1.0f };
+    }
+    else {
+        knobUI.color = { 1.0f, 1.0f, 1.0f, 1.0f };
+        knobTrans.scale = { 16.0f, 32.0f, 1.0f };
+    }
 }
 
 // ---------------------------------------------------------
@@ -1516,89 +1908,21 @@ void GameControlSystem::DestroyPauseUI()
         m_coordinator->DestroyEntity(id);
     }
     m_pauseUIEntities.clear();
-    m_sensitivityKnobID = ECS::INVALID_ENTITY_ID;
-    m_sensitivityBarID = ECS::INVALID_ENTITY_ID;
+    m_btnBgMap.clear(); // マップもクリア
+
+    m_pauseBgOverlayID = INVALID_ENTITY_ID;
+    m_pauseDecoSlashID = INVALID_ENTITY_ID;
+    m_pauseDecoLineID = INVALID_ENTITY_ID;
+
+    m_pauseItems = {};
     m_isDraggingSlider = false;
 }
 
-// ---------------------------------------------------------
-// スライダー専用更新ロジック
-// ---------------------------------------------------------
-void GameControlSystem::UpdatePauseSlider()
-{
-    if (m_sensitivityKnobID == INVALID_ENTITY_ID || m_sensitivityBarID == INVALID_ENTITY_ID) return;
 
-    // ハードウェアマウス座標ではなく、ゲーム内カーソルEntityの座標を取得する
-    EntityID cursorID = FindFirstEntityWithComponent<UICursorComponent>(m_coordinator);
-    if (cursorID == INVALID_ENTITY_ID) return;
 
-    auto& cursorTrans = m_coordinator->GetComponent<TransformComponent>(cursorID);
-    auto& cursorComp = m_coordinator->GetComponent<UICursorComponent>(cursorID); // クリック状態用
 
-    // カーソル位置 (Transformは画面座標系になっている前提)
-    float cursorX = cursorTrans.position.x;
-    float cursorY = cursorTrans.position.y;
 
-    // クリック判定 (UICursorComponent の isTriggered を使う)
-    // ドラッグ継続判定のために、ハードウェアのプレス状態も併用するか、
-    // あるいは「Aボタン押しっぱなし」を判定する必要があります。
-    // ここでは Input::IsMousePress(0) || Input::IsButtonPress(BUTTON_A) を使います。
-    bool isHold = IsMousePress(0) || IsButtonPress(BUTTON_A);
-    bool isTrigger = cursorComp.isTriggered; // カーソルシステムが更新したトリガー状態
 
-    auto& knobTrans = m_coordinator->GetComponent<TransformComponent>(m_sensitivityKnobID);
-    auto& barTrans = m_coordinator->GetComponent<TransformComponent>(m_sensitivityBarID);
-
-    float barW = barTrans.scale.x;
-    float barLeft = barTrans.position.x - barW * 0.5f;
-    float barRight = barTrans.position.x + barW * 0.5f;
-
-    // 当たり判定用サイズ
-    float knobW = knobTrans.scale.x;
-    float knobH = knobTrans.scale.y;
-    float cursorSize = cursorTrans.scale.x; // カーソルのサイズも考慮
-
-    // ドラッグ開始判定
-    if (isTrigger)
-    {
-        // つまみとの当たり判定 (矩形 vs 矩形)
-        // Y軸: カーソルYがつまみの範囲内か (少し余裕を持たせる + 20.0f)
-        bool yOverlap = std::abs(cursorY - knobTrans.position.y) < (knobH * 0.5f + cursorSize * 0.5f + 20.0f);
-
-        // X軸: バーの範囲内か (バーのどこをクリックしても反応するようにする)
-        bool xOverlap = (cursorX >= barLeft - 20.0f && cursorX <= barRight + 20.0f);
-
-        if (xOverlap && yOverlap) {
-            m_isDraggingSlider = true;
-        }
-    }
-
-    // ドラッグ終了
-    if (!isHold) {
-        m_isDraggingSlider = false;
-    }
-
-    // ドラッグ中の処理
-    if (m_isDraggingSlider)
-    {
-        // 1. つまみ位置更新 (カーソルXに追従)
-        float newX = std::max(barLeft, std::min(barRight, cursorX));
-        knobTrans.position.x = newX;
-
-        // 2. 感度計算 (0.0 ~ 1.0)
-        float t = (newX - barLeft) / barW;
-
-        // 3. 実際の感度値に変換
-        float minSens = 0.001f;
-        float maxSens = 0.02f;
-        float newSens = minSens + (maxSens - minSens) * t;
-
-        // 4. システムへ反映
-        if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>()) {
-            camSys->SetMouseSensitivity(newSens);
-        }
-    }
-}
 
 void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID)
 {

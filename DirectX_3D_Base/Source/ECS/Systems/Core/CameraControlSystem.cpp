@@ -230,6 +230,15 @@ static bool RaycastToWall(
  */
 void CameraControlSystem::Update(float deltaTime)
 {
+    if (m_coordinator)
+    {
+        ECS::EntityID stateID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
+        if (stateID != ECS::INVALID_ENTITY_ID)
+        {
+            if (m_coordinator->GetComponent<GameStateComponent>(stateID).isPaused) return;
+        }
+    }
+
     (void)deltaTime;
 
     // 1. ゲームステートとデバッグ状態の取得
