@@ -25,12 +25,12 @@
 
 using namespace DirectX;
 
+float CameraControlSystem::m_mouseSensitivity = 0.005f;
+
 // ===== 定数・マクロ定義 =====
 // 右スティックの感度
 const float CAMERA_SENSITIVITY_X = 0.04f; // YAW感度
 const float CAMERA_SENSITIVITY_Y = 0.02f; // PITCH感度 (上下は控えめに)
-// マウスの感度（ピクセル単位なのでスティックより小さく設定）
-const float MOUSE_SENSITIVITY = 0.005f;
 // PITCHのクランプ値 (上下の限界)
 const float PITCH_MAX = XM_PIDIV2 - 0.2f; // 約78度
 const float PITCH_MIN = XM_PIDIV2 * 0.0f; // 約-27度 (水平より少し下まで)
@@ -302,8 +302,8 @@ void CameraControlSystem::Update(float deltaTime)
 
     // カメラ回転量の計算 (スティック + マウス)
     // マウスのY移動は、画面上(マイナス)に行くとカメラを上に向けたい -> スティック上(プラス)と同じ挙動に合わせるため反転
-    float yawInput = rightStick.x * CAMERA_SENSITIVITY_X + mouseDelta.x * MOUSE_SENSITIVITY;
-    float pitchInput = rightStick.y * CAMERA_SENSITIVITY_Y - mouseDelta.y * MOUSE_SENSITIVITY;
+    float yawInput = rightStick.x * CAMERA_SENSITIVITY_X + mouseDelta.x * m_mouseSensitivity;
+    float pitchInput = rightStick.y * CAMERA_SENSITIVITY_Y - mouseDelta.y * m_mouseSensitivity;
 
     // 2. 【フリーカメラ】デバッグモードが有効な場合
     if (isDebugMode)

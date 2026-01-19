@@ -72,6 +72,18 @@ private:
     void ApplyModeVisuals(ECS::EntityID controllerID);
     bool IsAABBOverlap(ECS::EntityID a, ECS::EntityID b);
 
+    // --- ポーズ画面用 ---
+    void TogglePause(ECS::EntityID controllerID);
+    void CreatePauseUI();
+    void DestroyPauseUI();
+    void UpdatePauseSlider();
+
+    std::vector<ECS::EntityID> m_pauseUIEntities;
+    ECS::EntityID m_sensitivityKnobID = ECS::INVALID_ENTITY_ID;
+    ECS::EntityID m_sensitivityBarID = ECS::INVALID_ENTITY_ID;
+
+    // スライダー操作用フラグ
+    bool m_isDraggingSlider = false;
 
     // 座標変換ヘルパー
     DirectX::XMFLOAT3 GetScreenPosition(

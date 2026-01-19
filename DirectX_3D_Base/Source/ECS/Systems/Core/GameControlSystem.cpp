@@ -55,8 +55,17 @@ void GameControlSystem::Update(float deltaTime)
     if (controllerID == INVALID_ENTITY_ID) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
+    if (IsKeyTrigger(VK_ESCAPE) || IsButtonTriggered(BUTTON_START))
+    {
+        TogglePause(controllerID);
+    }
+
     // ポーズ中は更新を停止
-    if (state.isPaused) return;
+    if (state.isPaused)
+    {
+        UpdatePauseSlider();
+        return;
+    }
 
     // シーケンス処理
     if (state.sequenceState == GameSequenceState::Starting)
@@ -1132,7 +1141,7 @@ void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID control
     {
         // アニメーション再生 (歩き)
         if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
-            m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_RUN");
+            m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_RUN", true);
         }
 
         // プレイヤーが向いている方向(回転)に進む
@@ -1383,6 +1392,212 @@ bool GameControlSystem::IsAABBOverlap(ECS::EntityID a, ECS::EntityID b)
     const bool overlapZ = (amin.z <= bmax.z) && (amax.z >= bmin.z);
 
     return overlapX && overlapY && overlapZ;
+}
+
+// ---------------------------------------------------------
+// ポーズ切り替え
+// ---------------------------------------------------------
+void GameControlSystem::TogglePause(ECS::EntityID controllerID)
+{
+    auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+    state.isPaused = !state.isPaused;
+
+    if (state.isPaused)
+    {
+        CreatePauseUI();
+        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_SYSTEM_OPEN"); // 仮
+    }
+    else
+    {
+        DestroyPauseUI();
+    }
+}
+
+// ---------------------------------------------------------
+// ポーズUI生成
+// ---------------------------------------------------------
+void GameControlSystem::CreatePauseUI()
+{
+    m_pauseUIEntities.clear();
+
+    float cx = SCREEN_WIDTH * 0.5f;
+    float cy = SCREEN_HEIGHT * 0.5f;
+
+    // 1. 背景 (BG_STAGE_SELECT)
+    m_pauseUIEntities.push_back(m_coordinator->CreateEntity(
+        TransformComponent({ cx, cy, 0.0f }, { 0,0,0 }, { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }),
+        UIImageComponent("BG_STAGE_SELECT", 10.0f, true, { 0.8f, 0.8f, 0.8f, 1.0f }) // 少し暗く
+    ));
+
+    // 2. ステージセレクトボタン (UIButtonComponent活用)
+    m_pauseUIEntities.push_back(m_coordinator->CreateEntity(
+        TransformComponent({ cx, cy - 80.0f, 0.0f }, { 0,0,0 }, { 300, 60, 1 }),
+        UIImageComponent("BTN_BACK_STAGE_SELECT", 11.0f, true, { 1,1,1,1 }),
+        UIButtonComponent(
+            ButtonState::Normal,
+            true,
+            [this]() { // onClick
+                // ポーズUIを消してから遷移
+                DestroyPauseUI();
+                SceneManager::ChangeScene<StageSelectScene>();
+            }
+        )
+    ));
+
+    // 3. リトライボタン
+    m_pauseUIEntities.push_back(m_coordinator->CreateEntity(
+        TransformComponent({ cx, cy + 20.0f, 0.0f }, { 0,0,0 }, { 300, 60, 1 }),
+        UIImageComponent("BTN_RETRY", 11.0f, true, { 1,1,1,1 }),
+        UIButtonComponent(
+            ButtonState::Normal,
+            true,
+            [this]() {
+                DestroyPauseUI();
+                SceneManager::ChangeScene<GameScene>();
+            }
+        )
+    ));
+
+    // 4. マウス感度スライダー (カスタムUI)
+    // タイトル文字的なものが欲しければ追加可能
+
+    // 4-a. バー (土台)
+    float barY = cy + 150.0f;
+    float barW = 400.0f;
+    m_sensitivityBarID = m_coordinator->CreateEntity(
+        TransformComponent({ cx, barY, 0.0f }, { 0,0,0 }, { barW, 10.0f, 1 }),
+        UIImageComponent("FADE_WHITE", 11.0f, true, { 0.3f, 0.3f, 0.3f, 1.0f }) // グレー
+    );
+    m_pauseUIEntities.push_back(m_sensitivityBarID);
+
+    // 4-b. つまみ (現在値から計算)
+    float currentSens = 0.005f;
+    if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>()) {
+        currentSens = camSys->GetMouseSensitivity();
+    }
+
+    // 感度範囲設定 (例: 0.001 ~ 0.02)
+    float minSens = 0.001f;
+    float maxSens = 0.02f;
+    float t = (currentSens - minSens) / (maxSens - minSens);
+    t = std::max(0.0f, std::min(1.0f, t)); // Clamp
+
+    float knobX = (cx - barW * 0.5f) + (barW * t);
+
+    m_sensitivityKnobID = m_coordinator->CreateEntity(
+        TransformComponent({ knobX, barY, 0.0f }, { 0,0,0 }, { 20.0f, 40.0f, 1 }),
+        UIImageComponent("FADE_WHITE", 12.0f, true, { 1.0f, 1.0f, 1.0f, 1.0f }) // 白
+    );
+    m_pauseUIEntities.push_back(m_sensitivityKnobID);
+
+    // カーソルエンティティ
+    m_pauseUIEntities.push_back(m_coordinator->CreateEntity(
+        TransformComponent(
+            { cx, cy, 0.0f },     // 初期位置（画面中央）
+            { 0,0,0 },
+            { 32.0f, 32.0f, 1.0f } // カーソルの当たり判定サイズ (32x32)
+        ),
+        UIImageComponent(
+            "ICO_CURSOR",         // アセットID (無い場合は "UI_WHITE" などで代用確認)
+            20.0f,               // 最前面 (ボタンより手前)
+            true,
+            { 1, 1, 1, 1 }
+        ),
+        UICursorComponent(5.0f)  // カーソル機能 (スティック感度 5.0)
+    ));
+}
+
+// ---------------------------------------------------------
+// ポーズUI破棄
+// ---------------------------------------------------------
+void GameControlSystem::DestroyPauseUI()
+{
+    for (auto id : m_pauseUIEntities) {
+        m_coordinator->DestroyEntity(id);
+    }
+    m_pauseUIEntities.clear();
+    m_sensitivityKnobID = ECS::INVALID_ENTITY_ID;
+    m_sensitivityBarID = ECS::INVALID_ENTITY_ID;
+    m_isDraggingSlider = false;
+}
+
+// ---------------------------------------------------------
+// スライダー専用更新ロジック
+// ---------------------------------------------------------
+void GameControlSystem::UpdatePauseSlider()
+{
+    if (m_sensitivityKnobID == INVALID_ENTITY_ID || m_sensitivityBarID == INVALID_ENTITY_ID) return;
+
+    // ハードウェアマウス座標ではなく、ゲーム内カーソルEntityの座標を取得する
+    EntityID cursorID = FindFirstEntityWithComponent<UICursorComponent>(m_coordinator);
+    if (cursorID == INVALID_ENTITY_ID) return;
+
+    auto& cursorTrans = m_coordinator->GetComponent<TransformComponent>(cursorID);
+    auto& cursorComp = m_coordinator->GetComponent<UICursorComponent>(cursorID); // クリック状態用
+
+    // カーソル位置 (Transformは画面座標系になっている前提)
+    float cursorX = cursorTrans.position.x;
+    float cursorY = cursorTrans.position.y;
+
+    // クリック判定 (UICursorComponent の isTriggered を使う)
+    // ドラッグ継続判定のために、ハードウェアのプレス状態も併用するか、
+    // あるいは「Aボタン押しっぱなし」を判定する必要があります。
+    // ここでは Input::IsMousePress(0) || Input::IsButtonPress(BUTTON_A) を使います。
+    bool isHold = IsMousePress(0) || IsButtonPress(BUTTON_A);
+    bool isTrigger = cursorComp.isTriggered; // カーソルシステムが更新したトリガー状態
+
+    auto& knobTrans = m_coordinator->GetComponent<TransformComponent>(m_sensitivityKnobID);
+    auto& barTrans = m_coordinator->GetComponent<TransformComponent>(m_sensitivityBarID);
+
+    float barW = barTrans.scale.x;
+    float barLeft = barTrans.position.x - barW * 0.5f;
+    float barRight = barTrans.position.x + barW * 0.5f;
+
+    // 当たり判定用サイズ
+    float knobW = knobTrans.scale.x;
+    float knobH = knobTrans.scale.y;
+    float cursorSize = cursorTrans.scale.x; // カーソルのサイズも考慮
+
+    // ドラッグ開始判定
+    if (isTrigger)
+    {
+        // つまみとの当たり判定 (矩形 vs 矩形)
+        // Y軸: カーソルYがつまみの範囲内か (少し余裕を持たせる + 20.0f)
+        bool yOverlap = std::abs(cursorY - knobTrans.position.y) < (knobH * 0.5f + cursorSize * 0.5f + 20.0f);
+
+        // X軸: バーの範囲内か (バーのどこをクリックしても反応するようにする)
+        bool xOverlap = (cursorX >= barLeft - 20.0f && cursorX <= barRight + 20.0f);
+
+        if (xOverlap && yOverlap) {
+            m_isDraggingSlider = true;
+        }
+    }
+
+    // ドラッグ終了
+    if (!isHold) {
+        m_isDraggingSlider = false;
+    }
+
+    // ドラッグ中の処理
+    if (m_isDraggingSlider)
+    {
+        // 1. つまみ位置更新 (カーソルXに追従)
+        float newX = std::max(barLeft, std::min(barRight, cursorX));
+        knobTrans.position.x = newX;
+
+        // 2. 感度計算 (0.0 ~ 1.0)
+        float t = (newX - barLeft) / barW;
+
+        // 3. 実際の感度値に変換
+        float minSens = 0.001f;
+        float maxSens = 0.02f;
+        float newSens = minSens + (maxSens - minSens) * t;
+
+        // 4. システムへ反映
+        if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>()) {
+            camSys->SetMouseSensitivity(newSens);
+        }
+    }
 }
 
 void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID)
