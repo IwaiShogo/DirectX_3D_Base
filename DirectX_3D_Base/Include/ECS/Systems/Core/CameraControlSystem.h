@@ -77,6 +77,14 @@ public:
 	void SetFixedCamera(const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& lookAt);
 	void ReleaseFixedCamera();
 	void ResetCameraAngle(float yaw, float pitch);
+
+	// 感度設定用関数
+	void SetMouseSensitivity(float sensitivity) { m_mouseSensitivity = sensitivity; }
+	float GetMouseSensitivity() const { return m_mouseSensitivity; }
+
+private:
+	// デフォルト感度
+	static float m_mouseSensitivity;
 };
 
 #endif // !___CAMERA_CONTROL_SYSTEM_H___

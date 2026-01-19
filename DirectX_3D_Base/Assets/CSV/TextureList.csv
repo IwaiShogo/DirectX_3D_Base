@@ -101,3 +101,6 @@ Stage_3,Texture,Assets/Texture/ui_stagemap_castle4.png
 Stage_4,Texture,Assets/Texture/ui_stagemap_castle5.png
 Stage_5,Texture,Assets/Texture/ui_stagemap_castle6.png
 UI_GAME_START,Texture,Assets/Texture/gamestart.png
+BTN_BACK_POSE,Texture,Assets/Texture/btn_back_pose.png
+BTN_RETRY_POSE,Texture,Assets/Texture/btn_retry_pose.png
+BTN_SELECT_POSE,Texture,Assets/Texture/btn_select_pose.png

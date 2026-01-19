@@ -27,31 +27,38 @@ using namespace ECS;
 
 void UIInputSystem::Update(float deltaTime)
 {
-	if (!m_coordinator) return; //m_coordinatorが初期化されていなかったら何もしない 
-	
-	// 1. カーソルとボタンのリストアップ
+	if (!m_coordinator) return;
+
+	// 1. カーソル Entity を取得
 	EntityID cursorEntity = FindFirstEntityWithComponent<UICursorComponent>(m_coordinator);
 	if (cursorEntity == INVALID_ENTITY_ID) return;
 
-	// 2. 当たり判定ロジック
 	auto& cursorComp = m_coordinator->GetComponent<UICursorComponent>(cursorEntity);
 	auto& cursorTrans = m_coordinator->GetComponent<TransformComponent>(cursorEntity);
 
-	for (auto const& entity : m_entities)
+	// m_entities を直接ループせず、一時的なベクターにコピーする
+	std::vector<EntityID> entitiesToCheck(m_entities.begin(), m_entities.end());
+
+	for (const auto& entity : entitiesToCheck)
 	{
+		// 念のため、処理する瞬間にそのエンティティがまだ生存しているか確認
+		// (DestroyEntityされると Signature がリセットされるため、Component取得前にチェック)
+		if (m_coordinator->GetActiveEntities().find(entity) == m_coordinator->GetActiveEntities().end()) continue;
+		if (!m_coordinator->HasComponent<UIButtonComponent>(entity)) continue;
+
 		auto& button = m_coordinator->GetComponent<UIButtonComponent>(entity);
 		const auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
 
 		if (!button.isVisible) continue;
 
-		// AABB判定 (ピクセル座標系)
-		// Transform.scale を「サイズ(幅・高さ)」として扱います
+		// 当たり判定
 		if (IsOverlapping(cursorTrans.position, cursorTrans.scale, trans.position, trans.scale))
 		{
 			// 重なっている
 			if (cursorComp.isTriggered)
 			{
 				button.state = ButtonState::Pressed;
+				// コールバック実行 (ここで DestroyEntity されても entitiesToCheck は壊れない)
 				if (button.onClick) button.onClick();
 			}
 			else

@@ -1127,7 +1127,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
 
                 if (cell.type == CellType::Start) {
                     EntityFactory::CreatePlayer(m_coordinator, cellCenter);
-                    EntityFactory::CreateEnemySpawner(m_coordinator, cellCenter, 3.0f);
+                    EntityFactory::CreateEnemySpawner(m_coordinator, cellCenter, 7.0f);
                 }
                 else if (cell.type == CellType::Goal) {
                 }
