@@ -122,6 +122,19 @@ private:
 // 既存のシーン切替関数（既にあるならそれを使う）
 	std::vector<ECS::EntityID> m_listUIEntities;
 	std::vector<ECS::EntityID> m_detailUIEntities;
+	std::vector<ECS::EntityID> m_bestTimeDigitEntities; // mm:ss (UI_FONT)
+
+	// ★獲得スター表示（詳細UI）: ONアイコンを常に作って、ステージ選択で可視/不可視を切り替える
+	ECS::EntityID m_detailStarOnEntities[3] = { (ECS::EntityID)-1, (ECS::EntityID)-1, (ECS::EntityID)-1 };
+
+	// ★スターON表示は「カード選択アニメ終了後」に反映する（押した瞬間に出るバグ対策）
+	bool        m_starRevealPending = false;
+	std::string m_starRevealStageId;
+
+
+	// ★スター表示を更新（StageUnlockProgressの保存値から）
+	void UpdateStarIconsByStageId(const std::string& stageId);
+
 
 	// ===== 詳細UIを「一覧の上に重ねる」ための補助 =====
 	ECS::EntityID m_lastHiddenListCardEntity = (ECS::EntityID)-1; // 集中演出で一時的に隠したカード
@@ -172,6 +185,8 @@ private:
 
 	// ===== Stage Map Texture (per-stage) =====
 	int StageIdToStageNo(const std::string& stageId) const;
+	// ベストタイム(mm:ss) 表示を更新（UI_BEST_TIME の右）
+	void UpdateBestTimeDigitsByStageId(const std::string& stageId);
 	std::string GetStageMapTextureAssetId(int stageNo) const;
 	void ApplyStageMapTextureByStageId(const std::string& stageId);
 
@@ -264,7 +279,14 @@ private:
 	void UpdateShootingStar(float dt);
 	void SpawnShootingStar();
 	void EnsureDebugEffectOnMap(); // ★追加：切り分け用にGLOWを常駐
+
+
 	bool GetUIRect(ECS::EntityID id, float& left, float& top, float& right, float& bottom) const;
+
+	std::vector<std::pair<ECS::EntityID, float>> m_activeEyeLights;
+	float m_eyeLightTimer = 0.0f;
+	float m_eyeLightNextInterval = 0.0f;
+	void UpdateEyeLight(float dt);
 
 };
 

@@ -374,7 +374,6 @@ namespace
 
 
 // ===== ÓIo[ϐ̒` =====u
-// ̃VXeECSɃANZX邽߂̐ÓI|C^
 ECS::Coordinator* GameScene::s_coordinator = nullptr;
 std::string GameScene::s_StageNo = "";
 
@@ -386,8 +385,6 @@ void GameScene::Init()
     ECS::ECSInitializer::InitECS(m_coordinator);
 
     // --- 3. JSONRtBOgĈꌂI ---
-    // Ȃuꌂ֐vɁAIDCoordinatorn܂
-    // ֐͎ۂ̃R[hɍ킹ďĂ
     ECS::EntityFactory::GenerateStageFromConfig(m_coordinator.get(), s_StageNo);
 
     // Map-check gimmick (green cube). Touch it in ACTION_MODE to force TopView.
@@ -495,6 +492,24 @@ void GameScene::Init()
             /* IsVisible	*/	true,
             /* Color		*/	XMFLOAT4(0.0f, 1.0f, 1.0f, 0.1f)
         )
+    );
+
+    m_isFadeIn = false;
+    m_fadeTimer = 0.0f;
+
+    m_fadeEntity = m_coordinator->CreateEntity(
+        TransformComponent(
+            XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 200000.0f),
+            XMFLOAT3(0.0f, 0.0f, 0.0f),
+            XMFLOAT3(SCREEN_WIDTH, SCREEN_HEIGHT, 1.0f)
+        ),
+        UIImageComponent(
+            "BG_GAME_OVER",
+            200000.0f,
+            true,
+            XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f)
+        ),
+        TagComponent("SCREEN_FADE")
     );
 
     // ------------------------------

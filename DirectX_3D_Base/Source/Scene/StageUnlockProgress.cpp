@@ -1,7 +1,8 @@
-#include "Scene/StageUnlockProgress.h"
+ï»¿#include "Scene/StageUnlockProgress.h"
 
 #include <algorithm>
 #include <cctype>
+#include <cstdint>
 #include <cstdio>
 #include <fstream>
 #include <string>
@@ -20,13 +21,15 @@ namespace
 	int  g_maxUnlocked = 1;
 	bool g_loaded = false;
 	int  g_pendingReveal = -1;
+	uint32_t g_bestTimeMs[kMaxStages + 1] = {};           // 1..6, 0=æœªè¨˜éŒ²
+	std::uint8_t g_stageStarMask[kMaxStages + 1] = {};    // 1..6, 0=æœªå–å¾—(3bit)
 
 	int ClampStage(int v)
 	{
 		return std::max(kMinStages, std::min(kMaxStages, v));
 	}
 
-	// "ST_001" / "ST_1" / "Stage1" ‚È‚Ç‚©‚ç”š‚ğ”²‚­iÅ‰‚ÉŒ©‚Â‚©‚Á‚½˜A‘±”š‚ğÌ—pj
+	// "ST_001" / "ST_1" / "Stage1" ãªã©ã‹ã‚‰æ•°å­—éƒ¨åˆ†ã‚’æŠ½å‡º
 	int ParseStageNo(const std::string& stageID)
 	{
 		int  value = 0;
@@ -44,9 +47,8 @@ namespace
 				break;
 			}
 		}
-
 		if (!inDigits) return -1;
-		return value; // 001 ‚Ì‚æ‚¤‚ÈŒ`®‚Í‚»‚Ì‚Ü‚Ü 1 ‚É‚È‚é
+		return value;
 	}
 
 	std::string GetExeDirectory()
@@ -71,13 +73,19 @@ namespace
 
 	std::string GetSaveFilePath()
 	{
-		// ÀsêŠiƒJƒŒƒ“ƒgƒfƒBƒŒƒNƒgƒŠj‚ÉˆË‘¶‚µ‚È‚¢‚æ‚¤‚ÉAexe‚Æ“¯‚¶ƒtƒHƒ‹ƒ_‚ÖŒÅ’è‚·‚éB
+		// exe ã®éš£ã«å›ºå®šã—ã¦ã€ä½œæ¥­ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªä¾å­˜ã‚’é¿ã‘ã‚‹
 		const std::string exeDir = GetExeDirectory();
 		if (!exeDir.empty())
 		{
 			return exeDir + kSaveFileName;
 		}
 		return std::string(kSaveFileName);
+	}
+
+	bool FileExists(const std::string& path)
+	{
+		std::ifstream ifs(path);
+		return ifs.is_open();
 	}
 }
 
@@ -88,24 +96,17 @@ namespace StageUnlockProgress
 		if (g_loaded) return;
 		g_loaded = true;
 
-#if defined(_DEBUG)
-		// Debugƒrƒ‹ƒh‚Å‚Íu–ˆ‰ñ‰‰ñ‹N“®ˆµ‚¢v‚ÉŒÅ’è‚·‚éB
-		// ƒfƒoƒbƒO‹N“®‚·‚é‚½‚Ñ‚ÉAƒXƒe[ƒW”‚ª•K‚¸1ŒÂ‚É‚È‚éB
-		g_maxUnlocked = 1;
-		g_pendingReveal = -1;
-
-		// •Û‘¶ƒtƒ@ƒCƒ‹‚ªc‚Á‚Ä‚¢‚½‚çÁ‚·i¸”s‚µ‚Ä‚àOKj
+		// --- èµ·å‹•ã”ã¨åˆæœŸåŒ–ï¼ˆæœªè¨˜éŒ²/æœªå–å¾—ï¼‰ ---
+		for (int i = 1; i <= kMaxStages; ++i)
 		{
-			const std::string path = GetSaveFilePath();
-			std::remove(path.c_str());
+			g_bestTimeMs[i] = 0;
+			g_stageStarMask[i] = 0;
 		}
-		return;
-#endif
+		g_pendingReveal = -1;
 
 		std::ifstream ifs(GetSaveFilePath());
 		if (!ifs.is_open())
 		{
-			// •Û‘¶ƒtƒ@ƒCƒ‹‚ª–³‚¢‰‰ñ‹N“®ˆµ‚¢
 			g_maxUnlocked = 1;
 			return;
 		}
@@ -118,30 +119,135 @@ namespace StageUnlockProgress
 		}
 		else
 		{
-			// ‰ó‚ê‚Ä‚¢‚éê‡‚à‰‰ñˆµ‚¢‚ÉƒtƒH[ƒ‹ƒoƒbƒN
 			g_maxUnlocked = 1;
+		}
+
+		// ãƒ™ã‚¹ãƒˆã‚¿ã‚¤ãƒ (ms)
+		for (int i = 1; i <= kMaxStages; ++i)
+		{
+			uint32_t t = 0;
+			ifs >> t;
+			if (ifs.fail()) break;
+			g_bestTimeMs[i] = t;
+		}
+
+		// ã‚¹ã‚¿ãƒ¼(3bit)ï¼ˆå¤ã„ãƒ•ã‚¡ã‚¤ãƒ«ãªã‚‰ç„¡ã„ã®ã§ 0 ã®ã¾ã¾ï¼‰
+		for (int i = 1; i <= kMaxStages; ++i)
+		{
+			int s = 0;
+			ifs >> s;
+			if (ifs.fail()) break;
+			g_stageStarMask[i] = static_cast<std::uint8_t>(s & 0x7);
 		}
 	}
 
+	void ForceReload()
+	{
+		g_loaded = false;
+		Load();
+	}
+
+	bool HasSaveFile()
+	{
+		return FileExists(GetSaveFilePath());
+	}
+
+	void ResetAllAndSave()
+	{
+		// æ—¢ã«ãƒ­ãƒ¼ãƒ‰æ¸ˆã¿ã§ã‚‚ç¢ºå®Ÿã«åˆæœŸåŒ–ã™ã‚‹
+		g_loaded = true;
+		g_maxUnlocked = 1;
+		g_pendingReveal = -1;
+
+		for (int i = 1; i <= kMaxStages; ++i)
+		{
+			g_bestTimeMs[i] = 0;
+			g_stageStarMask[i] = 0;
+		}
+
+		Save(); // ãƒ•ã‚¡ã‚¤ãƒ«ã‚‚ä¸Šæ›¸ãã—ã¦ã€Œæ¬¡å›èµ·å‹•ã€ã§ã‚‚æœ€åˆã‹ã‚‰ã«ãªã‚‹
+	}
+
+
 	void Save()
 	{
-#if defined(_DEBUG)
-		// Debugƒrƒ‹ƒh‚Å‚Í•Û‘¶‚µ‚È‚¢iŸ‰ñ‹N“®‚Éc‚³‚È‚¢j
-		return;
-#endif
-
 		g_loaded = true;
 
 		std::ofstream ofs(GetSaveFilePath(), std::ios::trunc);
 		if (!ofs.is_open()) return;
 
-		ofs << ClampStage(g_maxUnlocked);
+		// v2å½¢å¼:
+		// 1è¡Œç›®: maxUnlocked
+		// 2è¡Œç›®: bestTimeMs[1..6]
+		// 3è¡Œç›®: stageStarMask[1..6]
+		ofs << ClampStage(g_maxUnlocked) << "\n";
+
+		for (int i = 1; i <= kMaxStages; ++i)
+		{
+			ofs << g_bestTimeMs[i];
+			if (i != kMaxStages) ofs << ' ';
+		}
+		ofs << "\n";
+
+		for (int i = 1; i <= kMaxStages; ++i)
+		{
+			ofs << static_cast<int>(g_stageStarMask[i] & 0x7);
+			if (i != kMaxStages) ofs << ' ';
+		}
 	}
 
 	int GetMaxUnlockedStage()
 	{
 		Load();
 		return g_maxUnlocked;
+	}
+
+	uint32_t GetBestTimeMs(int stageNo)
+	{
+		Load();
+		if (stageNo < 1 || stageNo > kMaxStages) return 0;
+		return g_bestTimeMs[stageNo];
+	}
+
+	bool UpdateBestTimeIfFaster(int stageNo, float clearTimeSec)
+	{
+		Load();
+		if (stageNo < 1 || stageNo > kMaxStages) return false;
+		if (!(clearTimeSec > 0.05f)) return false;
+
+		const uint32_t newMs = static_cast<uint32_t>(clearTimeSec * 1000.0f + 0.5f);
+		if (newMs == 0) return false;
+
+		const uint32_t oldMs = g_bestTimeMs[stageNo];
+		if (oldMs != 0 && newMs >= oldMs) return false;
+
+		g_bestTimeMs[stageNo] = newMs;
+		Save();
+		return true;
+	}
+
+	int ExtractStageNo(const std::string& stageID)
+	{
+		Load();
+		const int v = ParseStageNo(stageID);
+		if (v < 1 || v > kMaxStages) return -1;
+		return v;
+	}
+
+	std::uint8_t GetStageStarMask(int stageNo)
+	{
+		Load();
+		if (stageNo < 1 || stageNo > kMaxStages) return 0;
+		return g_stageStarMask[stageNo];
+	}
+
+	void UpdateStageStarMaskOr(int stageNo, std::uint8_t addMask)
+	{
+		Load();
+		if (stageNo < 1 || stageNo > kMaxStages) return;
+		addMask &= 0x7;
+		g_stageStarMask[stageNo] = static_cast<std::uint8_t>(g_stageStarMask[stageNo] | addMask);
+		Save(); // â˜…æ˜Ÿã‚‚æ°¸ç¶šåŒ–ã™ã‚‹
 	}
 
 	int UnlockNextStageFromClearedStageID(const std::string& clearedStageID)
@@ -161,20 +267,16 @@ namespace StageUnlockProgress
 
 	void SetPendingRevealStage(int stageNo)
 	{
-		// ‚±‚±‚Íu‰‰o—pv‚È‚Ì‚Å•Û‘¶‚µ‚È‚¢
 		if (stageNo < 2 || stageNo > kMaxStages)
 		{
 			g_pendingReveal = -1;
 			return;
 		}
-
-		// –¢‰ğ•ú‚Í‰‰o•s—v
 		if (stageNo > GetMaxUnlockedStage())
 		{
 			g_pendingReveal = -1;
 			return;
 		}
-
 		g_pendingReveal = stageNo;
 	}
 

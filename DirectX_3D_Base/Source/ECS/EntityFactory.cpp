@@ -58,7 +58,8 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 		AnimationComponent(
 			{
 				"A_PLAYER_IDLE",
-				"A_PLAYER_RUN"
+				"A_PLAYER_RUN",
+				"A_PLAYER_CAUGHT"
 			}
 		),
 		RigidBodyComponent(
@@ -248,7 +249,8 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 		AnimationComponent(
 			{
 				"A_GUARD_RUN",
-				"A_GUARD_WALK"
+				"A_GUARD_WALK",
+				"A_GUARD_ATTACK"
 			}
 		),
 		RigidBodyComponent(
@@ -550,7 +552,9 @@ EntityID ECS::EntityFactory::CreateEnemySpawner(Coordinator* coordinator, const 
 	return spawner;
 }
 
-ECS::EntityID EntityFactory::CreateTeleporter(ECS::Coordinator* coordinator, DirectX::XMFLOAT3 position) {
+
+ECS::EntityID EntityFactory::CreateTeleporter(ECS::Coordinator* coordinator, DirectX::XMFLOAT3 position)
+{
 	return coordinator->CreateEntity(
 		TransformComponent(position, { 0,0,0 }, { 2.5f, 0.1f, 2.5f }),
 		// 仕様：三人称モード（ACTION_MODE）では見えないため、MESH_NONEを指定

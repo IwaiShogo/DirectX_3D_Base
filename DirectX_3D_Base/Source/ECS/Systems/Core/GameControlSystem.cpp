@@ -30,6 +30,11 @@
 using namespace DirectX;
 using namespace ECS;
 
+// 定数定義
+static const int TILE_COLS = 8;  // 横の分割数
+static const int TILE_ROWS = 5;  // 縦の分割数
+static const float TILE_ANIM_DELAY = 0.05f; // 列ごとの落下遅延
+
 std::string GetItemIconPath(const std::string& itemID)
 {
     if (itemID == "Takara_Daiya")   return "ICO_TREASURE1";
@@ -51,15 +56,16 @@ void GameControlSystem::Update(float deltaTime)
     if (controllerID == INVALID_ENTITY_ID) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
-    // モード切替検知 (TopView -> Action)
-    if (state.currentMode == GameMode::ACTION_MODE && state.sequenceState == GameSequenceState::None)
-    {
-        // アクションモードに入った瞬間、入場演出を開始
-        StartEntranceSequence(controllerID);
-    }
+    // ポーズ中は更新を停止
+    if (state.isPaused) return;
 
     // シーケンス処理
-    if (state.sequenceState == GameSequenceState::Entering)
+    if (state.sequenceState == GameSequenceState::Starting)
+    {
+        UpdateMosaicSequence(deltaTime, controllerID);
+        return;
+    }
+    else if (state.sequenceState == GameSequenceState::Entering)
     {
         UpdateEntranceSequence(deltaTime, controllerID);
         return; // 演出中はゲームロジックを止める
@@ -292,25 +298,21 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
 
     // ここに入れる：スペース / A でSEを鳴らす
     // （トップビュー画面で鳴らしたいなら「反転前」の state.currentMode を見る）
-    if (state.currentMode == GameMode::SCOUTING_MODE && (pressedSpace || pressedA))
+    if (state.currentMode == GameMode::SCOUTING_MODE)
     {
-        ECS::EntityFactory::CreateOneShotSoundEntity(
-            m_coordinator,
-            "SE_TOPVIEWSTART", // ← Sound.csvのSE IDに置き換え
-            0.8f
-        );
+        // SE再生
+        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.8f);
+
+        // ★重要: ここではまだ currentMode を変更しません！
+        // トップビューのまま演出を開始します。
+        StartMosaicSequence(controllerID);
     }
-    // ★追加：切替前モードを保存
-    GameMode prevMode = state.currentMode;
-
-    // モード反転
-    state.currentMode = (state.currentMode == GameMode::ACTION_MODE)
-        ? GameMode::SCOUTING_MODE
-        : GameMode::ACTION_MODE;
-
-    // トップビュー → アクションになった瞬間にBGM切替
-    if (prevMode == GameMode::SCOUTING_MODE && state.currentMode == GameMode::ACTION_MODE)
+    // ■ ケース2: アクション から トップビュー への遷移 (こちらは即時でOK)
+    else if (state.currentMode == GameMode::ACTION_MODE)
     {
+        state.currentMode = GameMode::SCOUTING_MODE;
+        ApplyModeVisuals(controllerID);
+
         for (auto const& e : m_coordinator->GetActiveEntities())
         {
             if (!m_coordinator->HasComponent<SoundComponent>(e)) continue;
@@ -341,90 +343,6 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
 
     // Apply visuals based on the decided mode (also used by MapGimmick force-switch)
     ApplyModeVisuals(controllerID);
-    return;
-
-    // 背景画像の切り替え
-    if (state.topviewBgID != INVALID_ENTITY_ID && state.tpsBgID != INVALID_ENTITY_ID)
-    {
-        auto& normalUI = m_coordinator->GetComponent<UIImageComponent>(state.topviewBgID);
-        auto& tpsUI = m_coordinator->GetComponent<UIImageComponent>(state.tpsBgID);
-
-        if (state.currentMode == GameMode::SCOUTING_MODE)
-        {
-            // スカウティング（トップビュー）モード: 通常背景ON, TPS背景OFF
-            // ※あなたの既存コードでは SCOUTING_MODE がトップビュー（BG_TOPVIEWが表示されるべき状態）だと推測されます
-            normalUI.isVisible = true;
-            tpsUI.isVisible = false;
-        }
-        else
-        {
-            // アクション（TPS）モード: 通常背景OFF, TPS背景ON
-            normalUI.isVisible = false;
-            tpsUI.isVisible = true;
-        }
-    }
-
-    bool isScouting = (state.currentMode == GameMode::SCOUTING_MODE);
-    for (auto const& entity : m_coordinator->GetActiveEntities())
-    {
-        if (!m_coordinator->HasComponent<RenderComponent>(entity)) continue;
-
-        auto& render = m_coordinator->GetComponent<RenderComponent>(entity);
-        bool isTarget = false;
-        MeshType restoreType = MESH_BOX; // 復帰時のデフォルト
-
-        // プレイヤー
-        if (m_coordinator->HasComponent<PlayerControlComponent>(entity)) {
-            isTarget = true;
-            restoreType = MESH_MODEL;
-        }
-        // アイテム
-        else if (m_coordinator->HasComponent<CollectableComponent>(entity)) {
-            isTarget = true;
-            restoreType = MESH_MODEL; // アイテムは箱表示
-        }
-        else if (m_coordinator->HasComponent<TagComponent>(entity)) {
-            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
-            if (tag == "guard") {
-                isTarget = true;
-                restoreType = MESH_MODEL;
-            }
-            if (tag == "taser")
-            {
-                isTarget = true;
-#ifdef _DEBUG
-                restoreType = MESH_BOX;
-#elif defined(NDEBUG)
-                restoreType = MESH_NONE;
-#endif
-            }
-#ifdef _DEBUG
-            restoreType = MESH_BOX;
-#elif defined(NDEBUG)
-            restoreType = MESH_NONE;
-#endif
-        if (tag == "teleporter")
-        {
-            isTarget = true;
-}
-            if (tag == "ground" || tag == "wall" || tag == "door")
-            {
-                isTarget = true;
-                restoreType = MESH_MODEL;
-            }
-        }
-
-        // 対象であれば描画モード変更
-        if (isTarget)
-        {
-            if (isScouting) {
-                render.type = MESH_NONE; // トップビュー時は描画しない
-            }
-            else {
-                render.type = restoreType; // アクション時は元の形状で描画
-            }
-        }
-    }
 }
 
 // ---------------------------------------------------------
@@ -682,7 +600,7 @@ void GameControlSystem::UpdateCaughtSequence(float deltaTime, ECS::EntityID cont
             // プレイヤー: やられたモーション
             if (m_coordinator->HasComponent<AnimationComponent>(playerID)) {
                 // "A_PLAYER_DAMAGE" や "A_PLAYER_CAUGHT"
-                m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_DAMAGE", false);
+                m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_CAUGHT", false);
             }
 
             // 効果音 (バシッ！とか)
@@ -1472,13 +1390,15 @@ void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID)
 {
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
+    bool isScoutingVisual = (state.currentMode == GameMode::SCOUTING_MODE);
+
     // Background switch
     if (state.topviewBgID != INVALID_ENTITY_ID && state.tpsBgID != INVALID_ENTITY_ID)
     {
         auto& normalUI = m_coordinator->GetComponent<UIImageComponent>(state.topviewBgID);
         auto& tpsUI = m_coordinator->GetComponent<UIImageComponent>(state.tpsBgID);
 
-        if (state.currentMode == GameMode::SCOUTING_MODE)
+        if (isScoutingVisual)
         {
             normalUI.isVisible = true;
             tpsUI.isVisible = false;
@@ -1489,8 +1409,6 @@ void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID)
             tpsUI.isVisible = true;
         }
     }
-
-    const bool isScouting = (state.currentMode == GameMode::SCOUTING_MODE);
 
     for (auto const& entity : m_coordinator->GetActiveEntities())
     {
@@ -1576,7 +1494,7 @@ void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID)
 
         if (!isTarget) continue;
 
-        if (isScouting)
+        if (isScoutingVisual)
         {
             render.type = keepVisibleInScouting ? restoreTypeScouting : MESH_NONE;
         }
@@ -1629,5 +1547,247 @@ void GameControlSystem::CheckMapGimmickTrigger(ECS::EntityID controllerID)
             m_coordinator->GetComponent<CollisionComponent>(e).size = { 0.0f, 0.0f, 0.0f };
         }
         break;
+    }
+}
+
+// ------------------------------------------------------------------
+// モザイク演出の開始 (初期化)
+// ------------------------------------------------------------------
+void GameControlSystem::StartMosaicSequence(ECS::EntityID controllerID)
+{
+    auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+    state.sequenceState = GameSequenceState::Starting;
+    state.sequenceTimer = 0.0f;
+
+    // 黒背景を「透明」で生成し、TopViewが見えるようにする
+    m_blackBackID = m_coordinator->CreateEntity(
+        TransformComponent(
+            { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f },
+            { 0,0,0 },
+            { SCREEN_WIDTH * 1.1f, SCREEN_HEIGHT * 1.1f, 1.0f }
+        ),
+        UIImageComponent("FADE_WHITE", 100000.0f, true, { 0.0f, 0.0f, 0.0f, 0.0f }) // Alpha 0.0f
+    );
+
+    // プレイヤーを一時的に「非表示」にする
+    EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+    if (playerID != INVALID_ENTITY_ID && m_coordinator->HasComponent<RenderComponent>(playerID))
+    {
+        m_coordinator->GetComponent<RenderComponent>(playerID).type = MESH_NONE;
+    }
+
+    // TopView用のアイコンUI等もここで消しておくと綺麗です
+    for (auto& pair : m_iconMap) {
+        if (m_coordinator->HasComponent<UIImageComponent>(pair.second))
+            m_coordinator->GetComponent<UIImageComponent>(pair.second).isVisible = false;
+    }
+
+    // 2. グリッドタイルの生成 (ここは前回と同じですが、初期位置を画面外確定にします)
+    m_mosaicTiles.clear();
+
+    // グリッド設定
+    const int TILE_COLS = 8;
+    const int TILE_ROWS = 5;
+
+    float tileW = (float)SCREEN_WIDTH / TILE_COLS;
+    float tileH = (float)SCREEN_HEIGHT / TILE_ROWS;
+    float uvUnitX = 1.0f / TILE_COLS;
+    float uvUnitY = 1.0f / TILE_ROWS;
+
+    for (int y = 0; y < TILE_ROWS; ++y)
+    {
+        for (int x = 0; x < TILE_COLS; ++x)
+        {
+            float targetX = (x * tileW) + (tileW * 0.5f);
+            float targetY = (y * tileH) + (tileH * 0.5f);
+
+            // 開始位置を「画面の遥か上空」に設定
+            float startY = targetY - SCREEN_HEIGHT - 200.0f - (x * 50.0f) - (y * 50.0f);
+
+            EntityID tile = m_coordinator->CreateEntity(
+                TransformComponent(
+                    { targetX, startY, 0.0f },
+                    { 0.0f, 0.0f, 0.0f },
+                    { tileW + 2.0f, tileH + 2.0f, 1.0f } // 隙間が出ないよう少し大きく
+                ),
+                UIImageComponent(
+                    "UI_GAME_START",
+                    100001.0f, // 黒背景より手前
+                    true,
+                    { 1, 1, 1, 1 }
+                )
+            );
+
+            auto& ui = m_coordinator->GetComponent<UIImageComponent>(tile);
+            ui.uvPos = { x * uvUnitX, y * uvUnitY };
+            ui.uvScale = { uvUnitX, uvUnitY };
+
+            auto& trans = m_coordinator->GetComponent<TransformComponent>(tile);
+            trans.rotation.x = XM_PIDIV2; // 90度回転(薄っぺらい状態)からスタート
+
+            m_mosaicTiles.push_back(tile);
+        }
+    }
+}
+
+// ------------------------------------------------------------------
+// モザイク演出の更新
+// ------------------------------------------------------------------
+void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID controllerID)
+{
+    auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+    state.sequenceTimer += deltaTime;
+
+    // アニメーション定数
+    const int TILE_COLS = 8;
+    const int TILE_ROWS = 5;
+    const float FALL_DURATION = 0.6f;
+    const float STAY_DURATION = 1.2f;
+    const float END_DURATION = 0.5f;
+    const float TILE_DELAY_X = 0.08f;
+    const float TILE_DELAY_Y = 0.04f;
+
+    // 完了までの総時間 (約3.0秒前後)
+    float finishTime = (TILE_COLS * TILE_DELAY_X) + (TILE_ROWS * TILE_DELAY_Y) + FALL_DURATION + STAY_DURATION + END_DURATION;
+
+    // 黒背景のフェード制御
+    if (m_blackBackID != INVALID_ENTITY_ID) {
+        auto& bgUI = m_coordinator->GetComponent<UIImageComponent>(m_blackBackID);
+
+        // 降り始めから徐々に黒くする
+        float bgAlpha = state.sequenceTimer / 0.8f;
+        if (bgAlpha > 1.0f) bgAlpha = 1.0f;
+
+        // 終了間際のフェードアウト
+        if (state.sequenceTimer > finishTime - END_DURATION) {
+            float outT = (state.sequenceTimer - (finishTime - END_DURATION)) / END_DURATION;
+            bgAlpha = 1.0f - outT;
+        }
+        bgUI.color.w = bgAlpha;
+    }
+
+    // --- ステルス切り替え (2.0秒時点 = 画面は完全に隠れている) ---
+    if (state.currentMode == GameMode::SCOUTING_MODE && state.sequenceTimer > 2.0f)
+    {
+        // 【1】モードを ACTION_MODE に変更
+        state.currentMode = GameMode::ACTION_MODE;
+
+        // 【2】黒背景を念の為、完全不透明にする（チラつき防止）
+        if (m_blackBackID != INVALID_ENTITY_ID) {
+            m_coordinator->GetComponent<UIImageComponent>(m_blackBackID).color.w = 1.0f;
+        }
+
+        // 【3】BGMの切り替え
+        for (auto const& e : m_coordinator->GetActiveEntities())
+        {
+            if (!m_coordinator->HasComponent<SoundComponent>(e)) continue;
+            auto& snd = m_coordinator->GetComponent<SoundComponent>(e);
+            if (snd.assetID == "BGM_TOPVIEW" || snd.assetID == "BGM_TEST") snd.RequestStop();
+        }
+        ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator, "BGM_ACTION", 0.5f);
+
+        // 【4】プレイヤー移動 & カメラセット
+        EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+        EntityID doorID = FindEntranceDoor();
+
+        if (playerID != INVALID_ENTITY_ID && doorID != INVALID_ENTITY_ID)
+        {
+            auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
+            auto& dTrans = m_coordinator->GetComponent<TransformComponent>(doorID);
+
+            float rad = dTrans.rotation.y;
+            float startDist = 5.0f;
+            pTrans.position.x = dTrans.position.x - sin(rad) * startDist;
+            pTrans.position.z = dTrans.position.z - cos(rad) * startDist;
+            pTrans.rotation.y = dTrans.rotation.y;
+
+            if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
+            {
+                XMVECTOR doorPos = XMLoadFloat3(&dTrans.position);
+                XMVECTOR doorDir = XMVectorSet(sin(rad), 0.0f, cos(rad), 0.0f);
+                XMVECTOR camPosVec = doorPos + (doorDir * 7.5f) + XMVectorSet(0.0f, 3.0f, 0.0f, 0.0f);
+
+                XMFLOAT3 camPos;
+                XMStoreFloat3(&camPos, camPosVec);
+                camSys->SetFixedCamera(camPos, dTrans.position);
+            }
+        }
+
+        // 【5】UI（ソナー・スキャンライン・アイコン）を強制的に消す
+        for (auto& pair : m_iconMap) {
+            if (m_coordinator->HasComponent<UIImageComponent>(pair.second)) {
+                m_coordinator->GetComponent<UIImageComponent>(pair.second).isVisible = false;
+            }
+        }
+        for (auto const& e : m_coordinator->GetActiveEntities())
+        {
+            if (m_coordinator->HasComponent<ScanLineComponent>(e) ||
+                m_coordinator->HasComponent<SonarComponent>(e)) {
+                if (m_coordinator->HasComponent<UIImageComponent>(e)) {
+                    m_coordinator->GetComponent<UIImageComponent>(e).isVisible = false;
+                }
+            }
+        }
+
+        // 【6】見た目の更新 (ここでMESH_MODELに切り替わるが、画面は真っ暗なので見えない)
+        ApplyModeVisuals(controllerID);
+    }
+
+    // --- タイルアニメーション更新 ---
+    float tileH = (float)SCREEN_HEIGHT / TILE_ROWS;
+    for (int i = 0; i < m_mosaicTiles.size(); ++i)
+    {
+        EntityID tile = m_mosaicTiles[i];
+        int col = i % TILE_COLS;
+        int row = i / TILE_COLS;
+        float startTime = (col * TILE_DELAY_X) + (row * TILE_DELAY_Y);
+        float t = state.sequenceTimer - startTime;
+
+        auto& trans = m_coordinator->GetComponent<TransformComponent>(tile);
+        auto& ui = m_coordinator->GetComponent<UIImageComponent>(tile);
+        float targetY = (row * tileH) + (tileH * 0.5f);
+
+        if (t < FALL_DURATION) {
+            if (t < 0.0f) { trans.position.y = -2000.0f; continue; }
+            float p = t / FALL_DURATION;
+            float ease = 1.0f - pow(1.0f - p, 4.0f);
+            float startY = targetY - 400.0f - (col * 50.0f);
+            trans.position.y = startY + (targetY - startY) * ease;
+            trans.rotation.x = XM_PIDIV2 * (1.0f - ease);
+            ui.color.w = 1.0f;
+        }
+        else if (t < FALL_DURATION + STAY_DURATION) {
+            trans.position.y = targetY;
+            trans.rotation.x = 0.0f;
+        }
+        else if (t < FALL_DURATION + STAY_DURATION + END_DURATION) {
+            float outT = (t - (FALL_DURATION + STAY_DURATION)) / END_DURATION;
+            trans.position.y = targetY + (outT * 300.0f);
+            trans.rotation.x = -XM_PIDIV2 * outT;
+            ui.color.w = 1.0f - outT;
+        }
+        else {
+            ui.color.w = 0.0f;
+        }
+    }
+
+    // --- 終了判定 ---
+    if (state.sequenceTimer >= finishTime)
+    {
+        // お片付け
+        if (m_blackBackID != INVALID_ENTITY_ID) m_coordinator->DestroyEntity(m_blackBackID);
+        for (auto id : m_mosaicTiles) m_coordinator->DestroyEntity(id);
+        m_mosaicTiles.clear();
+        m_blackBackID = INVALID_ENTITY_ID;
+
+        // プレイヤー表示復活
+        EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+        if (playerID != INVALID_ENTITY_ID && m_coordinator->HasComponent<RenderComponent>(playerID))
+        {
+            m_coordinator->GetComponent<RenderComponent>(playerID).type = MESH_MODEL;
+        }
+
+        // 次のシーケンスへ
+        StartEntranceSequence(controllerID);
     }
 }
