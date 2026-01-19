@@ -113,7 +113,7 @@ public:
 				config.maxRoomCount = val.value("maxRoomCount", 5);
 
 				config.guardCount = val.value("guardCount", 1);
-				config.teleportPairCount = val.value("teleportPairCount", 0);
+				config.teleportPairCount = val.value("teleportPairCount", 1);
 				config.minPathPercentage = val.value("minPathPercentage", 0.3f);
 				config.useOrderedCollection = val.value("useOrderedCollection", false);
 

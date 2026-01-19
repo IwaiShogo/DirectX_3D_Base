@@ -74,6 +74,7 @@ void TitleControlSystem::Update(float deltaTime)
                 float easeOut = 1.0f - std::pow(1.0f - camProgress, 2.5f);
                 auto& camTrans = m_coordinator->GetComponent<TransformComponent>(ctrl.cameraEntityID);
                 float u = 1.0f - easeOut, tt = easeOut * easeOut, uu = u * u, ut2 = 2.0f * u * easeOut;
+
                 camTrans.position.x = (uu * ctrl.camStartPos.x) + (ut2 * ctrl.camControlPos.x) + (tt * ctrl.camEndPos.x);
                 camTrans.position.y = (uu * ctrl.camStartPos.y) + (ut2 * ctrl.camControlPos.y) + (tt * ctrl.camEndPos.y);
                 camTrans.position.z = (uu * ctrl.camStartPos.z) + (ut2 * ctrl.camControlPos.z) + (tt * ctrl.camEndPos.z);
@@ -92,48 +93,11 @@ void TitleControlSystem::Update(float deltaTime)
             ctrl.uiAnimTimer += deltaTime;
 
             // ============================================================
-            // 1. エフェクトの発生 (ModeSelect開始時に一度だけ)
-            // ============================================================
-            if (!ctrl.effectTriggered) { //
-                const char* effectName = "EFK_TITLE_SHINE2";
-                bool isLoop = false;
-                bool autoPlay = true;
-                DirectX::XMFLOAT3 offset = { 0.0f, 0.0f, 0.0f };
-
-                // 【修正】さらに小さく調整
-                float effectScale = 0.007f;
-                float effectZ = -4.0f;
-
-                // --- A. 上側（「はじめから」付近） ---
-                m_coordinator->CreateEntity(
-                    TransformComponent(
-                        {- 0.02f, 1.43f, effectZ },
-                        { 0.0f, 0.0f, XMConvertToRadians(-20.0f) },
-                        { 1.0f, 1.0f, 1.0f }
-                    ),
-                    EffectComponent(effectName, isLoop, autoPlay, offset, effectScale)
-                );
-                // --- B. 下側（「つづきから」付近） ---
-                m_coordinator->CreateEntity(
-                    TransformComponent(
-                        { 0.02f, 1.37f, effectZ }, 
-                        { 0.0f, 0.0f, XMConvertToRadians(-20.0f) },
-                        { 1.0f, 1.0f, 1.0f }
-                    ),
-                    EffectComponent(effectName, isLoop, autoPlay, offset, effectScale)
-                );
-
-                ctrl.effectTriggered = true; //
-            }
-            // ============================================================
             // 修正箇所：座標移動（startYの計算）を削除し、不透明度のみ更新
             // ============================================================
-            const float lagTime = 0.8f; 
-
-            if (ctrl.uiAnimTimer >= lagTime) {
-                // ラグを差し引いた時間でアニメーション進捗(0.0～1.0)を計算
-                float t = std::min(1.0f, (ctrl.uiAnimTimer - lagTime) / ctrl.uiAnimDuration);
-                float easeT = t * t; // じわっと出るイージング
+            if (ctrl.uiAnimTimer >= 0.0f) {
+                float t = std::min(1.0f, ctrl.uiAnimTimer / ctrl.uiAnimDuration);
+                float easeT = 1.0f - (1.0f - t) * (1.0f - t);
 
                 for (size_t i = 0; i < ctrl.menuUIEntities.size(); ++i) {
                     EntityID uiEntity = ctrl.menuUIEntities[i];
