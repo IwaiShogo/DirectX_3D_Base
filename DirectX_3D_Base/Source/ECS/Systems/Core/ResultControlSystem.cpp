@@ -111,11 +111,38 @@ void ResultControlSystem::Update(float deltaTime)
             }
 
 
-            trans.scale = { 150.0f * scale, 150.0f * scale, 1.0f };
+            trans.scale = { 140.0f * scale, 140.0f * scale, 1.0f };
             trans.rotation.z = -30.0f * TO_RAD;
             ui.color.w = alpha;
+
+            if (t >= 1.0f && !m_playedStampEffect)
+            {
+                m_playedStampEffect = true;
+
+                std::cout << "Stamp Effect Played!" << std::endl;
+               // DirectX::XMFLOAT3 effectPos = { 0.0f,0.0f,0.0f };
+
+                // スタンプと同じ位置にエフェクトを生成
+                m_coordinator->CreateEntity(
+                    TransformComponent(
+                        { 11.0f, 4.8f, -5.0f },   // Position: X=5(右), Y=2(上), Z=0(奥行き)
+                        { 0.0f, 0.0f, 0.0f },   // Rotation
+                        { 5.0f, 5.0f, 5.0f }    // Scale
+                    ),
+                    
+                    EffectComponent(
+                        "EFK_STAMP",
+                        false,
+                        true,
+                        DirectX::XMFLOAT3{ 0,0,0 },
+                        1.0f
+                    )
+                );
+            }
         }
     }
+
+    
 
     // ---------------------------------------------------------
     // 3. ★を取った行の STAR_TEXT を波打たせる

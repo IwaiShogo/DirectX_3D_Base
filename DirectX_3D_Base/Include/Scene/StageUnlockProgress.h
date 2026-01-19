@@ -105,8 +105,4 @@
 	 * @return stageNo(2..6) or -1
 	 */
 	int ConsumePendingRevealStage();
-	/**
-	 * @brief 進行データをリセットする
-	 */
-	void ResetProgress();
 }

@@ -18,21 +18,21 @@ namespace TitleTuning
     constexpr float BUTTON_HOVER_SCALE_MAG  = 1.15f;
     constexpr float BUTTON_HOVER_LERP_SPEED = 12.0f;
 
-    // --- ƒXƒEƒB[ƒv‰‰o—p’è” --- 
-    constexpr float SWEEP_DURATION  = 8.0f;       // ƒGƒtƒFƒNƒg‚ª‰º‚©‚çã‚ÖˆÚ“®‚·‚éŽžŠÔ
-    constexpr float SWEEP_START_Y   = 1.37f;      // 3D‹óŠÔ‚Å‚ÌŠJŽnYÀ•Wi‰º‘¤j
-    constexpr float SWEEP_MOVE_DIST = 0.5f;       // ˆÚ“®‹——£iã•ûŒü‚Ö‚Ì‰ÁŽZ•ªj
-    constexpr float FADE_IN_SPEED   = 1.5f;       // ƒ{ƒ^ƒ“‚ª’Ê‰ß‚µ‚½Œã‚ÌƒtƒF[ƒh‘¬“x
+    // --- ã‚¹ã‚¦ã‚£ãƒ¼ãƒ—æ¼”å‡ºç”¨å®šæ•° --- 
+    constexpr float SWEEP_DURATION  = 8.0f;       // ã‚¨ãƒ•ã‚§ã‚¯ãƒˆãŒä¸‹ã‹ã‚‰ä¸Šã¸ç§»å‹•ã™ã‚‹æ™‚é–“
+    constexpr float SWEEP_START_Y   = 1.37f;      // 3Dç©ºé–“ã§ã®é–‹å§‹Yåº§æ¨™ï¼ˆä¸‹å´ï¼‰
+    constexpr float SWEEP_MOVE_DIST = 0.5f;       // ç§»å‹•è·é›¢ï¼ˆä¸Šæ–¹å‘ã¸ã®åŠ ç®—åˆ†ï¼‰
+    constexpr float FADE_IN_SPEED   = 1.5f;       // ãƒœã‚¿ãƒ³ãŒé€šéŽã—ãŸå¾Œã®ãƒ•ã‚§ãƒ¼ãƒ‰é€Ÿåº¦
 
-    // --- ƒgƒ‰ƒ“ƒvƒGƒtƒFƒNƒgÝ’èiƒJƒƒ‰‚ÌŽ‹ŠE‚É‡‚í‚¹‚Ä’²®j ---
-    constexpr float LAMP_SPAWN_INTERVAL = 0.8f;   // ~‚ç‚·•p“x
-    constexpr float LAMP_LIFE_DURATION  = 50.0f;  // ‰æ–ÊŠO‚É—Ž‚¿‚é‚Ü‚Å‚ÌŽõ–½
-    constexpr float LAMP_SPAWN_HEIGHT   = 6.0f;   // ƒJƒƒ‰(Y=2.5)‚æ‚è‚‚¢ˆÊ’u‚©‚ç~‚ç‚·
+    // --- ãƒˆãƒ©ãƒ³ãƒ—ã‚¨ãƒ•ã‚§ã‚¯ãƒˆè¨­å®šï¼ˆã‚«ãƒ¡ãƒ©ã®è¦–ç•Œã«åˆã‚ã›ã¦èª¿æ•´ï¼‰ ---
+    constexpr float LAMP_SPAWN_INTERVAL = 0.8f;   // é™ã‚‰ã™é »åº¦
+    constexpr float LAMP_LIFE_DURATION  = 50.0f;  // ç”»é¢å¤–ã«è½ã¡ã‚‹ã¾ã§ã®å¯¿å‘½
+    constexpr float LAMP_SPAWN_HEIGHT   = 6.0f;   // ã‚«ãƒ¡ãƒ©(Y=2.5)ã‚ˆã‚Šé«˜ã„ä½ç½®ã‹ã‚‰é™ã‚‰ã™
 
-    // ƒJƒƒ‰‚ÌŒü‚«(-X)‚É‡‚í‚¹‚½À•WÝ’è
-    constexpr float LAMP_X_DEPTH = -6.0f;         // ƒJƒƒ‰‚Ì³–Ê•ûŒüi-X‘¤j‚Ì‹——£
-    constexpr float LAMP_Z_CENTER = -9.8f;        // ƒJƒƒ‰‚ÌZÀ•W‚ð’†S‚É
-    constexpr float LAMP_Z_RANGE = 1.0f;          // ‰æ–Ê‚Ì‰¡•ûŒü‚Ö‚ÌL‚ª‚è
+    // ã‚«ãƒ¡ãƒ©ã®å‘ã(-X)ã«åˆã‚ã›ãŸåº§æ¨™è¨­å®š
+    constexpr float LAMP_X_DEPTH = -6.0f;         // ã‚«ãƒ¡ãƒ©ã®æ­£é¢æ–¹å‘ï¼ˆ-Xå´ï¼‰ã®è·é›¢
+    constexpr float LAMP_Z_CENTER = -9.8f;        // ã‚«ãƒ¡ãƒ©ã®Zåº§æ¨™ã‚’ä¸­å¿ƒã«
+    constexpr float LAMP_Z_RANGE = 1.0f;          // ç”»é¢ã®æ¨ªæ–¹å‘ã¸ã®åºƒãŒã‚Š
 }
 
 void TitleControlSystem::Update(float deltaTime)
@@ -55,31 +55,31 @@ void TitleControlSystem::Update(float deltaTime)
         {
         case TitleState::WaitInput:
         {
-            // --- ƒ^ƒCƒ}[XV ---
-            ctrl.animTimer += deltaTime;      // UI“_–Å—p‚Ìƒ^ƒCƒ}[
+            // --- ã‚¿ã‚¤ãƒžãƒ¼æ›´æ–° ---
+            ctrl.animTimer += deltaTime;      // UIç‚¹æ»…ç”¨ã®ã‚¿ã‚¤ãƒžãƒ¼
           
-            ctrl.TitlelogoFadeTimer += deltaTime; // ƒƒSƒtƒF[ƒh—p
+            ctrl.TitlelogoFadeTimer += deltaTime; // ãƒ­ã‚´ãƒ•ã‚§ãƒ¼ãƒ‰ç”¨
 
-            // --- UI•\Ž¦E“_–Å§Œä ---
+            // --- UIè¡¨ç¤ºãƒ»ç‚¹æ»…åˆ¶å¾¡ ---
             float blinkT = (std::sin(ctrl.animTimer * 5.0f) + 1.0f) * 0.5f;
 
-            // ƒ[ƒœŽZ–hŽ~iDuration‚ª0‚È‚ç‘¦À‚É1.0f‚É‚·‚éj
+            // ã‚¼ãƒ­é™¤ç®—é˜²æ­¢ï¼ˆDurationãŒ0ãªã‚‰å³åº§ã«1.0fã«ã™ã‚‹ï¼‰
             float fadeDuration = std::max(0.01f, ctrl.TitlelogoFadeDuration);
             float logoFadeT = std::min(1.0f, ctrl.TitlelogoFadeTimer / fadeDuration);
 
-            // ƒƒS‚ÌƒtƒF[ƒhƒCƒ“
+            // ãƒ­ã‚´ã®ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³
             if (ctrl.logoEntityID != INVALID_ENTITY_ID && m_coordinator->HasComponent<UIImageComponent>(ctrl.logoEntityID))
             {
                 auto& img = m_coordinator->GetComponent<UIImageComponent>(ctrl.logoEntityID);
                 img.isVisible = true;
                 img.color.w = logoFadeT;
 
-                // Press Start UI‚Ì“_–Å
+                // Press Start UIã®ç‚¹æ»…
                 for (auto uiEntity : ctrl.pressStartUIEntities) {
                     if (m_coordinator->HasComponent<UIImageComponent>(uiEntity)) {
                         auto& startImg = m_coordinator->GetComponent<UIImageComponent>(uiEntity);
                         startImg.isVisible = true;
-                        // ƒtƒF[ƒhƒCƒ“‚µ‚Â‚ÂAƒTƒCƒ“”g‚Å–¾–Å‚³‚¹‚é
+                        // ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³ã—ã¤ã¤ã€ã‚µã‚¤ãƒ³æ³¢ã§æ˜Žæ»…ã•ã›ã‚‹
                         startImg.color.w = (0.2f + 0.8f * blinkT) * logoFadeT;
                     }
                 }
@@ -87,7 +87,7 @@ void TitleControlSystem::Update(float deltaTime)
            
             if (IsKeyTrigger(VK_RETURN) || IsButtonTriggered(BUTTON_A)) {
                 ctrl.state = TitleState::ZoomAnimation;
-                ctrl.animTimer = 0.0f; // ŽŸ‚ÌƒXƒe[ƒg‚Ì‚½‚ß‚ÉƒŠƒZƒbƒg
+                ctrl.animTimer = 0.0f; // æ¬¡ã®ã‚¹ãƒ†ãƒ¼ãƒˆã®ãŸã‚ã«ãƒªã‚»ãƒƒãƒˆ
             }
             break;
         }
@@ -112,6 +112,7 @@ void TitleControlSystem::Update(float deltaTime)
                 float easeOut = 1.0f - std::pow(1.0f - camProgress, 2.5f);
                 auto& camTrans = m_coordinator->GetComponent<TransformComponent>(ctrl.cameraEntityID);
                 float u = 1.0f - easeOut, tt = easeOut * easeOut, uu = u * u, ut2 = 2.0f * u * easeOut;
+
                 camTrans.position.x = (uu * ctrl.camStartPos.x) + (ut2 * ctrl.camControlPos.x) + (tt * ctrl.camEndPos.x);
                 camTrans.position.y = (uu * ctrl.camStartPos.y) + (ut2 * ctrl.camControlPos.y) + (tt * ctrl.camEndPos.y);
                 camTrans.position.z = (uu * ctrl.camStartPos.z) + (ut2 * ctrl.camControlPos.z) + (tt * ctrl.camEndPos.z);
@@ -132,7 +133,7 @@ void TitleControlSystem::Update(float deltaTime)
             ctrl.uiAnimTimer += deltaTime;
 
             // ============================================================
-            // 1. ˆÚ“®ƒGƒtƒFƒNƒg‚Ì¶¬ (¶‰E2—ñ‚ðˆÛŽ)
+            // 1. ç§»å‹•ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®ç”Ÿæˆ (å·¦å³2åˆ—ã‚’ç¶­æŒ)
             // ============================================================
             if (!ctrl.effectTriggered) {
                 const char* effectName = "EFK_TITLE_SHINE2";
@@ -147,7 +148,7 @@ void TitleControlSystem::Update(float deltaTime)
                             { 0.0f, 0.0f, XMConvertToRadians(-20.0f) },
                             { 1.0f, 1.0f, 1.0f }
                         ),
-                        // ƒ‹[ƒv‚È‚µ(false)Ý’è
+                        // ãƒ«ãƒ¼ãƒ—ãªã—(false)è¨­å®š
                         EffectComponent(effectName, true, false, { 0,0,0 }, effectScale)
                     );
                     ctrl.buttonEffectEntities.push_back(eff);
@@ -156,7 +157,7 @@ void TitleControlSystem::Update(float deltaTime)
             }
 
             // ============================================================
-            // 2. ƒGƒtƒFƒNƒg‚ÌˆÚ“®XV • 2‰ñ–Ú‚ªo‚é‘O‚ÉÁ‹Ž
+            // 2. ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®ç§»å‹•æ›´æ–° ï¼† 2å›žç›®ãŒå‡ºã‚‹å‰ã«æ¶ˆåŽ»
             // ============================================================
             float progress = std::min(1.0f, ctrl.uiAnimTimer / TitleTuning::SWEEP_DURATION);
             float current3DY = TitleTuning::SWEEP_START_Y + (TitleTuning::SWEEP_MOVE_DIST * progress);
@@ -168,9 +169,9 @@ void TitleControlSystem::Update(float deltaTime)
                     auto& trans = m_coordinator->GetComponent<TransformComponent>(effId);
                     trans.position.y = current3DY;
 
-                    // y2‰ñ–Ú–hŽ~z
-                    // ‘S‘Ì‚ÌˆÚ“®(6•b)‚ð‘Ò‚½‚¸AƒGƒtƒFƒNƒg‚ªƒ{ƒ^ƒ“‚ð’Ê‚è‰ß‚¬‚é‚­‚ç‚¢‚Ì
-                    // ’Z‚¢ŽžŠÔi—á: 1.5•bj‚ÅŽÀ‘Ì‚ðÁ‹Ž‚µ‚Ä‚µ‚Ü‚¤
+                    // ã€2å›žç›®é˜²æ­¢ã€‘
+                    // å…¨ä½“ã®ç§»å‹•(6ç§’)ã‚’å¾…ãŸãšã€ã‚¨ãƒ•ã‚§ã‚¯ãƒˆãŒãƒœã‚¿ãƒ³ã‚’é€šã‚ŠéŽãŽã‚‹ãã‚‰ã„ã®
+                    // çŸ­ã„æ™‚é–“ï¼ˆä¾‹: 1.5ç§’ï¼‰ã§å®Ÿä½“ã‚’æ¶ˆåŽ»ã—ã¦ã—ã¾ã†
                     if (ctrl.uiAnimTimer > 1.5f) {
                         m_coordinator->DestroyEntity(effId);
                         it = ctrl.buttonEffectEntities.erase(it);
@@ -181,11 +182,11 @@ void TitleControlSystem::Update(float deltaTime)
             }
 
             // ============================================================
-            // 3. ƒ{ƒ^ƒ“‚ÌoŒ»§Œä (oŒ»‘¬“x‚ðu•bvŠî€‚É‚µ‚Ä‚‘¬‰»)
+            // 3. ãƒœã‚¿ãƒ³ã®å‡ºç¾åˆ¶å¾¡ (å‡ºç¾é€Ÿåº¦ã‚’ã€Œç§’ã€åŸºæº–ã«ã—ã¦é«˜é€ŸåŒ–)
             // ============================================================
 
-            ctrl.lampSpawnTimer += deltaTime; // ƒgƒ‰ƒ“ƒv¶¬—p‚Ìƒ^ƒCƒ}[
-            // --- ƒgƒ‰ƒ“ƒviƒGƒtƒFƒNƒgj‚Ì¶¬ ---
+            ctrl.lampSpawnTimer += deltaTime; // ãƒˆãƒ©ãƒ³ãƒ—ç”Ÿæˆç”¨ã®ã‚¿ã‚¤ãƒžãƒ¼
+            // --- ãƒˆãƒ©ãƒ³ãƒ—ï¼ˆã‚¨ãƒ•ã‚§ã‚¯ãƒˆï¼‰ã®ç”Ÿæˆ ---
             if (ctrl.lampSpawnTimer >= TitleTuning::LAMP_SPAWN_INTERVAL) {
                 ctrl.lampSpawnTimer = 0.0f;
 
@@ -212,14 +213,14 @@ void TitleControlSystem::Update(float deltaTime)
             {
                 EntityID uiEntity = ctrl.menuUIEntities[i];
 
-                // oŒ»ŠJŽn‚Ìu•b”v‚ðŒvŽZ
+                // å‡ºç¾é–‹å§‹ã®ã€Œç§’æ•°ã€ã‚’è¨ˆç®—
                 float revealStartTime = (i == 1) ?
                     (0.045f * TitleTuning::SWEEP_DURATION) :
                     (0.085f * TitleTuning::SWEEP_DURATION);
 
                 if (ctrl.uiAnimTimer > revealStartTime) {
-                    // y‘¬“x‰ü‘Pzprogress(Š„‡)‚Å‚Í‚È‚­AŠJŽn‚µ‚Ä‚©‚ç‚Ìu•b”v‚ÅŒvŽZ
-                    // TitleTuning::FADE_IN_SPEED (4.0) ‚È‚çA0.25•b‚Åƒpƒb‚Æo‚Ü‚·
+                    // ã€é€Ÿåº¦æ”¹å–„ã€‘progress(å‰²åˆ)ã§ã¯ãªãã€é–‹å§‹ã—ã¦ã‹ã‚‰ã®ã€Œç§’æ•°ã€ã§è¨ˆç®—
+                    // TitleTuning::FADE_IN_SPEED (4.0) ãªã‚‰ã€0.25ç§’ã§ãƒ‘ãƒƒã¨å‡ºã¾ã™
                     float timeSinceStart = ctrl.uiAnimTimer - revealStartTime;
                     float localT = std::min(1.0f, timeSinceStart * TitleTuning::FADE_IN_SPEED);
 
@@ -236,7 +237,7 @@ void TitleControlSystem::Update(float deltaTime)
             }
 
             // ============================================================
-            // 4. ƒzƒo[Žž‚ÌƒXƒP[ƒ‹§Œä (Šù‘¶‚Ìƒ{ƒ^ƒ“ƒAƒNƒVƒ‡ƒ“)
+            // 4. ãƒ›ãƒãƒ¼æ™‚ã®ã‚¹ã‚±ãƒ¼ãƒ«åˆ¶å¾¡ (æ—¢å­˜ã®ãƒœã‚¿ãƒ³ã‚¢ã‚¯ã‚·ãƒ§ãƒ³)
             // ============================================================
             for (auto uiEntity : ctrl.menuUIEntities) {
                 if (m_coordinator->HasComponent<UIButtonComponent>(uiEntity) && m_coordinator->HasComponent<TransformComponent>(uiEntity)) {
