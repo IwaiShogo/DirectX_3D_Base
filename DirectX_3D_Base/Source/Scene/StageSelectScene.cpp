@@ -269,7 +269,7 @@ void StageSelectScene::Init()
 	// =====================
 	// List UI（一覧）
 	// =====================
-	std::vector<std::string> stageIDs = { "ST_006", "ST_002", "ST_003", "ST_004", "ST_005", "ST_006" }; // 織田
+	std::vector<std::string> stageIDs = { "ST_001", "ST_002", "ST_003", "ST_004", "ST_005", "ST_006" };
 	m_listStageNos.clear();
 	m_listStageNos.reserve(6);
 
