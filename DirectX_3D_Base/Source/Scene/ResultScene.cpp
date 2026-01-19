@@ -15,6 +15,8 @@
 #include <ECS/Components/UI/UIImageComponent.h>
 #include <ECS/Components/UI/UIButtonComponent.h>
 #include <ECS/Components/UI/UICursorComponent.h>
+#include <ECS/Components/Rendering/ModelComponent.h>
+#include <ECS/Components/Rendering/AnimationComponent.h>
 
 #include <ECS/Systems/UI/UIInputSystem.h>
 #include <ECS/Systems/UI/UIRenderSystem.h>
@@ -99,7 +101,7 @@ namespace
     std::string GetResultStageNameTexture(const std::string& stageID)
     {
         (void)stageID;
-        return "BTN_BACK_STAGE_SELECT";
+        return "UI_BEST_TIME";
     }
 }
 
@@ -109,7 +111,15 @@ void ResultScene::Init()
     m_coordinator = std::make_shared<ECS::Coordinator>();
     ECS::ECSInitializer::InitECS(m_coordinator);
 
-    ECS::EntityFactory::CreateBasicCamera(m_coordinator.get(), { 0.0f, 0.0f, 0.0f });
+    // エフェクトシステムに対して「UI用カメラ設定」を適用::織田
+    if (auto effectSystem = ECS::ECSInitializer::GetSystem<EffectSystem>())
+    {
+        // これを呼ばないと、前のシーンの2D設定が残ってしまい、
+        // 奥行きやスケールが正しく反映されません。
+        effectSystem->ClearOverrideCamera();
+    }
+
+    ECS::EntityFactory::CreateBasicCamera(m_coordinator.get(), { 0.0f, 0.0f, -20.0f });
 
     const bool isClear = s_resultData.isCleared;
     //  メンバに保存（CreateButtons で使う)
@@ -120,18 +130,19 @@ void ResultScene::Init()
     {
         ResultScene::SetResultData(s_resultData);
     }
+   
 
 
     // NOTE:
     //  isCleared==true  : GAME CLEAR 表示
     //  isCleared==false : GAME OVER 表示
     //  ここが逆だと「クリアしてもゲームオーバー側」に見える。
-    if (isClear == true)
+    if (isClear == false) //織田
     {
         // 1) 背景
         m_coordinator->CreateEntity(
             TransformComponent(
-                { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0 },
+                { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 100 },
                 { 0, 0, 0 },
                 { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }
             ),
@@ -226,17 +237,17 @@ void ResultScene::Init()
                 int count = static_cast<int>(icons.size());
                 if (count > 0)
                 {
-                    const float iconW = 64.0f;
+                    const float iconW = 80.0f;
                     float baseY2 = timeY + 80.0f;
 
                     struct IconPos { float x; float y; };
                     IconPos positions[] = {
-                        { timeX - 100.0f, baseY2         },
-                        { timeX - 120.0f, baseY2         },
-                        { timeX + 80.0f,  baseY2         },
-                        { timeX - 120.0f, baseY2 + 80.0f },
-                        { timeX - 40.0f,  baseY2 + 80.0f },
-                        { timeX + 40.0f,  baseY2 + 80.0f }
+                        { timeX - 160.0f, baseY2 + 40.5f},
+                        { timeX - 80.0f, baseY2 + 40.5f},
+                        { timeX - 0.0f,  baseY2 + 40.5f},
+                        { timeX + 405.0f, baseY2 + 50.0f },
+                        { timeX + 323.0f,  baseY2 + 50.0f },
+                        { timeX + 240.0f,  baseY2 + 50.0f }
                     };
 
                     int maxIcons = std::min(count, (int)(sizeof(positions) / sizeof(positions[0])));
@@ -250,9 +261,51 @@ void ResultScene::Init()
                 }
             }
 
+            // ダイヤテキスト
+            m_coordinator->CreateEntity(
+                TransformComponent(
+                    { SCREEN_WIDTH * 0.46f, SCREEN_HEIGHT * 0.55f, 0 },
+                    { 0, 0, 0 },
+                    { 330.0f, 40.0f, 1.0f }
+                ),
+                UIImageComponent("GEMS_TEXT", 0.0f, true, { 1,1,1,1 })
+            );
+
+            // 絵画テキスト
+            m_coordinator->CreateEntity(
+                TransformComponent(
+                    { SCREEN_WIDTH * 0.77f, SCREEN_HEIGHT * 0.55f, 0 },
+                    { 0, 0, 0 },
+                    { 330.0f, 40.0f, 1.0f }
+                ),
+                UIImageComponent("PAINTING_TEXT", 0.0f, true, { 1,1,1,1 })
+            );
+
+            // 化石テキスト
+            m_coordinator->CreateEntity(
+                TransformComponent(
+                    { SCREEN_WIDTH * 0.27f, SCREEN_HEIGHT * 0.68f, 0 },
+                    { 0, 0, 0 },
+                    { 330.0f, 40.0f, 1.0f }
+                ),
+                UIImageComponent("FOSSIL_TEXT", 0.0f, true, { 1,1,1,1 })
+            );
+
+            // 陶器テキスト
+            m_coordinator->CreateEntity(
+                TransformComponent(
+                    { SCREEN_WIDTH * 0.57f, SCREEN_HEIGHT * 0.68f, 0 },
+                    { 0, 0, 0 },
+                    { 330.0f, 40.0f, 1.0f }
+                ),
+                UIImageComponent("POTTERY_TEXT", 0.0f, true, { 1,1,1,1 })
+            );
+
+
+             // スタンプ
             {
                 const float STAMP_LEFT_OFFSET = 20.0f;  // 左へ(+)
-                const float STAMP_Y_OFFSET = 20.0f;  // 上へ(+) / 下へはマイナス
+                const float STAMP_Y_OFFSET = 28.0f;  // 上へ(+) / 下へはマイナス
                 const float STAMP_ROT_DEG = 90.0f;
 
                 m_coordinator->CreateEntity(
@@ -264,19 +317,41 @@ void ResultScene::Init()
                         },
                         // 回転がラジアン実装の前提（違ったら下の注記）
                         { 0.0f, 0.0f, DirectX::XMConvertToRadians(STAMP_ROT_DEG) },
-                        { 200.0f, 200.0f, 90.0f }
+                        { 140.0f, 140.0f, 90.0f }
                     ),
                     UIImageComponent("ICO_STAMP1", 3.0f, true, { 1,1,1,0 }),
                     TagComponent("AnimStamp")
                 );
             }
 
-            // ステージ名プレート
+            //EffectComponent(
+            //    /* AssetID  */ "EFK_TITLE_SHINE",
+            //    /* Loop     */ true,
+            //    /* AutoPlay */ true,
+            //    /* Offset   */{ 0.0f, 0.0f, -3.0f },
+            //    /* Scale    */ 0.3f
+
+
+           /* {
+                m_coordinator->CreateEntity(
+                    TransformComponent(
+                        { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f,1.0f },
+                        { 0,0,0 },
+                        { 100.0f, 100.0f, 1.0f }
+                    ),
+                    EffectComponent("EFK_STAMP1", true,true, { 0,0,-3.0 },0.3f)
+                );
+            }*/
+
+            
+            
+
+            // ベストタイムプレート
             {
                 float plateW = 320.0f;
                 float plateH = 80.0f;
-                float plateX = SCREEN_WIDTH * 0.33f;
-                float plateY = SCREEN_HEIGHT * 0.25f;
+                float plateX = SCREEN_WIDTH * 0.35f;
+                float plateY = SCREEN_HEIGHT * 0.28f;
 
                 const std::string texID = GetResultStageNameTexture(s_resultData.stageID);
 
@@ -410,6 +485,7 @@ void ResultScene::Uninit()
 {
     if (auto effectSystem = ECS::ECSInitializer::GetSystem<EffectSystem>())
     {
+        effectSystem->ClearOverrideCamera();
         effectSystem->Uninit();
     }
 
@@ -420,6 +496,8 @@ void ResultScene::Uninit()
 void ResultScene::Update(float deltaTime)
 {
     m_coordinator->UpdateSystems(deltaTime);
+
+    
 
     // 織田
     m_elapsedTime += deltaTime;
@@ -532,26 +610,26 @@ void ResultScene::CreateButtons()
     const float y = SCREEN_HEIGHT * 0.94f;//0.93
 
     // 土台フレームのサイズ
-    const float frameW = 210.0f;//260
+    const float frameW = 260.0f;//260
     const float frameH = 90.0f;//90
 
     // 中の文字画像(RETRY/SELECT/TITLE) のサイズ
-    const float textW = 185.0f;//210
-    const float textH = 80.0f;//60
+    const float textW = 210.0f;//210
+    const float textH = 60.0f;//60
 
     // ボタン同士の間隔
-    const float spacing = 10.0f;//15
+    const float spacing = 5.0f;//15
 
     const float totalWidth = frameW * 3.0f + spacing * 2.0f;
 
     // 一番左のボタンの中心X
-    const float firstX = (SCREEN_WIDTH * 0.785f) - totalWidth * 0.6f + frameW * 0.5f;
+    const float firstX = (SCREEN_WIDTH * 0.740f) - totalWidth * 0.6f + frameW * 0.5f;
     //    const float firstX = (SCREEN_WIDTH * 0.6f) - totalWidth * 0.5f + frameW * 0.5f;
 
     // ★ ここでクリア／ゲームオーバーで使う土台テクスチャを切り替える
     const char* frameTexId = isClear
-        ? "BTN_UNDER_CLEAR"  // ← btn_result_normal1.png 用
-        : "BTN_UNDER_GAMEOVER";  // ← btn_result_normal.png 用
+        ? "BTN_UNDER_CLEAR"  // ← btn_result_normal.png 用
+        : "BTN_UNDER_GAMEOVER";  // ← btn_result_normal1.png 用
 
     auto createResultButton =
         [&](int index, const char* textTex, std::function<void()> onClick)

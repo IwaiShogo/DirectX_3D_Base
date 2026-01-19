@@ -29,11 +29,11 @@ struct TitleControllerComponent
     float uiAnimDuration;
     std::vector<float> menuTargetYs;
 
-    // --- エフェクト関連 ---
+    // --- 繧ｨ繝輔ぉ繧ｯ繝磯未騾｣ ---
     std::vector<ECS::EntityID> buttonEffectEntities;
     bool effectTriggered = false;
 
-    // --- カメラ演出用 ---
+    // --- 繧ｫ繝｡繝ｩ貍泌�ｺ逕ｨ ---
     ECS::EntityID cameraEntityID;
     ECS::EntityID logoEntityID;
     ECS::EntityID cardEntityID;
@@ -54,7 +54,7 @@ struct TitleControllerComponent
         ECS::EntityID id;
         float lifeTimer;
     };
-    std::vector<ActiveLamp> activeLamps; // 寿命管理用
+    std::vector<ActiveLamp> activeLamps; // 蟇ｿ蜻ｽ邂｡逅�逕ｨ
     TitleControllerComponent()
         : state(TitleState::WaitInput)
         , animTimer(0.0f)

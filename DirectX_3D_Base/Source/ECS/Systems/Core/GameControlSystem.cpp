@@ -44,6 +44,7 @@ std::string GetItemIconPath(const std::string& itemID)
     if (itemID == "Takara_Kaiga2")  return "ICO_TREASURE5";
     if (itemID == "Takara_Kaiga3")  return "ICO_TREASURE6";
 
+
     // デフォルト
     return "ICO_TREASURE";
 }
