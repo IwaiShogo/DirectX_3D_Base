@@ -65,7 +65,12 @@
       "Takara_Daiya"
     ],
     "guardCount": 0,
-    "gimmicks": []
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 1
+      }
+    ]
   },
   "ST_004": {
     "name": "Stage 4",

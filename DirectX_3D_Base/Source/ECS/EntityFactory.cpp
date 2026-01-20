@@ -136,6 +136,7 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 	else if (itemID == "Takara_Kaiga2") { modelPath = "M_TREASURE5"; }
 	else if (itemID == "Takara_Kaiga3") { modelPath = "M_TREASURE6"; }
 
+
 	ECS::EntityID entity = coordinator->CreateEntity(
 		TagComponent(
 			/* Tag	*/	"item"
