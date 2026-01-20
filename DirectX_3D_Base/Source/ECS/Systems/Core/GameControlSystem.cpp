@@ -779,6 +779,11 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
     if (!(pressedSpace || pressedA)) return;
 
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+    //ここでトップビューの切り替えを禁止
+    if (state.currentMode == GameMode::ACTION_MODE)
+    {
+        return;
+    }
     if (state.currentMode == GameMode::SCOUTING_MODE) {
         ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.8f);
         StartMosaicSequence(controllerID);
@@ -794,6 +799,8 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
         }
         ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator, "BGM_ACTION", 0.5f);
     }
+
+   
     ApplyModeVisuals(controllerID);
 }
 
@@ -1413,7 +1420,7 @@ void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID)
         else if (m_coordinator->HasComponent<TagComponent>(entity)) {
             const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
             if (tag == "guard") { actionType = MESH_MODEL; scoutType = MESH_NONE; }
-            else if (tag == "taser" || tag == "map_gimmick") {
+            else if (tag == "taser" || tag == "map_gimmick" || tag == "TopViewTrigger") {
                 actionType = MESH_NONE; scoutType = MESH_NONE;
             }
             else if (tag == "ground" || tag == "wall") {

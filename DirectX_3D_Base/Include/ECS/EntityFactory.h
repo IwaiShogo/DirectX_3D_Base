@@ -69,6 +69,7 @@ namespace ECS
 
 		static EntityID CreateTeleporter(ECS::Coordinator* coordinator, DirectX::XMFLOAT3 position);
 
+		static EntityID CreateTopViewTrigger(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止
 		EntityFactory() = delete;

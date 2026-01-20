@@ -533,44 +533,43 @@ void GameScene::Init()
         )
     );
 
+   ECS::EntityFactory::CreateTopViewTrigger(m_coordinator.get(), XMFLOAT3(0.0f, 0.0f, 5.0f));
 
-
-//#ifdef _DEBUG
-//    // ★デバッグ: 開始時にアイテムを全獲得状態にする
-//    {
-//        // 1. トラッカー(進行管理)を取得し、カウントを最大にする
-//        ECS::EntityID trackerID = ECS::FindFirstEntityWithComponent<ItemTrackerComponent>(m_coordinator.get());
-//        if (trackerID != ECS::INVALID_ENTITY_ID)
-//        {
-//            auto& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(trackerID);
-//
-//            // 現在の獲得数を総数と同じにする
-//            tracker.collectedItems = tracker.totalItems;
-//
-//            // ターゲット順序も完了状態にしておく（順序ありモード対策）
-//            tracker.currentTargetOrder = tracker.totalItems + 1;
-//
-//            // 2. 画面上のアイテム(Collectable)を全て物理的に消去する
-//            // (ループ中に削除すると不具合が出る可能性があるため、一度リストアップしてから削除)
-//            std::vector<ECS::EntityID> itemsToRemove;
-//            for (auto const& entity : m_coordinator->GetActiveEntities())
-//            {
-//                if (m_coordinator->HasComponent<CollectableComponent>(entity))
-//                {
-//                    itemsToRemove.push_back(entity);
-//                }
-//            }
-//
-//            for (auto entity : itemsToRemove)
-//            {
-//                m_coordinator->DestroyEntity(entity);
-//            }
-//
-//            std::cout << "[DEBUG] Init: All items forced collected (" << tracker.collectedItems << "/" << tracker.totalItems << ")" << std::endl;
-//        }
-//    }
-//#endif
-
+        //#ifdef _DEBUG
+        //    // ★デバッグ: 開始時にアイテムを全獲得状態にする
+        //    {
+        //        // 1. トラッカー(進行管理)を取得し、カウントを最大にする
+        //        ECS::EntityID trackerID = ECS::FindFirstEntityWithComponent<ItemTrackerComponent>(m_coordinator.get());
+        //        if (trackerID != ECS::INVALID_ENTITY_ID)
+        //        {
+        //            auto& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(trackerID);
+        //
+        //            // 現在の獲得数を総数と同じにする
+        //            tracker.collectedItems = tracker.totalItems;
+        //
+        //            // ターゲット順序も完了状態にしておく（順序ありモード対策）
+        //            tracker.currentTargetOrder = tracker.totalItems + 1;
+        //
+        //            // 2. 画面上のアイテム(Collectable)を全て物理的に消去する
+        //            // (ループ中に削除すると不具合が出る可能性があるため、一度リストアップしてから削除)
+        //            std::vector<ECS::EntityID> itemsToRemove;
+        //            for (auto const& entity : m_coordinator->GetActiveEntities())
+        //            {
+        //                if (m_coordinator->HasComponent<CollectableComponent>(entity))
+        //                {
+        //                    itemsToRemove.push_back(entity);
+        //                }
+        //            }
+        //
+        //            for (auto entity : itemsToRemove)
+        //            {
+        //                m_coordinator->DestroyEntity(entity);
+        //            }
+        //
+        //            std::cout << "[DEBUG] Init: All items forced collected (" << tracker.collectedItems << "/" << tracker.totalItems << ")" << std::endl;
+        //        }
+        //    }
+        //#endif
 
 }
 
