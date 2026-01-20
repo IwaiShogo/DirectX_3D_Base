@@ -288,6 +288,9 @@ private:
 	float m_eyeLightNextInterval = 0.0f;
 	void UpdateEyeLight(float dt);
 
+	std::vector<ECS::EntityID> m_stageSpecificEntities; // ステージごとの固有UI管理用
+	void CreateStageInfoUI(const std::string& stageID); // 専用UI作成関数
+	void ClearStageInfoUI();                            // お片付け関数
 };
 
 #endif // !___STAGE_SELECT_SCENE_H___
