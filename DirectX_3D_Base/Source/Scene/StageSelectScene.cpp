@@ -514,12 +514,17 @@ void StageSelectScene::Init()
 		UpdateStarIconsByStageId(std::string());
 	}
 
-
-	// トレジャー枠
+	//トレジャー背景
 	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
 		TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.2f, 0.0f }, { 0,0,0 }, { 550, 220, 1 }),
-		UIImageComponent("UI_TRESURE", baseDepth + 3.0f) // 1.0f -> baseDepth + 3.0f
+		UIImageComponent("UI_TRESURE_BACK", baseDepth + 3.0f) // 1.0f -> baseDepth + 3.0f
 	));
+
+	//// トレジャー枠
+	//m_detailUIEntities.push_back(m_coordinator->CreateEntity(
+	//	TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.2f, 0.0f }, { 0,0,0 }, { 550, 220, 1 }),
+	//	UIImageComponent("UI_TRESURE", baseDepth + 3.0f) // 1.0f -> baseDepth + 3.0f
+	//));
 
 	// ★スター表示（保存値を表示：選択中ステージに応じてONを切り替える）
 	{
@@ -1520,7 +1525,7 @@ void StageSelectScene::SwitchState(bool toDetail)
 		{
 			// 選択ステージに応じて「城(手前)」のテクスチャを差し替える
 			ApplyStageMapTextureByStageId(m_selectedStageID);
-
+			CreateStageInfoUI(m_selectedStageID);
 			BeginDetailAppear();
 			m_shootingStarTimer = 0.0f;
 			std::uniform_real_distribution<float> dist(m_shootingStarIntervalMin, m_shootingStarIntervalMax);
@@ -1537,6 +1542,7 @@ void StageSelectScene::SwitchState(bool toDetail)
 		{
 			m_spawnStarOnEnterDetail = false;
 			KillAllShootingStars();
+			ClearStageInfoUI();
 			if (m_debugStarEntity != (ECS::EntityID)-1)
 			{
 				m_coordinator->DestroyEntity(m_debugStarEntity);
@@ -2541,6 +2547,362 @@ void StageSelectScene::KillAllShootingStars()
 	}
 	m_activeShootingStars.clear();
 }
+
+// ステージ固有のUIを作成する関数
+void StageSelectScene::CreateStageInfoUI(const std::string& stageID)
+{
+	// 文字列ID("ST_001") を 整数(1) に変換
+	int stageNo = StageIdToStageNo(stageID);
+
+	// UIの深さ基準（詳細画面と同じ設定）
+	const float baseDepth = 110000.0f;
+
+	// switch文で分岐（整数ならOK！）
+	switch (stageNo)
+	{
+	case 1: // 1-1
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE3", baseDepth + 3.2f)
+		));
+		break;
+
+	}
+	case 2: // 1-2
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE3", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE1", baseDepth + 3.2f)
+		));
+		break;
+	}
+	case 3: // 1-3
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE3", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE1", baseDepth + 3.2f)
+		));
+		break;
+	}
+	case 4: // 2-1
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
+		));
+		break;
+	}
+	case 5: // 2-2
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
+		));
+		break;
+	}
+	case 6: // 2-3
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
+		));
+		break;
+	}
+	case 7: //4個出すとき用
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.58f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.88f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.58f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.88f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE10", baseDepth + 3.2f)
+		));
+		break;
+	}
+	case 8: //5個出すとき用
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.560f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.645f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.730f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.815f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.900f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.560f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
+			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.645f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
+			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.730f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
+			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.815f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
+			UIImageComponent("ICO_TREASURE10", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.900f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
+			UIImageComponent("ICO_TREASURE11", baseDepth + 3.2f)
+		));
+		break;
+	}
+	case 9: // 6個出すとき用
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.555f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.625f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.695f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.765f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.835f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.905f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.555f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
+			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.625f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
+			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.695f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
+			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.765f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
+			UIImageComponent("ICO_TREASURE10", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.835f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
+			UIImageComponent("ICO_TREASURE11", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.905f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
+			UIImageComponent("ICO_TREASURE12", baseDepth + 3.2f)
+		));
+		break;
+	}
+	}
+
+	// 作成した固有UIにも「詳細出現アニメーション（ふわっと出るやつ）」を適用するために登録
+	for (auto id : m_stageSpecificEntities) {
+		CacheDetailBaseTransform(id); // これを忘れるとアニメーションしません
+		m_detailUIEntities.push_back(id); // 共通管理リストにも入れておくと、一括操作に便利
+	}
+}
+
+// 固有UIを削除する関数
+void StageSelectScene::ClearStageInfoUI()
+{
+	// 作成したエンティティをECSから削除
+	for (auto id : m_stageSpecificEntities) {
+		if (id != (ECS::EntityID)-1) {
+			m_coordinator->DestroyEntity(id);
+		}
+	}
+	m_stageSpecificEntities.clear();
+
+	// m_detailUIEntities の中からも無効になったIDを消しておくと安全ですが、
+	// 現在の実装では SwitchState で再構築されるわけではないので、
+	// ここで明示的に remove するか、m_detailUIEntities の再構築ロジックを見直す必要があります。
+	// 今回は簡易的に「固有UIは毎回作り直す」方針をとります。
+}
+
 
 // StageSelectScene.cpp 例
 // StageSelectScene.cpp
