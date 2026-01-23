@@ -24,6 +24,11 @@
       {
         "type": "Teleporter",
         "count": 0
+      },
+      {
+        "type": "StopTrap",
+        "count": 1,
+        "duration":10.0 
       }
     ]
   },

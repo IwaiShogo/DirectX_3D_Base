@@ -667,6 +667,18 @@ end_generate_loop:;
                 mapComp.teleportPairs.push_back({ posA, posB });
                 placedCount++;
             }
+            else if (gimmick.type == "StopTrap")
+            {
+                // 空いている通路を1つ取得
+                if (availablePathPositions.empty()) break;
+
+                XMINT2 pos = availablePathPositions.back();
+                availablePathPositions.pop_back();
+
+                // グリッド情報を書き換え
+                mapComp.grid[pos.y][pos.x].type = CellType::StopTrap;
+                placedCount++;
+            }
             // --- [Case: その他 (将来的な拡張)] ---
             else
             {
@@ -944,6 +956,13 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
     const float TILE_SIZE = config.tileSize;
     const float WALL_HEIGHT = config.wallHeight;
 
+    float trapDuration = 3.0f; // デフォルト
+    for (const auto& g : config.gimmicks) {
+        if (g.type == "StopTrap") {
+            trapDuration = g.duration;
+            break;
+        }
+    }
     // --------------------------------------------------------------------------------
     // 【最適化】Greedy Meshingのための処理済みフラグ用グリッド
     // --------------------------------------------------------------------------------
@@ -1113,6 +1132,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
             case CellType::Item:
             case CellType::Guard:
             case CellType::Taser:
+			case CellType::StopTrap:
                 // TODO: CellType::Room に配置するギミックがある場合はここに追加
                 // case CellType::Teleporter: 
             {
@@ -1162,9 +1182,15 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                 }
                 else if (cell.type == CellType::Taser) {
                     XMFLOAT3 taserPos = cellCenter;
-                    taserPos.y += 0.0f;
                     EntityFactory::CreateTaser(m_coordinator, taserPos);
                 }
+                else if (cell.type == CellType::StopTrap) {
+
+                    // タイル中心座標を取得
+                    XMFLOAT3 trapPos = cellCenter;
+                    EntityFactory::CreateStopTrap(m_coordinator, trapPos, trapDuration);
+                }
+
             }
             break;
             default:

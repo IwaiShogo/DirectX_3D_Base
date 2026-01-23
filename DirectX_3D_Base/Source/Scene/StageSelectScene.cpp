@@ -843,7 +843,8 @@ void StageSelectScene::Update(float deltaTime)
 	{
 		m_gameStartTimer += dtSec;
 
-		// 指定時間（GAME_START_DELAY）経過したらフェードアウト開始
+		// 指定時間（
+		// _DELAY）経過したらフェードアウト開始
 		if (m_gameStartTimer >= 1.0f)
 		{
 			m_isWaitingForGameStart = false; // 多重発火防止

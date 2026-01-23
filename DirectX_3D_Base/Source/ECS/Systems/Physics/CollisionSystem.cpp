@@ -290,6 +290,9 @@ void CollisionSystem::Update(float deltaTime)
 
 				if (!guard.isActive) continue;
 
+				if (guard.isStunned)
+					continue;
+
 				ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST5");
 
 				state.isGameOver = true;
