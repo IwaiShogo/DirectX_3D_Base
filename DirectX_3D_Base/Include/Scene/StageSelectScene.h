@@ -261,7 +261,8 @@ private:
 	bool m_isWaitingForBackToList = false;
 
 	float m_gameStartTimer = 0.0f;
-	const float GAME_START_DELAY = 1.0f; // ★ここで待機時間を調整（秒）
+	const float 
+		_DELAY = 1.0f; // ★ここで待機時間を調整（秒）
 
 	// ★出現間隔（秒）ここを変えると頻度が変わる
 	float m_shootingStarIntervalMin = 3.0f; // 例：頻繁=1.0f、レア=3.0f
@@ -288,6 +289,9 @@ private:
 	float m_eyeLightNextInterval = 0.0f;
 	void UpdateEyeLight(float dt);
 
+	std::vector<ECS::EntityID> m_stageSpecificEntities; // ステージごとの固有UI管理用
+	void CreateStageInfoUI(const std::string& stageID); // 専用UI作成関数
+	void ClearStageInfoUI();                            // お片付け関数
 };
 
 #endif // !___STAGE_SELECT_SCENE_H___

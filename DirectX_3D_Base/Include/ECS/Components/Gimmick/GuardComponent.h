@@ -31,6 +31,10 @@ struct GuardComponent
     float elapsedTime;          // 経過時間（内部用）
     float speed;                // ガードの移動速度
 
+    bool isStunned = false;     // 足止め中フラグ
+    float stunTimer = 0.0f;     // 足止め残り時間
+
+
     float viewRange = 10.0f;        // 視認距離（半径）
     float viewAngle = 60.0f;        // 視野角（度数法：左右合わせて60度など）
     bool isPlayerDetected = false;  // プレイヤーを発見しているか
@@ -61,6 +65,8 @@ struct GuardComponent
         , viewAngle(vAngle)
         , currentPathIndex(0)
         , pathRecalcTimer(0.0f)
+		, isStunned(false)
+		, stunTimer(0.0f)
     {
     }
 };

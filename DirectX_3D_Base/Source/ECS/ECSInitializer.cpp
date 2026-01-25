@@ -147,6 +147,13 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* System       */  TeleportSystem,
         /* Components   */  TeleportComponent, TransformComponent
     );
+	// @system  StopTrapSystem
+	// @brief   停止トラップの当たり判定と効果発動
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        StopTrapSystem,
+        StopTrapComponent, TransformComponent, RenderComponent
+    );
 
     // @system UIInputSystem
     // @brief   マウスカーソルの入力判定

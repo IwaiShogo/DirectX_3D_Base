@@ -82,5 +82,7 @@
 #include "ECS/Systems/Gimmick/GuardAISystem.h"
 // @system	テレポーター
 #include "ECS/Systems/Gimmick/TeleportSystem.h"
+// @system	ストップトラップ
+#include "ECS/Systems/Gimmick/StopTrapSystem.h"
 
 #endif // !___ALL_SYSTEM_H___

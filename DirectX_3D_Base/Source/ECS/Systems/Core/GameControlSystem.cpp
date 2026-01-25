@@ -858,11 +858,12 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID)
             }
             else if (m_iconMap.count(entity)) m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false;
         }
-        bool isGuard = false, isTeleporter = false;
+        bool isGuard = false, isTeleporter = false, isStopTrap = false;
         if (m_coordinator->HasComponent<TagComponent>(entity)) {
             const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
             if (tag == "taser") isGuard = true;
             if (tag == "teleporter") isTeleporter = true;
+            if (tag == "stop_trap") isStopTrap = true;
         }
         if (isGuard) {
             if (showIcons) UpdateIcon(entity, "ICO_TASER", { 1, 1, 1, 1 });
@@ -871,6 +872,11 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID)
         if (isTeleporter) {
             if (showIcons) UpdateIcon(entity, "UI_TITLE_LOGO", { 0, 1, 1, 1 });
             else if (m_iconMap.count(entity)) m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false;
+        }
+        if (isStopTrap) {
+            if (showIcons) UpdateIcon(entity, "UI_ASHIATO_BLUE", { 0.8f, 0.0f, 0.8f, 1.0f });
+            else if (m_iconMap.count(entity))  m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false;
+            
         }
     }
 
