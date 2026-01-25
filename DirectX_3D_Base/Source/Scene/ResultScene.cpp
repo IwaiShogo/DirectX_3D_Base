@@ -137,7 +137,7 @@ void ResultScene::Init()
     //  isCleared==true  : GAME CLEAR 表示
     //  isCleared==false : GAME OVER 表示
     //  ここが逆だと「クリアしてもゲームオーバー側」に見える。
-    if (isClear == false) //織田
+    if (isClear == true) //織田
     {
         // 1) 背景
         m_coordinator->CreateEntity(
