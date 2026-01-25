@@ -176,6 +176,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Scene\FadeManager.cpp" />
     <ClCompile Include="Source\Scene\GameScene.cpp" />
+    <ClCompile Include="Source\Scene\LoadingScene.cpp" />
     <ClCompile Include="Source\Scene\OpeningScene.cpp" />
     <ClCompile Include="Source\Scene\ResultScene.cpp" />
     <ClCompile Include="Source\Scene\SceneManager.cpp" />
@@ -271,6 +272,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\Main.h" />
     <ClInclude Include="Include\Scene\FadeManager.h" />
     <ClInclude Include="Include\Scene\GameScene.h" />
+    <ClInclude Include="Include\Scene\LoadingScene.h" />
     <ClInclude Include="Include\Scene\OpeningScene.h" />
     <ClInclude Include="Include\Scene\ResultScene.h" />
     <ClInclude Include="Include\Scene\Scene.h" />
