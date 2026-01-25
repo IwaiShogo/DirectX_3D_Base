@@ -23,6 +23,7 @@
 #include <functional>
 #include <fstream>
 #include <vector>
+#include <cstdint>
 #include <string>
 #include <algorithm>
 #include <random>
@@ -248,6 +249,9 @@ void StageSelectScene::Init()
 	m_maxUnlockedStage = StageUnlockProgress::GetMaxUnlockedStage();
 	m_pendingRevealStage = StageUnlockProgress::ConsumePendingRevealStage();
 
+	// ★開始時は未選択扱いにして、BEST TIME は必ず "--:--" から開始する
+	m_selectedStageID.clear();
+
 
 	// カメラ
 	EntityFactory::CreateBasicCamera(m_coordinator.get(), { 0,0,0 });
@@ -315,7 +319,15 @@ void StageSelectScene::Init()
 					ResetSelectToDetailAnimState(false, true);
 
 					m_selectedStageID = id;
+					UpdateBestTimeDigitsByStageId(m_selectedStageID);
+
+					// ★星は「カード選択→詳細出現アニメ」が終わるまで点灯させない（押した瞬間に出るバグ対策）
+					UpdateStarIconsByStageId(std::string());
+					m_starRevealPending = true;
+					m_starRevealStageId = m_selectedStageID;
+
 					m_inputLocked = true;
+
 
 					if (i < m_listUIEntities.size())
 					{
@@ -428,6 +440,7 @@ void StageSelectScene::Init()
 // UI_STAGE_MAP (BACK=10.0, SIRO=9.0)
 	// Draw関数内で depth > 100000.0f のものは 3D描画後に重ねて描画されます。
 	const float baseDepth = 110000.0f;
+	//const float baseDepth = 20.0f;
 
 	// UI_STAGE_MAP (BACK=10.0, SIRO=9.0)
 	EntityID mapBack = m_coordinator->CreateEntity(
@@ -456,17 +469,65 @@ void StageSelectScene::Init()
 		UIImageComponent("UI_BEST_TIME", baseDepth + 4.0f) // 2.0f -> baseDepth + 4.0f
 	));
 
-	// トレジャー枠
+	// BEST TIME digits (mm:ss.d) : UI_BEST_TIME の右に UI_FONT で描画
+	// - 開始時/未選択/未記録: "--:--" を表示し、".d" は非表示
+	// - 記録あり: "mm:ss.d" を表示
+	{
+		m_bestTimeDigitEntities.clear();
+		m_bestTimeDigitEntities.reserve(7);
+
+		// 枠に収まるように少し小さめ
+		const float digitW = 32.0f;
+		const float digitH = 48.0f;
+		const float stepX = 34.0f; // 文字間隔
+		const float y = SCREEN_HEIGHT * 0.83f;
+		const float labelCenterX = SCREEN_WIDTH * 0.16f;
+		const float labelW = 200.0f;
+		const float startX = (labelCenterX + labelW * 0.5f + 20.0f);
+
+		for (int i = 0; i < 7; ++i)
+		{
+			EntityID d = m_coordinator->CreateEntity(
+				TransformComponent({ startX + i * stepX, y, 0.0f }, { 0,0,0 }, { digitW, digitH, 1.0f }),
+				UIImageComponent("UI_FONT", baseDepth + 4.5f, true, { 1,1,1,1 })
+			);
+
+			auto& ui = m_coordinator->GetComponent<UIImageComponent>(d);
+			// 初期は "--:--"（".d" は非表示）
+			int idx = 10; // '-'
+			if (i == 2) idx = 11;      // ':'
+			else if (i == 5) idx = 12; // '.'
+			const int r = (idx <= 9) ? (idx / 5) : 2;
+			const int c = (idx <= 9) ? (idx % 5) : (idx - 10);
+			ui.uvPos = { c * 0.2f,  r * 0.333f };
+			ui.uvScale = { 0.2f,     0.333f };
+
+			// 末尾の .d は初期非表示
+			if (i >= 5) ui.isVisible = false;
+
+			m_bestTimeDigitEntities.push_back(d);
+			m_detailUIEntities.push_back(d);
+		}
+
+		// ★開始時は未選択扱いなので必ず "--:--" に戻す
+		UpdateBestTimeDigitsByStageId(std::string());
+		UpdateStarIconsByStageId(std::string());
+	}
+
+	//トレジャー背景
 	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
 		TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.2f, 0.0f }, { 0,0,0 }, { 550, 220, 1 }),
-		UIImageComponent("UI_TRESURE", baseDepth + 3.0f) // 1.0f -> baseDepth + 3.0f
+		UIImageComponent("UI_TRESURE_BACK", baseDepth + 3.0f) // 1.0f -> baseDepth + 3.0f
 	));
 
-	// ★スター表示
+	//// トレジャー枠
+	//m_detailUIEntities.push_back(m_coordinator->CreateEntity(
+	//	TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.2f, 0.0f }, { 0,0,0 }, { 550, 220, 1 }),
+	//	UIImageComponent("UI_TRESURE", baseDepth + 3.0f) // 1.0f -> baseDepth + 3.0f
+	//));
+
+	// ★スター表示（保存値を表示：選択中ステージに応じてONを切り替える）
 	{
-		const ResultData& rd = ResultScene::GetResultData();
-		const bool hasValidResult = (rd.isCleared && (rd.stageID == m_selectedStageID));
-		bool stars[3] = { hasValidResult && !rd.wasSpotted, hasValidResult && rd.collectedAllOrdered, hasValidResult && rd.clearedInTime };
 		const char* conditionTex[3] = { "STAR_TEXT1","STAR_TEXT2","STAR_TEXT3" };
 
 		float baseY = SCREEN_HEIGHT * 0.50f;
@@ -477,144 +538,156 @@ void StageSelectScene::Init()
 		for (int i = 0; i < 3; ++i)
 		{
 			float y = baseY + i * gapY;
+
+			// 条件テキスト
 			m_detailUIEntities.push_back(m_coordinator->CreateEntity(
 				TransformComponent({ captionX, y, 0.0f }, { 0,0,0 }, { 320.0f, 60.0f, 1.0f }),
-				UIImageComponent(conditionTex[i], baseDepth + 5.0f, true, { 1,1,1,1 }) // 1.0f -> ...
+				UIImageComponent(conditionTex[i], baseDepth + 5.0f, true, { 1,1,1,1 })
 			));
 
+			// ★サイズ（上だけ大きい）
 			float offSize = (i == 0) ? 50.0f : 34.0f;
 			float onSize = (i == 0) ? 50.0f : 34.0f;
 
+			// ★ Off（枠）
 			m_detailUIEntities.push_back(m_coordinator->CreateEntity(
 				TransformComponent({ starX, y, 0.0f }, { 0,0,0 }, { offSize, offSize, 1.0f }),
-				UIImageComponent("ICO_STAR_OFF", baseDepth + 5.0f, true, { 1,1,1,1 }) // 1.0f -> ...
+				UIImageComponent("ICO_STAR_OFF", baseDepth + 5.0f, true, { 0.0f,0.0f,0.0f,1.0f })
 			));
 
-			if (stars[i])
+			// ★ On（常に生成しておき、選択ステージで可視/不可視を切り替える）
+			ECS::EntityID starOn = m_coordinator->CreateEntity(
+				TransformComponent({ starX, y, 0.0f }, { 0,0,0 }, { onSize, onSize, 1.0f }),
+				UIImageComponent("ICO_STAR_ON", baseDepth + 6.0f, true, { 1,1,1,1 })
+			);
+			if (m_coordinator->HasComponent<UIImageComponent>(starOn))
 			{
-				m_detailUIEntities.push_back(m_coordinator->CreateEntity(
-					TransformComponent({ starX, y, 0.0f }, { 0,0,0 }, { onSize, onSize, 1.0f }),
-					UIImageComponent("ICO_STAR_ON", baseDepth + 6.0f, true, { 1,1,1,1 }) // 2.0f -> ...
-				));
+				m_coordinator->GetComponent<UIImageComponent>(starOn).isVisible = false; // 初期はOFF
 			}
+			m_detailStarOnEntities[i] = starOn;
+			m_detailUIEntities.push_back(starOn);
 		}
 
-		// STARTボタン
-		m_detailUIEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.86f, 5.0f }, { 0,0,0 }, { 200, 100, 1 }),
-			UIImageComponent("UI_START_NORMAL", baseDepth + 5.0f) // 1.0f -> ...
-		));
-
-		EntityID startBtn = m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.86f, 5.0f }, { 0,0,0 }, { 200, 100, 1 }),
-			UIImageComponent("BTN_DECISION", baseDepth + 6.0f), // 2.0f -> ...
-			UIButtonComponent(
-				ButtonState::Normal,
-				true,
-				[this]() {
-					if (m_inputLocked) return;
-
-					PlayUISelectEffect(m_startBtnEntity, "EFK_SELECTOK", 35.0f);
-					m_inputLocked = true;
-
-					m_isWaitingForGameStart = true;
-					m_gameStartTimer = 0.0f;
-
-					ScreenTransition::RequestFadeOutEx(
-						m_coordinator.get(), m_blackTransitionEntity, 0.15f, 0.35f, 0.45f,
-						[this]() { GameScene::SetStageNo(m_selectedStageID); SceneManager::ChangeScene<GameScene>(); },
-						false, nullptr, 0.0f, 0.35f, false, false
-					);
-				}
-			)
-		);
-		m_startBtnEntity = startBtn;
-		m_detailUIEntities.push_back(startBtn);
-
-		// BACKボタン
-		m_detailUIEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.86f, 5.0f }, { 0,0,0 }, { 200, 100, 1 }),
-			UIImageComponent("UI_FINISH_NORMAL", baseDepth + 5.0f) // 1.0f -> ...
-		));
-
-		EntityID backBtn = m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.86f, 5.0f }, { 0,0,0 }, { 160, 80, 1 }),
-			UIImageComponent("BTN_REBERSE", baseDepth + 6.0f), // 2.0f -> ...
-			UIButtonComponent(
-				ButtonState::Normal,
-				true,
-				[this]() {
-					if (m_inputLocked) return;
-					PlayUISelectEffect(m_finishBtnEntity, "EFK_SELECTBACK", 35.0f);
-					m_inputLocked = true;
-					ScreenTransition::RequestFadeOutEx(
-						m_coordinator.get(), m_blackTransitionEntity, 0.15f, 0.35f, 0.45f,
-						[this]() { SwitchState(false); },
-						true, [this]() { m_inputLocked = false; }, 0.0f, 0.35f, false, false
-					);
-				}
-			)
-		);
-		m_finishBtnEntity = backBtn;
-		m_detailUIEntities.push_back(backBtn);
-
-
-
-		// 詳細UIの基準Transformをキャッシュ（ふわっと出す用）
-		for (auto id : m_detailUIEntities) { CacheDetailBaseTransform(id); }
-
-		// カーソル
-		m_cursorEntity = m_coordinator->CreateEntity(
-			TransformComponent({ 0.0f, 0.0f, 0.0f }, { 0,0,0 }, { 64.0f, 64.0f, 1.0f }),
-			UIImageComponent("ICO_CURSOR", 200000.0f),
-			UICursorComponent()
-		);
-
-		// 初期：一覧
-		SwitchState(false);
-
-		// フェードオーバーレイ
-		const float fadeX = SCREEN_WIDTH * 0.5f;
-		const float fadeY = SCREEN_HEIGHT * 0.5f;
-
-		// 1. 黒背景層（m_transitionEntity）
-		const float fadeBgW = SCREEN_WIDTH * 2.0f;
-		const float fadeBgH = SCREEN_HEIGHT * 2.0f;
-
-		m_transitionEntity = ScreenTransition::CreateOverlay(
-			m_coordinator.get(), "BG_STAGE_SELECT", fadeX, fadeY, fadeBgW, fadeBgH
-		);
-
-		if (m_coordinator->HasComponent<UIImageComponent>(m_transitionEntity))
-		{
-			auto& ui = m_coordinator->GetComponent<UIImageComponent>(m_transitionEntity);
-			ui.color = { 1.0f, 1.0f, 1.0f, 1.0f }; // 茶色ボード（元テクスチャ色）をそのまま使う
-			ui.depth = 200000.0f;
-		}
-
-
-
-		// 2. ゲーム遷移専用：全面黒フェード（m_blackTransitionEntity）
-		// ※既存の茶色ボードフェード（m_transitionEntity）はそのまま維持し、
-		//   「決定 → GameScene」だけこちらを使う
-		m_blackTransitionEntity = ScreenTransition::CreateOverlay(
-			m_coordinator.get(), "BG_STAGE_SELECT", fadeX, fadeY, fadeBgW, fadeBgH
-		);
-
-		if (m_coordinator->HasComponent<UIImageComponent>(m_blackTransitionEntity))
-		{
-			auto& ui = m_coordinator->GetComponent<UIImageComponent>(m_blackTransitionEntity);
-			ui.color = { 0.0f, 0.0f, 0.0f, 0.0f }; // 初期は透明（遷移時にαを上げる）
-			ui.depth = 200001.0f;                 // 茶色ボードより手前
-		}
-		// 起動時フェードイン
-		m_inputLocked = true;
-		ScreenTransition::RequestFadeInEx(
-			m_coordinator.get(), m_transitionEntity, 1.45f,
-			[this]() { m_inputLocked = false; }, 0.0f, false
-		);
+		// ★開始時は未選択なので全部OFF
+		UpdateStarIconsByStageId(std::string());
 	}
+
+	// STARTボタン
+	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
+		TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.86f, 5.0f }, { 0,0,0 }, { 200, 100, 1 }),
+		UIImageComponent("UI_START_NORMAL", baseDepth + 5.0f) // 1.0f -> ...
+	));
+
+	EntityID startBtn = m_coordinator->CreateEntity(
+		TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.86f, 5.0f }, { 0,0,0 }, { 200, 100, 1 }),
+		UIImageComponent("BTN_DECISION", baseDepth + 6.0f), // 2.0f -> ...
+		UIButtonComponent(
+			ButtonState::Normal,
+			true,
+			[this]() {
+				if (m_inputLocked) return;
+
+				PlayUISelectEffect(m_startBtnEntity, "EFK_SELECTOK", 35.0f);
+				m_inputLocked = true;
+
+				m_isWaitingForGameStart = true;
+				m_gameStartTimer = 0.0f;
+
+				ScreenTransition::RequestFadeOutEx(
+					m_coordinator.get(), m_blackTransitionEntity, 0.15f, 0.35f, 0.45f,
+					[this]() { GameScene::SetStageNo(m_selectedStageID); SceneManager::ChangeScene<GameScene>(); },
+					false, nullptr, 0.0f, 0.35f, false, false
+				);
+			}
+		)
+	);
+	m_startBtnEntity = startBtn;
+	m_detailUIEntities.push_back(startBtn);
+
+	// BACKボタン
+	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
+		TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.86f, 5.0f }, { 0,0,0 }, { 200, 100, 1 }),
+		UIImageComponent("UI_FINISH_NORMAL", baseDepth + 5.0f) // 1.0f -> ...
+	));
+
+	EntityID backBtn = m_coordinator->CreateEntity(
+		TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.86f, 5.0f }, { 0,0,0 }, { 160, 80, 1 }),
+		UIImageComponent("BTN_REBERSE", baseDepth + 6.0f), // 2.0f -> ...
+		UIButtonComponent(
+			ButtonState::Normal,
+			true,
+			[this]() {
+				if (m_inputLocked) return;
+				PlayUISelectEffect(m_finishBtnEntity, "EFK_SELECTBACK", 35.0f);
+				m_inputLocked = true;
+				ScreenTransition::RequestFadeOutEx(
+					m_coordinator.get(), m_blackTransitionEntity, 0.15f, 0.35f, 0.45f,
+					[this]() { SwitchState(false); },
+					true, [this]() { m_inputLocked = false; }, 0.0f, 0.35f, false, false
+				);
+			}
+		)
+	);
+	m_finishBtnEntity = backBtn;
+	m_detailUIEntities.push_back(backBtn);
+
+
+
+	// 詳細UIの基準Transformをキャッシュ（ふわっと出す用）
+	for (auto id : m_detailUIEntities) { CacheDetailBaseTransform(id); }
+
+	// カーソル
+	m_cursorEntity = m_coordinator->CreateEntity(
+		TransformComponent({ 0.0f, 0.0f, 0.0f }, { 0,0,0 }, { 64.0f, 64.0f, 1.0f }),
+		UIImageComponent("ICO_CURSOR", 200000.0f),
+		UICursorComponent()
+	);
+
+	// 初期：一覧
+	SwitchState(false);
+
+	// フェードオーバーレイ
+	const float fadeX = SCREEN_WIDTH * 0.5f;
+	const float fadeY = SCREEN_HEIGHT * 0.5f;
+
+	// 1. 黒背景層（m_transitionEntity）
+	const float fadeBgW = SCREEN_WIDTH * 2.0f;
+	const float fadeBgH = SCREEN_HEIGHT * 2.0f;
+
+	m_transitionEntity = ScreenTransition::CreateOverlay(
+		m_coordinator.get(), "BG_STAGE_SELECT", fadeX, fadeY, fadeBgW, fadeBgH
+	);
+
+	if (m_coordinator->HasComponent<UIImageComponent>(m_transitionEntity))
+	{
+		auto& ui = m_coordinator->GetComponent<UIImageComponent>(m_transitionEntity);
+		ui.color = { 1.0f, 1.0f, 1.0f, 1.0f }; // 茶色ボード（元テクスチャ色）をそのまま使う
+		ui.depth = 200000.0f;
+	}
+
+
+
+	// 2. ゲーム遷移専用：全面黒フェード（m_blackTransitionEntity）
+	// ※既存の茶色ボードフェード（m_transitionEntity）はそのまま維持し、
+	//   「決定 → GameScene」だけこちらを使う
+	m_blackTransitionEntity = ScreenTransition::CreateOverlay(
+		m_coordinator.get(), "BG_STAGE_SELECT", fadeX, fadeY, fadeBgW, fadeBgH
+	);
+
+	if (m_coordinator->HasComponent<UIImageComponent>(m_blackTransitionEntity))
+	{
+		auto& ui = m_coordinator->GetComponent<UIImageComponent>(m_blackTransitionEntity);
+		ui.color = { 0.0f, 0.0f, 0.0f, 0.0f }; // 初期は透明（遷移時にαを上げる）
+		ui.depth = 200001.0f;                 // 茶色ボードより手前
+	}
+	// 起動時フェードイン
+	m_inputLocked = true;
+	ScreenTransition::RequestFadeInEx(
+		m_coordinator.get(), m_transitionEntity, 1.45f,
+		[this]() { m_inputLocked = false; }, 0.0f, false
+	);
 }
+
 
 // --------------------------------------------------------------
 // 一覧↔詳細の切替や、詳細へ入り直すタイミングで
@@ -627,6 +700,11 @@ void StageSelectScene::ResetSelectToDetailAnimState(bool unlockInput, bool keepF
 	m_transitionWaitTimer = 0.0f;
 	m_transitionDelayTime = 1.0f;
 	m_pendingStageID.clear();
+	// ★スター点灯の遅延予約もリセット（前回の持ち越し防止）
+	m_starRevealPending = false;
+	m_starRevealStageId.clear();
+
+
 
 	// カード集中演出の完全停止
 	m_cardFocus.active = false;
@@ -710,6 +788,7 @@ void StageSelectScene::Update(float deltaTime)
 
 	UpdateShootingStar(dtSec);
 	UpdateActiveShootingStars(dtSec);
+	UpdateEyeLight(dtSec);
 	UpdateUISelectFx(dtSec);
 	UpdateDetailAppear(dtSec);
 	UpdateButtonHoverScale(dtSec);
@@ -769,7 +848,8 @@ void StageSelectScene::Update(float deltaTime)
 	{
 		m_gameStartTimer += dtSec;
 
-		// 指定時間（GAME_START_DELAY）経過したらフェードアウト開始
+		// 指定時間（
+		// _DELAY）経過したらフェードアウト開始
 		if (m_gameStartTimer >= 1.0f)
 		{
 			m_isWaitingForGameStart = false; // 多重発火防止
@@ -790,149 +870,332 @@ void StageSelectScene::Update(float deltaTime)
 
 void StageSelectScene::Draw()
 {
-	auto ui = ECSInitializer::GetSystem<UIRenderSystem>();
-	auto rs = ECSInitializer::GetSystem<RenderSystem>();
-	auto fx = ECSInitializer::GetSystem<EffectSystem>();
+	//auto ui = ECSInitializer::GetSystem<UIRenderSystem>();
+	//auto rs = ECSInitializer::GetSystem<RenderSystem>();
+	//auto fx = ECSInitializer::GetSystem<EffectSystem>();
 
-	// UIレンダラが無い場合は従来通り
-	if (!ui)
+	//// UIレンダラが無い場合は従来通り
+	//if (!ui)
+	//{
+	//	if (rs) { rs->DrawSetup(); rs->DrawEntities(); }
+	//	if (fx) fx->Render();
+	//	return;
+	//}
+
+	//// -----------------------------------------
+	//// 目的：
+	//// - 「カードアニメーション（3D）」をUIより前に出す
+	//// - ただし画面遷移フェード（黒塗りオーバーレイ）は最前面に残す
+	//// 実装：
+	////   1) UI背景(depth<=0)
+	////   2) 通常UI(0<depth<=kOverlayDepthStart)  ※この上に3Dを描く
+	////   3) 3D
+	////   4) オーバーレイUI(depth>kOverlayDepthStart) ※フェードなど
+	//// -----------------------------------------
+	//const float kOverlayDepthStart = 100000.0f; // フェード(=200000)は確実にここより上
+
+	//struct VisState { ECS::EntityID id; bool uiVis; bool btnVis; };
+	//std::vector<VisState> savedStates;
+
+	//std::vector<ECS::EntityID> allTargets = m_listUIEntities;
+	//allTargets.insert(allTargets.end(), m_detailUIEntities.begin(), m_detailUIEntities.end());
+	//if (m_cursorEntity != (ECS::EntityID)-1) allTargets.push_back(m_cursorEntity);
+
+	//// 背景
+	//if (m_listBgEntity != (ECS::EntityID)-1) allTargets.push_back(m_listBgEntity);
+
+	//// フェード（オーバーレイ）も対象に入れてパス制御する
+	//if (m_transitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_transitionEntity);
+	//if (m_blackTransitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_blackTransitionEntity);
+
+	//for (auto id : allTargets)
+	//{
+	//	if (id == (ECS::EntityID)-1) continue;
+
+	//	VisState s{ id,false,false };
+	//	if (m_coordinator->HasComponent<UIImageComponent>(id))
+	//		s.uiVis = m_coordinator->GetComponent<UIImageComponent>(id).isVisible;
+	//	if (m_coordinator->HasComponent<UIButtonComponent>(id))
+	//		s.btnVis = m_coordinator->GetComponent<UIButtonComponent>(id).isVisible;
+
+	//	savedStates.push_back(s);
+	//}
+
+	//auto SetVisible = [&](ECS::EntityID id, bool v)
+	//	{
+	//		if (id == (ECS::EntityID)-1) return;
+	//		if (m_coordinator->HasComponent<UIImageComponent>(id))
+	//			m_coordinator->GetComponent<UIImageComponent>(id).isVisible = v;
+	//		if (m_coordinator->HasComponent<UIButtonComponent>(id))
+	//			m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = v;
+	//	};
+
+	//auto GetDepth = [&](ECS::EntityID id) -> float
+	//	{
+	//		if (!m_coordinator->HasComponent<UIImageComponent>(id)) return 0.0f;
+	//		return m_coordinator->GetComponent<UIImageComponent>(id).depth;
+	//	};
+
+	//auto DrawUIOnce = [&]()
+	//	{
+	//		ui->Render(true);
+	//		ui->Render(false);
+	//	};
+
+	//// 1) UI背景パス（depth <= 0）
+	//for (const auto& s : savedStates)
+	//{
+	//	if (s.id == (ECS::EntityID)-1) continue;
+
+	//	bool draw = false;
+	//	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+	//	{
+	//		const float d = GetDepth(s.id);
+	//		draw = (d <= 0.0f) && s.uiVis;
+	//	}
+	//	SetVisible(s.id, draw);
+	//}
+	//DrawUIOnce();
+
+	//// 2) 通常UI（0 < depth <= kOverlayDepthStart）
+	//for (const auto& s : savedStates)
+	//{
+	//	if (s.id == (ECS::EntityID)-1) continue;
+
+	//	bool draw = false;
+	//	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+	//	{
+	//		const float d = GetDepth(s.id);
+	//		draw = (d > 0.0f && d <= kOverlayDepthStart) && s.uiVis;
+	//	}
+	//	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+	//	{
+	//		const float d = GetDepth(s.id);
+	//		draw = draw || (s.btnVis && (d > 0.0f && d <= kOverlayDepthStart));
+	//	}
+	//	SetVisible(s.id, draw);
+	//}
+	//DrawUIOnce();
+
+	//// 3) 3D（カードアニメーションをUIの上に）
+	//if (rs)
+	//{
+	//	rs->DrawSetup();
+	//	rs->DrawEntities();
+	//}
+
+	//if (fx)
+	//{
+	//	fx->Render();
+	//}
+
+	//// 4) オーバーレイUI（depth > kOverlayDepthStart）※フェードなど
+	//for (const auto& s : savedStates)
+	//{
+	//	if (s.id == (ECS::EntityID)-1) continue;
+
+	//	bool draw = false;
+	//	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+	//	{
+	//		const float d = GetDepth(s.id);
+	//		draw = (d > kOverlayDepthStart) && s.uiVis;
+	//	}
+	//	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+	//	{
+	//		const float d = GetDepth(s.id);
+	//		draw = draw || (s.btnVis && (d > kOverlayDepthStart));
+	//	}
+	//	SetVisible(s.id, draw);
+	//}
+	//DrawUIOnce();
+
+	//// 5) 復元
+	//for (const auto& s : savedStates)
+	//{
+	//	if (s.id == (ECS::EntityID)-1) continue;
+	//	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+	//		m_coordinator->GetComponent<UIImageComponent>(s.id).isVisible = s.uiVis;
+	//	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+	//		m_coordinator->GetComponent<UIButtonComponent>(s.id).isVisible = s.btnVis;
+	//}
+
+auto ui = ECSInitializer::GetSystem<UIRenderSystem>();
+auto rs = ECSInitializer::GetSystem<RenderSystem>();
+auto fx = ECSInitializer::GetSystem<EffectSystem>();
+
+// UIレンダラが無い場合は従来通り
+if (!ui)
+{
+	if (rs) { rs->DrawSetup(); rs->DrawEntities(); }
+	if (fx) fx->Render();
+	return;
+}
+
+// -----------------------------------------
+// 描画順序の制御 (レイヤー分け)
+// Layer 1: 背景UI (depth <= 0)
+// Layer 2: 通常UI (0 < depth <= 100,000)
+// Layer 3: 3Dモデル (カードなど)
+// Layer 4: 詳細UI (100,000 < depth < 200,000) ★ここを作る
+// Layer 5: エフェクト (詳細UIの上、フェードの下) ★ここで描画
+// Layer 6: フェード (depth >= 200,000)
+// -----------------------------------------
+
+const float kNormalUIEnd = 100000.0f;
+const float kFadeStart = 200000.0f; // フェード開始ライン
+
+struct VisState { ECS::EntityID id; bool uiVis; bool btnVis; };
+std::vector<VisState> savedStates;
+
+std::vector<ECS::EntityID> allTargets = m_listUIEntities;
+allTargets.insert(allTargets.end(), m_detailUIEntities.begin(), m_detailUIEntities.end());
+if (m_cursorEntity != (ECS::EntityID)-1) allTargets.push_back(m_cursorEntity);
+if (m_listBgEntity != (ECS::EntityID)-1) allTargets.push_back(m_listBgEntity);
+if (m_transitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_transitionEntity);
+if (m_blackTransitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_blackTransitionEntity);
+
+// 現在の表示状態を保存
+for (auto id : allTargets)
+{
+	if (id == (ECS::EntityID)-1) continue;
+	VisState s{ id,false,false };
+	if (m_coordinator->HasComponent<UIImageComponent>(id))
+		s.uiVis = m_coordinator->GetComponent<UIImageComponent>(id).isVisible;
+	if (m_coordinator->HasComponent<UIButtonComponent>(id))
+		s.btnVis = m_coordinator->GetComponent<UIButtonComponent>(id).isVisible;
+	savedStates.push_back(s);
+}
+
+auto SetVisible = [&](ECS::EntityID id, bool v)
 	{
-		if (rs) { rs->DrawSetup(); rs->DrawEntities(); }
-		if (fx) fx->Render();
-		return;
-	}
-
-	// -----------------------------------------
-	// 目的：
-	// - 「カードアニメーション（3D）」をUIより前に出す
-	// - ただし画面遷移フェード（黒塗りオーバーレイ）は最前面に残す
-	// 実装：
-	//   1) UI背景(depth<=0)
-	//   2) 通常UI(0<depth<=kOverlayDepthStart)  ※この上に3Dを描く
-	//   3) 3D
-	//   4) オーバーレイUI(depth>kOverlayDepthStart) ※フェードなど
-	// -----------------------------------------
-	const float kOverlayDepthStart = 100000.0f; // フェード(=200000)は確実にここより上
-
-	struct VisState { ECS::EntityID id; bool uiVis; bool btnVis; };
-	std::vector<VisState> savedStates;
-
-	std::vector<ECS::EntityID> allTargets = m_listUIEntities;
-	allTargets.insert(allTargets.end(), m_detailUIEntities.begin(), m_detailUIEntities.end());
-	if (m_cursorEntity != (ECS::EntityID)-1) allTargets.push_back(m_cursorEntity);
-
-	// 背景
-	if (m_listBgEntity != (ECS::EntityID)-1) allTargets.push_back(m_listBgEntity);
-
-	// フェード（オーバーレイ）も対象に入れてパス制御する
-	if (m_transitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_transitionEntity);
-	if (m_blackTransitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_blackTransitionEntity);
-
-	for (auto id : allTargets)
-	{
-		if (id == (ECS::EntityID)-1) continue;
-
-		VisState s{ id,false,false };
+		if (id == (ECS::EntityID)-1) return;
 		if (m_coordinator->HasComponent<UIImageComponent>(id))
-			s.uiVis = m_coordinator->GetComponent<UIImageComponent>(id).isVisible;
+			m_coordinator->GetComponent<UIImageComponent>(id).isVisible = v;
 		if (m_coordinator->HasComponent<UIButtonComponent>(id))
-			s.btnVis = m_coordinator->GetComponent<UIButtonComponent>(id).isVisible;
+			m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = v;
+	};
 
-		savedStates.push_back(s);
-	}
-
-	auto SetVisible = [&](ECS::EntityID id, bool v)
-		{
-			if (id == (ECS::EntityID)-1) return;
-			if (m_coordinator->HasComponent<UIImageComponent>(id))
-				m_coordinator->GetComponent<UIImageComponent>(id).isVisible = v;
-			if (m_coordinator->HasComponent<UIButtonComponent>(id))
-				m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = v;
-		};
-
-	auto GetDepth = [&](ECS::EntityID id) -> float
-		{
-			if (!m_coordinator->HasComponent<UIImageComponent>(id)) return 0.0f;
-			return m_coordinator->GetComponent<UIImageComponent>(id).depth;
-		};
-
-	auto DrawUIOnce = [&]()
-		{
-			ui->Render(true);
-			ui->Render(false);
-		};
-
-	// 1) UI背景パス（depth <= 0）
-	for (const auto& s : savedStates)
+auto GetDepth = [&](ECS::EntityID id) -> float
 	{
-		if (s.id == (ECS::EntityID)-1) continue;
+		if (!m_coordinator->HasComponent<UIImageComponent>(id)) return 0.0f;
+		return m_coordinator->GetComponent<UIImageComponent>(id).depth;
+	};
 
-		bool draw = false;
-		if (m_coordinator->HasComponent<UIImageComponent>(s.id))
-		{
-			const float d = GetDepth(s.id);
-			draw = (d <= 0.0f) && s.uiVis;
-		}
-		SetVisible(s.id, draw);
-	}
-	DrawUIOnce();
-
-	// 2) 通常UI（0 < depth <= kOverlayDepthStart）
-	for (const auto& s : savedStates)
+auto DrawUIOnce = [&]()
 	{
-		if (s.id == (ECS::EntityID)-1) continue;
+		ui->Render(true);
+		ui->Render(false);
+	};
 
-		bool draw = false;
-		if (m_coordinator->HasComponent<UIImageComponent>(s.id))
-		{
-			const float d = GetDepth(s.id);
-			draw = (d > 0.0f && d <= kOverlayDepthStart) && s.uiVis;
-		}
-		if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
-		{
-			const float d = GetDepth(s.id);
-			draw = draw || (s.btnVis && (d > 0.0f && d <= kOverlayDepthStart));
-		}
-		SetVisible(s.id, draw);
-	}
-	DrawUIOnce();
-
-	// 3) 3D（カードアニメーションをUIの上に）
-	if (rs)
+// ------------------------------------------------------
+// 1) 背景UI (depth <= 0)
+// ------------------------------------------------------
+for (const auto& s : savedStates)
+{
+	if (s.id == (ECS::EntityID)-1) continue;
+	bool draw = false;
+	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
 	{
-		rs->DrawSetup();
-		rs->DrawEntities();
+		const float d = GetDepth(s.id);
+		draw = (d <= 0.0f) && s.uiVis;
 	}
+	SetVisible(s.id, draw);
+}
+DrawUIOnce();
 
-	// 4) オーバーレイUI（depth > kOverlayDepthStart）※フェードなど
-	for (const auto& s : savedStates)
+// ------------------------------------------------------
+// 2) 通常UI (0 < depth <= 100,000)
+// ------------------------------------------------------
+for (const auto& s : savedStates)
+{
+	if (s.id == (ECS::EntityID)-1) continue;
+	bool draw = false;
+	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
 	{
-		if (s.id == (ECS::EntityID)-1) continue;
-
-		bool draw = false;
-		if (m_coordinator->HasComponent<UIImageComponent>(s.id))
-		{
-			const float d = GetDepth(s.id);
-			draw = (d > kOverlayDepthStart) && s.uiVis;
-		}
-		if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
-		{
-			const float d = GetDepth(s.id);
-			draw = draw || (s.btnVis && (d > kOverlayDepthStart));
-		}
-		SetVisible(s.id, draw);
+		const float d = GetDepth(s.id);
+		draw = (d > 0.0f && d <= kNormalUIEnd) && s.uiVis;
 	}
-	DrawUIOnce();
-
-	// 5) 復元
-	for (const auto& s : savedStates)
+	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
 	{
-		if (s.id == (ECS::EntityID)-1) continue;
-		if (m_coordinator->HasComponent<UIImageComponent>(s.id))
-			m_coordinator->GetComponent<UIImageComponent>(s.id).isVisible = s.uiVis;
-		if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
-			m_coordinator->GetComponent<UIButtonComponent>(s.id).isVisible = s.btnVis;
+		const float d = GetDepth(s.id);
+		draw = draw || (s.btnVis && (d > 0.0f && d <= kNormalUIEnd));
 	}
+	SetVisible(s.id, draw);
+}
+DrawUIOnce();
+
+// ------------------------------------------------------
+// 3) 3Dモデル (カードアニメーションなど)
+// ------------------------------------------------------
+if (rs)
+{
+	rs->DrawSetup();
+	rs->DrawEntities();
+}
+
+// ------------------------------------------------------
+// 4) 詳細UIなど (100,000 < depth < 200,000)
+// ★ここが重要：エフェクトより先に描画して「下敷き」にする
+// ------------------------------------------------------
+for (const auto& s : savedStates)
+{
+	if (s.id == (ECS::EntityID)-1) continue;
+	bool draw = false;
+	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+	{
+		const float d = GetDepth(s.id);
+		draw = (d > kNormalUIEnd && d < kFadeStart) && s.uiVis;
+	}
+	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+	{
+		const float d = GetDepth(s.id);
+		draw = draw || (s.btnVis && (d > kNormalUIEnd && d < kFadeStart));
+	}
+	SetVisible(s.id, draw);
+}
+DrawUIOnce();
+
+// ------------------------------------------------------
+// 5) エフェクト描画
+// ★詳細UIの上、かつフェード(200,000)の下に描画される
+// ------------------------------------------------------
+if (fx)
+{
+	fx->Render();
+}
+
+// ------------------------------------------------------
+// 6) フェードなど (depth >= 200,000)
+// ------------------------------------------------------
+for (const auto& s : savedStates)
+{
+	if (s.id == (ECS::EntityID)-1) continue;
+	bool draw = false;
+	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+	{
+		const float d = GetDepth(s.id);
+		draw = (d >= kFadeStart) && s.uiVis;
+	}
+	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+	{
+		const float d = GetDepth(s.id);
+		draw = draw || (s.btnVis && (d >= kFadeStart));
+	}
+	SetVisible(s.id, draw);
+}
+DrawUIOnce();
+
+// ------------------------------------------------------
+// 復元
+// ------------------------------------------------------
+for (const auto& s : savedStates)
+{
+	if (s.id == (ECS::EntityID)-1) continue;
+	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+		m_coordinator->GetComponent<UIImageComponent>(s.id).isVisible = s.uiVis;
+	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+		m_coordinator->GetComponent<UIButtonComponent>(s.id).isVisible = s.btnVis;
+}
 }
 
 void StageSelectScene::UpdateShootingStar(float dt)
@@ -1199,6 +1462,33 @@ void StageSelectScene::SwitchState(bool toDetail)
 		SetUIVisible(id, toDetail);
 	}
 
+	// ★注意: 上の一括表示でスターONも一瞬 visible=true になる。
+// ★要求: 「カードを押した瞬間」に星が出ないよう、詳細UIの出現アニメが終わったタイミングで点灯させる。
+	if (toDetail)
+	{
+		// まずは全部OFF（SwitchStateの一括表示でtrueにされても、ここで必ず上書き）
+		UpdateStarIconsByStageId(std::string());
+
+		// 反映予約（UpdateDetailAppearの完了時に点灯）
+		if (!m_selectedStageID.empty())
+		{
+			m_starRevealPending = true;
+			m_starRevealStageId = m_selectedStageID;
+		}
+		else
+		{
+			m_starRevealPending = false;
+			m_starRevealStageId.clear();
+		}
+	}
+	else
+	{
+		UpdateStarIconsByStageId(std::string());
+		m_starRevealPending = false;
+		m_starRevealStageId.clear();
+	}
+
+
 	// カーソル
 	if (m_cursorEntity != (ECS::EntityID)-1)
 	{
@@ -1210,17 +1500,41 @@ void StageSelectScene::SwitchState(bool toDetail)
 
 	// 演出関連
 	if (toDetail)
-	{
+	{// ============================================================
+        // ★修正: エフェクトシステム経由で「即時停止」してから削除
+        // ============================================================
+		auto effectSystem = ECSInitializer::GetSystem<EffectSystem>();
+
+		for (auto& pair : m_activeEyeLights)
+		{
+			if (pair.first != (ECS::EntityID)-1)
+			{
+				// 1. まずエフェクトを止める (これで画面から消えます)
+				if (effectSystem)
+				{
+					effectSystem->StopEffectImmediate(pair.first);
+				}
+
+				// 2. その後、Entityを削除
+				m_coordinator->DestroyEntity(pair.first);
+			}
+		}
+		m_activeEyeLights.clear();
+		// ============================================================
+
 		if (!wasDetail)
 		{
 			// 選択ステージに応じて「城(手前)」のテクスチャを差し替える
 			ApplyStageMapTextureByStageId(m_selectedStageID);
-
+			CreateStageInfoUI(m_selectedStageID);
 			BeginDetailAppear();
 			m_shootingStarTimer = 0.0f;
 			std::uniform_real_distribution<float> dist(m_shootingStarIntervalMin, m_shootingStarIntervalMax);
 			m_nextShootingStarWait = dist(m_rng);
 			m_spawnStarOnEnterDetail = true;
+
+			m_eyeLightTimer = 0.0f;
+			m_eyeLightNextInterval = 1.0f; // 最初は1秒後に光る
 		}
 	}
 	else
@@ -1229,11 +1543,17 @@ void StageSelectScene::SwitchState(bool toDetail)
 		{
 			m_spawnStarOnEnterDetail = false;
 			KillAllShootingStars();
+			ClearStageInfoUI();
 			if (m_debugStarEntity != (ECS::EntityID)-1)
 			{
 				m_coordinator->DestroyEntity(m_debugStarEntity);
 				m_debugStarEntity = (ECS::EntityID)-1;
 			}
+			// ★詳細ウインドウを閉じたら未選択に戻す（開始時と同じ "--:--"）
+			m_selectedStageID.clear();
+			UpdateBestTimeDigitsByStageId(std::string());
+			UpdateStarIconsByStageId(std::string());
+
 		}
 	}
 }
@@ -1270,6 +1590,82 @@ int StageSelectScene::StageIdToStageNo(const std::string& stageId) const
 
 	return -1;
 }
+
+void StageSelectScene::UpdateBestTimeDigitsByStageId(const std::string& stageId)
+{
+	if (!m_coordinator) return;
+	if (m_bestTimeDigitEntities.size() != 7) return;
+
+	const int stageNo = StageIdToStageNo(stageId);
+	const uint32_t bestMs = StageUnlockProgress::GetBestTimeMs(stageNo);
+
+	// 未選択/未記録は "--:--" を表示し、".d" は非表示にする
+	int digits[7] = { 10,10,11,10,10,12,10 }; // --:--.-
+	bool showDecimal = false;
+
+	if (bestMs != 0)
+	{
+		// ms -> 0.1秒単位に丸め（リザルトの表示と揃える）
+		const int t10 = static_cast<int>((bestMs + 50) / 100); // 0.1s
+		const int mm = (t10 / 600) % 100;
+		const int ss = (t10 / 10) % 60;
+		const int ds = (t10 % 10);
+
+		digits[0] = (mm / 10) % 10;
+		digits[1] = (mm % 10);
+		digits[2] = 11; // ':'
+		digits[3] = (ss / 10) % 10;
+		digits[4] = (ss % 10);
+		digits[5] = 12; // '.'
+		digits[6] = ds;
+		showDecimal = true;
+	}
+
+	for (int i = 0; i < 7; ++i)
+	{
+		EntityID e = m_bestTimeDigitEntities[i];
+		if (e == (ECS::EntityID)-1) continue;
+		if (!m_coordinator->HasComponent<UIImageComponent>(e)) continue;
+
+		auto& ui = m_coordinator->GetComponent<UIImageComponent>(e);
+		const int idx = digits[i];
+		const int r = (idx <= 9) ? (idx / 5) : 2;
+		const int c = (idx <= 9) ? (idx % 5) : (idx - 10);
+		ui.uvPos = { c * 0.2f,  r * 0.333f };
+		ui.uvScale = { 0.2f,     0.333f };
+
+		// 末尾の .d は、記録がある時だけ見せる
+		if (i >= 5) ui.isVisible = showDecimal;
+		else ui.isVisible = true;
+	}
+}
+
+
+void StageSelectScene::UpdateStarIconsByStageId(const std::string& stageId)
+{
+	if (!m_coordinator) return;
+
+	const int stageNo = StageIdToStageNo(stageId);
+	// 未選択/不正IDのときは全てOFF
+	const std::uint8_t mask =
+		(stageNo >= 1 && stageNo <= 6) ? StageUnlockProgress::GetStageStarMask(stageNo) : 0;
+
+	for (int i = 0; i < 3; ++i)
+	{
+		ECS::EntityID e = m_detailStarOnEntities[i];
+		if (e == (ECS::EntityID)-1) continue;
+		if (!m_coordinator->HasComponent<UIImageComponent>(e)) continue;
+
+		auto& ui = m_coordinator->GetComponent<UIImageComponent>(e);
+		const bool on = ((mask >> i) & 0x1) != 0;
+
+		// SwitchState() の一括表示で true にされるので、ここで最終状態を必ず上書き。
+		// さらに isVisible を見ない描画実装でも確実に消えるよう alpha も同期。
+		ui.isVisible = on;
+		ui.color.w = on ? 1.0f : 0.0f;
+	}
+}
+
 
 std::string StageSelectScene::GetStageMapTextureAssetId(int stageNo) const
 {
@@ -1349,6 +1745,10 @@ void StageSelectScene::BeginDetailAppear()
 	m_detailAppearActive = true;
 	m_detailAppearTimer = 0.0f;
 	m_inputLocked = true; // 演出中は操作不可
+	// ★詳細出現中は星を点灯させない（完了タイミングで反映）
+	UpdateStarIconsByStageId(std::string());
+
+
 
 	// 初期状態（少し小さく/少しだけ下から）
 	for (auto id : m_detailUIEntities)
@@ -1419,6 +1819,15 @@ void StageSelectScene::UpdateDetailAppear(float dt)
 			tr.scale = itS->second;
 			tr.position = itP->second;
 		}
+
+		// ★ここが「詳細UIの出現アニメ完了」
+// 予約していたスター点灯を、このタイミングで反映する
+		if (m_starRevealPending && m_isDetailMode && !m_starRevealStageId.empty())
+		{
+			UpdateStarIconsByStageId(m_starRevealStageId);
+			m_starRevealPending = false;
+		}
+
 
 		m_detailAppearActive = false;
 		m_detailAppearTimer = 0.0f;
@@ -1752,6 +2161,79 @@ bool StageSelectScene::GetUIRect(ECS::EntityID id, float& left, float& top, floa
 	return true;
 }
 
+void StageSelectScene::UpdateEyeLight(float dt)
+{
+	// --------------------------------------------------------
+	// 1. 既存のエフェクトの寿命管理（自動消滅）
+	// --------------------------------------------------------
+	for (int i = (int)m_activeEyeLights.size() - 1; i >= 0; --i)
+	{
+		auto& pair = m_activeEyeLights[i];
+		pair.second -= dt; // 寿命を減らす
+
+		// 寿命切れ、またはEntityが既に無効ならリストから削除
+		if (pair.second <= 0.0f || pair.first == (ECS::EntityID)-1)
+		{
+			if (pair.first != (ECS::EntityID)-1)
+			{
+				m_coordinator->DestroyEntity(pair.first);
+			}
+			m_activeEyeLights.erase(m_activeEyeLights.begin() + i);
+		}
+	}
+	// 詳細モード以外や、遷移中は再生しない
+	if (m_isDetailMode) return;
+	if (ScreenTransition::IsBusy(m_coordinator.get(), m_transitionEntity) ||
+		ScreenTransition::IsBusy(m_coordinator.get(), m_blackTransitionEntity)) return;
+
+	// タイマー更新
+	m_eyeLightTimer += dt;
+
+	// 待ち時間を経過したら生成
+	if (m_eyeLightTimer >= m_eyeLightNextInterval)
+	{
+		// 次回の設定（例: 2.0秒 〜 4.0秒 の間でランダム）
+		m_eyeLightTimer = 0.0f;
+		std::uniform_real_distribution<float> dist(0.5f, 1.5f);
+		m_eyeLightNextInterval = dist(m_rng);
+
+		// ============================================================
+		// ★追加: 光らせたい場所のリスト（6箇所）
+		// ============================================================
+		// ※画面上の好きな座標(ピクセル)に書き換えてください
+		// SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720 想定
+		std::vector<DirectX::XMFLOAT2> points = {
+			{ SCREEN_WIDTH * 0.21f, SCREEN_HEIGHT * 0.33f }, // 1. 元の場所
+			//{ SCREEN_WIDTH * 0.42f,   SCREEN_HEIGHT * 0.33f   }, // 2. 左上あたり
+			//{ SCREEN_WIDTH * 0.63f,   SCREEN_HEIGHT * 0.33f   }, // 3. 右上あたり
+			//{ SCREEN_WIDTH * 0.21f,   SCREEN_HEIGHT * 0.66f   }, // 4. 左下あたり
+			//{ SCREEN_WIDTH * 0.42f,   SCREEN_HEIGHT * 0.66f   }, // 5. 右下あたり
+			//{ SCREEN_WIDTH * 0.63f,   SCREEN_HEIGHT * 0.66f   }  // 6. 中央上（タイトル付近）
+		};
+
+		// リストの中からランダムに1つ選ぶ
+		std::uniform_int_distribution<int> idxDist(0, (int)points.size() - 1);
+		int idx = idxDist(m_rng);
+
+		float cx = points[idx].x;
+		float cy = points[idx].y;
+
+		// --- エフェクト生成 ---
+		ECS::EntityID fxEntity = m_coordinator->CreateEntity(
+			TagComponent("effect_eyeslight"),
+			TransformComponent({ cx, cy, 0.0f}, { 0,0,0 }, { 1,1,1 }),
+			EffectComponent(
+				"EFK_EYESLIGHT", // ★アセットID (要登録)
+				false,           // ループしない（1回再生）
+				true,            // 生成時に即再生
+				{ 0,0,0 },       // オフセット
+				5.0f            // ★スケール (大きすぎる場合は 1.0f 等に調整)
+			)
+		);
+		m_activeEyeLights.push_back({ fxEntity, 2.0f });
+	}
+}
+
 void StageSelectScene::EnsureDebugEffectOnMap()
 {
 	if (!m_debugShowGlowOnMap) return;
@@ -1997,7 +2479,7 @@ void StageSelectScene::SpawnShootingStar()
 	std::uniform_real_distribution<float> ydist(yMin, yMax);
 	const float x = START_X;
 	const float y = ydist(m_rng);
-	const float z = 9.5f; // MAPBACK(10.0) と MAPSIRO(9.0) の間
+	const float z = 0.0f; // MAPBACK(10.0) と MAPSIRO(9.0) の間
 
 	// ★サイズ（必要ならここで一括調整）
 	const float starScale = 5.0f;
@@ -2066,6 +2548,362 @@ void StageSelectScene::KillAllShootingStars()
 	}
 	m_activeShootingStars.clear();
 }
+
+// ステージ固有のUIを作成する関数
+void StageSelectScene::CreateStageInfoUI(const std::string& stageID)
+{
+	// 文字列ID("ST_001") を 整数(1) に変換
+	int stageNo = StageIdToStageNo(stageID);
+
+	// UIの深さ基準（詳細画面と同じ設定）
+	const float baseDepth = 110000.0f;
+
+	// switch文で分岐（整数ならOK！）
+	switch (stageNo)
+	{
+	case 1: // 1-1
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE3", baseDepth + 3.2f)
+		));
+		break;
+
+	}
+	case 2: // 1-2
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE3", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE1", baseDepth + 3.2f)
+		));
+		break;
+	}
+	case 3: // 1-3
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE3", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE1", baseDepth + 3.2f)
+		));
+		break;
+	}
+	case 4: // 2-1
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
+		));
+		break;
+	}
+	case 5: // 2-2
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
+		));
+		break;
+	}
+	case 6: // 2-3
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
+		));
+		break;
+	}
+	case 7: //4個出すとき用
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.58f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.88f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.58f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.88f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
+			UIImageComponent("ICO_TREASURE10", baseDepth + 3.2f)
+		));
+		break;
+	}
+	case 8: //5個出すとき用
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.560f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.645f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.730f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.815f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.900f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.560f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
+			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.645f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
+			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.730f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
+			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.815f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
+			UIImageComponent("ICO_TREASURE10", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.900f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
+			UIImageComponent("ICO_TREASURE11", baseDepth + 3.2f)
+		));
+		break;
+	}
+	case 9: // 6個出すとき用
+	{
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.555f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.625f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.695f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.765f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.835f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーケース
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.905f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.555f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
+			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.625f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
+			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.695f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
+			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.765f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
+			UIImageComponent("ICO_TREASURE10", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.835f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
+			UIImageComponent("ICO_TREASURE11", baseDepth + 3.2f)
+		));
+		// トレジャーアイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent({ SCREEN_WIDTH * 0.905f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
+			UIImageComponent("ICO_TREASURE12", baseDepth + 3.2f)
+		));
+		break;
+	}
+	}
+
+	// 作成した固有UIにも「詳細出現アニメーション（ふわっと出るやつ）」を適用するために登録
+	for (auto id : m_stageSpecificEntities) {
+		CacheDetailBaseTransform(id); // これを忘れるとアニメーションしません
+		m_detailUIEntities.push_back(id); // 共通管理リストにも入れておくと、一括操作に便利
+	}
+}
+
+// 固有UIを削除する関数
+void StageSelectScene::ClearStageInfoUI()
+{
+	// 作成したエンティティをECSから削除
+	for (auto id : m_stageSpecificEntities) {
+		if (id != (ECS::EntityID)-1) {
+			m_coordinator->DestroyEntity(id);
+		}
+	}
+	m_stageSpecificEntities.clear();
+
+	// m_detailUIEntities の中からも無効になったIDを消しておくと安全ですが、
+	// 現在の実装では SwitchState で再構築されるわけではないので、
+	// ここで明示的に remove するか、m_detailUIEntities の再構築ロジックを見直す必要があります。
+	// 今回は簡易的に「固有UIは毎回作り直す」方針をとります。
+}
+
 
 // StageSelectScene.cpp 例
 // StageSelectScene.cpp

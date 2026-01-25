@@ -40,6 +40,15 @@ using namespace DirectX;
  */
 void PlayerControlSystem::Update(float deltaTime)
 {
+	if (m_coordinator)
+	{
+		ECS::EntityID stateID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
+		if (stateID != ECS::INVALID_ENTITY_ID)
+		{
+			if (m_coordinator->GetComponent<GameStateComponent>(stateID).isPaused) return;
+		}
+	}
+
 	// CameraControlSystemはECSInitializerによって登録されている前提
 	auto cameraSystem = ECS::ECSInitializer::GetSystem<CameraControlSystem>();
 	if (!cameraSystem) return; // カメラシステムが存在しなければ処理を中断

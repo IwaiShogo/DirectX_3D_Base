@@ -1,6 +1,6 @@
 ﻿/*****************************************************************//**
  * @file	ECSInitializer.cpp
- * @brief	ECSVXeŜ̏W񂵁AV[Init()Ӗ𕪗邽߂̃wp[NX̎
+ * @brief	ECSシステムの初期化情報をまとめ、Init()の責務を分担するためのヘルパークラスの実装
  *
  * @details
  *
@@ -8,16 +8,16 @@
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  *
- * @date	2025/10/31	쐬
- * 			ƓeF	- ǉF
+ * @date	2025/10/31	作成
+ * 作業内容	- 新規追加
  *
- * @update	2025/11/08	ŏIXV
- * 			ƓeF	- ǉFxAI̒ǉ
+ * @update	2025/11/08	最終更新
+ * 作業内容	- 警備AIの追加
  *
- * @note	iȗj
+ * @note
  *********************************************************************/
 
- // ===== CN[h =====
+ // ===== インクルード =====
 #include "ECS/ECSInitializer.h"
 #include "ECS/AllComponents.h"
 #include "ECS/AllSystems.h"
@@ -35,18 +35,18 @@
 
 using namespace ECS;
 
-// ÓIo[ϐ s_systems ̎̂`Amۂ
+// 静的メンバ変数 s_systems の実体定義
 std::unordered_map<std::type_index, std::shared_ptr<ECS::System>> ECS::ECSInitializer::s_systems;
 
 /**
  * [void - RegisterComponents]
- * @brief	SẴR|[lgCoordinatorɓo^B
+ * @brief	全コンポーネントをCoordinatorに登録。
  *
  * @param	[in] coordinator
  */
 void ECSInitializer::RegisterComponents(Coordinator* coordinator)
 {
-    // R|[lg̓o^iœo^j
+    // コンポーネントの登録（一括登録）
     for (const auto& registerFn : GetComponentRegisterers())
     {
         registerFn(coordinator);
@@ -58,16 +58,16 @@ void ECSInitializer::RegisterComponents(Coordinator* coordinator)
 void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
 {
     // ============================================================
-    // VXe̓o^ƃVOl`̐ݒi牺ɒǉj
-    // o^ɃVXesB
+    // システムの登録とシグネチャの設定（ここに追加）
+    // 登録順にシステムが実行されます。
     // ============================================================
 
     // ------------------------------------------------------------
-    // 1. UpdateiXVj
+    // 1. Update（更新系）
     // ------------------------------------------------------------
 
     // @system  PlayerControlSystem
-    // @brief   L[́ARg[[
+    // @brief   プレイヤーのキー入力、コントローラー制御
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  PlayerControlSystem,
@@ -75,7 +75,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  PhysicsSystem
-    // @brief   vZiʒu̍XVj
+    // @brief   物理的な位置の更新
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  PhysicsSystem,
@@ -83,7 +83,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  CollectionSystem
-    // @brief   ACeWbN
+    // @brief   アイテム回収チェック
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  CollectionSystem,
@@ -91,7 +91,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  CollisionSystem
-    // @brief   ՓˌoƉiʒȕCj
+    // @brief   衝突判定と位置補正
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  CollisionSystem,
@@ -99,7 +99,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  GameControlSystem
-    // @brief   Q[Xe[g
+    // @brief   ゲームステート管理
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  GameControlSystem,
@@ -107,7 +107,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  CameraControlSystem
-    // @brief   Jir[EvWFNVs̍XVj
+    // @brief   カメラとオブジェクトの追従更新
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  CameraControlSystem,
@@ -115,7 +115,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  BasicCameraSystem
-    // @brief   ŒJ
+    // @brief   固定カメラ制御
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  BasicCameraSystem,
@@ -124,7 +124,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
 
 #ifdef _DEBUG
     // @system  DebugDrawSystem
-    // @brief   fobO`VXe
+    // @brief   デバッグ描画システム
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  DebugDrawSystem,
@@ -133,7 +133,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
 #endif
 
     // @system  GuardAISystem
-    // @brief   xAI
+    // @brief   警備AI制御
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  GuardAISystem,
@@ -147,9 +147,16 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         /* System       */  TeleportSystem,
         /* Components   */  TeleportComponent, TransformComponent
     );
+	// @system  StopTrapSystem
+	// @brief   停止トラップの当たり判定と効果発動
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        StopTrapSystem,
+        StopTrapComponent, TransformComponent, RenderComponent
+    );
 
-    // @system UIInoutSystem
-    // @brief  }EXJ[\̔
+    // @system UIInputSystem
+    // @brief   マウスカーソルの入力判定
     REGISTER_SYSTEM_AND_INIT(
         coordinator,
         UIInputSystem,
@@ -157,7 +164,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  CursorSystem
-    // @brief   J[\UI
+    // @brief   UI用カーソル表示
     REGISTER_SYSTEM_AND_INIT(
         coordinator,
         CursorSystem,
@@ -165,7 +172,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  AudioSystem
-    // @brief   Đ
+    // @brief   音声再生管理
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  AudioSystem,
@@ -173,7 +180,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  AnimationSystem
-    // @brief   Aj[VXV
+    // @brief   アニメーション更新
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  AnimationSystem,
@@ -181,7 +188,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  LifeTimeSystem
-    // @brief   
+    // @brief   生存時間管理
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  LifeTimeSystem,
@@ -199,10 +206,15 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
         coordinator,
         ResultControlSystem,
         TagComponent, UIButtonComponent
+    );
+    REGISTER_SYSTEM_AND_INIT(
+        coordinator,
+        OpeningControlSystem,
+        TagComponent, UIButtonComponent
 
     );
 
-    // 2. VXeo^ƃVOl`ݒ
+    // 浮遊システムの設定
     REGISTER_SYSTEM_AND_INIT(
         coordinator,
         FloatingSystem,
@@ -210,7 +222,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  EnemySpawnSystem
-    // @brief   x
+    // @brief   敵のスポーン管理
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  EnemySpawnSystem,
@@ -218,7 +230,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  EffectSystem
-    // @brief   GtFNg
+    // @brief   エフェクト（VFX）管理
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  EffectSystem,
@@ -235,11 +247,11 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
 
 
     // ------------------------------------------------------------
-    // 2. Drawi`揈j
+    // 2. Draw（描画系）
     // ------------------------------------------------------------
 
     // @system  FlickerSystem
-    // @brief   _
+    // @brief   点滅エフェクト
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  FlickerSystem,
@@ -247,7 +259,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  RenderSystem
-    // @brief   JݒAfobOObh`恕Entities̕`
+    // @brief   カメラ設定、デバッグ描画を含むエンティティの描画
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  RenderSystem,
@@ -255,7 +267,7 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // @system  UIRenderSystem
-    // @brief   UI̕`
+    // @brief   UI要素の描画
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  UIRenderSystem,
@@ -263,11 +275,11 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
     );
 
     // ------------------------------------------------------------
-    // 3. ̑UpdatesȂVXe
+    // 3. その他（毎フレーム更新しないシステムなど）
     // ------------------------------------------------------------
 
     // @system  MapGenerationSystem
-    // @brief   _}bv𐶐
+    // @brief   マップデータの生成
     REGISTER_SYSTEM_AND_INIT(
         /* Coordinator  */  coordinator,
         /* System       */  MapGenerationSystem,
@@ -279,29 +291,29 @@ void ECSInitializer::RegisterSystemsAndSetSignatures(Coordinator* coordinator)
 
 /**
  * [void - InitECS]
- * @brief	CoordinatorSystem֘AtGg|CgB
+ * @brief	CoordinatorとSystemの初期化エントリーポイント。
  *
  * @param	[in] coordinator
  */
 void ECSInitializer::InitECS(std::shared_ptr<Coordinator>& coordinator)
 {
-    // Coordinator̐|C^擾
+    // Coordinatorのポインタ取得
     Coordinator* rawCoordinator = coordinator.get();
 
-    // 1. Coordinator̂̏ (ECSRÃf[^\̏)
+    // 1. Coordinator自体の初期化 (ECSデータバッファの初期化)
     rawCoordinator->Init();
 
-    // 2. R|[lg̓o^
+    // 2. コンポーネントの登録
     RegisterComponents(rawCoordinator);
 
-    // 3. VXe̓o^ƃVOl`̐ݒ (ÓI}bvɊi[)
+    // 3. システムの登録とシグネチャの設定 (静的マップに格納)
     RegisterSystemsAndSetSignatures(rawCoordinator);
 }
 
 /**
- * @brief ECSɊ֘ASĂ̐ÓI\[XN[AbvB
+ * @brief ECSに関連するすべての静的リソースのクリーンアップ。
  */
 void ECSInitializer::UninitECS()
 {
-    s_systems.clear(); // SẴVXeSharedPtr
+    s_systems.clear(); // 全システムSharedPtrの解放
 }

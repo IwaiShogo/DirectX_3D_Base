@@ -5,12 +5,11 @@
 #include <DirectXMath.h>
 #include <vector>
 
-// タイトル画面の状態定義
 enum class TitleState
 {
-    WaitInput,      // 入力待ち
-    ZoomAnimation,  // ズーム演出中
-    ModeSelect      // モード選択中
+    WaitInput,
+    ZoomAnimation,
+    ModeSelect
 };
 
 struct TitleControllerComponent
@@ -19,39 +18,43 @@ struct TitleControllerComponent
     float animTimer;
     float animDuration;
 
-    //タイトルロゴ用
-    float TitlelogoFadeTimer;    // ロゴのフェード用タイマー
-    float TitlelogoFadeDuration; // ロゴのフェードにかける時間
-	
-    //カード
-    bool isCardEnabled; // trueでカード表示、falseで非表示
-    DirectX::XMFLOAT3 cardOriginalScale; //カード元のスケール保存
-    DirectX::XMFLOAT3 cardOriginalRotation; //カード元の回転保存
-    //UIアニメーション用
-    float uiAnimTimer;                //UIアニメーション経過時間
-    float uiAnimDuration;             //アニメーションにかかる時間
-    std::vector<float> menuTargetYs;  //各ボタン目的Y座標 
-    //UIエンティティ
-    std::vector<ECS::EntityID> buttonEffectEntities;
-	bool effectTriggered = false; //エフェクト発生フラグ
-    //回転角度0
-    float startRotY;
-    float endRotY;
+    float TitlelogoFadeTimer;
+    float TitlelogoFadeDuration;
 
-    // 制御対象のエンティティID
+    bool isCardEnabled;
+    DirectX::XMFLOAT3 cardOriginalScale;
+    DirectX::XMFLOAT3 cardOriginalRotation;
+
+    float uiAnimTimer;
+    float uiAnimDuration;
+    std::vector<float> menuTargetYs;
+
+    // --- 繧ｨ繝輔ぉ繧ｯ繝磯未騾｣ ---
+    std::vector<ECS::EntityID> buttonEffectEntities;
+    bool effectTriggered = false;
+
+    // --- 繧ｫ繝｡繝ｩ貍泌�ｺ逕ｨ ---
     ECS::EntityID cameraEntityID;
     ECS::EntityID logoEntityID;
     ECS::EntityID cardEntityID;
+    ECS::EntityID TitlekaigaEntityID;
     std::vector<ECS::EntityID> pressStartUIEntities;
     std::vector<ECS::EntityID> menuUIEntities;
 
-    // カメラ演出用データ
-    DirectX::XMFLOAT3 camStartPos;   //始点
-    DirectX::XMFLOAT3 camEndPos;     //終点
-    DirectX::XMFLOAT3 camControlPos; //基準点1
-    float startRotZ; // 角度
-    float endRotZ;   // 角度
+    DirectX::XMFLOAT3 camStartPos;
+    DirectX::XMFLOAT3 camEndPos;
+    DirectX::XMFLOAT3 camControlPos;
+    float startRotY;
+    float endRotY;
+    float startRotZ;
+    float endRotZ;
 
+    float lampSpawnTimer = 0.0f;
+    struct ActiveLamp {
+        ECS::EntityID id;
+        float lifeTimer;
+    };
+    std::vector<ActiveLamp> activeLamps; // 蟇ｿ蜻ｽ邂｡逅�逕ｨ
     TitleControllerComponent()
         : state(TitleState::WaitInput)
         , animTimer(0.0f)
@@ -78,7 +81,6 @@ struct TitleControllerComponent
 };
 
 #include "ECS/ComponentRegistry.h"
-//既存のマクロを使用
 REGISTER_COMPONENT_TYPE(TitleControllerComponent)
 
-#endif //!___TitleControllerComponent_H___
+#endif

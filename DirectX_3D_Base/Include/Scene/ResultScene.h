@@ -20,6 +20,8 @@ struct ResultData
     bool  collectedAllOrdered = false; // ʂRv[g
     std::string stageID = "";        // vCXe[WID (gCp)
 
+    float timeLimitStar; //目標タイム 
+
     //  łɃUgʂŎgĂuꂽ󂾂ṽXg
     std::vector<std::string> collectedItemIcons;
 
@@ -41,12 +43,14 @@ public:
 
     // {̒Ƀ^C\p̐XvCgׂ
     void CreateTimeDisplay(float time, DirectX::XMFLOAT2 pos);
+    void CreateNumberDisplay(int number, DirectX::XMFLOAT2 pos); // 整数をシンプルに表示する関数
+
 
     // ʉ̃{^(RETRY / SELECT / TITLE)
     void CreateButtons();
 
     // GameControlSystem  ResultData 󂯎邽߂̑
-    static void SetResultData(const ResultData& data) { s_resultData = data; }
+    static void SetResultData(const ResultData& data);
     // ǉFStageSelect ǂޗp
     static const ResultData& GetResultData() { return s_resultData; }
 
@@ -59,7 +63,7 @@ public:
 
 private:
     std::shared_ptr<ECS::Coordinator> m_coordinator;
-    static ResultData                 s_resultData;   
+    static ResultData                 s_resultData;
     bool m_isClear = false;
     ECS::EntityID m_gameoverBGM = ECS::INVALID_ENTITY_ID;
     // 直前のクリアで新規解放されたステージ番号（2..6）。演出はStageSelectへ戻るときだけ出す。

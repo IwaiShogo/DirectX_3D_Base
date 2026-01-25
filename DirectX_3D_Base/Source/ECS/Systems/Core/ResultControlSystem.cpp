@@ -101,19 +101,91 @@ void ResultControlSystem::Update(float deltaTime)
             {
                 scale = 5.0f - 4.0f * t; // 5 -> 1
                 alpha = t;               // 0 -> 1
-        
+
             }
             else
             {
                 scale = 1.0f;
                 alpha = 1.0f;
-				
+
             }
 
 
-            trans.scale = { 150.0f * scale, 150.0f * scale, 1.0f };
+            trans.scale = { 140.0f * scale, 140.0f * scale, 1.0f };
             trans.rotation.z = -30.0f * TO_RAD;
             ui.color.w = alpha;
+
+            float triggerTiming = 0.8f;
+
+            if (t >= triggerTiming && !m_playedStampEffect)
+            {
+                m_playedStampEffect = true;
+
+                std::cout << "Stamp Effect Played!" << std::endl;
+                float centerX = 1920.0f * 0.52f;
+                float centerY = 1080.0f * 0.18f;
+
+                // ★テスト用：スケールを「巨大」にする
+                // これで画面全体が光ったり何かが横切れば、エフェクトは再生できています
+                float Scale = 600.0f;
+
+                m_coordinator->CreateEntity(
+                    TransformComponent(
+                        { centerX, centerY, 0.0f }, // 画面ど真ん中、Z=0
+                        { 0.0f, 0.0f, 0.0f },
+                        { Scale, Scale, Scale }
+                    ),
+                    EffectComponent(
+                        "EFK_STAMP",
+                        false,
+                        true,
+                        { 0,0,0 },
+                        1.0f
+                    )
+                );
+            }
+        }
+    }
+
+    if (m_starEffectStep < 3)
+    {
+        m_starEffectTimer += deltaTime;
+
+        // ここでエフェクトの間隔を自由に調整できます 
+        // 星の画像に合わせるなら 0.5f ですが、
+        // 少し遅らせたいなら 0.6f、早めたいなら 0.4f などに変更してください。
+        const float EFFECT_INTERVAL = 5.0f;
+
+        if (m_starEffectTimer >= EFFECT_INTERVAL)
+        {
+            m_starEffectTimer = 0.0f; // タイマーリセット
+
+            // リザルトデータを取得
+            const auto& data = ResultScene::GetResultData();
+
+            int i = m_starEffectStep;
+            bool hasStar = false;
+
+            // 星判定
+            if (i == 0) hasStar = !data.wasSpotted;
+            else if (i == 1) hasStar = data.collectedAllOrdered;
+            else if (i == 2) hasStar = data.clearedInTime;
+
+            if (hasStar)
+            {
+                // 座標計算
+                float baseY = SCREEN_HEIGHT * 0.30f;
+                float gapY = 55.0f;
+                float starX = SCREEN_WIDTH * 0.535f;
+                float y = baseY + i * gapY;
+
+                // エフェクト生成
+                m_coordinator->CreateEntity(
+                    TransformComponent({ starX, y, -5.0f }, { 0,0,0 }, { 1.0f, 1.0f, 1.0f }),
+                    EffectComponent("EFK_TITLE_SHINE", false, true, { 0.0f, 0.0f, 0.0f }, 1.0f)
+                );
+            }
+            m_starEffectStep++;
         }
     }
 
@@ -147,10 +219,10 @@ void ResultControlSystem::Update(float deltaTime)
         }
     }
 
-// ---------------------------------------------------------
-// 4. ���ʉ��o�F�p���p������A�j���[�V����
-//    Tag: "ResultAnim"
-// ---------------------------------------------------------
+    // ---------------------------------------------------------
+    // 4. ���ʉ��o�F�p���p������A�j���[�V����
+    //    Tag: "ResultAnim"
+    // ---------------------------------------------------------
     {
         const float FRAME_TIME = 0.05f;
 
@@ -181,9 +253,9 @@ void ResultControlSystem::Update(float deltaTime)
         }
     }
 
-// ---------------------------------------------------------
-// Result �{�^���� Hover ���o
-// ---------------------------------------------------------
+    // ---------------------------------------------------------
+    // Result �{�^���� Hover ���o
+    // ---------------------------------------------------------
     for (auto entity : m_coordinator->GetActiveEntities())
     {
         if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
@@ -223,15 +295,54 @@ void ResultControlSystem::Update(float deltaTime)
         if (btn.prevState != ButtonState::Hover &&
             btn.state == ButtonState::Hover)
         {
-                // �{�^���ɃJ�[�\�������Ԃ������Ƃ�SE��炷
-                ECS::EntityFactory::CreateOneShotSoundEntity(
-                    m_coordinator,
-                    "SE_CLEAR",  // SE
-                    0.8f         // ����       
+            // �{�^���ɃJ�[�\�������Ԃ������Ƃ�SE��‚炷
+            ECS::EntityFactory::CreateOneShotSoundEntity(
+                m_coordinator,
+                "SE_CLEAR",  // SE
+                0.8f         // ����       
             );
         }
         btn.prevState = btn.state;
 
     }
 
+
+
+
+    {
+        // アニメーション設定
+        const float BASE_W = 40.0f; // 元の幅
+        const float BASE_H = 60.0f; // 元の高さ
+
+
+
+        const float START_TIME = 0.8f; // テキスト同じ「0.8秒後」に開始
+        const float SPEED = 6.0f; // テキストと同じ速さ
+        const float AMOUNT = 0.05f;
+
+        // 計算用の変数
+        float currentScale = 1.0f;
+
+        // 時間が 0.8秒 を過ぎていたら波打つ
+        if (m_timer >= START_TIME)
+        {
+            float t = m_timer - START_TIME;
+            // sin(時間 * 6.0) で波を作る
+            currentScale = 1.0f + AMOUNT * std::sin(t * SPEED);
+        }
+
+        // 全ての数字に適用
+        for (auto const& entity : m_coordinator->GetActiveEntities())
+        {
+            if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+
+            // "AnimNumber" というタグが付いているものを探して適用
+            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
+            if (tag == "AnimNumber")
+            {
+                auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+                trans.scale = { BASE_W * currentScale, BASE_H * currentScale, 1.0f };
+            }
+        }
+    }
 }

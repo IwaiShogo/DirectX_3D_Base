@@ -58,7 +58,8 @@ EntityID EntityFactory::CreatePlayer(Coordinator* coordinator, const XMFLOAT3& p
 		AnimationComponent(
 			{
 				"A_PLAYER_IDLE",
-				"A_PLAYER_RUN"
+				"A_PLAYER_RUN",
+				"A_PLAYER_CAUGHT"
 			}
 		),
 		RigidBodyComponent(
@@ -134,6 +135,12 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 	else if (itemID == "Takara_Kaiga1") { modelPath = "M_TREASURE4"; }
 	else if (itemID == "Takara_Kaiga2") { modelPath = "M_TREASURE5"; }
 	else if (itemID == "Takara_Kaiga3") { modelPath = "M_TREASURE6"; }
+	else if (itemID == "Takara_Doki") { modelPath = "M_TREASURE7"; }
+	else if (itemID == "Takara_Tubo_Blue") { modelPath = "M_TREASURE8"; }
+	else if (itemID == "Takara_Tubo_Gouyoku") { modelPath = "M_TREASURE9"; }
+	else if (itemID == "Takara_Dinosaur") { modelPath = "M_TREASURE10"; }
+	else if (itemID == "Takara_Ammonite") { modelPath = "M_TREASURE11"; }
+	else if (itemID == "Takara_Dinosaur_Foot") { modelPath = "M_TREASURE12"; }
 
 	ECS::EntityID entity = coordinator->CreateEntity(
 		TagComponent(
@@ -248,7 +255,8 @@ EntityID EntityFactory::CreateGuard(Coordinator* coordinator, const DirectX::XMF
 		AnimationComponent(
 			{
 				"A_GUARD_RUN",
-				"A_GUARD_WALK"
+				"A_GUARD_WALK",
+				"A_GUARD_ATTACK"
 			}
 		),
 		RigidBodyComponent(
@@ -550,7 +558,9 @@ EntityID ECS::EntityFactory::CreateEnemySpawner(Coordinator* coordinator, const 
 	return spawner;
 }
 
-ECS::EntityID EntityFactory::CreateTeleporter(ECS::Coordinator* coordinator, DirectX::XMFLOAT3 position) {
+
+ECS::EntityID EntityFactory::CreateTeleporter(ECS::Coordinator* coordinator, DirectX::XMFLOAT3 position)
+{
 	return coordinator->CreateEntity(
 		TransformComponent(position, { 0,0,0 }, { 2.5f, 0.1f, 2.5f }),
 		// 仕様：三人称モード（ACTION_MODE）では見えないため、MESH_NONEを指定
@@ -559,5 +569,33 @@ ECS::EntityID EntityFactory::CreateTeleporter(ECS::Coordinator* coordinator, Dir
 		CollisionComponent(DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f), { 0,0,0 }, COLLIDER_TRIGGER),
 		TagComponent("teleporter"),
 		TeleportComponent()
+	);
+}
+
+ECS::EntityID EntityFactory::CreateStopTrap(ECS::Coordinator* coordinator, const DirectX::XMFLOAT3& position, float duration)
+{
+	// 床に少しめり込まないように浮かせる
+	DirectX::XMFLOAT3 placePos = position;
+	placePos.y += 0.02f;
+
+	// Teleportと同じ「一括生成スタイル」に書き換え
+	return coordinator->CreateEntity(
+		// 1. Transform
+		TransformComponent(
+			placePos,
+			DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
+			DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f)
+		),
+		// 2. Render (初期は不可視)
+		RenderComponent(MESH_NONE, DirectX::XMFLOAT4(0, 1.0f, 1.0f, 1.0f)),
+
+		//ModelComponent("UI_ASHIATO_BLUE", 0.5f, Model::None),
+		// 3. Model (スカウトモード用アイコン
+
+		// 4. StopTrap (ギミック本体)
+		StopTrapComponent(duration),
+
+		// 5. Tag
+		TagComponent("stop_trap")
 	);
 }

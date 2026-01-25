@@ -34,9 +34,6 @@
     <ClCompile Include="Source\Systems\DirectX\Texture.cpp">
       <Filter>Source Files\Systems\DirectX</Filter>
     </ClCompile>
-    <ClCompile Include="Source\ECS\ECSInitializer.cpp">
-      <Filter>Source Files\ECS</Filter>
-    </ClCompile>
     <ClCompile Include="Source\ECS\EntityFactory.cpp">
       <Filter>Source Files\ECS</Filter>
     </ClCompile>
@@ -140,8 +137,19 @@
     <ClCompile Include="Source\Scene\StageUnlockProgress.cpp">
       <Filter>Source Files\Scene</Filter>
     </ClCompile>
-    <ClCompile Include="TeleportSystem.cpp">
+    <ClCompile Include="Source\ECS\Systems\Core\OpeningControlSystem.cpp">
+      <Filter>Source Files\ECS\Systems\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Gimmick\TeleportSystem.cpp" />
+    <ClCompile Include="Source\Scene\OpeningScene.cpp" />
+    <ClCompile Include="Source\Scene\LoadingScene.cpp">
+      <Filter>Source Files\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Include\ECS\Systems\Gimmick\StopTrapSystem.cpp">
       <Filter>Source Files\ECS\Systems\Gimmick</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ECS\ECSInitializer.cpp">
+      <Filter>Source Files\ECS\Systems\UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -414,11 +422,25 @@
     <ClInclude Include="Include\Scene\StageUnlockProgress.h">
       <Filter>Header Files\Scene</Filter>
     </ClInclude>
-    <ClInclude Include="TeleportComponent.h">
+    <ClInclude Include="Include\ECS\Systems\Core\OpeningControlSystem.h">
+      <Filter>Header Files\ECS\Systems\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Components\Gimmick\TeleportComponent.h">
       <Filter>Header Files\ECS\Components\Gimmick</Filter>
     </ClInclude>
-    <ClInclude Include="TeleportSystem.h">
+    <ClInclude Include="Include\Scene\OpeningScene.h" />
+    <ClInclude Include="Include\ECS\Components\Gimmick\StopTrapComponent.h">
+      <Filter>Header Files\ECS\Components\Gimmick</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Gimmick\TeleportSystem.h">
       <Filter>Header Files\ECS\Systems\Gimmick</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\ECS\Systems\Gimmick\StopTrapSystem.h">
+      <Filter>Header Files\ECS\Systems\Gimmick</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\OpeningScene.h" />
+    <ClInclude Include="Include\Scene\LoadingScene.h">
+      <Filter>Header Files\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

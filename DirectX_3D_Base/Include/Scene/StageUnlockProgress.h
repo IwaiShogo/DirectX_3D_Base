@@ -1,68 +1,108 @@
-#pragma once
+ï»¿#pragma once
 
 #include <string>
+#include <cstdint>
 
 /**
  * @file StageUnlockProgress.h
- * @brief ƒXƒe[ƒW‰ğ•úisiƒAƒ“ƒƒbƒNj‚ğŠÇ—‚·‚éƒ†[ƒeƒBƒŠƒeƒBB
- *
- * - ‰‰ñ‹N“®‚ÍƒXƒe[ƒW1‚Ì‚İ‰ğ•ú
- * - ƒXƒe[ƒWN‚ğƒNƒŠƒA‚µ‚½‚çAŸƒXƒe[ƒW(N+1)‚ğ‰ğ•úiÅ‘å6j
- * - ‰ğ•úó‘Ô‚Íƒtƒ@ƒCƒ‹‚É•Û‘¶
- * - u¡‰ñStageSelect•œ‹A‚Å•‚‚©‚Ñã‚ª‚ç‚¹‚éƒXƒe[ƒWv‚Íƒƒ‚ƒŠã‚Ì‚İ•Û
+ * @brief ã‚¹ãƒ†ãƒ¼ã‚¸è§£æ”¾/ãƒ™ã‚¹ãƒˆã‚¿ã‚¤ãƒ /ã‚¹ã‚¿ãƒ¼(æ˜Ÿ)ã®æ°¸ç¶šåŒ–ç®¡ç†
  */
-namespace StageUnlockProgress
+	namespace StageUnlockProgress
 {
 	/**
-	 * @brief isƒf[ƒ^‚ğ“Ç‚İ‚ŞB
-	 *
-	 * •Û‘¶ƒtƒ@ƒCƒ‹‚ª–³‚¢/‰ó‚ê‚Ä‚¢‚éê‡‚Íu‰‰ñˆµ‚¢v‚Æ‚µ‚Ä
-	 * Å‘å‰ğ•úƒXƒe[ƒW‚ğ 1 ‚ÉƒtƒH[ƒ‹ƒoƒbƒN‚·‚éB
-	 *
-	 * ‚³‚ç‚É Debug ƒrƒ‹ƒh‚Å‚ÍA–ˆ‰ñƒXƒe[ƒW1‚Ì‚İ‚É‚È‚é‚æ‚¤
-	 * “Ç‚İ‚İ‚ğ–³Œø‰»‚µA•Û‘¶ƒtƒ@ƒCƒ‹‚àíœ‚·‚éB
+	 * @brief ã‚»ãƒ¼ãƒ–ãƒ‡ãƒ¼ã‚¿èª­è¾¼
 	 */
 	void Load();
 
 	/**
-	 * @brief isƒf[ƒ^‚ğ•Û‘¶‚·‚éB
-	 *
-	 * Debug ƒrƒ‹ƒh‚Å‚Í•Û‘¶‚µ‚È‚¢i–ˆ‰ñƒXƒe[ƒW1‚É–ß‚·‚½‚ßjB
+	 * @brief å¼·åˆ¶çš„ã«ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰å†èª­ã¿è¾¼ã¿ã™ã‚‹ï¼ˆæ—¢ã« Load æ¸ˆã¿ã§ã‚‚èª­ã¿ç›´ã™ï¼‰
+	 */
+	void ForceReload();
+
+	/**
+	 * @brief ã‚»ãƒ¼ãƒ–ãƒ‡ãƒ¼ã‚¿ä¿å­˜
 	 */
 	void Save();
 
+
+	// ã€Œã¯ã˜ã‚ã‹ã‚‰ã€ç”¨ï¼šé€²æ—ã‚’å®Œå…¨åˆæœŸåŒ–ã—ã¦ä¿å­˜
+
+
 	/**
-	 * @brief Œ»İ‚ÌÅ‘å‰ğ•úƒXƒe[ƒW”Ô†‚ğæ“¾‚·‚éB
+	 * @brief ã‚»ãƒ¼ãƒ–ãƒ‡ãƒ¼ã‚¿ã‚’åˆæœŸåŒ–ã—ã¦ä¿å­˜ã™ã‚‹ï¼ˆåˆã‚ã‹ã‚‰ç”¨ï¼‰
+	 *
+	 * - è§£æ”¾ã‚¹ãƒ†ãƒ¼ã‚¸: 1
+	 * - ãƒ™ã‚¹ãƒˆã‚¿ã‚¤ãƒ : å…¨ã¦ 0
+	 * - ã‚¹ã‚¿ãƒ¼: å…¨ã¦ 0
+	 */
+	void ResetAllAndSave();
+
+	/**
+	 * @brief ã‚»ãƒ¼ãƒ–ãƒ•ã‚¡ã‚¤ãƒ«ãŒå­˜åœ¨ã™ã‚‹ã‹ï¼ˆContinue ãƒœã‚¿ãƒ³å¯å¦ãªã©ï¼‰
+	 */
+	bool HasSaveFile();
+
+	/**
+	 * @brief ç¾åœ¨è§£æ”¾ã•ã‚Œã¦ã„ã‚‹æœ€å¤§ã‚¹ãƒ†ãƒ¼ã‚¸ç•ªå·ã‚’å–å¾—
 	 * @return 1..6
 	 */
 	int GetMaxUnlockedStage();
 
 	/**
-	 * @brief ƒNƒŠƒA‚µ‚½ƒXƒe[ƒWID‚©‚çŸ‚ÌƒXƒe[ƒW‚ğ‰ğ•ú‚·‚éi•Û‘¶‚às‚¤jB
-	 *
-	 * —áF"ST_001" ‚â "Stage1" ‚È‚Ç‚©‚ç”š‚ğ’Šo‚µAN+1 ‚ğ‰ğ•ú‚·‚éB
-	 *
-	 * @param clearedStageID ƒNƒŠƒA‚µ‚½ƒXƒe[ƒWID
-	 * @return ¡‰ñuV‹K‚É‰ğ•ú‚³‚ê‚½vƒXƒe[ƒW”Ô†(2..6)BV‹K‰ğ•ú‚ª–³‚¯‚ê‚Î -1
+	 * @brief ã‚¯ãƒªã‚¢ã—ãŸã‚¹ãƒ†ãƒ¼ã‚¸IDã‹ã‚‰æ¬¡ã‚¹ãƒ†ãƒ¼ã‚¸ã‚’è§£æ”¾ã™ã‚‹
+	 * @param clearedStageID "ST_001" / "Stage1" ãªã©
+	 * @return æ–°ã—ãè§£æ”¾ã•ã‚ŒãŸã‚¹ãƒ†ãƒ¼ã‚¸ç•ªå·(2..6)ã€‚è§£æ”¾ãŒç„¡ã„å ´åˆ -1
 	 */
 	int UnlockNextStageFromClearedStageID(const std::string& clearedStageID);
 
 	/**
-	 * @brief StageSelect•œ‹A‚Ìu•‚‚©‚Ñã‚ª‚è‰‰ov‘ÎÛƒXƒe[ƒW‚ğİ’è‚·‚éB
+	 * @brief æŒ‡å®šã‚¹ãƒ†ãƒ¼ã‚¸ã®ãƒ™ã‚¹ãƒˆã‚¿ã‚¤ãƒ (ms)ã‚’å–å¾—ã™ã‚‹ï¼ˆæœªè¨˜éŒ²ã¯ 0ï¼‰
+	 * @param stageNo 1..6
+	 */
+	uint32_t GetBestTimeMs(int stageNo);
+
+	/**
+	 * @brief ã‚¯ãƒªã‚¢ã‚¿ã‚¤ãƒ (ç§’)ã§ãƒ™ã‚¹ãƒˆã‚¿ã‚¤ãƒ ã‚’æ›´æ–°ã™ã‚‹ï¼ˆé€Ÿã„æ™‚ã ã‘æ›´æ–°ï¼‰
+	 * @param stageNo 1..6
+	 * @param clearTimeSec ã‚¯ãƒªã‚¢ã‚¿ã‚¤ãƒ (ç§’)
+	 * @return true: æ›´æ–°ã•ã‚ŒãŸ / false: æ›´æ–°ãªã—ï¼ˆé…ã„ or ç„¡åŠ¹ï¼‰
+	 */
+	bool UpdateBestTimeIfFaster(int stageNo, float clearTimeSec);
+
+	/**
+	 * @brief ã‚¹ãƒ†ãƒ¼ã‚¸IDæ–‡å­—åˆ—ã‹ã‚‰ã‚¹ãƒ†ãƒ¼ã‚¸ç•ªå·ã‚’æŠ½å‡ºï¼ˆ1..6ï¼‰
+	 * @param stageID "ST_001" / "Stage1" ãªã©
+	 * @return 1..6ã€‚æŠ½å‡ºã§ããªã„å ´åˆã¯ -1
+	 */
+	int ExtractStageNo(const std::string& stageID);
+
+	/**
+	 * @brief æŒ‡å®šã‚¹ãƒ†ãƒ¼ã‚¸ã®ã‚¹ã‚¿ãƒ¼ç²å¾—ãƒã‚¹ã‚¯ã‚’å–å¾—ã™ã‚‹
 	 *
-	 * ¦•Û‘¶‚Í‚µ‚È‚¢i‰‰o—p‚Ìˆêî•ñj
+	 * bit0: æœªç™ºè¦‹ã‚¯ãƒªã‚¢
+	 * bit1: ãŠå®ã‚’é †ç•ªé€šã‚Šã«å…¨éƒ¨å›å
+	 * bit2: åˆ¶é™æ™‚é–“å†…ã«ã‚¯ãƒªã‚¢
 	 *
-	 * @param stageNo ‰‰o‚µ‚½‚¢ƒXƒe[ƒW”Ô†i2..6jB–³Œø’l‚È‚çƒNƒŠƒAB
+	 * @param stageNo 1..6
+	 * @return 0..7
+	 */
+	std::uint8_t GetStageStarMask(int stageNo);
+
+	/**
+	 * @brief ã‚¹ã‚¿ãƒ¼ç²å¾—ãƒã‚¹ã‚¯ã‚’ORã§æ›´æ–°ï¼ˆå¾Œã‹ã‚‰æ¡ä»¶é”æˆã§å¢—ãˆã‚‹ï¼‰ã—ä¿å­˜ã™ã‚‹
+	 * @param stageNo 1..6
+	 * @param addMask 0..7
+	 */
+	void UpdateStageStarMaskOr(int stageNo, std::uint8_t addMask);
+
+	/**
+	 * @brief StageSelectã®ã€Œä»Šå›ã ã‘è§£æ”¾æ¼”å‡ºã€ç”¨ï¼ˆä¿å­˜ã—ãªã„ï¼‰
 	 */
 	void SetPendingRevealStage(int stageNo);
 
 	/**
-	 * @brief ‰‰o‘ÎÛƒXƒe[ƒW”Ô†‚ğæ“¾‚µA“à•”ó‘Ô‚ğƒNƒŠƒA‚·‚éB
-	 * @return stageNoi2..6j or -1
+	 * @brief SetPendingRevealStage ã®å€¤ã‚’æ¶ˆè²»ã—ã¦å–å¾—
+	 * @return stageNo(2..6) or -1
 	 */
 	int ConsumePendingRevealStage();
-	/**
-	 * @brief isƒf[ƒ^‚ğƒŠƒZƒbƒg‚·‚é
-	 */
-	void ResetProgress();
 }
