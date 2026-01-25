@@ -5,7 +5,7 @@
 #include "Systems/Model.h"
 
 // 最大ライト数
-#define MAX_LIGHTS 8
+#define MAX_LIGHTS 64
 
 // 点光源のデータをまとめた構造体
 struct PointLightData

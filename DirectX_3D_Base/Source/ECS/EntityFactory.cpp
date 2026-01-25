@@ -599,3 +599,67 @@ ECS::EntityID EntityFactory::CreateStopTrap(ECS::Coordinator* coordinator, const
 		TagComponent("stop_trap")
 	);
 }
+
+/**
+ * @brief 天井ファン（プロペラ）を生成
+ */
+ECS::EntityID EntityFactory::CreateCeilingFan(ECS::Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+{
+	ECS::EntityID entity = coordinator->CreateEntity(
+		TagComponent("propeller"), // 回転制御用タグ
+		TransformComponent(
+			position,
+			DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
+			DirectX::XMFLOAT3(1.5f, 1.5f, 1.5f) // 少し大きめに
+		),
+		RenderComponent(MESH_NONE, DirectX::XMFLOAT4(1, 1, 1, 1)),
+		ModelComponent("M_PUROPERA", 0.1f, Model::None),
+
+		// 下向きのスポットライト (Intensity, Radius, Angle, Direction, Color)
+		// ※SpotLightComponentがない場合はPointLightComponentで代用してください
+		PointLightComponent(2.0f, 2.0f, 0.9f, 20.0f, { 0.0f, -2.0f, 0.0f })
+	);
+	return entity;
+}
+
+/**
+ * @brief 監視カメラを生成
+ */
+ECS::EntityID EntityFactory::CreateSecurityCamera(ECS::Coordinator* coordinator, const DirectX::XMFLOAT3& position, float rotationY)
+{
+	ECS::EntityID entity = coordinator->CreateEntity(
+		TagComponent("security_camera"), // 首振り制御用タグ
+		TransformComponent(
+			position,
+			DirectX::XMFLOAT3(0.0f, rotationY, 0.0f),
+			DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f)
+		),
+		RenderComponent(MESH_NONE, DirectX::XMFLOAT4(1, 1, 1, 1)),
+		ModelComponent("M_CAMERA", 0.25f, Model::None),
+
+		// 前方のライト (赤色で威圧感)
+		PointLightComponent(3.0f, 0.1f, 0.1f, 15.0f, { 0.0f, -0.5f, 1.0f })
+	);
+	return entity;
+}
+
+/**
+ * @brief 壁掛け絵画を生成
+ */
+ECS::EntityID EntityFactory::CreateWallPainting(ECS::Coordinator* coordinator, const DirectX::XMFLOAT3& position, float rotationY, const std::string& modelName)
+{
+	ECS::EntityID entity = coordinator->CreateEntity(
+		TagComponent("painting"),
+		TransformComponent(
+			position,
+			DirectX::XMFLOAT3(0.0f, rotationY, 0.0f),
+			DirectX::XMFLOAT3(1.5f, 1.5f, 1.5f) // 絵は見やすく大きく
+		),
+		RenderComponent(MESH_NONE, DirectX::XMFLOAT4(1, 1, 1, 1)),
+		ModelComponent(modelName, 0.15f, Model::None),
+
+		// 絵を照らすほのかなライト (暖色系)
+		PointLightComponent(1.5f, 1.3f, 1.0f, 14.0f, { 0.0f, 0.0f, 0.5f })
+	);
+	return entity;
+}
