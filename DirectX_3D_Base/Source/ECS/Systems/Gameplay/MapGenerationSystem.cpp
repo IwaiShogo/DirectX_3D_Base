@@ -1224,4 +1224,83 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
 
         printf("[Debug] Teleporter Linked: %d <-> %d\n", entA, entB);
     }
+
+    // --------------------------------------------------------------------
+    // 4. 賑やかしオブジェクトの配置 (プロペラ、カメラ、絵画)
+    // --------------------------------------------------------------------
+
+    // 絵画のバリエーション
+    std::vector<std::string> paintModels = {
+        "M_KAIGA_BIRD", "M_KAIGA_CAT", "M_KAIGA_PANCAKES",
+        "M_KAIGA_PENGUIN", "M_KAIGA_ROSE", "M_KAIGA_SKELETON", "M_KAIGA_MAGICALGIRL"
+    };
+
+    // A. 天井プロペラ (通路の天井に配置)
+    for (int y = 1; y < GRID_SIZE_Y - 1; ++y) {
+        for (int x = 1; x < GRID_SIZE_X - 1; ++x) {
+            CellType type = mapComp.grid[y][x].type;
+            // 通路または部屋の場合
+            if (type == CellType::Path || type == CellType::Room) {
+                // 5%の確率で配置
+                if (rand() % 100 < 5) {
+                    XMFLOAT3 pos = GetWorldPosition(x, y, config);
+                    pos.x += TILE_SIZE / 2.0f;
+                    pos.z += TILE_SIZE / 2.0f;
+                    pos.y = WALL_HEIGHT * 0.5f; // 天井より少し下
+                    EntityFactory::CreateCeilingFan(m_coordinator, pos);
+                }
+            }
+        }
+    }
+
+    // B. 壁掛けオブジェクト
+    int dx[] = { 0, 0, -1, 1 };
+    int dy[] = { -1, 1, 0, 0 };
+
+    // 北(180), 南(0), 西(270), 東(90)
+    float rots[] = { 180.0f, 0.0f, 270.0f, 90.0f };
+
+    for (int y = 1; y < GRID_SIZE_Y - 1; ++y) {
+        for (int x = 1; x < GRID_SIZE_X - 1; ++x) {
+            if (mapComp.grid[y][x].type == CellType::Wall) {
+
+                for (int i = 0; i < 4; ++i) {
+                    int nx = x + dx[i];
+                    int ny = y + dy[i];
+
+                    CellType nType = mapComp.grid[ny][nx].type;
+                    if (nType == CellType::Path || nType == CellType::Room || nType == CellType::Start) {
+
+                        if (rand() % 100 < 15) {
+                            XMFLOAT3 pos = GetWorldPosition(x, y, config);
+                            pos.x += TILE_SIZE / 2.0f;
+                            pos.z += TILE_SIZE / 2.0f;
+
+                            float offset = TILE_SIZE * 0.55f;
+                            pos.x += dx[i] * offset;
+                            pos.z += dy[i] * offset;
+
+                            if (rand() % 4 == 0) {
+                                // 監視カメラ
+                                pos.y = WALL_HEIGHT * 0.55f;
+
+                                // ★修正: カメラだけモデルの向きが逆なので +180度 して反転させる
+                                float rotY = DirectX::XMConvertToRadians(rots[i] + 180.0f);
+
+                                EntityFactory::CreateSecurityCamera(m_coordinator, pos, rotY);
+                            }
+                            else {
+                                // 絵画
+                                pos.y = WALL_HEIGHT * 0.25f;
+                                float rotY = DirectX::XMConvertToRadians(rots[i]);
+                                std::string model = paintModels[rand() % paintModels.size()];
+                                EntityFactory::CreateWallPainting(m_coordinator, pos, rotY, model);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

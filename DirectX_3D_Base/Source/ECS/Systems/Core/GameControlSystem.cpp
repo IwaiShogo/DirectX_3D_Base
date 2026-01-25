@@ -105,6 +105,8 @@ void GameControlSystem::Update(float deltaTime)
         UpdateSonarEffect(deltaTime, controllerID);
         UpdateGameUI(deltaTime, controllerID); // 演出付きUI更新
         CheckDoorUnlock(controllerID);
+        UpdateDecorations(deltaTime);
+        UpdateLights();
     }
 
     // 8. ゴール（脱出）判定
@@ -432,36 +434,36 @@ void GameControlSystem::UpdateVisualEffects(float deltaTime, ECS::EntityID contr
 
 
     // --- 2. タクティカル・クロスヘア (動的レティクル) ---
-    bool showCrosshair = isAction;
+    //bool showCrosshair = isAction;
 
-    auto SetVis = [&](ECS::EntityID id) {
-        if (id != INVALID_ENTITY_ID && m_coordinator->HasComponent<UIImageComponent>(id))
-            m_coordinator->GetComponent<UIImageComponent>(id).isVisible = showCrosshair;
-        };
-    SetVis(m_crosshair.top); SetVis(m_crosshair.bottom);
-    SetVis(m_crosshair.left); SetVis(m_crosshair.right);
+    //auto SetVis = [&](ECS::EntityID id) {
+    //    if (id != INVALID_ENTITY_ID && m_coordinator->HasComponent<UIImageComponent>(id))
+    //        m_coordinator->GetComponent<UIImageComponent>(id).isVisible = showCrosshair;
+    //    };
+    //SetVis(m_crosshair.top); SetVis(m_crosshair.bottom);
+    //SetVis(m_crosshair.left); SetVis(m_crosshair.right);
 
-    if (showCrosshair) {
-        // 広がりの計算
-        float targetSpread = (isMoving) ? 25.0f : 8.0f; // 移動:広がる / 停止:締まる
-        m_crosshairSpread += (targetSpread - m_crosshairSpread) * 15.0f * deltaTime;
+    //if (showCrosshair) {
+    //    // 広がりの計算
+    //    float targetSpread = (isMoving) ? 25.0f : 8.0f; // 移動:広がる / 停止:締まる
+    //    m_crosshairSpread += (targetSpread - m_crosshairSpread) * 15.0f * deltaTime;
 
-        float cx = SCREEN_WIDTH * 0.5f;
-        float cy = SCREEN_HEIGHT * 0.5f;
+    //    float cx = SCREEN_WIDTH * 0.5f;
+    //    float cy = SCREEN_HEIGHT * 0.5f;
 
-        // 座標更新
-        if (m_crosshair.top != INVALID_ENTITY_ID)
-            m_coordinator->GetComponent<TransformComponent>(m_crosshair.top).position = { cx, cy - m_crosshairSpread, 0.0f };
+    //    // 座標更新
+    //    if (m_crosshair.top != INVALID_ENTITY_ID)
+    //        m_coordinator->GetComponent<TransformComponent>(m_crosshair.top).position = { cx, cy - m_crosshairSpread, 0.0f };
 
-        if (m_crosshair.bottom != INVALID_ENTITY_ID)
-            m_coordinator->GetComponent<TransformComponent>(m_crosshair.bottom).position = { cx, cy + m_crosshairSpread, 0.0f };
+    //    if (m_crosshair.bottom != INVALID_ENTITY_ID)
+    //        m_coordinator->GetComponent<TransformComponent>(m_crosshair.bottom).position = { cx, cy + m_crosshairSpread, 0.0f };
 
-        if (m_crosshair.left != INVALID_ENTITY_ID)
-            m_coordinator->GetComponent<TransformComponent>(m_crosshair.left).position = { cx - m_crosshairSpread, cy, 0.0f };
+    //    if (m_crosshair.left != INVALID_ENTITY_ID)
+    //        m_coordinator->GetComponent<TransformComponent>(m_crosshair.left).position = { cx - m_crosshairSpread, cy, 0.0f };
 
-        if (m_crosshair.right != INVALID_ENTITY_ID)
-            m_coordinator->GetComponent<TransformComponent>(m_crosshair.right).position = { cx + m_crosshairSpread, cy, 0.0f };
-    }
+    //    if (m_crosshair.right != INVALID_ENTITY_ID)
+    //        m_coordinator->GetComponent<TransformComponent>(m_crosshair.right).position = { cx + m_crosshairSpread, cy, 0.0f };
+    //}
 }
 
 // ---------------------------------------------------------
@@ -1409,6 +1411,131 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
     }
 }
 
+void GameControlSystem::UpdateDecorations(float deltaTime)
+{
+    static float time = 0.0f;
+    time += deltaTime;
+
+    for (auto const& entity : m_coordinator->GetActiveEntities()) {
+        if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+        const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
+
+        if (tag == "propeller") {
+            if (m_coordinator->HasComponent<TransformComponent>(entity)) {
+                m_coordinator->GetComponent<TransformComponent>(entity).rotation.y += 5.0f * deltaTime;
+            }
+            // プロペラのライトも少し揺らす
+            if (m_coordinator->HasComponent<PointLightComponent>(entity)) {
+                auto& light = m_coordinator->GetComponent<PointLightComponent>(entity);
+                float flicker = 1.0f + 0.05f * sinf(time * 5.0f);
+                light.range = 20.0f * flicker;
+            }
+        }
+        else if (tag == "security_camera") {
+            if (m_coordinator->HasComponent<TransformComponent>(entity)) {
+                auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+                float baseRot = round(trans.rotation.y / XM_PIDIV2) * XM_PIDIV2;
+                float swing = sinf(time * 0.8f + (float)entity) * 0.7f;
+                float currentRotY = baseRot + swing;
+                trans.rotation.y = currentRotY;
+
+                if (m_coordinator->HasComponent<PointLightComponent>(entity)) {
+                    auto& light = m_coordinator->GetComponent<PointLightComponent>(entity);
+                    float dist = 2.0f;
+                    float lx = sinf(currentRotY) * dist;
+                    float lz = cosf(currentRotY) * dist;
+                    light.offset = { lx, -1.5f, lz };
+
+                    // ★演出強化: ジジッ...という不規則な点滅
+                    // ランダムなスパイクノイズを入れる
+                    float noise = (float)(rand() % 100) / 100.0f;
+                    float intensity = 1.0f;
+                    if (noise > 0.95f) intensity = 0.2f; // 5%の確率で一瞬暗くなる
+                    if (noise < 0.05f) intensity = 1.5f; // 5%の確率で一瞬明るくなる
+
+                    light.range = 25.0f * intensity;
+                }
+            }
+        }
+        else if (tag == "painting") {
+            // [1] ライトの明滅 (既存の処理)
+            if (m_coordinator->HasComponent<PointLightComponent>(entity)) {
+                auto& light = m_coordinator->GetComponent<PointLightComponent>(entity);
+                float flicker = 1.0f + 0.3f * sinf(time * 2.0f + (float)entity);
+                light.range = 12.0f * flicker;
+            }
+
+            // [2] ★追加: 絵画のガタガタ揺れ演出
+            if (m_coordinator->HasComponent<TransformComponent>(entity)) {
+                auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+
+                // 乱数で揺れ幅を決める
+                float r = (float)(rand() % 100);
+                float shake = 0.0f;
+
+                // 3%の確率で「ガタン！」と大きく揺れる
+                if (r < 3.0f) {
+                    shake = (float)(rand() % 20 - 10) * 0.02f; // ±0.2ラジアン
+                }
+                // それ以外は「カタカタ」と微振動
+                else {
+                    shake = (float)(rand() % 10 - 5) * 0.005f; // ±0.01ラジアン
+                }
+
+                // 壁の向きに合わせて、揺らす軸を変える
+                // Y軸回転のサイン値を見て、東西(90, 270度)か南北(0, 180度)かを判定
+                if (std::abs(sinf(trans.rotation.y)) < 0.7f) {
+                    // 南北の壁にある絵 -> Z軸（画面に対して左右）に揺らす
+                    trans.rotation.z = shake;
+                }
+                else {
+                    // 東西の壁にある絵 -> X軸（画面に対して左右）に揺らす
+                    trans.rotation.z = shake;
+                }
+            }
+        }
+    }
+}
+
+void GameControlSystem::UpdateLights()
+{
+    // 全エンティティから有効なPointLightComponentを収集
+    std::vector<PointLightData> lights;
+    // メモリ確保 (最大数)
+    lights.reserve(MAX_LIGHTS);
+
+    for (auto const& entity : m_coordinator->GetActiveEntities()) {
+        if (m_coordinator->HasComponent<PointLightComponent>(entity) &&
+            m_coordinator->HasComponent<TransformComponent>(entity)) {
+
+            auto& plc = m_coordinator->GetComponent<PointLightComponent>(entity);
+            auto& tc = m_coordinator->GetComponent<TransformComponent>(entity);
+
+            if (!plc.isActive) continue;
+
+            PointLightData data;
+            // 座標計算: エンティティの位置 + オフセット
+            data.position.x = tc.position.x + plc.offset.x;
+            data.position.y = tc.position.y + plc.offset.y;
+            data.position.z = tc.position.z + plc.offset.z;
+            data.position.w = plc.range; // W成分に範囲を入れる
+
+            data.color = plc.color;
+
+            lights.push_back(data);
+
+            // 最大数を超えたら打ち切り
+            if (lights.size() >= MAX_LIGHTS) break;
+        }
+    }
+
+    // 環境光の設定 (少し明るめのグレー)
+    DirectX::XMFLOAT4 ambient = { 0.3f, 0.3f, 0.3f, 1.0f };
+
+    // ShaderListに一括送信
+    ShaderList::SetPointLights(lights.data(), (int)lights.size(), ambient);
+}
+
 void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID)
 {
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
@@ -1441,6 +1568,10 @@ void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID)
             }
             else if (tag == "door") {
                 actionType = MESH_MODEL; scoutType = MESH_MODEL;
+            }
+            else if (tag == "propeller" || tag == "security_camera" || tag == "painting") {
+                actionType = MESH_MODEL; // TPSではモデル表示
+                scoutType = MESH_NONE;   // トップビューでは非表示
             }
         }
         render.type = isScoutingVisual ? scoutType : actionType;
