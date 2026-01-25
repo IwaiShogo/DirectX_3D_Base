@@ -15,12 +15,20 @@ private:
 
     std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_starTargetScale; // ’Ç‰Á
 
+    float m_starEffectTimer = 0.0f;
+    int   m_starEffectStep = 0;
+
 public:
+
     void Init(ECS::Coordinator* coordinator) override
     {
         m_coordinator = coordinator;
         m_timer = 0.0f;
-        m_starTargetScale.clear(); // ’Ç‰Á
+        m_playedStampEffect = false;
+        m_starTargetScale.clear(); 
+
+        m_starEffectTimer = 0.0f;
+        m_starEffectStep = 0;
     }
 
     void Update(float deltaTime) override;

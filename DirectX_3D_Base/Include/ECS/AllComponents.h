@@ -106,5 +106,8 @@
 #include "ECS/Components/Gimmick/DoorComponent.h"
 // @component	テレポーター
 #include "ECS/Components/Gimmick/Teleportcomponent.h"
+// @component	ストップトラップ
+#include "ECS/Components/Gimmick/StopTrapComponent.h"
+
 
 #endif // !___ALL_COMPONENTS_H___

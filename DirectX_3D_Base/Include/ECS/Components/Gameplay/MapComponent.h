@@ -44,6 +44,7 @@ enum class CellType
     Guard = 7,      // 警備員（敵）の初期位置
 	Taser = 8,      // テーザーの初期位置
 	Teleporter = 9, // テレポーターの位置
+	StopTrap = 10,   // 停止トラップの位置
 };
 
 /**

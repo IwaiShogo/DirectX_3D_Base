@@ -261,7 +261,8 @@ private:
 	bool m_isWaitingForBackToList = false;
 
 	float m_gameStartTimer = 0.0f;
-	const float GAME_START_DELAY = 1.0f; // ★ここで待機時間を調整（秒）
+	const float 
+		_DELAY = 1.0f; // ★ここで待機時間を調整（秒）
 
 	// ★出現間隔（秒）ここを変えると頻度が変わる
 	float m_shootingStarIntervalMin = 3.0f; // 例：頻繁=1.0f、レア=3.0f

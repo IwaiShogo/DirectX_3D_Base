@@ -20,6 +20,8 @@ struct ResultData
     bool  collectedAllOrdered = false; // ʂRv[g
     std::string stageID = "";        // vCXe[WID (gCp)
 
+    float timeLimitStar; //目標タイム 
+
     //  łɃUgʂŎgĂuꂽ󂾂ṽXg
     std::vector<std::string> collectedItemIcons;
 
@@ -41,6 +43,8 @@ public:
 
     // {̒Ƀ^C\p̐XvCgׂ
     void CreateTimeDisplay(float time, DirectX::XMFLOAT2 pos);
+    void CreateNumberDisplay(int number, DirectX::XMFLOAT2 pos); // 整数をシンプルに表示する関数
+
 
     // ʉ̃{^(RETRY / SELECT / TITLE)
     void CreateButtons();
