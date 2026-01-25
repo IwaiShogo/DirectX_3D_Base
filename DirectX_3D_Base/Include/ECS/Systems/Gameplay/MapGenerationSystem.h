@@ -61,6 +61,7 @@ struct MapStageConfig
     struct GimmickInfo {
         std::string type;
         int count;
+		float duration = 0.0f;
     };
     std::vector<GimmickInfo> gimmicks;
 };
@@ -138,6 +139,7 @@ public:
 						MapStageConfig::GimmickInfo info;
 						info.type = gim.value("type", "");
 						info.count = gim.value("count", 0);
+						info.duration = gim.value("duration", 3.0f);
 						config.gimmicks.push_back(info);
 					}
 				}

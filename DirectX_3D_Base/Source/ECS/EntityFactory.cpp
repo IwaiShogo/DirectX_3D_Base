@@ -565,3 +565,31 @@ ECS::EntityID EntityFactory::CreateTeleporter(ECS::Coordinator* coordinator, Dir
 		TeleportComponent()
 	);
 }
+
+ECS::EntityID EntityFactory::CreateStopTrap(ECS::Coordinator* coordinator, const DirectX::XMFLOAT3& position, float duration)
+{
+	// 床に少しめり込まないように浮かせる
+	DirectX::XMFLOAT3 placePos = position;
+	placePos.y += 0.02f;
+
+	// Teleportと同じ「一括生成スタイル」に書き換え
+	return coordinator->CreateEntity(
+		// 1. Transform
+		TransformComponent(
+			placePos,
+			DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f),
+			DirectX::XMFLOAT3(1.0f, 1.0f, 1.0f)
+		),
+		// 2. Render (初期は不可視)
+		RenderComponent(MESH_NONE, DirectX::XMFLOAT4(0, 1.0f, 1.0f, 1.0f)),
+
+		//ModelComponent("UI_ASHIATO_BLUE", 0.5f, Model::None),
+		// 3. Model (スカウトモード用アイコン
+
+		// 4. StopTrap (ギミック本体)
+		StopTrapComponent(duration),
+
+		// 5. Tag
+		TagComponent("stop_trap")
+	);
+}

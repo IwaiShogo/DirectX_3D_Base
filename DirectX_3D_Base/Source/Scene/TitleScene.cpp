@@ -82,8 +82,8 @@ void TitleScene::Init()
         ),
         EffectComponent(
             /* AssetID  */ "EFK_TITLE_SHINE",
-            /* Loop     */ true,
-            /* AutoPlay */ true,
+            /* Loop     */ false,
+            /* AutoPlay */ false,
             /* Offset   */{ 0.0f, 0.0f, -3.0f },
             /* Scale    */ 0.3f
         )
