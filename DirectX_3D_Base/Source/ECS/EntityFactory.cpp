@@ -135,6 +135,12 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 	else if (itemID == "Takara_Kaiga1") { modelPath = "M_TREASURE4"; }
 	else if (itemID == "Takara_Kaiga2") { modelPath = "M_TREASURE5"; }
 	else if (itemID == "Takara_Kaiga3") { modelPath = "M_TREASURE6"; }
+	else if (itemID == "Takara_Doki") { modelPath = "M_TREASURE7"; }
+	else if (itemID == "Takara_Tubo_Blue") { modelPath = "M_TREASURE8"; }
+	else if (itemID == "Takara_Tubo_Gouyoku") { modelPath = "M_TREASURE9"; }
+	else if (itemID == "Takara_Dinosaur") { modelPath = "M_TREASURE10"; }
+	else if (itemID == "Takara_Ammonite") { modelPath = "M_TREASURE11"; }
+	else if (itemID == "Takara_Dinosaur_Foot") { modelPath = "M_TREASURE12"; }
 
 	ECS::EntityID entity = coordinator->CreateEntity(
 		TagComponent(

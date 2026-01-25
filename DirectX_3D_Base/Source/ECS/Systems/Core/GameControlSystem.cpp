@@ -22,12 +22,18 @@ static const float TILE_ANIM_DELAY = 0.05f;
 // アイコンパス取得ヘルパー
 std::string GetItemIconPath(const std::string& itemID)
 {
-    if (itemID == "Takara_Daiya")   return "ICO_TREASURE1";
-    if (itemID == "Takara_Crystal") return "ICO_TREASURE2";
-    if (itemID == "Takara_Yubiwa")  return "ICO_TREASURE3";
-    if (itemID == "Takara_Kaiga1")  return "ICO_TREASURE4";
-    if (itemID == "Takara_Kaiga2")  return "ICO_TREASURE5";
-    if (itemID == "Takara_Kaiga3")  return "ICO_TREASURE6";
+    if (itemID == "Takara_Daiya")           return "ICO_TREASURE1";
+    if (itemID == "Takara_Crystal")         return "ICO_TREASURE2";
+    if (itemID == "Takara_Yubiwa")          return "ICO_TREASURE3";
+    if (itemID == "Takara_Kaiga1")          return "ICO_TREASURE4";
+    if (itemID == "Takara_Kaiga2")          return "ICO_TREASURE5";
+    if (itemID == "Takara_Kaiga3")          return "ICO_TREASURE6";
+    if (itemID == "Takara_Doki")            return "ICO_TREASURE7";
+    if (itemID == "Takara_Tubo_Blue")       return "ICO_TREASURE8";
+    if (itemID == "Takara_Tubo_Gouyoku")    return "ICO_TREASURE9";
+    if (itemID == "Takara_Dinosaur")        return "ICO_TREASURE10";
+    if (itemID == "Takara_Ammonite")        return "ICO_TREASURE11";
+    if (itemID == "Takara_Dinosaur_Foot")   return "ICO_TREASURE12";
     return "ICO_TREASURE";
 }
 
@@ -784,7 +790,14 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
         StartMosaicSequence(controllerID);
     }
     else if (state.currentMode == GameMode::ACTION_MODE) {
+
+#ifndef _DEBUG
+        if (m_hasUsedTopView) return;
+#endif // !_DEBUG
+
         state.currentMode = GameMode::SCOUTING_MODE;
+        m_hasUsedTopView = true;
+
         ApplyModeVisuals(controllerID);
         for (auto const& e : m_coordinator->GetActiveEntities()) {
             if (!m_coordinator->HasComponent<SoundComponent>(e)) continue;
@@ -1236,7 +1249,7 @@ void GameControlSystem::CheckMapGimmickTrigger(ECS::EntityID controllerID)
     ECS::EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
     if (playerID == ECS::INVALID_ENTITY_ID) return;
 
-    for (auto const& e : m_coordinator->GetActiveEntities()) {
+    /*for (auto const& e : m_coordinator->GetActiveEntities()) {
         if (!m_coordinator->HasComponent<TagComponent>(e)) continue;
         auto& tag = m_coordinator->GetComponent<TagComponent>(e).tag;
         if (tag != "map_gimmick") continue;
@@ -1248,7 +1261,7 @@ void GameControlSystem::CheckMapGimmickTrigger(ECS::EntityID controllerID)
         tag = "map_gimmick_used";
         if (m_coordinator->HasComponent<CollisionComponent>(e)) m_coordinator->GetComponent<CollisionComponent>(e).size = { 0,0,0 };
         break;
-    }
+    }*/
 }
 
 void GameControlSystem::StartMosaicSequence(ECS::EntityID controllerID)

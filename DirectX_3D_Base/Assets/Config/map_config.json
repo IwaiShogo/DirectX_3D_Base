@@ -13,7 +13,7 @@
     "minPathPercentage": 0.5,
     "useOrderedCollection": true,
     "items": [
-      "Takara_Yubiwa"
+      "Takara_Dinosaur"
     ],
     "guardCount": 1,
     "gimmicks": [
@@ -70,7 +70,12 @@
       "Takara_Daiya"
     ],
     "guardCount": 0,
-    "gimmicks": []
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 1
+      }
+    ]
   },
   "ST_004": {
     "name": "Stage 4",
@@ -145,3 +150,17 @@
     "gimmicks": []
   }
 }
+
+// 宝一覧
+// Takara_Yubiwa 指輪
+// Takara_Daiya ダイヤ
+// Takara_Crystal クリスタル
+// Takara_Kaiga1 絵画1
+// Takara_Kaiga2 絵画2
+// Takara_Kaiga3 絵画3
+// Takara_Doki 土器
+// Takara_Tubo_Blue 青いツボ
+// Takara_Tubo_Gouyoku 紫のツボ
+// Takara_Dinosaur 恐竜
+// Takara_Ammonite アンモナイト
+// Takara_Dinosaur_Foot 恐竜の足跡

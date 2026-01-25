@@ -182,6 +182,9 @@ private:
     // 関数
     void InitVisualEffects(); // 演出初期化
     void UpdateVisualEffects(float deltaTime, ECS::EntityID controllerID); // 演出更新
+
+    // --- 制限フラグ ---
+    bool m_hasUsedTopView = false; // ★追加: トップビューを既に使用したか
 };
 
 #endif // !___GAME_CONTROL_SYSTEM_H___
