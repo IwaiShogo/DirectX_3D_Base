@@ -144,6 +144,8 @@ private:
     void UpdateExitSequence(float deltaTime, ECS::EntityID controllerID);
     void StartMosaicSequence(ECS::EntityID controllerID);
     void UpdateMosaicSequence(float deltaTime, ECS::EntityID controllerID);
+    void UpdateDecorations(float deltaTime);
+    void UpdateLights();
 
     ECS::EntityID FindEntranceDoor();
     ECS::EntityID FindExitDoor();

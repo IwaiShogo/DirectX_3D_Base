@@ -21,3 +21,12 @@ M_DOOR,Model,Assets/Model/Stage/obj_door.fbx
 M_TITLE_CARD,Model,Assets/Model/Prop/obj_yokokujo.fbx
 M_TITLE_GLASSCASE,Model,Assets/Model/Prop/obj_glasscase.fbx
 M_CARD,Model,Assets/Model/Guard/anim_yokokujo.fbx
+M_CAMERA,Model,Assets/Model/Stage/anim_camera.fbx
+M_PUROPERA,Model,Assets/Model/Stage/anim_puropera.fbx
+M_KAIGA_BIRD,Model,Assets/Model/Stage/obj_kaiga_bird.fbx
+M_KAIGA_CAT,Model,Assets/Model/Stage/obj_kaiga_cat.fbx
+M_KAIGA_PANCAKES,Model,Assets/Model/Stage/obj_kaiga_pancakes.fbx
+M_KAIGA_PENGUIN,Model,Assets/Model/Stage/obj_kaiga_penguin.fbx
+M_KAIGA_ROSE,Model,Assets/Model/Stage/obj_kaiga_rose.fbx
+M_KAIGA_SKELETON,Model,Assets/Model/Stage/obj_kaiga_skeleton.fbx
+M_KAIGA_MAGICALGIRL,Model,Assets/Model/Stage/obj_kaiga_magicalgirl.fbx
