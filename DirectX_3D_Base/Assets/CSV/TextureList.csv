@@ -53,3 +53,11 @@ UI_STAGE_MAPSIRO,Texture,Assets/Texture/ui_stagemap_castle.png
 UI_STAGE_FADE,Texture,Assets/Texture/ui_fade.png
 UI_ASHIATO_BLUE,Texture,Assets/Texture/ui_asiato_blue_waku.png
 UI_GAME_START,Texture,Assets/Texture/gamestart.png
+UI_TRESURE_BACK,Texture,Assets/Texture/ui_tresure_back.png
+UI_TRESURE_CASE,Texture,Assets/Texture/ui_tresure_case.png
+ICO_TREASURE7,Texture,Assets/Texture/ui_result_takara07.png
+ICO_TREASURE8,Texture,Assets/Texture/ui_result_takara08.png
+ICO_TREASURE9,Texture,Assets/Texture/ui_result_takara09.png
+ICO_TREASURE10,Texture,Assets/Texture/ui_result_takara10.png
+ICO_TREASURE11,Texture,Assets/Texture/ui_result_takara11.png
+ICO_TREASURE12,Texture,Assets/Texture/ui_result_takara12.png
