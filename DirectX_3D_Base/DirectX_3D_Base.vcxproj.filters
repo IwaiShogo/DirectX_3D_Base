@@ -140,9 +140,10 @@
     <ClCompile Include="Source\ECS\Systems\Core\OpeningControlSystem.cpp">
       <Filter>Source Files\ECS\Systems\Core</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ECS\Systems\Gimmick\TeleportSystem.cpp" />
     <ClCompile Include="Source\Scene\OpeningScene.cpp" />
-    <ClCompile Include="Source\ECS\Systems\Gimmick\TeleportSystem.cpp">
-      <Filter>Source Files\ECS\Systems\Gimmick</Filter>
+    <ClCompile Include="Source\Scene\LoadingScene.cpp">
+      <Filter>Source Files\Scene</Filter>
     </ClCompile>
     <ClCompile Include="Include\ECS\Systems\Gimmick\StopTrapSystem.cpp">
       <Filter>Source Files\ECS\Systems\Gimmick</Filter>
@@ -436,6 +437,10 @@
     </ClInclude>
     <ClInclude Include="Include\ECS\Systems\Gimmick\StopTrapSystem.h">
       <Filter>Header Files\ECS\Systems\Gimmick</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Scene\OpeningScene.h" />
+    <ClInclude Include="Include\Scene\LoadingScene.h">
+      <Filter>Header Files\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
