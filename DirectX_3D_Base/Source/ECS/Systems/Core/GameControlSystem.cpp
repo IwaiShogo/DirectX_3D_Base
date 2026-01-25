@@ -805,6 +805,7 @@ void GameControlSystem::CheckSceneTransition(ECS::EntityID controllerID)
         data.isCleared = state.isGameClear;
         data.clearTime = state.elapsedTime;
         data.clearedInTime = (state.elapsedTime <= state.timeLimitStar);
+        data.timeLimitStar = state.timeLimitStar; // 追加：織田
         data.wasSpotted = state.wasSpotted;
         data.stageID = GameScene::GetStageNo();
 
