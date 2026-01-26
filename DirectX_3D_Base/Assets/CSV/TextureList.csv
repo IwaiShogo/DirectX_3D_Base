@@ -136,3 +136,7 @@ UI_LOAD_G,Texture,Assets/Texture/ui_loading_g.png
 UI_LOAD_N,Texture,Assets/Texture/ui_loading_n.png
 UI_LOAD_I,Texture,Assets/Texture/ui_loading_i.png
 UI_LOAD_ANIM,Texture,Assets/Texture/ui_loading_animation.png
+BTN_BACK_POSE,Texture,Assets/Texture/btn_back_pose.png
+BTN_RETRY_POSE,Texture,Assets/Texture/btn_retry_pose.png
+BTN_SELECT_POSE,Texture,Assets/Texture/btn_select_pose.png
+UI_CAMERA_POSE,Texture,Assets/Texture/ui_camera_pose.png
