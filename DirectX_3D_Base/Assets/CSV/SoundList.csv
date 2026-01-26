@@ -3,7 +3,7 @@ BGM_TITLE,Sound,Assets/Sound/bgm_title.wav
 BGM_OPENING,Sound,Assets/Sound/bgm_opening.wav
 BGM_STAGESELECT,Sound,Assets/Sound/bgm_stageselect.wav
 BGM_TOPVIEW,Sound,Assets/Sound/bgm_topview.wav
-BGM_BGM_GAME_1,Sound,Assets/Sound/bgm_game1.wav
+BGM_GAME_1,Sound,Assets/Sound/bgm_game1.wav
 BGM_GAME_2,Sound,Assets/Sound/bgm_game2.wav
 BGM_GAMECLEAR,Sound,Assets/Sound/bgm_gameclear.wav
 BGM_GAMEOVER,Sound,Assets/Sound/bgm_gameover.wav
