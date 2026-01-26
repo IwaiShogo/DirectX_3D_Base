@@ -64,9 +64,20 @@ public:
         m_crosshairSpread = 0.0f;
         m_cinemaBarTop = ECS::INVALID_ENTITY_ID;
         m_cinemaBarBottom = ECS::INVALID_ENTITY_ID;
+
+        // ★追加: 制限フラグ初期化
+        m_hasUsedTopView = false;
+
+        // ★追加: サウンド用変数初期化
+        m_footstepTimer = 0.0f;
+        m_prevCollectedCount = 0;
+        m_lastHoveredID = ECS::INVALID_ENTITY_ID;
+        m_sliderSoundTimer = 0.0f;
     }
 
     void Update(float deltaTime) override;
+
+    void UpdateGuardFootsteps(float deltaTime);
 
     // 外部から「見つかった」状態へ遷移させるトリガー
     void TriggerCaughtSequence(ECS::EntityID guardID);
@@ -144,8 +155,6 @@ private:
     void UpdateExitSequence(float deltaTime, ECS::EntityID controllerID);
     void StartMosaicSequence(ECS::EntityID controllerID);
     void UpdateMosaicSequence(float deltaTime, ECS::EntityID controllerID);
-    void UpdateDecorations(float deltaTime);
-    void UpdateLights();
 
     ECS::EntityID FindEntranceDoor();
     ECS::EntityID FindExitDoor();
@@ -181,12 +190,25 @@ private:
     ECS::EntityID m_cinemaBarTop = ECS::INVALID_ENTITY_ID;
     ECS::EntityID m_cinemaBarBottom = ECS::INVALID_ENTITY_ID;
 
+    // 制限フラグ
+    bool m_hasUsedTopView = false;
+
+    // --- ★追加: 音声制御用変数 ---
+    float m_footstepTimer = 0.0f;       // 歩行音の間隔
+    int m_prevCollectedCount = 0;       // アイテム取得音判定用
+    ECS::EntityID m_lastHoveredID = ECS::INVALID_ENTITY_ID; // カーソル音用
+    float m_sliderSoundTimer = 0.0f;    // スライダー音の間隔
+
     // 関数
     void InitVisualEffects(); // 演出初期化
     void UpdateVisualEffects(float deltaTime, ECS::EntityID controllerID); // 演出更新
+    void UpdateDecorations(float deltaTime); // 賑やかしアニメーション
+    void UpdateLights(); // ポイントライト更新
 
-    // --- 制限フラグ ---
-    bool m_hasUsedTopView = false; // ★追加: トップビューを既に使用したか
+    // BGM管理用
+    void PlayBGM(const std::string& assetID);
+    void StopBGM();
+    void PlayStopableSE(const std::string& assetID, float volume);
 };
 
 #endif // !___GAME_CONTROL_SYSTEM_H___

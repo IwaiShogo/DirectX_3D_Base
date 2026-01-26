@@ -219,43 +219,222 @@ void ResultControlSystem::Update(float deltaTime)
         }
     }
 
+
     // ---------------------------------------------------------
-    // 4. ���ʉ��o�F�p���p������A�j���[�V����
-    //    Tag: "ResultAnim"
+    // 4. GameOver 演出（車＋ガスが走り、ロゴを置いていく）
     // ---------------------------------------------------------
     {
-        const float FRAME_TIME = 0.05f;
+        const float SPEED = 500.0f;
 
-        const int COLUMNS = 5; // ��
-        const int ROWS = 1; // �c
-        const int FRAME_COUNT = COLUMNS * ROWS;
+        const float LOGO_STOP_X = SCREEN_WIDTH * 0.475f;
+        const float LOGO_FINAL_Y = SCREEN_HEIGHT * 0.2f;
+        const float LOGO_MOVE_UP_SPD = 240.0f;
+        const float LOGO_SLOW_IN = 120.0f;
 
-        int frame = static_cast<int>(m_timer / FRAME_TIME) % FRAME_COUNT;
+        // 画面外判定（ガス基準）
+        const float GAS_MARGIN = 1200.0f;
+        const float GAS_OUT_LEFT = -GAS_MARGIN;
+        const float GAS_OUT_RIGHT = SCREEN_WIDTH + GAS_MARGIN;
 
-        int col = frame % COLUMNS;
-        int row = frame / COLUMNS;
+        // 車とガスの距離
+        const float CAR_OFFSET = 0.0f;
+        const float GAS_OFFSET = 750.0f;
 
-        float uvW = 1.0f / COLUMNS;
-        float uvH = 1.0f / ROWS;
-
-        for (auto const& entity : m_coordinator->GetActiveEntities())
+        // ==================================================
+        // ロゴ・車・ガス 更新
+        // ==================================================
+        for (auto entity : m_coordinator->GetActiveEntities())
         {
             if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
-            if (!m_coordinator->HasComponent<UIImageComponent>(entity)) continue;
 
-            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity);
-            if (tag.tag != "RESULT_ANIM") continue;
+            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
 
-            auto& ui = m_coordinator->GetComponent<UIImageComponent>(entity);
+            bool isCar = (tag == "RESULT_ANIM_CAR");
+            bool isGas = (tag == "RESULT_ANIM_GAS");
+            bool isLogo = (tag == "RESULT_ANIM_LOGO");
 
-            ui.uvScale = { uvW, uvH };
-            ui.uvPos = { col * uvW, row * uvH };
+            if (!isCar && !isGas && !isLogo) continue;
+
+            auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+
+            // ---------------------------------------------------------
+            // RESULT_ANIM_CLOUD（常に左へ流れる）2枚で途切れさせない
+            // ---------------------------------------------------------
+            {
+                const float CLOUD_SPEED = 20.0f;
+
+                // 左端判定（雲がほぼ消えたら）
+                const float CLOUD_OUT_LEFT = -SCREEN_WIDTH * 0.5f;
+
+                // 右端スポーン
+                const float CLOUD_SPAWN_X = SCREEN_WIDTH + SCREEN_WIDTH * 0.5f;
+
+                for (auto entity : m_coordinator->GetActiveEntities())
+                {
+                    if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+                    if (!m_coordinator->HasComponent<TransformComponent>(entity)) continue;
+
+                    const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
+                    if (tag != "RESULT_ANIM_CLOUD") continue;
+
+                    auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+
+                    // --------------------
+                    // 左へ流す（常に）
+                    // --------------------
+                    trans.position.x -= CLOUD_SPEED * deltaTime;
+
+                    // --------------------
+                    // 左端に来た雲だけ右へ
+                    // --------------------
+                    if (trans.position.x < CLOUD_OUT_LEFT)
+                    {
+                        trans.position.x = CLOUD_SPAWN_X;
+                    }
+                }
+            }
+
+            // -------- ロゴ --------
+            if (isLogo)
+            {
+                if (!m_logoStoppingX)
+                {
+                    trans.position.x -= SPEED * deltaTime;
+                    if (trans.position.x <= LOGO_STOP_X + LOGO_SLOW_IN)
+                        m_logoStoppingX = true;
+                }
+                else if (!m_logoMovingUp)
+                {
+                    float dx = LOGO_STOP_X - trans.position.x;
+                    trans.position.x += dx * 6.0f * deltaTime;
+
+                    if (std::fabs(dx) < 1.0f)
+                    {
+                        trans.position.x = LOGO_STOP_X;
+                        m_logoMovingUp = true;
+                    }
+                }
+                else
+                {
+                    trans.position.y -= LOGO_MOVE_UP_SPD * deltaTime;
+                    if (trans.position.y <= LOGO_FINAL_Y)
+                    {
+                        trans.position.y = LOGO_FINAL_Y;
+                        m_logoFinished = true;
+                    }
+                }
+            }
+            // -------- 車・ガス --------
+            else
+            {
+                float dir = m_moveRightToLeft ? -1.0f : 1.0f;
+                trans.position.x += dir * SPEED * deltaTime;
+            }
+        }
+
+        // ==================================================
+        // ロゴ完成後：反転制御（ガス完全基準）
+        // ==================================================
+        if (!m_logoFinished) return;
+
+        // --------------------------------------
+        // ガスが画面内に入るまで反転禁止
+        // --------------------------------------
+        if (m_waitEnterScreen)
+        {
+            for (auto entity : m_coordinator->GetActiveEntities())
+            {
+                if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+                if (m_coordinator->GetComponent<TagComponent>(entity).tag != "RESULT_ANIM_GAS") continue;
+
+                auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+
+                if (trans.position.x > 0.0f &&
+                    trans.position.x < SCREEN_WIDTH)
+                {
+                    m_waitEnterScreen = false;
+                }
+            }
+        }
+
+        // --------------------------------------
+        // 反転判定（ガスが完全に抜けたか）
+        // --------------------------------------
+        if (!m_waitEnterScreen)
+        {
+            bool needFlip = false;
+
+            for (auto entity : m_coordinator->GetActiveEntities())
+            {
+                if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+                if (m_coordinator->GetComponent<TagComponent>(entity).tag != "RESULT_ANIM_GAS") continue;
+
+                auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+
+                if ((m_moveRightToLeft && trans.position.x < GAS_OUT_LEFT) ||
+                    (!m_moveRightToLeft && trans.position.x > GAS_OUT_RIGHT))
+                {
+                    needFlip = true;
+                    break;
+                }
+            }
+
+            // ----------------------------------
+            // 実際の反転処理
+            // ----------------------------------
+            if (needFlip)
+            {
+                m_moveRightToLeft = !m_moveRightToLeft;
+                m_waitEnterScreen = true;
+
+                for (auto entity : m_coordinator->GetActiveEntities())
+                {
+                    if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+
+                    const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
+                    if (tag != "RESULT_ANIM_CAR" && tag != "RESULT_ANIM_GAS") continue;
+
+                    auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+
+                    float offset = (tag == "RESULT_ANIM_GAS") ? GAS_OFFSET : CAR_OFFSET;
+
+                    // スポーン位置を画面端からのオフセットで計算
+                    float spawnX = m_moveRightToLeft
+                        ? GAS_OUT_RIGHT + offset
+                        : GAS_OUT_LEFT - offset;
+
+                    trans.position.x = spawnX;
+
+                    // scale.x は常に正
+                    trans.scale.x = std::fabs(trans.scale.x);
+
+                    // ================================
+                    // UV座標で左右反転
+                    // ================================
+                    if (m_coordinator->HasComponent<UIImageComponent>(entity))
+                    {
+                        auto& ui = m_coordinator->GetComponent<UIImageComponent>(entity);
+
+                        if (m_moveRightToLeft)
+                        {
+                            // 左向き（右→左移動中）
+                            ui.uvPos.x = 0.0f;   // 左端
+                            ui.uvScale.x = 1.0f; // 通常描画
+                        }
+                        else
+                        {
+                            // 右向き（左→右移動中）
+                            ui.uvPos.x = 1.0f;    // 右端
+                            ui.uvScale.x = -1.0f; // 反転
+                        }
+                    }
+                }
+            }
         }
     }
-
-    // ---------------------------------------------------------
-    // Result �{�^���� Hover ���o
-    // ---------------------------------------------------------
+// ---------------------------------------------------------
+// Resultボタンにカーソルが重なったとき
+// ---------------------------------------------------------
     for (auto entity : m_coordinator->GetActiveEntities())
     {
         if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
@@ -288,9 +467,9 @@ void ResultControlSystem::Update(float deltaTime)
         float speed = 15.0f * deltaTime;
         trans.scale.x += (targetX - trans.scale.x) * speed;
         trans.scale.y += (targetY - trans.scale.y) * speed;
-
+            
         // ================================
-        // �� Hover �ɓ������u�Ԃ� SE �Đ�
+        // �� Hoverが有効な時
         // ================================
         if (btn.prevState != ButtonState::Hover &&
             btn.state == ButtonState::Hover)
