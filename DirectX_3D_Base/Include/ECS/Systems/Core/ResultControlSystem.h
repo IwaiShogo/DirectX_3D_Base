@@ -19,6 +19,7 @@ private:
     bool m_cloudOutLeft = false;
     bool m_cloud0Active = true;
     bool m_cloud1Active = false;
+    bool m_playedStampEffect = false;
 
     std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_starTargetScale; // 追加
     
