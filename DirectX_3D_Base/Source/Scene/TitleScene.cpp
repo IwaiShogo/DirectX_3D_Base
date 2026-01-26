@@ -35,6 +35,7 @@ namespace TitleLayout
     const XMFLOAT3 BTN_BASE_SCALE = { 300.0f, 140.0f, 1.0f };
     const XMFLOAT3 LOGO_BASE_SCALE = { 550.0f, 410.0f, 1.0f };
     const XMFLOAT3 START_BTN_SCALE = { 450.0f, 150.0f, 1.0f };
+	const XMFLOAT3 TITLE_KAIGA_SCALE = { 1280.0f, 720.0f, 1.0f };
 
     constexpr float CARD_STATIC_ROT_Z_DEG = 20.0f;
 }
@@ -54,7 +55,7 @@ void TitleScene::Init()
     titleCtrl.uiAnimDuration = TitleLayout::MENU_SLIDE_DURATION;
     titleCtrl.startRotY = XMConvertToRadians(-90.0f);
     titleCtrl.endRotY = XMConvertToRadians(0.0f);
-
+    std::srand(static_cast<unsigned int>(time(NULL)));
     // --- カメラ生成 ---
     ECS::EntityID cam = ECS::EntityFactory::CreateBasicCamera(m_coordinator.get(), titleCtrl.camStartPos);
     titleCtrl.cameraEntityID = cam;
@@ -103,6 +104,20 @@ void TitleScene::Init()
             /* AssetID */ "M_TITLE_CARD",
             /* Scale   */ 0.1f,
             /* Flags   */ Model::ZFlip
+        )
+    );
+
+    titleCtrl.TitlekaigaEntityID = m_coordinator->CreateEntity(
+        TransformComponent(
+            /* Position */{ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f },
+            /* Rotation */{ 1.0f, 0.0f, 0.0f },
+            /* Scale    */ TitleLayout::TITLE_KAIGA_SCALE
+        ),
+        UIImageComponent(
+            /* AssetID */ "UI_TITLE_KAIGA",
+            /* Depth   */ 0.0f,
+            /* Visible */ true,
+            /* Color   */{ 1.0f, 1.0f, 1.0f, 0.0f }
         )
     );
 
@@ -163,24 +178,6 @@ void TitleScene::Init()
         const XMFLOAT3 hitScale = { TitleLayout::BTN_BASE_SCALE.x * 0.66f, TitleLayout::BTN_BASE_SCALE.y * 0.66f, 1.0f };
         const XMFLOAT3 menuRotation = { 0.0f, 0.0f, XMConvertToRadians(-20.0f) };
 
-		// エフェクト
-        float effPosX[] = { -1.0f, 1.0f };
-        for (int i = 0; i < 2; ++i) {
-            ECS::EntityID eff = m_coordinator->CreateEntity(
-                TransformComponent(
-                    { effPosX[i], 0.0f, 0.0f }, // Z座標はカード(-3.5f)より少し手前
-                    { 0.0f, 0.0f, 0.0f },
-                    { 0.0f, 0.0f, 0.0f }
-                ),
-                EffectComponent(
-                    "EFK_TITLE_SHINE", // 一旦、既存のエフェクト名
-                    false,              // ループ
-                    false,             // 初期状態は停止
-                    { 1.0f,1.0f, 1.0f },
-                    0.5f
-                )
-            );
-        }
         // New Game ボタン
         ECS::EntityID newGame = m_coordinator->CreateEntity(
             TransformComponent(
@@ -218,9 +215,7 @@ void TitleScene::Init()
             UIButtonComponent(
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
-                /* Callback */ []() { 
-                    StageUnlockProgress::Load();
-                    SceneManager::ChangeScene<StageSelectScene>(); },
+                /* Callback */ []() { SceneManager::ChangeScene<StageSelectScene>(); },
                 /* HitScale */ hitScale
             )
         );

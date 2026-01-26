@@ -627,53 +627,67 @@ end_generate_loop:;
         guardsPlaced++;
     }
 
-    //テーザーの配置
-    const int TASER_TO_PLACE = config.taserCount;
-    int taserPlaced = 0;
-    while (taserPlaced < TASER_TO_PLACE && !availablePathPositions.empty())
+    // 3. 汎用ギミック配置ロジック
+    for (const auto& gimmick : config.gimmicks)
     {
-        XMINT2 pos = availablePathPositions.back();
-        availablePathPositions.pop_back();
+        int placedCount = 0;
 
-        mapComp.grid[pos.y][pos.x].type = CellType::Taser;
-        taserPlaced++;
+        // 指定された個数分配置を試みる
+        while (placedCount < gimmick.count && !availablePathPositions.empty())
+        {
+            // --- [Case: Taser] ---
+            if (gimmick.type == "Taser")
+            {
+                XMINT2 pos = availablePathPositions.back();
+                availablePathPositions.pop_back();
+
+                mapComp.grid[pos.y][pos.x].type = CellType::Taser;
+                placedCount++;
+            }
+            // --- [Case: Teleporter] ---
+            else if (gimmick.type == "Teleporter")
+            {
+                // テレポーターはペア(2箇所)が必要なので、空きが2つ以上あるか確認
+                if (availablePathPositions.size() < 2)
+                {
+                    printf("[Warning] Not enough space for Teleporter pair.\n");
+                    break;
+                }
+
+                // 入口と出口の2マスをリストから取得
+                XMINT2 posA = availablePathPositions.back();
+                availablePathPositions.pop_back();
+                XMINT2 posB = availablePathPositions.back();
+                availablePathPositions.pop_back();
+
+                // グリッドにテレポート属性を設定
+                mapComp.grid[posA.y][posA.x].type = CellType::Teleporter;
+                mapComp.grid[posB.y][posB.x].type = CellType::Teleporter;
+
+                mapComp.teleportPairs.push_back({ posA, posB });
+                placedCount++;
+            }
+            else if (gimmick.type == "StopTrap")
+            {
+                // 空いている通路を1つ取得
+                if (availablePathPositions.empty()) break;
+
+                XMINT2 pos = availablePathPositions.back();
+                availablePathPositions.pop_back();
+
+                // グリッド情報を書き換え
+                mapComp.grid[pos.y][pos.x].type = CellType::StopTrap;
+                placedCount++;
+            }
+            // --- [Case: その他 (将来的な拡張)] ---
+            else
+            {
+                // 未定義のタイプが指定された場合の警告
+                printf("[Warning] Unknown gimmick type in config: %s\n", gimmick.type.c_str());
+                break; // 無限ループ防止のためbreak
+            }
+        }
     }
-    // テレポートの配置
-    int teleportPairsPlaced = 0;
-    while (teleportPairsPlaced < config.teleportPairCount && availablePathPositions.size() >= 2)
-    {
-        // 入口と出口の2マスをリストから取得
-        DirectX::XMINT2 posA = availablePathPositions.back();
-        availablePathPositions.pop_back();
-        DirectX::XMINT2 posB = availablePathPositions.back();
-        availablePathPositions.pop_back();
-
-        // グリッドにテレポート属性を設定
-        mapComp.grid[posA.y][posA.x].type = CellType::Teleporter;
-        mapComp.grid[posB.y][posB.x].type = CellType::Teleporter;
-
-        mapComp.teleportPairs.push_back({ posA, posB });
-        teleportPairsPlaced++;
-    }
-
-    // 3. その他のギミック配置 (config.gimmickCounts を利用)
-    // NOTE: CellType::Gimmick の処理はMapComponent.hにCellTypeを追加した後で実装
-
-    //for (const auto& pair : config.gimmicks.size())
-    //{
-    //    CellType gimmickType = pair.first;
-    //    int count = pair.second;
-
-    //    // availablePathPositionsが空になるまで、配置を試みる
-    //    for (int i = 0; i < count && !availablePathPositions.empty(); ++i)
-    //    {
-    //        XMINT2 pos = availablePathPositions.back();
-    //        availablePathPositions.pop_back();
-
-    //        mapComp.grid[pos.y][pos.x].type = gimmickType;
-    //        // 必要に応じて、追加のギミック位置リストをMapComponentに追加可能
-    //    }
-    //}
 }
 
 /**
@@ -942,6 +956,13 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
     const float TILE_SIZE = config.tileSize;
     const float WALL_HEIGHT = config.wallHeight;
 
+    float trapDuration = 3.0f; // デフォルト
+    for (const auto& g : config.gimmicks) {
+        if (g.type == "StopTrap") {
+            trapDuration = g.duration;
+            break;
+        }
+    }
     // --------------------------------------------------------------------------------
     // 【最適化】Greedy Meshingのための処理済みフラグ用グリッド
     // --------------------------------------------------------------------------------
@@ -1111,6 +1132,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
             case CellType::Item:
             case CellType::Guard:
             case CellType::Taser:
+			case CellType::StopTrap:
                 // TODO: CellType::Room に配置するギミックがある場合はここに追加
                 // case CellType::Teleporter: 
             {
@@ -1125,11 +1147,9 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
 
                 if (cell.type == CellType::Start) {
                     EntityFactory::CreatePlayer(m_coordinator, cellCenter);
-                    //EntityFactory::CreateGoal(m_coordinator, cellCenter);
-                    EntityFactory::CreateEnemySpawner(m_coordinator, cellCenter, 3.0f);
+                    EntityFactory::CreateEnemySpawner(m_coordinator, cellCenter, 7.0f);
                 }
                 else if (cell.type == CellType::Goal) {
-                    //EntityFactory::CreateGoal(m_coordinator, cellCenter);
                 }
                 else if (cell.type == CellType::Item) {
 
@@ -1162,9 +1182,15 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                 }
                 else if (cell.type == CellType::Taser) {
                     XMFLOAT3 taserPos = cellCenter;
-                    taserPos.y += 0.0f;
                     EntityFactory::CreateTaser(m_coordinator, taserPos);
                 }
+                else if (cell.type == CellType::StopTrap) {
+
+                    // タイル中心座標を取得
+                    XMFLOAT3 trapPos = cellCenter;
+                    EntityFactory::CreateStopTrap(m_coordinator, trapPos, trapDuration);
+                }
+
             }
             break;
             default:
@@ -1197,5 +1223,84 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
         compB.targetEntity = entA;
 
         printf("[Debug] Teleporter Linked: %d <-> %d\n", entA, entB);
+    }
+
+    // --------------------------------------------------------------------
+    // 4. 賑やかしオブジェクトの配置 (プロペラ、カメラ、絵画)
+    // --------------------------------------------------------------------
+
+    // 絵画のバリエーション
+    std::vector<std::string> paintModels = {
+        "M_KAIGA_BIRD", "M_KAIGA_CAT", "M_KAIGA_PANCAKES",
+        "M_KAIGA_PENGUIN", "M_KAIGA_ROSE", "M_KAIGA_SKELETON", "M_KAIGA_MAGICALGIRL"
+    };
+
+    // A. 天井プロペラ (通路の天井に配置)
+    for (int y = 1; y < GRID_SIZE_Y - 1; ++y) {
+        for (int x = 1; x < GRID_SIZE_X - 1; ++x) {
+            CellType type = mapComp.grid[y][x].type;
+            // 通路または部屋の場合
+            if (type == CellType::Path || type == CellType::Room) {
+                // 5%の確率で配置
+                if (rand() % 100 < 5) {
+                    XMFLOAT3 pos = GetWorldPosition(x, y, config);
+                    pos.x += TILE_SIZE / 2.0f;
+                    pos.z += TILE_SIZE / 2.0f;
+                    pos.y = WALL_HEIGHT * 0.5f; // 天井より少し下
+                    EntityFactory::CreateCeilingFan(m_coordinator, pos);
+                }
+            }
+        }
+    }
+
+    // B. 壁掛けオブジェクト
+    int dx[] = { 0, 0, -1, 1 };
+    int dy[] = { -1, 1, 0, 0 };
+
+    // 北(180), 南(0), 西(270), 東(90)
+    float rots[] = { 180.0f, 0.0f, 270.0f, 90.0f };
+
+    for (int y = 1; y < GRID_SIZE_Y - 1; ++y) {
+        for (int x = 1; x < GRID_SIZE_X - 1; ++x) {
+            if (mapComp.grid[y][x].type == CellType::Wall) {
+
+                for (int i = 0; i < 4; ++i) {
+                    int nx = x + dx[i];
+                    int ny = y + dy[i];
+
+                    CellType nType = mapComp.grid[ny][nx].type;
+                    if (nType == CellType::Path || nType == CellType::Room || nType == CellType::Start) {
+
+                        if (rand() % 100 < 15) {
+                            XMFLOAT3 pos = GetWorldPosition(x, y, config);
+                            pos.x += TILE_SIZE / 2.0f;
+                            pos.z += TILE_SIZE / 2.0f;
+
+                            float offset = TILE_SIZE * 0.55f;
+                            pos.x += dx[i] * offset;
+                            pos.z += dy[i] * offset;
+
+                            if (rand() % 4 == 0) {
+                                // 監視カメラ
+                                pos.y = WALL_HEIGHT * 0.55f;
+
+                                // ★修正: カメラだけモデルの向きが逆なので +180度 して反転させる
+                                float rotY = DirectX::XMConvertToRadians(rots[i] + 180.0f);
+
+                                EntityFactory::CreateSecurityCamera(m_coordinator, pos, rotY);
+                            }
+                            else {
+                                // 絵画
+                                pos.y = WALL_HEIGHT * 0.25f;
+                                float rotY = DirectX::XMConvertToRadians(rots[i]);
+                                std::string model = paintModels[rand() % paintModels.size()];
+                                EntityFactory::CreateWallPainting(m_coordinator, pos, rotY, model);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 }

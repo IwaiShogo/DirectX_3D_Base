@@ -374,7 +374,6 @@ namespace
 
 
 // ===== ÓIo[ϐ̒` =====u
-// ̃VXeECSɃANZX邽߂̐ÓI|C^
 ECS::Coordinator* GameScene::s_coordinator = nullptr;
 std::string GameScene::s_StageNo = "";
 
@@ -386,8 +385,6 @@ void GameScene::Init()
     ECS::ECSInitializer::InitECS(m_coordinator);
 
     // --- 3. JSONRtBOgĈꌂI ---
-    // Ȃuꌂ֐vɁAIDCoordinatorn܂
-    // ֐͎ۂ̃R[hɍ킹ďĂ
     ECS::EntityFactory::GenerateStageFromConfig(m_coordinator.get(), s_StageNo);
 
     // Map-check gimmick (green cube). Touch it in ACTION_MODE to force TopView.
@@ -497,6 +494,24 @@ void GameScene::Init()
         )
     );
 
+    m_isFadeIn = false;
+    m_fadeTimer = 0.0f;
+
+    m_fadeEntity = m_coordinator->CreateEntity(
+        TransformComponent(
+            XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 200000.0f),
+            XMFLOAT3(0.0f, 0.0f, 0.0f),
+            XMFLOAT3(SCREEN_WIDTH, SCREEN_HEIGHT, 1.0f)
+        ),
+        UIImageComponent(
+            "BG_GAME_OVER",
+            200000.0f,
+            true,
+            XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f)
+        ),
+        TagComponent("SCREEN_FADE")
+    );
+
     // ------------------------------
     // gbvr[JñtF[hCi\j
     // ------------------------------
@@ -517,6 +532,45 @@ void GameScene::Init()
             XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f) // ESsX^[g
         )
     );
+
+
+
+//#ifdef _DEBUG
+//    // ★デバッグ: 開始時にアイテムを全獲得状態にする
+//    {
+//        // 1. トラッカー(進行管理)を取得し、カウントを最大にする
+//        ECS::EntityID trackerID = ECS::FindFirstEntityWithComponent<ItemTrackerComponent>(m_coordinator.get());
+//        if (trackerID != ECS::INVALID_ENTITY_ID)
+//        {
+//            auto& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(trackerID);
+//
+//            // 現在の獲得数を総数と同じにする
+//            tracker.collectedItems = tracker.totalItems;
+//
+//            // ターゲット順序も完了状態にしておく（順序ありモード対策）
+//            tracker.currentTargetOrder = tracker.totalItems + 1;
+//
+//            // 2. 画面上のアイテム(Collectable)を全て物理的に消去する
+//            // (ループ中に削除すると不具合が出る可能性があるため、一度リストアップしてから削除)
+//            std::vector<ECS::EntityID> itemsToRemove;
+//            for (auto const& entity : m_coordinator->GetActiveEntities())
+//            {
+//                if (m_coordinator->HasComponent<CollectableComponent>(entity))
+//                {
+//                    itemsToRemove.push_back(entity);
+//                }
+//            }
+//
+//            for (auto entity : itemsToRemove)
+//            {
+//                m_coordinator->DestroyEntity(entity);
+//            }
+//
+//            std::cout << "[DEBUG] Init: All items forced collected (" << tracker.collectedItems << "/" << tracker.totalItems << ")" << std::endl;
+//        }
+//    }
+//#endif
+
 
 }
 
@@ -546,7 +600,7 @@ void GameScene::Update(float deltaTime)
             ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator.get());
         auto& gameState = m_coordinator->GetComponent<GameStateComponent>(gameController);
 
-        gameState.isGameClear = true;   // ✅ これが正しい
+        gameState.isGameClear = true;   // ✅ これが正しい 
         gameState.isGameOver = false;  // 念のため
     }
 #endif

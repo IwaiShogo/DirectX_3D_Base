@@ -32,6 +32,7 @@
 #include "GameScene.h"
 #include "TitleScene.h"
 #include "OpeningScene.h"
+#include "LoadingScene.h"
 #include "ResultScene.h"
  /**
   * @class SceneManager

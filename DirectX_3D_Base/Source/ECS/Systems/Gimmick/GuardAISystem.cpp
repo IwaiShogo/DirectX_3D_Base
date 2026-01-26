@@ -334,6 +334,15 @@ bool GuardAISystem::IsTargetInSight(
 
 void GuardAISystem::Update(float deltaTime)
 {
+    if (m_coordinator)
+    {
+        ECS::EntityID stateID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
+        if (stateID != ECS::INVALID_ENTITY_ID)
+        {
+            if (m_coordinator->GetComponent<GameStateComponent>(stateID).isPaused) return;
+        }
+    }
+
     // MapComponentを持つEntity (GameController) を検索
     EntityID mapEntity = FindFirstEntityWithComponent<MapComponent>(m_coordinator);
     if (mapEntity == INVALID_ENTITY_ID) return;
@@ -407,6 +416,33 @@ void GuardAISystem::Update(float deltaTime)
         TransformComponent& guardTransform = m_coordinator->GetComponent<TransformComponent>(entity);
         RigidBodyComponent& guardRigidBody = m_coordinator->GetComponent<RigidBodyComponent>(entity);
 
+        if (guardComp.isStunned)
+        {
+            // ログ出力
+            printf("[Guard] Stunned! Remaining Time: %.2f\n", guardComp.stunTimer);
+
+            // 1. 物理挙動を完全停止
+            guardRigidBody.velocity = { 0.0f, 0.0f, 0.0f };
+            guardRigidBody.acceleration = { 0.0f, 0.0f, 0.0f };
+
+            // 2. アニメーションを待機状態(直立)にする
+            if (m_coordinator->HasComponent<AnimationComponent>(entity))
+            {
+                m_coordinator->GetComponent<AnimationComponent>(entity).Play("A_GUARD_WALK");
+            }
+
+            // 3. タイマー処理
+            guardComp.stunTimer -= deltaTime;
+            if (guardComp.stunTimer <= 0.0f)
+            {
+                printf("[Guard] Recovered from stun!\n");
+                guardComp.isStunned = false;
+                guardComp.stunTimer = 0.0f;
+            }
+
+            // 4. 重要: ここでループを抜けることで、下の「視界判定(捕獲)」や「移動」を実行させない
+            continue;
+        }
         // 1. トップビューモードでの初期化
         if (gameStateComp.currentMode == GameMode::SCOUTING_MODE)
         {
@@ -415,9 +451,7 @@ void GuardAISystem::Update(float deltaTime)
             guardComp.elapsedTime = 0.0f; // タイマーリセット
             guardRigidBody.velocity = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
-            // NOTE: ここでプレイヤーと同じ位置に警備員を配置する初期スポーン処理は不要。
-            // なぜなら、ACTION_MODEへの移行時に正確な位置に配置するため。
-            continue; // トップビュー時は以降のAIロジックをスキップ
+            continue; 
         }
 
         // 2. アクションモード (TPS) 移行後の遅延スポーン
