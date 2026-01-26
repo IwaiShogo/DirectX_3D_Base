@@ -120,3 +120,12 @@ FADE_WHITE,Texture,Assets/Texture/white.png
 OP_TXT_TSUGI,Texture,Assets/Texture/optxt/op_illust_tsugi.png
 OP_TXT_HE,Texture,Assets/Texture/optxt/op_illust__he.png
 OP_BUTTON,Texture,Assets/Texture/op_button.png
+UI_LOAD_O,Texture,Assets/Texture/ui_loading_o.png
+UI_LOAD_PERIOD,Texture,Assets/Texture/ui_loading_period.png
+UI_LOAD_D,Texture,Assets/Texture/ui_loading_d.png
+UI_LOAD_A,Texture,Assets/Texture/ui_loading_a.png
+UI_LOAD_L,Texture,Assets/Texture/ui_loading_l.png
+UI_LOAD_G,Texture,Assets/Texture/ui_loading_g.png
+UI_LOAD_N,Texture,Assets/Texture/ui_loading_n.png
+UI_LOAD_I,Texture,Assets/Texture/ui_loading_i.png
+UI_LOAD_ANIM,Texture,Assets/Texture/ui_loading_animation.png
