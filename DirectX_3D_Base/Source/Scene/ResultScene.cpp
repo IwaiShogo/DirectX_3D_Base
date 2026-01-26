@@ -105,6 +105,62 @@ namespace
     }
 }
 
+
+namespace
+{
+    // アイテムIDの受け取り、｛アイコンテクスチャ, 名前テクスチャ｝のペアを返す
+    struct ItemTextureSet {
+        const char* iconTex;
+        const char* nameTex;
+    };
+}
+
+ItemTextureSet GetItemTextures(const std::string& itemID)
+{
+    // アイテムIDに応じて画像を切り替える
+    // ※アセットIDは実際のプロジェクトに合わせて調整する
+    if (itemID == "ICO_TREASURE1") {
+        return { "ICO_TREASURE1", "UI_RESULT_TREASURE1" }; // ダイア
+    }
+    else if (itemID == "ICO_TREASURE2") {
+        return { "ICO_TREASURE2", "UI_RESULT_TREASURE1" }; // クリスタル
+    }
+    else if (itemID == "ICO_TREASURE3") {
+        return { "ICO_TREASURE3", "UI_RESULT_TREASURE1" }; // 指輪
+    }
+    else if (itemID == "ICO_TREASURE4") {
+        return { "ICO_TREASURE4", "UI_RESULT_TREASURE2" }; // 絵画1（ひまわり）
+    }
+    else if (itemID == "ICO_TREASURE5") {
+        return { "ICO_TREASURE5", "UI_RESULT_TREASURE2" }; // 絵画2（女の人）
+    }
+    else if (itemID == "ICO_TREASURE6") {
+        return { "ICO_TREASURE6", "UI_RESULT_TREASURE2" }; // 絵画3（睡蓮花）
+    }
+    else if (itemID == "ICO_TREASURE7") {
+        return { "ICO_TREASURE7", "UI_RESULT_TREASURE4" }; // 陶器1（茶色）
+    }
+    else if (itemID == "ICO_TREASURE8") {
+        return { "ICO_TREASURE8", "UI_RESULT_TREASURE4" }; // 陶器2（水色）
+    }
+    else if (itemID == "ICO_TREASURE9") {
+        return { "ICO_TREASURE9", "UI_RESULT_TREASURE4" }; // 陶器3（紫色）
+    }
+    else if (itemID == "ICO_TREASURE10") {
+        return { "ICO_TREASURE10", "UI_RESULT_TREASURE3" }; // 化石1（頭部）
+    }
+    else if (itemID == "ICO_TREASURE11") {
+        return { "ICO_TREASURE11", "UI_RESULT_TREASURE3" }; // 化石2（アンモナイト）
+    }
+    else if (itemID == "ICO_TREASURE12") {
+        return { "ICO_TREASURE12", "UI_RESULT_TREASURE3" }; // 化石3（足）
+    }
+    // デフォルト（未知のID用）
+    return { "ICO_TREASURE1", "ICO_TREASURE1" };
+}
+
+
+
 void ResultScene::Init()
 {
     // --- 1. ECS 初期化 & カメラ ---
@@ -163,6 +219,8 @@ void ResultScene::Init()
             ),
             UIImageComponent("UI_GAME_CLEAR", -2.0f, true, { 1,1,1,1 })
         );
+
+       
 
 
 
@@ -282,73 +340,75 @@ void ResultScene::Init()
 
             // タイムの下：拾ったアイテム
             {
-                const auto& icons = s_resultData.collectedItemIcons;
-                int count = static_cast<int>(icons.size());
+                const auto& itemIDs = s_resultData.collectedItemIcons; // ここにはIDが入っているはず
+                int count = static_cast<int>(itemIDs.size());
+                // ★デバッグ用ログ出力：受け取っているID一覧を表示
+                std::cout << "=== ResultScene Item IDs ===" << std::endl;
+                for (int i = 0; i < count; ++i) {
+                    std::cout << "Index " << i << ": " << itemIDs[i] << std::endl;
+                }
+                std::cout << "============================" << std::endl;
+
                 if (count > 0)
                 {
                     const float iconW = 80.0f;
-                    float baseY2 = timeY + 80.0f;
+                    const float nameW = 330.0f;
+                    const float nameH = 80.0f;
+                    const  float baseY2 = timeY + 80.0f;
 
                     struct IconPos { float x; float y; };
                     IconPos positions[] = {
-                        { timeX - 160.0f, baseY2 + 40.5f},
-                        { timeX - 80.0f, baseY2 + 40.5f},
-                        { timeX - 0.0f,  baseY2 + 40.5f},
-                        { timeX + 405.0f, baseY2 + 50.0f },
-                        { timeX + 323.0f,  baseY2 + 50.0f },
-                        { timeX + 240.0f,  baseY2 + 50.0f }
+                        {timeX - 100.0f, baseY2 + 0.5f},
+                        {timeX - 100.0f, baseY2 + 120.5f},
+                        {timeX + 300.0f, baseY2 + 40.5f}
+                        /*{timeX + 405.0f, baseY2 + 50.0f},
+                        {timeX + 323.0f, baseY2 + 50.0f},
+                        {timeX + 240.0f, baseY2 + 50.0f}*/
+
+
                     };
 
                     int maxIcons = std::min(count, (int)(sizeof(positions) / sizeof(positions[0])));
+
                     for (int i = 0; i < maxIcons; ++i)
                     {
+
+                        // ★ここでも確認できます
+                        std::cout << "Processing Item: " << itemIDs[i] << std::endl;
+
+                        // 1. テクスチャ名の決定
+                        auto texSet = GetItemTextures(itemIDs[i]);
+
+                        // ★画像が見つからない場合の確認
+                        if (std::string(texSet.iconTex) == "ICO_UNKNOWN") {
+                            std::cout << "  -> WARNING: Unknown ID! Check GetItemTextures." << std::endl;
+                        }
+                       
+
+                        float x = positions[i].x;
+                        float y = positions[i].y;
+
                         m_coordinator->CreateEntity(
-                            TransformComponent({ positions[i].x, positions[i].y, 0 }, { 0,0,0 }, { iconW, iconW, 1 }),
-                            UIImageComponent(icons[i].c_str(), 1.0f, true, { 1,1,1,1 })
+                            TransformComponent({ x,y,0 }, { 0,0,0 }, { iconW, iconW, 1 }),
+                            UIImageComponent(texSet.iconTex, 1.0f, true, { 1,1,1,1 })
+                        );
+
+                        float nameX = x + 80.0f;
+                        float nameY = y;
+
+                        m_coordinator->CreateEntity(
+                            TransformComponent(
+                                { nameX, nameY, 0 },
+                                { 0,0,0 },
+                                { nameW * 0.4f, nameH * 0.4f, 1.0f }
+                            ),
+                            UIImageComponent(texSet.nameTex, 1.0f, true, { 1,1,1,1 })
                         );
                     }
                 }
             }
 
-            // ダイヤテキスト
-            m_coordinator->CreateEntity(
-                TransformComponent(
-                    { SCREEN_WIDTH * 0.46f, SCREEN_HEIGHT * 0.55f, 0 },
-                    { 0, 0, 0 },
-                    { 330.0f, 40.0f, 1.0f }
-                ),
-                UIImageComponent("GEMS_TEXT", 0.0f, true, { 1,1,1,1 })
-            );
-
-            // 絵画テキスト
-            m_coordinator->CreateEntity(
-                TransformComponent(
-                    { SCREEN_WIDTH * 0.77f, SCREEN_HEIGHT * 0.55f, 0 },
-                    { 0, 0, 0 },
-                    { 330.0f, 40.0f, 1.0f }
-                ),
-                UIImageComponent("PAINTING_TEXT", 0.0f, true, { 1,1,1,1 })
-            );
-
-            // 化石テキスト
-            m_coordinator->CreateEntity(
-                TransformComponent(
-                    { SCREEN_WIDTH * 0.27f, SCREEN_HEIGHT * 0.68f, 0 },
-                    { 0, 0, 0 },
-                    { 330.0f, 40.0f, 1.0f }
-                ),
-                UIImageComponent("FOSSIL_TEXT", 0.0f, true, { 1,1,1,1 })
-            );
-
-            // 陶器テキスト
-            m_coordinator->CreateEntity(
-                TransformComponent(
-                    { SCREEN_WIDTH * 0.57f, SCREEN_HEIGHT * 0.68f, 0 },
-                    { 0, 0, 0 },
-                    { 330.0f, 40.0f, 1.0f }
-                ),
-                UIImageComponent("POTTERY_TEXT", 0.0f, true, { 1,1,1,1 })
-            );
+           
 
 
             // スタンプ
@@ -372,27 +432,6 @@ void ResultScene::Init()
                     TagComponent("AnimStamp")
                 );
             }
-
-            //EffectComponent(
-            //    /* AssetID  */ "EFK_TITLE_SHINE",
-            //    /* Loop     */ true,
-            //    /* AutoPlay */ true,
-            //    /* Offset   */{ 0.0f, 0.0f, -3.0f },
-            //    /* Scale    */ 0.3f
-
-
-           /* {
-                m_coordinator->CreateEntity(
-                    TransformComponent(
-                        { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f,1.0f },
-                        { 0,0,0 },
-                        { 100.0f, 100.0f, 1.0f }
-                    ),
-                    EffectComponent("EFK_STAMP1", true,true, { 0,0,-3.0 },0.3f)
-                );
-            }*/
-
-
 
 
             // ベストタイムプレート

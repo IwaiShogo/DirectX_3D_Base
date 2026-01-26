@@ -120,6 +120,10 @@ FADE_WHITE,Texture,Assets/Texture/white.png
 OP_TXT_TSUGI,Texture,Assets/Texture/optxt/op_illust_tsugi.png
 OP_TXT_HE,Texture,Assets/Texture/optxt/op_illust__he.png
 OP_BUTTON,Texture,Assets/Texture/op_button.png
+UI_RESULT_TREASURE1,Texture,Assets/Texture/ui_result_takara01.png
+UI_RESULT_TREASURE2,Texture,Assets/Texture/ui_result_takara02.png
+UI_RESULT_TREASURE3,Texture,Assets/Texture/ui_result_takara03.png
+UI_RESULT_TREASURE4,Texture,Assets/Texture/ui_result_takara04.png
 GAMEOVER_CHARACTER,Texture,Assets/Texture/bg_gameover_character.png
 GAMEOVER_GAS,Texture,Assets/Texture/bg_gameover_gas.png
 BG_GAMEOVER_SKY,Texture,Assets/Texture/bg_gameover_sky.png
