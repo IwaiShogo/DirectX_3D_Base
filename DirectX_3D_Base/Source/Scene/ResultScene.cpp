@@ -293,43 +293,90 @@ void ResultScene::Init()
         // GAME OVER 画面のレイアウト
         // ========================================================
 
-        // 背景
+        // --------------------------------------------------------
+        // GAME OVER 演出：初期位置定義
+        // --------------------------------------------------------
+        const float startX = SCREEN_WIDTH + 300.0f;   // 画面右外
+        const float startY = SCREEN_HEIGHT * 0.8f;    // 車・ガスのY位置
+        const float CloudX = SCREEN_WIDTH * 0.7f;  // 雲の初期位置
+
+        // 背景.空
         m_coordinator->CreateEntity(
             TransformComponent(
                 { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0 },
                 { 0, 0, 0 },
                 { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }
             ),
-            UIImageComponent("BG_GAME_OVER", 0.0f, true, { 1,1,1,1 })
-        );
-        // --------------------------------------------------------
-        // パラパラ漫画アニメーション（Result演出）
-        // --------------------------------------------------------
-        m_coordinator->CreateEntity(
-            TransformComponent(
-                { SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.5f, 0.0f }, // 表示位置
-                { 0.0f, 0.0f, 0.0f },
-                { 600.0f, 600.0f, 1.0f } // 1枚分のサイズ
-            ),
-            UIImageComponent(
-                "RESULT_ANIM",   // ★ 最初のフレーム
-                1.0f,
-                true,
-                { 1,1,1,1 }
-            ),
-            TagComponent("RESULT_ANIM") // ★ ResultControlSystem が拾う
+            UIImageComponent("BG_GAMEOVER_SKY", 0.0f, true, { 1,1,1,1 })
         );
 
-        // GAME OVER ロゴ
+        // 背景.太陽
         m_coordinator->CreateEntity(
             TransformComponent(
-                { SCREEN_WIDTH * 0.2f, SCREEN_HEIGHT * 0.09f, 0.0f },//0.1,0.15
-                { 0.0f, 0.0f, 0.0f },
-                { 460,72,1 }//680,96
+                { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0 },
+                { 0, 0, 0 },
+                { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }
             ),
-            UIImageComponent("UI_GAME_OVER", 0.0f, true, { 1,1,1,1 })
+            UIImageComponent("BG_GAMEOVER_SUN", 0.0f, true, { 1,1,1,1 })
         );
 
+        // 背景.海
+        m_coordinator->CreateEntity(
+            TransformComponent(
+                { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0 },
+                { 0, 0, 0 },
+                { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }
+            ),
+            UIImageComponent("BG_GAMEOVER_OCEAN", 0.0f, true, { 1,1,1,1 })
+        );
+
+        // 背景.雲
+        m_coordinator->CreateEntity(
+            TransformComponent(
+                { CloudX, SCREEN_HEIGHT * 0.5f, 0 },
+                { 0, 0, 0 },
+                { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }
+            ),
+            UIImageComponent("BG_GAMEOVER_CLOUD", 0.0f, true, { 1,1,1,1 }),
+            TagComponent("RESULT_ANIM_CLOUD")
+        );
+
+        // 背景.雲2
+        m_coordinator->CreateEntity(
+            TransformComponent(
+                { CloudX+1280, SCREEN_HEIGHT * 0.5f, 0 },
+                { 0, 0, 0 },
+                { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }
+            ),
+            UIImageComponent("BG_GAMEOVER_CLOUD2", 0.0f, true, { 1,1,1,1 }),
+            TagComponent("RESULT_ANIM_CLOUD")
+        );
+
+        // 車
+        m_coordinator->CreateEntity(
+            TransformComponent({ startX, startY, 0.0f }, { 0,0,0 }, { 900,532,1 }),
+            UIImageComponent("GAMEOVER_CHARACTER", 1.0f, true, { 1,1,1,1 }),
+            TagComponent("RESULT_ANIM_CAR")
+        );
+
+        // ガス
+        m_coordinator->CreateEntity(
+            TransformComponent({ startX + 750.0f, startY, 0.0f }, { 0,0,0 }, { 1080,555,1 }),
+            UIImageComponent("GAMEOVER_GAS", 1.0f, true, { 1,1,1,1 }),
+            TagComponent("RESULT_ANIM_GAS")
+        );
+
+        // GAME OVER ロゴ（真ん中で置いていく）
+        m_coordinator->CreateEntity(
+            TransformComponent(
+                { startX + 800.0f,startY+25 , 0.0f },
+                { 0,0,0 },
+                { 460,72,1 }
+            ),
+            UIImageComponent("UI_GAME_OVER", 1.2f, true, { 1,1,1,1 }),
+            TagComponent("RESULT_ANIM_LOGO")
+        );
+        
 
 
         // ステージ名プレート（ゲームオーバー時も表示）
@@ -354,36 +401,37 @@ void ResultScene::Init()
         //    );
         //}
 
-        // D) ゲームオーバー時：お宝一覧（順番どおり＋未取得灰色）
-        {
-            const auto& icons = s_resultData.orderedItemIcons;
-            const auto& flags = s_resultData.orderedItemCollected;
-            size_t count = std::min(icons.size(), flags.size());
+        //  1/20 つかわない
+        //// D) ゲームオーバー時：お宝一覧（順番どおり＋未取得灰色）
+        //{
+        //    const auto& icons = s_resultData.orderedItemIcons;
+        //    const auto& flags = s_resultData.orderedItemCollected;
+        //    size_t count = std::min(icons.size(), flags.size());
 
-            if (count > 0)
-            {
-                const float iconSize = 80.0f;
-                const float margin = 20.0f;
+        //    if (count > 0)
+        //    {
+        //        const float iconSize = 80.0f;
+        //        const float margin = 20.0f;
 
-                // 画面下部ボタンの少し上、左から右へ並べるイメージ
-                float baseY = SCREEN_HEIGHT * 0.25f;
-                float baseX = SCREEN_WIDTH * 0.05f;
+        //        // 画面下部ボタンの少し上、左から右へ並べるイメージ
+        //        float baseY = SCREEN_HEIGHT * 0.25f;
+        //        float baseX = SCREEN_WIDTH * 0.05f;
 
-                for (size_t i = 0; i < count; ++i)
-                {
-                    float x = baseX + (iconSize + margin) * static_cast<float>(i);
-                    float y = baseY;
+        //        for (size_t i = 0; i < count; ++i)
+        //        {
+        //            float x = baseX + (iconSize + margin) * static_cast<float>(i);
+        //            float y = baseY;
 
-                    bool collected = flags[i];
-                    DirectX::XMFLOAT4 color = collected ? DirectX::XMFLOAT4{ 1,1,1,1 } : DirectX::XMFLOAT4{ 0.3f,0.3f,0.3f,0.7f };
+        //            bool collected = flags[i];
+        //            DirectX::XMFLOAT4 color = collected ? DirectX::XMFLOAT4{ 1,1,1,1 } : DirectX::XMFLOAT4{ 0.3f,0.3f,0.3f,0.7f };
 
-                    m_coordinator->CreateEntity(
-                        TransformComponent({ x, y, 0.0f }, { 0,0,0 }, { iconSize, iconSize, 1.0f }),
-                        UIImageComponent(icons[i].c_str(), 1.0f, true, color)
-                    );
-                }
-            }
-        }
+        //            m_coordinator->CreateEntity(
+        //                TransformComponent({ x, y, 0.0f }, { 0,0,0 }, { iconSize, iconSize, 1.0f }),
+        //                UIImageComponent(icons[i].c_str(), 1.0f, true, color)
+        //            );
+        //        }
+        //    }
+        //}
 
         // BGM再生
         ECS::EntityID m_gameoverBGM = ECS::EntityFactory::CreateLoopSoundEntity(
@@ -550,8 +598,8 @@ void ResultScene::CreateButtons()
 
     // ★ ここでクリア／ゲームオーバーで使う土台テクスチャを切り替える
     const char* frameTexId = isClear
-        ? "BTN_UNDER_CLEAR"  // ← btn_result_normal1.png 用
-        : "BTN_UNDER_GAMEOVER";  // ← btn_result_normal.png 用
+        ? "BTN_UNDER_GAMECLEAR"  // ← btn_result_normal.png 用
+        : "BTN_UNDER_GAMEOVER";  // ← btn_result_normal1.png 用
 
     auto createResultButton =
         [&](int index, const char* textTex, std::function<void()> onClick)
