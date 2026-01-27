@@ -1276,7 +1276,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                             pos.x += TILE_SIZE / 2.0f;
                             pos.z += TILE_SIZE / 2.0f;
 
-                            float offset = TILE_SIZE * 0.55f;
+                            float offset = TILE_SIZE * 0.51f;
                             pos.x += dx[i] * offset;
                             pos.z += dy[i] * offset;
 
