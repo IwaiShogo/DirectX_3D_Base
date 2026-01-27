@@ -1173,6 +1173,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                         orderIndex = m_itemSpawnIndex + 1;
                     }
 
+                    cellCenter.y += 0.3f;
                     EntityFactory::CreateCollectable(m_coordinator, cellCenter, orderIndex, itemID);
 
                     m_itemSpawnIndex++;
@@ -1271,7 +1272,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                     CellType nType = mapComp.grid[ny][nx].type;
                     if (nType == CellType::Path || nType == CellType::Room || nType == CellType::Start) {
 
-                        if (rand() % 100 < 15) {
+                        if (rand() % 100 < 20) {
                             XMFLOAT3 pos = GetWorldPosition(x, y, config);
                             pos.x += TILE_SIZE / 2.0f;
                             pos.z += TILE_SIZE / 2.0f;

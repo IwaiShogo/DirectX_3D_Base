@@ -17,7 +17,7 @@ M_TREASURE9,Model,Assets/Model/Item/obj_tubo_is_gouyoku.fbx
 M_TREASURE10,Model,Assets/Model/Item/obj_dinosaur.fbx
 M_TREASURE11,Model,Assets/Model/Item/obj_ammonite.fbx
 M_TREASURE12,Model,Assets/Model/Item/obj_dinosaur_foot.fbx
-M_DOOR,Model,Assets/Model/Stage/obj_door.fbx
+M_DOOR,Model,Assets/Model/Stage/anim_door_open.fbx
 M_TITLE_CARD,Model,Assets/Model/Prop/obj_yokokujo.fbx
 M_TITLE_GLASSCASE,Model,Assets/Model/Prop/obj_glasscase.fbx
 M_CARD,Model,Assets/Model/Guard/anim_yokokujo.fbx

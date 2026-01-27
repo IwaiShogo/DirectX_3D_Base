@@ -160,7 +160,7 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 			/* Scale	*/	0.1f,
 			/* Flip		*/	Model::None
 		),
-		CollectableComponent(1.0f, orderIndex, itemID),
+		CollectableComponent(1.5f, orderIndex, itemID),
 		//浮遊コンポーネント
 		FloatingComponent(
 			/* Amplitude */ 0.5f,     // 上下 0.5 の範囲で揺れる
