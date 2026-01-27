@@ -1232,8 +1232,8 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
 
     // 絵画のバリエーション
     std::vector<std::string> paintModels = {
-        "M_KAIGA_BIRD", "M_KAIGA_CAT", "M_KAIGA_PANCAKES",
-        "M_KAIGA_PENGUIN", "M_KAIGA_ROSE", "M_KAIGA_SKELETON", "M_KAIGA_MAGICALGIRL"
+        "M_KAIGA_BIRD", "M_KAIGA_CAT", "M_KAIGA_PANCAKES","M_KAIGA_PENGUIN",
+        "M_KAIGA_ROSE", "M_KAIGA_SKELETON", "M_KAIGA_MAGICALGIRL", "M_KAIGA_SIBAKO"
     };
 
     // A. 天井プロペラ (通路の天井に配置)
