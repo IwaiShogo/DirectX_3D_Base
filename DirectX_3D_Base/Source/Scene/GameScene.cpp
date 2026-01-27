@@ -533,6 +533,7 @@ void GameScene::Init()
         )
     );
 
+    ECS::EntityFactory::CreateTopViewTrigger(m_coordinator.get(), XMFLOAT3(0.0f, 0.0f, 5.0f));
 
 
 //#ifdef _DEBUG

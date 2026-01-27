@@ -1098,6 +1098,10 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID) {
     if (!(pressedSpace || pressedA)) return;
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+    if (state.currentMode == GameMode::ACTION_MODE)
+    {
+        return;
+    }
     if (state.currentMode == GameMode::SCOUTING_MODE) {
         ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f); // 音量調整
         StartMosaicSequence(controllerID);
@@ -1571,7 +1575,7 @@ void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID) {
         else if (m_coordinator->HasComponent<TagComponent>(entity)) {
             const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
             if (tag == "guard") { actionType = MESH_MODEL; scoutType = MESH_NONE; }
-            else if (tag == "taser" || tag == "map_gimmick") { actionType = MESH_NONE; scoutType = MESH_NONE; }
+            else if (tag == "taser" || tag == "map_gimmick" || tag == "TopViewTrigger") { actionType = MESH_BOX; scoutType = MESH_BOX; }
             else if (tag == "ground" || tag == "wall") { actionType = MESH_MODEL; scoutType = MESH_BOX; }
             else if (tag == "door") { actionType = MESH_MODEL; scoutType = MESH_MODEL; }
             else if (tag == "propeller" || tag == "security_camera" || tag == "painting") {

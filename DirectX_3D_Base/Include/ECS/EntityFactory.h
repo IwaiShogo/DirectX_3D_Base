@@ -69,6 +69,8 @@ namespace ECS
 
 		static EntityID CreateTeleporter(ECS::Coordinator* coordinator, DirectX::XMFLOAT3 position);
 
+		static EntityID CreateTopViewTrigger(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
+
 		static ECS::EntityID CreateStopTrap(ECS::Coordinator* coordinator, const DirectX::XMFLOAT3& position, float duration);
 		static ECS::EntityID CreateCeilingFan(ECS::Coordinator* coordinator, const DirectX::XMFLOAT3& position);
 		static ECS::EntityID CreateSecurityCamera(ECS::Coordinator* coordinator, const DirectX::XMFLOAT3& position, float rotationY);

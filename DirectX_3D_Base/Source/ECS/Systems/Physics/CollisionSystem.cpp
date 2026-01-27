@@ -320,6 +320,10 @@ void CollisionSystem::Update(float deltaTime)
 				
 				return;
 			}
+			if (tagB.tag == "TopViewTrigger" || tagB.tag == "map_gimmick")
+			{
+				return;
+			}
 		}
 	}
 
