@@ -1094,63 +1094,28 @@ void GameControlSystem::UpdateTimerAndRules(float deltaTime, ECS::EntityID contr
 }
 
 void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID) {
-    bool pressedSpace = IsKeyTrigger(VK_SPACE);
-    bool pressedA = IsButtonTriggered(BUTTON_A);
+    bool pressedSpace = IsKeyTrigger(VK_SPACE); bool pressedA = IsButtonTriggered(BUTTON_A);
     if (!(pressedSpace || pressedA)) return;
-
+    if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
-
-    // ★追加：ギミックで「今さっき」モードが変わったばかりなら、この関数の処理をスキップする
-    // これを入れないと、ギミックで切り替わった直後にこの関数が「戻す処理」をしてしまいます
-    static GameMode lastFrameMode = state.currentMode;
-    if (lastFrameMode != state.currentMode) {
-        lastFrameMode = state.currentMode;
-        return;
-    }
-
-    // 演出が終わったかの判定
-    static bool entranceDone = false;
-    if (state.sequenceState == GameSequenceState::Playing) entranceDone = true;
-
-    // 偵察(SCOUTING) → アクション(ACTION)
     if (state.currentMode == GameMode::SCOUTING_MODE) {
-        state.currentMode = GameMode::ACTION_MODE;
-        lastFrameMode = state.currentMode; // モード変更を記録
-        EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
-        if (playerID != INVALID_ENTITY_ID) {
-            auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
-            if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>()) {
-                // プレイヤーの背後にスッと回り込むようにリセット
-                camSys->ResetCameraAngle(pTrans.rotation.y, 0.5f);
-            }
-        }
-        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f);
+        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f); // 音量調整
         StartMosaicSequence(controllerID);
+    }
+    else if (state.currentMode == GameMode::ACTION_MODE) {
+#ifndef _DEBUG
+        if (m_hasUsedTopView) return;
+#endif
+        state.currentMode = GameMode::SCOUTING_MODE;
+        m_hasUsedTopView = true;
 
-        if (entranceDone) {
-            state.sequenceState = GameSequenceState::Playing;
-        }
-        PlayBGM("BGM_ACTION", 0.7f);
+        // ★修正: トップビュー遷移時は BGM_TOPVIEW を再生
+        PlayBGM("BGM_TOPVIEW", 0.7f);
+
         ApplyModeVisuals(controllerID);
-        return;
+        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f); // 音量調整
     }
-    //何回もやりたい場合はここを解除する
-    //    else {
-    //         --- アクション -> 偵察 (どこでも可能に！) ---
-    //        state.currentMode = GameMode::SCOUTING_MODE;
-    //        lastFrameMode = state.currentMode; // モード変更を記録
-    //
-    //        PlayBGM("BGM_TOPVIEW", 0.7f);
-    //        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f);
-    //    }
-    //
-    //    ApplyModeVisuals(controllerID);
-    //}
-        // アクション(ACTION)時は、ギミック以外では何もしない
-    if (state.currentMode == GameMode::ACTION_MODE) {
-        lastFrameMode = state.currentMode;
-        return;
-    }
+    ApplyModeVisuals(controllerID);
 }
 
 void GameControlSystem::CheckSceneTransition(ECS::EntityID controllerID) {
@@ -1338,9 +1303,6 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
 {
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
     state.sequenceState = GameSequenceState::Entering;
-    // ★追加：リトライ対策。経過時間をリセットすることで、
-    // 下記の if ブロックが必ず実行されるようにします。
-    state.elapsedTime = 0.0f;
     state.sequenceTimer = 0.0f;
     EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
     EntityID doorID = FindEntranceDoor();
@@ -1350,12 +1312,10 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
         auto& dTrans = m_coordinator->GetComponent<TransformComponent>(doorID);
         float rad = dTrans.rotation.y;
         float startDist = 5.0f;
-        // ここがリトライ時に実行されないのが原因でした
-        if (state.elapsedTime < 1.0f) {
-            pTrans.position.x = dTrans.position.x - sin(rad) * startDist;
-            pTrans.position.z = dTrans.position.z - cos(rad) * startDist;
-            pTrans.rotation.y = dTrans.rotation.y;
-        }
+        pTrans.position.x = dTrans.position.x - sin(rad) * startDist;
+        pTrans.position.z = dTrans.position.z - cos(rad) * startDist;
+        pTrans.rotation.y = dTrans.rotation.y;
+
         if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>()) {
             XMVECTOR doorPos = XMLoadFloat3(&dTrans.position);
             XMVECTOR doorDir = XMVectorSet(sin(rad), 0.0f, cos(rad), 0.0f);
@@ -1364,14 +1324,6 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
             XMFLOAT3 camPos, lookAt;
             XMStoreFloat3(&camPos, camPosVec); XMStoreFloat3(&lookAt, lookAtVec);
             camSys->SetFixedCamera(camPos, lookAt);
-        }
-        // ドアのアニメーション制御
-        if (m_coordinator->HasComponent<AnimationComponent>(doorID)) {
-            auto& anim = m_coordinator->GetComponent<AnimationComponent>(doorID);
-
-            // ★ここがポイント：一度 Stop してから Play することで
-            // リトライ時に「開ききった状態」からでも最初に戻って再生されます
-            anim.Play("A_DOOR_OPEN", false);
         }
         if (m_coordinator->HasComponent<AnimationComponent>(doorID)) m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_OPEN", false);
         if (m_coordinator->HasComponent<CollisionComponent>(doorID)) m_coordinator->GetComponent<CollisionComponent>(doorID).type = COLLIDER_TRIGGER;
@@ -1619,7 +1571,7 @@ void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID) {
         else if (m_coordinator->HasComponent<TagComponent>(entity)) {
             const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
             if (tag == "guard") { actionType = MESH_MODEL; scoutType = MESH_NONE; }
-            else if (tag == "taser" || tag == "map_gimmick" || tag == "TopViewTrigger") { actionType = MESH_BOX; scoutType = MESH_BOX; }
+            else if (tag == "taser" || tag == "map_gimmick") { actionType = MESH_NONE; scoutType = MESH_NONE; }
             else if (tag == "ground" || tag == "wall") { actionType = MESH_MODEL; scoutType = MESH_BOX; }
             else if (tag == "door") { actionType = MESH_MODEL; scoutType = MESH_MODEL; }
             else if (tag == "propeller" || tag == "security_camera" || tag == "painting") {
