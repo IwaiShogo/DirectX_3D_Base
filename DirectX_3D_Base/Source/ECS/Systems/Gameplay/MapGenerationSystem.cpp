@@ -1279,7 +1279,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
         int dy[] = { -1, 1, 0, 0 };
         // 壁を背にして通路中心を向く角度 (0度=North基準と仮定)
         // 北壁(背中)→南向き(180), 南壁(背中)→北向き(0), 西壁(背中)→東向き(90), 東壁(背中)→西向き(270)
-        float rots[] = { 180.0f, 0.0f, 90.0f, 270.0f };
+        float rots[] = { 270.0f, 90.0f, 0.0f, 180.0f };
 
         for (int y = 1; y < GRID_SIZE_Y - 1; ++y) {
             for (int x = 1; x < GRID_SIZE_X - 1; ++x) {
