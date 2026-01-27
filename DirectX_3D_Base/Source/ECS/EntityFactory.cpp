@@ -368,7 +368,32 @@ EntityID ECS::EntityFactory::CreateTaser(Coordinator* coordinator, const DirectX
 	return taser;
 }
 
+EntityID ECS::EntityFactory::CreateTopViewTrigger(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+{
+	float width = 10.0f;
+	float height = 1.0f; // 描画する箱の高さ
+	float depth = 15.0f;
 
+	EntityID trigger = coordinator->CreateEntity(
+		TagComponent("TopViewTrigger"),
+		TransformComponent(
+			XMFLOAT3(position.x, 2.0f, position.z), // 地面より少し上に配置
+			XMFLOAT3(0.0f, 0.0f, 0.0f),
+			XMFLOAT3(width, height, depth)
+		),
+		RenderComponent(
+			MESH_BOX,
+			XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) // 半透明の赤
+		),
+		CollisionComponent(
+			XMFLOAT3(0.0f, 0.0f, 0.0f),      // オフセット（中心）
+			XMFLOAT3(width, height, depth), // サイズ
+			COLLIDER_TRIGGER
+		)
+	);
+
+	return trigger;
+}
 
 EntityID ECS::EntityFactory::CreateMapGimmick(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
 {

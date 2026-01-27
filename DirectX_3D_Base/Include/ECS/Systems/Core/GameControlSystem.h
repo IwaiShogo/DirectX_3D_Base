@@ -81,7 +81,7 @@ public:
 
     // 外部から「見つかった」状態へ遷移させるトリガー
     void TriggerCaughtSequence(ECS::EntityID guardID);
-
+    void ApplyModeVisuals(ECS::EntityID controllerID);
 private:
     // --- 内部処理用ヘルパー関数 ---
     void UpdateTimerAndRules(float deltaTime, ECS::EntityID controllerID); // 時間・勝敗判定
@@ -100,7 +100,6 @@ private:
 
     // --- MapGimmick (touch to open TopView map) ---
     void CheckMapGimmickTrigger(ECS::EntityID controllerID);
-    void ApplyModeVisuals(ECS::EntityID controllerID);
     bool IsAABBOverlap(ECS::EntityID a, ECS::EntityID b);
 
     // --- ポーズ画面用ステート管理 ---
