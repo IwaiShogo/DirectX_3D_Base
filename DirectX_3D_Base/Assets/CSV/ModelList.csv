@@ -1,5 +1,5 @@
 AssetID,AssetType,FilePath
-M_PLAYER,Model,Assets/Model/Player/anim_player_cought_ref.fbx
+M_PLAYER,Model,Assets/Model/Player/anim_player_Idle_ref.fbx
 M_GUARD,Model,Assets/Model/Guard/anim_enemy_run.fbx
 M_CORRIDOR,Model,Assets/Model/Stage/std_floare.fbx
 M_WALL,Model,Assets/Model/Stage/wall.fbx
