@@ -381,7 +381,7 @@ EntityID ECS::EntityFactory::CreateMapSignboard(Coordinator* coordinator, const 
 
 	// ★修正: Y=0.0f だと中心が床に来て埋まるため、高さ(1.5f)の半分ほど浮かせる
 	// 看板の高さが1.5f程度なら、0.75f付近を中心にすると床の上に立つ
-	placePos.y = 5.0;
+	placePos.y = 3.7;
 
 	return coordinator->CreateEntity(
 		TagComponent("TopViewTrigger"),
@@ -396,11 +396,12 @@ EntityID ECS::EntityFactory::CreateMapSignboard(Coordinator* coordinator, const 
 		),
 		ModelComponent(
 			"M_KANBAN",
-			0.2f,
+			0.1f,
 			Model::None
 		),
+		PointLightComponent(0.2f, 1.5f, 3.0f, 4.0f, { 0.0f, 0.5f, 0.5f }),
 		CollisionComponent(
-			XMFLOAT3(1.5f, 2.0f, 1.5f),
+			XMFLOAT3(2.0f, 2.0f, 2.0f),
 			XMFLOAT3(0.0f, 1.0f, 0.0f),
 			COLLIDER_TRIGGER
 		),
