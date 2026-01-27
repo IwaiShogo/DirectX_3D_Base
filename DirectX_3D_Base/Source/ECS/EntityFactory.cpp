@@ -369,64 +369,47 @@ EntityID ECS::EntityFactory::CreateTaser(Coordinator* coordinator, const DirectX
 	return taser;
 }
 
-EntityID ECS::EntityFactory::CreateTopViewTrigger(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+/**
+ * @brief マップ確認用の看板（衝立）を生成
+ * @param position 配置座標（床の中心）
+ * @param rotationY 回転角度（壁に沿わせるため）
+ */
+EntityID ECS::EntityFactory::CreateMapSignboard(Coordinator* coordinator, const DirectX::XMFLOAT3& position, float rotationY)
 {
-	float width = 10.0f;
-	float height = 1.0f; // 描画する箱の高さ
-	float depth = 15.0f;
+	// 見た目のモデル用エンティティ
+	XMFLOAT3 placePos = position;
 
-	EntityID trigger = coordinator->CreateEntity(
+	// ★修正: Y=0.0f だと中心が床に来て埋まるため、高さ(1.5f)の半分ほど浮かせる
+	// 看板の高さが1.5f程度なら、0.75f付近を中心にすると床の上に立つ
+	placePos.y = 5.0;
+
+	return coordinator->CreateEntity(
 		TagComponent("TopViewTrigger"),
 		TransformComponent(
-			XMFLOAT3(position.x, 2.0f, position.z), // 地面より少し上に配置
-			XMFLOAT3(0.0f, 0.0f, 0.0f),
-			XMFLOAT3(width, height, depth)
+			placePos,
+			XMFLOAT3(0.0f, rotationY, 0.0f),
+			XMFLOAT3(1.5f, 1.5f, 1.5f) // スケール
 		),
 		RenderComponent(
 			MESH_BOX,
-			XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f) // 半透明の赤
+			XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f) // ★修正: 黄色に変更 (R=1, G=1, B=0)
+		),
+		ModelComponent(
+			"M_KANBAN",
+			0.2f,
+			Model::None
 		),
 		CollisionComponent(
-			XMFLOAT3(0.0f, 0.0f, 0.0f),      // オフセット（中心）
-			XMFLOAT3(width, height, depth), // サイズ
+			XMFLOAT3(1.5f, 2.0f, 1.5f),
+			XMFLOAT3(0.0f, 1.0f, 0.0f),
 			COLLIDER_TRIGGER
-		)
-	);
-
-	return trigger;
-}
-
-EntityID ECS::EntityFactory::CreateMapGimmick(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
-{
-	ECS::EntityID gimmick = coordinator->CreateEntity(
-		TagComponent(
-			/* Tag */    "map_gimmick"
-		),
-		TransformComponent(
-			/* Position */	position,
-			/* Rotation */	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale */	XMFLOAT3(3.0f, 3.0f, 3.0f)
-		),
-		RenderComponent(
-			/* MeshType */	MESH_NONE,
-			/* Color */	XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
 		),
 		RigidBodyComponent(
-			/* Velocity */		XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Acceleration */	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Mass */			0.0f,
-			/* Friction */		0.5f,
-			/* Restitution */	0.1f
-		),
-		CollisionComponent(
-			/* Size */			XMFLOAT3(2.5f, 2.5f, 2.5f),
-			/* Offset */		XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType */	COLLIDER_STATIC
+			XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), 0.0f, 0.5f, 0.0f
 		)
 	);
-
-	return gimmick;
 }
+
 EntityID ECS::EntityFactory::CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume)
 {
 	EntityID entity = coordinator->CreateEntity(

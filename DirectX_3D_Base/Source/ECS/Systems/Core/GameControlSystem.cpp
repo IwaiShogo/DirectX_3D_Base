@@ -82,6 +82,10 @@ void GameControlSystem::PlayStopableSE(const std::string& assetID, float volume)
     m_coordinator->GetComponent<SoundComponent>(entity).RequestPlay(volume, 0);
 }
 
+// 定数定義などの下、またはUpdate関数の直前あたりに静的変数を定義
+static GameMode s_prevMode = GameMode::SCOUTING_MODE; // 前フレームのモード
+static float s_modeSwitchCooldown = 0.0f;             // 切り替え防止タイマー
+
 // ==================================================================================
 //  Update メインループ
 // ==================================================================================
@@ -91,6 +95,16 @@ void GameControlSystem::Update(float deltaTime)
     if (controllerID == INVALID_ENTITY_ID) return;
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+
+    if (s_modeSwitchCooldown > 0.0f) {
+        s_modeSwitchCooldown -= deltaTime;
+    }
+
+    // 外部（PlayerControlSystemなど）でモードが変更された場合を検知してクールダウンを設定
+    if (state.currentMode != s_prevMode) {
+        s_modeSwitchCooldown = 0.5f; // 0.5秒間は再切り替えを禁止
+        s_prevMode = state.currentMode;
+    }
 
     if (IsKeyTrigger(VK_ESCAPE) || IsButtonTriggered(BUTTON_START)) {
         TogglePauseRequest();
@@ -1093,13 +1107,48 @@ void GameControlSystem::UpdateTimerAndRules(float deltaTime, ECS::EntityID contr
 #endif
 }
 
-void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID) {
-    bool pressedSpace = IsKeyTrigger(VK_SPACE); bool pressedA = IsButtonTriggered(BUTTON_A);
+void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
+{
+    if (s_modeSwitchCooldown > 0.0f) return;
+    
+    bool pressedSpace = IsKeyTrigger(VK_SPACE);
+    bool pressedA = IsButtonTriggered(BUTTON_A);
+
+    // キー入力がなければ何もしない
     if (!(pressedSpace || pressedA)) return;
+
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+
+    // --- 1. スカウトモード（トップビュー）の場合 ---
     if (state.currentMode == GameMode::SCOUTING_MODE) {
-        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f); // 音量調整
+
+        // ★修正: 既にゲームが始まっている（トップビュー使用済み）場合は、
+        // スタート演出ではなく「TPSモードへの復帰」を行う
+        if (m_hasUsedTopView)
+        {
+            // モードをアクションに戻す
+            state.currentMode = GameMode::ACTION_MODE;
+
+            // 見た目の切り替え（黄色い箱 → モデル）
+            ApplyModeVisuals(controllerID);
+
+            // カメラの角度をTPS視点に戻す
+            // これをしないと真下を向いたままになる可能性がある
+            auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>();
+            if (camSys) {
+                camSys->m_currentPitch = 0.2f; // 水平より少し見下ろす程度にリセット
+                // Yaw（横回転）はそのまま維持
+            }
+
+            // キャンセル音などを鳴らす（任意）
+            ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_BACK", 0.5f);
+
+            return;
+        }
+
+        // ゲーム未開始時のみ、スタート演出を開始
+        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f);
         StartMosaicSequence(controllerID);
     }
     else if (state.currentMode == GameMode::ACTION_MODE) {
@@ -1468,6 +1517,9 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
     }
     if (state.currentMode == GameMode::SCOUTING_MODE && state.sequenceTimer > 2.0f) {
         state.currentMode = GameMode::ACTION_MODE;
+
+        m_hasUsedTopView = true;
+
         if (m_blackBackID != INVALID_ENTITY_ID) m_coordinator->GetComponent<UIImageComponent>(m_blackBackID).color.w = 1.0f;
 
         // 音関連
@@ -1571,7 +1623,8 @@ void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID) {
         else if (m_coordinator->HasComponent<TagComponent>(entity)) {
             const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
             if (tag == "guard") { actionType = MESH_MODEL; scoutType = MESH_NONE; }
-            else if (tag == "taser" || tag == "map_gimmick") { actionType = MESH_NONE; scoutType = MESH_NONE; }
+            else if (tag == "taser") { actionType = MESH_NONE; scoutType = MESH_NONE; }
+            else if (tag == "TopViewTrigger") { actionType = MESH_MODEL; scoutType = MESH_BOX; }
             else if (tag == "ground" || tag == "wall") { actionType = MESH_MODEL; scoutType = MESH_BOX; }
             else if (tag == "door") { actionType = MESH_MODEL; scoutType = MESH_MODEL; }
             else if (tag == "propeller" || tag == "security_camera" || tag == "painting") {
