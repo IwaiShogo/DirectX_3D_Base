@@ -206,7 +206,7 @@ private:
     void UpdateLights(); // ポイントライト更新
 
     // BGM管理用
-    void PlayBGM(const std::string& assetID);
+    void PlayBGM(const std::string& assetID, float volume = 0.15f);
     void StopBGM();
     void PlayStopableSE(const std::string& assetID, float volume);
 };
