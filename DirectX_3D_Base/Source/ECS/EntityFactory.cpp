@@ -128,13 +128,14 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 {
 	std::string modelPath = "M_TREASURE1";
 	DirectX::XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	float rot = 0.0f;
 
 	if (itemID == "Takara_Daiya") { modelPath = "M_TREASURE1"; }
 	else if (itemID == "Takara_Crystal") { modelPath = "M_TREASURE2"; }
 	else if (itemID == "Takara_Yubiwa") { modelPath = "M_TREASURE3"; }
-	else if (itemID == "Takara_Kaiga1") { modelPath = "M_TREASURE4"; }
-	else if (itemID == "Takara_Kaiga2") { modelPath = "M_TREASURE5"; }
-	else if (itemID == "Takara_Kaiga3") { modelPath = "M_TREASURE6"; }
+	else if (itemID == "Takara_Kaiga1") { modelPath = "M_TREASURE4"; rot = 1.57f; }
+	else if (itemID == "Takara_Kaiga2") { modelPath = "M_TREASURE5"; rot = 1.57f; }
+	else if (itemID == "Takara_Kaiga3") { modelPath = "M_TREASURE6"; rot = 1.57f; }
 	else if (itemID == "Takara_Doki") { modelPath = "M_TREASURE7"; }
 	else if (itemID == "Takara_Tubo_Blue") { modelPath = "M_TREASURE8"; }
 	else if (itemID == "Takara_Tubo_Gouyoku") { modelPath = "M_TREASURE9"; }
@@ -148,7 +149,7 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 		),
 		TransformComponent(
 			/* Position	*/	position,
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(rot, 0.0f, 0.0f),
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(

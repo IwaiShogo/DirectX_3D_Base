@@ -2,13 +2,13 @@
   "ST_001": {
     "name": "Stage 1",
     "image": "UI_ST_001",
-    "gridSizeX": 15,
-    "gridSizeY": 15,
+    "gridSizeX": 10,
+    "gridSizeY": 10,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
     "maxRoomSize": 3,
-    "maxRoomCount": 4,
+    "maxRoomCount": 1,
     "timeLimitStar": 180.0,
     "minPathPercentage": 0.5,
     "useOrderedCollection": false,
@@ -21,13 +21,13 @@
   "ST_002": {
     "name": "Stage 2",
     "image": "UI_ST_002",
-    "gridSizeX": 15,
-    "gridSizeY": 15,
+    "gridSizeX": 12,
+    "gridSizeY": 12,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
     "maxRoomSize": 3,
-    "maxRoomCount": 4,
+    "maxRoomCount": 2,
     "timeLimitStar": 180.0,
     "minPathPercentage": 0.5,
     "useOrderedCollection": true,
@@ -41,13 +41,13 @@
   "ST_003": {
     "name": "Stage 3",
     "image": "UI_ST_003",
-    "gridSizeX": 15,
-    "gridSizeY": 15,
+    "gridSizeX": 12,
+    "gridSizeY": 12,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
     "maxRoomSize": 3,
-    "maxRoomCount": 4,
+    "maxRoomCount": 2,
     "timeLimitStar": 180.0,
     "minPathPercentage": 0.5,
     "useOrderedCollection": true,
@@ -66,13 +66,13 @@
   "ST_004": {
     "name": "Stage 4",
     "image": "UI_ST_004",
-    "gridSizeX": 15,
-    "gridSizeY": 15,
+    "gridSizeX": 12,
+    "gridSizeY": 12,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
     "maxRoomSize": 3,
-    "maxRoomCount": 4,
+    "maxRoomCount": 2,
     "timeLimitStar": 60.0,
     "minPathPercentage": 0.5,
     "useOrderedCollection": true,
@@ -162,8 +162,8 @@
   "ST_999": {
     "name": "Stage 999",
     "image": "UI_ST_999",
-    "gridSizeX": 15,
-    "gridSizeY": 15,
+    "gridSizeX": 35,
+    "gridSizeY": 20,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
@@ -186,7 +186,21 @@
       "Takara_Ammonite"
     ],
     "guardCount": 1,
-    "gimmicks": []
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 2
+      },
+      {
+        "type": "Teleporter",
+        "count": 5
+      },
+      {
+        "type": "StopTrap",
+        "count": 5,
+        "duration": 10.0
+      }
+    ]
   }
 }
 
@@ -203,3 +217,18 @@
 // Takara_Dinosaur 恐竜
 // Takara_Ammonite アンモナイト
 // Takara_Dinosaur_Foot 恐竜の足跡
+
+// ギミック一覧
+// {
+//   "type": "Taser",
+//   "count": 0
+// },
+// {
+//   "type": "Teleporter",
+//   "count": 0
+// },
+// {
+//   "type": "StopTrap",
+//   "count": 0,
+//   "duration": 10.0
+// }
