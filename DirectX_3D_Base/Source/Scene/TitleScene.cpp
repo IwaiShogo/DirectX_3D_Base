@@ -89,12 +89,23 @@ void TitleScene::Init()
         )
     );
 
+    XMFLOAT3 finalCardPos = { 0.0f,1.4f,-3.5f };
+    titleCtrl.cardEndPos = finalCardPos;
+    titleCtrl.cardStartPos = { -1.0f, 2.5f, -12.8f };
+
+    titleCtrl.cardEndScale = TitleLayout::CARD_3D_SCALE;
+    titleCtrl.cardStartScale = {
+        titleCtrl.cardEndScale.x * 0.25f,
+        titleCtrl.cardEndScale.y * 0.25f,
+        titleCtrl.cardEndScale.z * 0.25f
+    };
+    
     // タイトルカード
     titleCtrl.cardEntityID = m_coordinator->CreateEntity(
         TransformComponent(
-            /* Position */{ 0.0f, 1.4f, -3.5f },
-            /* Rotation */{ 0.0f, XMConvertToRadians(180.0f), XMConvertToRadians(TitleLayout::CARD_STATIC_ROT_Z_DEG) },
-            /* Scale    */ TitleLayout::CARD_3D_SCALE
+            /* Position */titleCtrl.cardStartPos,
+            /* Rotation */{ 0.0f,0.0f, XMConvertToRadians(45.0f) },
+            /* Scale    */ titleCtrl.cardStartScale
         ),
         RenderComponent(
             /* Type  */ MESH_MODEL,

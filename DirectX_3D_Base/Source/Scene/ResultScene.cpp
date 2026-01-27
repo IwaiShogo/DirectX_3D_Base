@@ -27,7 +27,7 @@
 
 #include <DirectXMath.h>
 #include <cctype>
-#include <iostream>;
+#include <iostream>
 
 using namespace DirectX;
 using namespace ECS;
