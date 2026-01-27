@@ -43,11 +43,11 @@ std::string GetItemIconPath(const std::string& itemID)
 // ---------------------------------------------------------
 
 // BGM再生 (BGMタグのついた音を全て止めてから再生)
-void GameControlSystem::PlayBGM(const std::string& assetID)
+void GameControlSystem::PlayBGM(const std::string& assetID, float volume)
 {
     StopBGM();
     // 音量 0.15
-    ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator, assetID, 0.15f);
+    ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator, assetID, volume);
 }
 
 // 全ての音（BGMとSE含む）を停止
@@ -274,7 +274,7 @@ void GameControlSystem::InitGameUI()
     InitVisualEffects();
 
     // BGM初期化 (トップビューBGM)
-    PlayBGM("BGM_TOPVIEW");
+    PlayBGM("BGM_TOPVIEW", 0.7f);
 }
 
 void GameControlSystem::InitVisualEffects()
@@ -1110,7 +1110,7 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID) {
         m_hasUsedTopView = true;
 
         // ★修正: トップビュー遷移時は BGM_TOPVIEW を再生
-        PlayBGM("BGM_TOPVIEW");
+        PlayBGM("BGM_TOPVIEW", 0.7f);
 
         ApplyModeVisuals(controllerID);
         ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f); // 音量調整
