@@ -13,7 +13,7 @@ using namespace DirectX;
 namespace TitleTuning
 {
     constexpr float LOGO_FADE_OUT_DURATION  = 0.8f;
-    constexpr float ZOOM_START_DELAY        = 1.1f;
+    constexpr float ZOOM_START_DELAY        = 6.0f;
     constexpr float MENU_APPEAR_DELAY       = 0.0f;
     constexpr float BUTTON_HOVER_SCALE_MAG  = 1.15f;
     constexpr float BUTTON_HOVER_LERP_SPEED = 12.0f;
@@ -57,7 +57,7 @@ void TitleControlSystem::Update(float deltaTime)
         {
             // --- タイマー更新 ---
             ctrl.animTimer += deltaTime;      // UI点滅用のタイマー
-          
+
             ctrl.TitlelogoFadeTimer += deltaTime; // ロゴフェード用
 
             // --- UI表示・点滅制御 ---
@@ -84,7 +84,7 @@ void TitleControlSystem::Update(float deltaTime)
                     }
                 }
             }
-           
+
             if (IsKeyTrigger(VK_RETURN) || IsButtonTriggered(BUTTON_A)) {
                 ctrl.state = TitleState::ZoomAnimation;
                 ctrl.animTimer = 0.0f; // 次のステートのためにリセット
@@ -95,6 +95,7 @@ void TitleControlSystem::Update(float deltaTime)
         case TitleState::ZoomAnimation:
         {
             ctrl.animTimer += deltaTime;
+
             float alpha = std::max(0.0f, 1.0f - (ctrl.animTimer / TitleTuning::LOGO_FADE_OUT_DURATION));
             auto fadeOutUI = [&](ECS::EntityID id) {
                 if (id != INVALID_ENTITY_ID && m_coordinator->HasComponent<UIImageComponent>(id)) {
@@ -105,10 +106,59 @@ void TitleControlSystem::Update(float deltaTime)
                 };
             for (auto uiEntity : ctrl.pressStartUIEntities) fadeOutUI(uiEntity);
             fadeOutUI(ctrl.logoEntityID);
-          
-            if (ctrl.cameraEntityID != INVALID_ENTITY_ID && ctrl.animTimer > TitleTuning::ZOOM_START_DELAY)
+
+            if (ctrl.cardEntityID != INVALID_ENTITY_ID)
             {
-                float camProgress = std::min(1.0f, (ctrl.animTimer - TitleTuning::ZOOM_START_DELAY) / ctrl.animDuration);
+                float cardProgress = std::min(1.0f, ctrl.animTimer / TitleTuning::ZOOM_START_DELAY);
+                float t = cardProgress * cardProgress * (3.0f - 2.0f * cardProgress);
+                float easeT = t * t * (3.0f - 2.0f * t);
+                auto& cardTrans = m_coordinator->GetComponent<TransformComponent>(ctrl.cardEntityID);
+
+                // --- Z軸移動と揺らぎ ---
+                float baseZ = ctrl.cardStartPos.z + (ctrl.cardEndPos.z - ctrl.cardStartPos.z) * t;
+                float waveZ = std::sin(cardProgress * 6.28f * 1.5f) * 0.8f;
+                cardTrans.position.z = baseZ + waveZ;
+
+                float baseY = ctrl.cardStartPos.y + (ctrl.cardEndPos.y - ctrl.cardStartPos.y) * t;
+                float bigSwingY = std::sin(cardProgress * 3.1415f) * 0.5f; 
+                float floatyY = std::cos(cardProgress * 4.0f) * 0.3f;     
+                cardTrans.position.y = baseY + bigSwingY + floatyY;
+
+                // X軸は開始位置を維持
+                cardTrans.position.x = ctrl.cardStartPos.x;
+
+                // スケール
+                cardTrans.scale.x = ctrl.cardStartScale.x + (ctrl.cardEndScale.x - ctrl.cardStartScale.x) * easeT;
+                cardTrans.scale.y = ctrl.cardStartScale.y + (ctrl.cardEndScale.y - ctrl.cardStartScale.y) * easeT;
+                cardTrans.scale.z = ctrl.cardStartScale.z + (ctrl.cardEndScale.z - ctrl.cardStartScale.z) * easeT;
+
+                // --- 回転 (提示いただいたスピンロジック) ---
+                float startRotZ = XMConvertToRadians(-45.0f);
+                float endRotZ = XMConvertToRadians(20.0f);
+                cardTrans.rotation.z = startRotZ + (endRotZ - startRotZ) * t;
+
+                if (cardProgress < 1.0f) {
+                    float faceToCamera = XMConvertToRadians(90.0f);
+                    float spin = cardProgress * XM_2PI * 4;
+                    float shake = std::sin(cardProgress * 3.1415f * 4.0f) * 0.4f;
+                    cardTrans.rotation.y = faceToCamera + spin + shake;
+                }
+                else {
+                    cardTrans.rotation.y = XMConvertToRadians(180.0f);
+                }
+
+                // 完了処理
+                if (cardProgress >= 0.6f) {
+                    cardTrans.position = ctrl.cardEndPos;
+                    cardTrans.rotation.y = XMConvertToRadians(180.0f);
+                    cardTrans.rotation.z = endRotZ;
+                }
+            }
+            float mizkakusuruzikan = 2.4f;
+         
+            if (ctrl.cameraEntityID != INVALID_ENTITY_ID && ctrl.animTimer +mizkakusuruzikan  > TitleTuning::ZOOM_START_DELAY)
+            {
+                float camProgress = std::min(1.0f, (ctrl.animTimer+mizkakusuruzikan - TitleTuning::ZOOM_START_DELAY) / ctrl.animDuration);
                 float easeOut = 1.0f - std::pow(1.0f - camProgress, 2.5f);
                 auto& camTrans = m_coordinator->GetComponent<TransformComponent>(ctrl.cameraEntityID);
                 float u = 1.0f - easeOut, tt = easeOut * easeOut, uu = u * u, ut2 = 2.0f * u * easeOut;
@@ -119,7 +169,7 @@ void TitleControlSystem::Update(float deltaTime)
                 camTrans.rotation.y = ctrl.startRotY + (ctrl.endRotY - ctrl.startRotY) * easeOut;
             }
 
-            if (ctrl.animTimer >= TitleTuning::ZOOM_START_DELAY + ctrl.animDuration) {
+            if (ctrl.animTimer+mizkakusuruzikan >= TitleTuning::ZOOM_START_DELAY + ctrl.animDuration) {
                 ctrl.state = TitleState::ModeSelect;
                 ctrl.uiAnimTimer = TitleTuning::MENU_APPEAR_DELAY;
             }
@@ -209,7 +259,7 @@ void TitleControlSystem::Update(float deltaTime)
                 ctrl.activeLamps.push_back({ lamp, 0.0f });
             }
 
-            for (size_t i = 0; i < ctrl.menuUIEntities.size(); ++i) 
+            for (size_t i = 0; i < ctrl.menuUIEntities.size(); ++i)
             {
                 EntityID uiEntity = ctrl.menuUIEntities[i];
 
