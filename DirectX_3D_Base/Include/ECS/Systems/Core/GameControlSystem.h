@@ -10,6 +10,7 @@
 #include "ECS/ECS.h"
 #include "Scene/SceneManager.h" 
 #include <unordered_map>
+#include <unordered_set>
 #include <DirectXMath.h>
 #include <functional>
 #include <vector>
@@ -37,6 +38,9 @@ public:
         m_mosaicTiles.clear();
         m_pauseUIEntities.clear();
         m_btnBgMap.clear();
+        m_teleportEffectMap.clear(); // ★追加: テレポートエフェクトマップのクリア
+        m_usedTeleporters.clear();   // ★追加: 使用済みテレポーターのクリア
+        m_teleportColorMap.clear();  // ★追加: テレポート色マップのクリア
 
         // 変数初期化
         m_sonarSpawnTimer = 0.0f;
@@ -64,13 +68,24 @@ public:
         m_crosshairSpread = 0.0f;
         m_cinemaBarTop = ECS::INVALID_ENTITY_ID;
         m_cinemaBarBottom = ECS::INVALID_ENTITY_ID;
+
+        // ★追加: 制限フラグ初期化
+        m_hasUsedTopView = false;
+
+        // ★追加: サウンド用変数初期化
+        m_footstepTimer = 0.0f;
+        m_prevCollectedCount = 0;
+        m_lastHoveredID = ECS::INVALID_ENTITY_ID;
+        m_sliderSoundTimer = 0.0f;
     }
 
     void Update(float deltaTime) override;
 
+    void UpdateGuardFootsteps(float deltaTime);
+
     // 外部から「見つかった」状態へ遷移させるトリガー
     void TriggerCaughtSequence(ECS::EntityID guardID);
-
+    void ApplyModeVisuals(ECS::EntityID controllerID);
 private:
     // --- 内部処理用ヘルパー関数 ---
     void UpdateTimerAndRules(float deltaTime, ECS::EntityID controllerID); // 時間・勝敗判定
@@ -89,7 +104,6 @@ private:
 
     // --- MapGimmick (touch to open TopView map) ---
     void CheckMapGimmickTrigger(ECS::EntityID controllerID);
-    void ApplyModeVisuals(ECS::EntityID controllerID);
     bool IsAABBOverlap(ECS::EntityID a, ECS::EntityID b);
 
     // --- ポーズ画面用ステート管理 ---
@@ -179,12 +193,31 @@ private:
     ECS::EntityID m_cinemaBarTop = ECS::INVALID_ENTITY_ID;
     ECS::EntityID m_cinemaBarBottom = ECS::INVALID_ENTITY_ID;
 
+    // 制限フラグ
+    bool m_hasUsedTopView = false;
+
+    // --- ★追加: 音声制御用変数 ---
+    float m_footstepTimer = 0.0f;       // 歩行音の間隔
+    int m_prevCollectedCount = 0;       // アイテム取得音判定用
+    ECS::EntityID m_lastHoveredID = ECS::INVALID_ENTITY_ID; // カーソル音用
+    float m_sliderSoundTimer = 0.0f;    // スライダー音の間隔
+
+    // --- ★追加: テレポートエフェクト管理用 ---
+    std::unordered_map<ECS::EntityID, ECS::EntityID> m_teleportEffectMap; // テレポートID -> エフェクトID
+    std::unordered_set<ECS::EntityID> m_usedTeleporters; // 使用済みテレポーターのセット
+    std::unordered_map<ECS::EntityID, DirectX::XMFLOAT4> m_teleportColorMap; // テレポートID -> 色
+
     // 関数
     void InitVisualEffects(); // 演出初期化
     void UpdateVisualEffects(float deltaTime, ECS::EntityID controllerID); // 演出更新
+    void UpdateDecorations(float deltaTime); // 賑やかしアニメーション
+    void UpdateLights(); // ポイントライト更新
+    void UpdateTeleportEffects(ECS::EntityID controllerID); // ★追加: テレポートエフェクト更新
 
-    // --- 制限フラグ ---
-    bool m_hasUsedTopView = false; // ★追加: トップビューを既に使用したか
+    // BGM管理用
+    void PlayBGM(const std::string& assetID, float volume = 0.15f);
+    void StopBGM();
+    void PlayStopableSE(const std::string& assetID, float volume);
 };
 
 #endif // !___GAME_CONTROL_SYSTEM_H___

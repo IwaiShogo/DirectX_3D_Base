@@ -287,7 +287,7 @@ float4 main(PS_IN pin) : SV_TARGET
 void ShaderList::MakeLambertPS()
 {
 	const char* code = R"EOT(
-#define MAX_LIGHTS 8
+#define MAX_LIGHTS 64
 
 struct PS_IN {
 	float4 pos : SV_POSITION;
@@ -374,7 +374,7 @@ float4 main(PS_IN pin) : SV_TARGET
     // --- ‹——£ƒtƒHƒO (‰“‚­‚ðˆÃ‚­) ---
     float camDist = distance(pin.wPos.xyz, cameraPos.xyz);
     float fogStart = 5.0f;
-    float fogRange = 20.0f; 
+    float fogRange = 30.0f; 
     float fogFactor = saturate((camDist - fogStart) / fogRange);
     color.rgb = lerp(color.rgb, float3(0.0f, 0.0f, 0.0f), fogFactor);
 

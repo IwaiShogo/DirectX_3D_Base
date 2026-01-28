@@ -1,7 +1,4 @@
-﻿/*****************************************************************//**
- * @file	StageSelectScene.cpp
- *********************************************************************/
-
+﻿
 #include "Scene/SceneManager.h"
 #include "Scene/ResultScene.h"
 #include "Scene/GameScene.h"
@@ -15,7 +12,7 @@
 #include "ECS/EntityFactory.h"
 #include "ECS/Systems/Rendering/EffectSystem.h"
 
- // 共通画面遷移（System + Component）
+// 共通画面遷移（System + Component）
 #include "ECS/Systems/Core/ScreenTransition.h"
 #include "ECS/Components/Rendering/AnimationComponent.h"
 #include <DirectXMath.h>
@@ -45,6 +42,24 @@ static float Clamp01(float x)
 	return x;
 }
 
+// ============================================================
+// M_SELECT1～6 の左右反転について
+//
+// ============================================================
+// M_SELECT1～6 の左右反転について
+//
+// ★注意: 現在は反転を無効にしています
+// SetCullMode関数をDirectX.h/cppに追加してから、反転を有効にしてください。
+// 詳細は「SetCullMode関数追加ガイド.md」を参照
+// ============================================================
+static constexpr bool kMirrorSelectCardTexture = false;  // ★一時的にfalse
+
+static DirectX::XMFLOAT3 MakeSelectCardScale(float s)
+{
+	// 反転を無効化（SetCullMode実装後にtrueに変更）
+	return DirectX::XMFLOAT3(-s, s, s);
+}
+
 static DirectX::XMFLOAT3 UIToWorld(float sx, float sy, float zWorld)
 {
 	// 1ワールド単位 = 100px くらいから調整開始（必要なら後で詰める）
@@ -53,6 +68,24 @@ static DirectX::XMFLOAT3 UIToWorld(float sx, float sy, float zWorld)
 	const float wx = (sx - SCREEN_WIDTH * 0.5f) / PIXELS_PER_UNIT;
 	const float wy = -(sy - SCREEN_HEIGHT * 0.5f) / PIXELS_PER_UNIT; // Y反転（UI↓ / 3D↑）
 	return DirectX::XMFLOAT3(wx, wy, zWorld);
+}
+
+// 一覧カードのクリック判定用（透明UI）を確実に「見えないまま」表示/非表示する
+static void SetListCardHitboxVisible(ECS::Coordinator* coord, ECS::EntityID id, bool visible)
+{
+	if (!coord || id == (ECS::EntityID)-1) return;
+
+	if (coord->HasComponent<UIImageComponent>(id))
+	{
+		auto& ui = coord->GetComponent<UIImageComponent>(id);
+		ui.isVisible = visible;
+		ui.color.w = 0.0f; // 常に透明
+	}
+	if (coord->HasComponent<UIButtonComponent>(id))
+	{
+
+		coord->GetComponent<UIButtonComponent>(id).isVisible = visible;
+	}
 }
 
 
@@ -72,11 +105,61 @@ static float SmoothStep01(float t)
 	return t * t * (3.0f - 2.0f * t);
 }
 
-//--------------------------------------------------------------
-// 一覧カード：スロット中心座標（押下時の一瞬ズレ対策）
-//  - UIButtonSystem 側の「押下演出」で Transform が一瞬だけ動く場合があるため、
-//    クリック時は Transform ではなく“本来の配置スロット”を基準にする。
-//--------------------------------------------------------------
+
+// ------------------------------------------------------------
+// UI_FONT helpers (5x3 grid assumed: uvScale=(0.2,0.333))
+// digits 0-9: idx 0..9 (row=idx/5, col=idx%5)
+// symbols: '-'=10 ':'=11 '.'=12  (row=2, col=idx-10)
+// ------------------------------------------------------------
+static bool UIFont_GetIndex(char c, int& outIdx)
+{
+	if (c >= '0' && c <= '9') { outIdx = (int)(c - '0'); return true; }
+	switch (c)
+	{
+	case '-': outIdx = 10; return true;
+	case ':': outIdx = 11; return true;
+	case '.': outIdx = 12; return true;
+	default: break;
+	}
+	return false;
+}
+
+static void UIFont_ApplyChar(ECS::Coordinator* coord, ECS::EntityID id, char c)
+{
+	if (!coord || id == (ECS::EntityID)-1) return;
+	if (!coord->HasComponent<UIImageComponent>(id)) return;
+
+	auto& ui = coord->GetComponent<UIImageComponent>(id);
+
+	int idx = 0;
+	if (!UIFont_GetIndex(c, idx))
+	{
+		ui.isVisible = false;
+		ui.color.w = 0.0f;
+		return;
+	}
+
+	const int r = (idx <= 9) ? (idx / 5) : 2;
+	const int col = (idx <= 9) ? (idx % 5) : (idx - 10);
+
+	ui.uvPos = { col * 0.2f,  r * 0.333f };
+	ui.uvScale = { 0.2f,     0.333f };
+	// isVisible / alpha は呼び出し側で同期する
+}
+
+// ST_001..ST_006 を想定して「1-1 / 1-2 / 1-3 / 2-1 ...」へ変換
+static std::string StageNoToLabelText(int stageNo)
+{
+	const int world = (stageNo - 1) / 3 + 1;
+	const int sub = (stageNo - 1) % 3 + 1;
+	return std::to_string(world) + "-" + std::to_string(sub);
+}
+
+/**
+ * @brief ステージカード(1～6)の一覧スロット中心座標(UI座標)を返す
+ * @param stageNo 1～6
+ * @return UI座標（ピクセル）
+ */
 DirectX::XMFLOAT3 StageSelectScene::GetListCardSlotCenterPos(int stageNo) const
 {
 	const int n = std::max(1, std::min(6, m_maxUnlockedStage));
@@ -85,20 +168,18 @@ DirectX::XMFLOAT3 StageSelectScene::GetListCardSlotCenterPos(int stageNo) const
 		return DirectX::XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f);
 	}
 
-	const float gapX = 350.0f;
-	const float gapY = 250.0f;
+	// ★ここを好きに変更（UI座標）
+	static const DirectX::XMFLOAT3 kPos[6] =
+	{
+		{ SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.32f, 0.0f }, // 1
+		{ SCREEN_WIDTH * 0.50f, SCREEN_HEIGHT * 0.32f, 0.0f }, // 2
+		{ SCREEN_WIDTH * 0.75f, SCREEN_HEIGHT * 0.32f, 0.0f }, // 3
+		{ SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.62f, 0.0f }, // 4
+		{ SCREEN_WIDTH * 0.50f, SCREEN_HEIGHT * 0.62f, 0.0f }, // 5
+		{ SCREEN_WIDTH * 0.75f, SCREEN_HEIGHT * 0.62f, 0.0f }, // 6
+	};
 
-	const float centerX = SCREEN_WIDTH * 0.5f;
-	const float startY = SCREEN_HEIGHT * 0.32f;
-	const float baseRowStartX = centerX - gapX;
-
-	const int slotIndex = stageNo - 1;
-	const int row = slotIndex / 3;
-	const int col = slotIndex % 3;
-
-	const float x = baseRowStartX + col * gapX;
-	const float y = startY + row * gapY;
-	return DirectX::XMFLOAT3(x, y, 0.0f);
+	return kPos[stageNo - 1];
 }
 
 //--------------------------------------------------------------
@@ -126,24 +207,18 @@ void StageSelectScene::StartCardFocusAnim(ECS::EntityID cardEntity, const Direct
 	m_cardFocus.elapsed = 0.0f;
 	m_cardFocus.duration = kDuration;
 
-	m_cardFocus.startPos = UIToWorld(uiPos.x, uiPos.y, kCardZ);
-
-	// ------------------------------------------------------------
-	// ★開始位置の微調整（pixel単位）
-	// - UIToWorld の内部実装がどんな変換でも効くように、
-	//   「pixel -> world の差分」を差し引きで求めて加算する。
-	// - ここを調整しても全く変化が無い場合は、別の StageSelectScene.cpp が
-	//   ビルド対象になっている可能性が高い。
-	// ------------------------------------------------------------
-	constexpr float kFocusStartOffsetXPx = 65.0f;  // 右に寄せたいなら +, 左なら -
-	constexpr float kFocusStartOffsetYPx = 25.0f;  // 上に寄せたいなら +, 下なら -
-
-	if (kFocusStartOffsetXPx != 0.0f || kFocusStartOffsetYPx != 0.0f)
+	// ★修正: カードの実際の表示位置を開始位置として使用
+	// uiPos（クリック位置）ではなく、カードエンティティの現在のTransformから取得
+	if (m_coordinator->HasComponent<TransformComponent>(cardEntity))
 	{
-		const auto w0 = UIToWorld(0.0f, 0.0f, kCardZ);
-		const auto w1 = UIToWorld(kFocusStartOffsetXPx, kFocusStartOffsetYPx, kCardZ);
-		m_cardFocus.startPos.x += (w1.x - w0.x);
-		m_cardFocus.startPos.y += (w1.y - w0.y);
+		auto& transform = m_coordinator->GetComponent<TransformComponent>(cardEntity);
+		// カードの現在位置をそのまま開始位置にする（UI座標→ワールド座標変換）
+		m_cardFocus.startPos = UIToWorld(transform.position.x, transform.position.y, kCardZ);
+	}
+	else
+	{
+		// フォールバック: Transformがない場合は従来通り
+		m_cardFocus.startPos = UIToWorld(uiPos.x, uiPos.y, kCardZ);
 	}
 
 	m_cardFocus.endPos = UIToWorld(
@@ -153,16 +228,16 @@ void StageSelectScene::StartCardFocusAnim(ECS::EntityID cardEntity, const Direct
 	);
 
 	const float endScale = kStartScale * kEndScaleMul;
-	m_cardFocus.startScale = DirectX::XMFLOAT3(kStartScale, kStartScale, kStartScale);
-	m_cardFocus.endScale = DirectX::XMFLOAT3(endScale, endScale, endScale);
+	m_cardFocus.startScale = MakeSelectCardScale(kStartScale);
+	m_cardFocus.endScale = MakeSelectCardScale(endScale);
 
 	m_cardFocus.baseRot = DirectX::XMFLOAT3(0.0f, DirectX::XM_PI, 0.0f); // カード表向きの向きに合わせる
 	m_cardFocus.extraRollRad = kExtraRollRad;
 
 	{
 		auto& tr = m_coordinator->GetComponent<TransformComponent>(cardEntity);
-		// ★生成直後の1フレーム目から「同じ場所・同じ大きさ」で始める（瞬間ズレ対策）
-		tr.position = m_cardFocus.startPos;
+		// ★修正: 位置は既に正しい場所にあるので、スケールと回転だけ初期化
+		// tr.position は上書きしない（元のカードの位置を保持）
 		tr.scale = m_cardFocus.startScale;
 		tr.rotation = m_cardFocus.baseRot;
 	}
@@ -277,6 +352,9 @@ void StageSelectScene::Init()
 	m_listStageNos.clear();
 	m_listStageNos.reserve(6);
 
+	m_listCardModelEntities.clear();
+	m_listCardModelEntities.reserve(6);
+
 
 	float startX = SCREEN_WIDTH * 0.2f;
 	float startY = SCREEN_HEIGHT * 0.3f;
@@ -294,18 +372,26 @@ void StageSelectScene::Init()
 		float x = startX + (i % 3) * gapX;
 		float y = startY + (i / 3) * gapY;
 
+		// --- Card visual (3D model): stage-specific (M_SELECT1..6) ---
+		{
+			std::string modelID = "M_SELECT" + std::to_string(i + 1);
+			constexpr float kListCardZ = 4.8f;
+			// ★一覧カードは「UI用カードモデル」を想定しているため、ワールドスケールを小さく固定。
+			//   ここが大きいと、起動直後からカードが画面を覆う（今回の症状）。
+			constexpr float kListCardScale = 0.03f;
+			ECS::EntityID cardModel = m_coordinator->CreateEntity(
+				TagComponent("list_card_model"),
+				TransformComponent(UIToWorld(x, y, kListCardZ), { 0.0f, DirectX::XM_PI, 0.0f }, MakeSelectCardScale(kListCardScale)),
+				RenderComponent(MESH_MODEL, { 1.0f, 1.0f, 1.0f, 1.0f }, CullMode::Front),
+				ModelComponent(modelID, 5.0f, Model::None)
+			);
+			m_listCardModelEntities.push_back(cardModel);
+		}
+
+		// --- Hitbox (clickable area): keep it non-visual ---
 		EntityID btn = m_coordinator->CreateEntity(
+			TagComponent("list_card_hitbox"),
 			TransformComponent({ x, y, 5.0f }, { 0,0,0 }, { 250, 150, 1 }),
-			UIImageComponent("BTN_STAGE_SELECT", 1.0f),
-			RenderComponent(MESH_NONE, { 1.0f, 1.0f, 1.0f, 1.0f }),
-
-			// ★★★ 修正箇所：ここをコメントアウト ★★★
-			// これらが有効だと、裏で6個分の時間が進んでしまい、メインの演出が一瞬で終わってしまいます。
-			// ボタン自体は UIImageComponent で表示されているため、これを消しても見た目は変わりません。
-			// ModelComponent("M_CARD", 5.0f, Model::None),
-			// AnimationComponent({ "A_CARD_COMEON" }),
-			// ★★★★★★★★★★★★★★★★★★★★★★★
-
 			UIButtonComponent(
 				ButtonState::Normal,
 				true,
@@ -313,44 +399,53 @@ void StageSelectScene::Init()
 					if (m_inputLocked || m_isWaitingForTransition) return;
 					if (m_isDetailMode) return; // 詳細表示中は一覧からの再選択を無効化
 
-					// ★一覧→詳細の演出は「毎回必ず同じ初期状態」から開始する
-					// Destroy→Create で EntityID が再利用されると、AnimationSystem 側のキャッシュにより
-					// 「前回の続きから再生」になることがあるため、ここでは旧フォーカスカードは破棄しない。
 					ResetSelectToDetailAnimState(false, true);
 
 					m_selectedStageID = id;
 					UpdateBestTimeDigitsByStageId(m_selectedStageID);
 
-					// ★星は「カード選択→詳細出現アニメ」が終わるまで点灯させない（押した瞬間に出るバグ対策）
 					UpdateStarIconsByStageId(std::string());
 					m_starRevealPending = true;
 					m_starRevealStageId = m_selectedStageID;
 
 					m_inputLocked = true;
 
-
 					if (i < m_listUIEntities.size())
 					{
+						// ======================================================
+						// ★要求: カードを選択したら「他のカードが見えない」ようにする
+						// - 一覧のヒットボックス/UI番号/3Dカードモデルを全て隠す
+						// - 選択カードは focus_card として再生成して拡大表示
+						// ======================================================
+						for (int j = 0; j < (int)m_listUIEntities.size(); ++j)
+						{
+							SetUIVisible(m_listUIEntities[j], false);
+							SetStageNumberLabelVisible(j + 1, false);
+						}
+						for (int j = 0; j < (int)m_listCardModelEntities.size(); ++j)
+						{
+							SetUIVisible(m_listCardModelEntities[j], false);
+						}
+
+						// 互換: 以前の「選択スロットだけ隠す」情報も更新しておく
 						EntityID currentBtnID = m_listUIEntities[i];
-
-						// 1. 選択したカード（ボタン）を消す（集中カード演出のため）
-						SetUIVisible(currentBtnID, false);
 						m_lastHiddenListCardEntity = currentBtnID;
+						m_lastHiddenListStageNo = (int)i + 1;
+						if (i < (int)m_listCardModelEntities.size())
+						{
+							m_lastHiddenListCardModelEntity = m_listCardModelEntities[i];
+						}
 
-
-						// 2. クリック位置から出す「集中カード」を新規作成
-						//    ★押した瞬間だけTransformが動く(押下演出)ケースがあるため、
-						//      “本来のスロット座標”から開始する。
+						// 2) Create focus card using stage-specific model (M_SELECT1..6)
 						DirectX::XMFLOAT3 uiPos = GetListCardSlotCenterPos((int)i + 1);
-
-						// 旧フォーカスカードは「新規作成後」に破棄して EntityID 再利用を回避する
 						ECS::EntityID oldFocus = m_focusCardEntity;
 
+						std::string focusModelID = "M_SELECT" + std::to_string((int)i + 1);
 						m_focusCardEntity = m_coordinator->CreateEntity(
 							TagComponent("focus_card"),
-							TransformComponent({ 0.0f, 0.0f, 0.0f }, { 0,0,0 }, { 1.0f, 1.0f, 1.0f }),
-							RenderComponent(MESH_MODEL, { 1.0f, 1.0f, 1.0f, 1.0f }),
-							ModelComponent("M_CARD", 5.0f, Model::None),
+							TransformComponent({ uiPos.x, uiPos.y, 5.0f }, { 0,0,0 }, { 1.0f, 1.0f, 1.0f }), // ★修正: 元のカード位置で作成
+							RenderComponent(MESH_MODEL, { 1.0f, 1.0f, 1.0f, 1.0f }, CullMode::Front),
+							ModelComponent(focusModelID, 5.0f, Model::None),
 							AnimationComponent({ "A_CARD_COMEON" })
 						);
 
@@ -363,28 +458,65 @@ void StageSelectScene::Init()
 							m_coordinator->DestroyEntity(oldFocus);
 						}
 
-						// 3. ボタン位置 → 画面中央へ「補間」で移動/拡大（段階演出）
+						// ★カード選択時に目のエフェクトを即座に消す
+						auto effectSystem = ECSInitializer::GetSystem<EffectSystem>();
+
+						// ============================================================
+						// ★要求: ステージカードを選択した瞬間に「全てのエフェクト」を停止
+						//  - 目の光(EFK_EYESLIGHT)
+						//  - UI選択エフェクト(PlayUISelectEffect)
+						//  - 詳細マップの流れ星(EFK_SHOOTINGSTAR*)
+						//  - デバッグ常駐グロー(EFK_TREASURE_GLOW)
+						// ============================================================
+
+						// 1) 目の光
+						for (auto& pair : m_activeEyeLights)
+						{
+							if (pair.first != (ECS::EntityID)-1)
+							{
+								if (effectSystem) effectSystem->StopEffectImmediate(pair.first);
+								m_coordinator->DestroyEntity(pair.first);
+							}
+						}
+						m_activeEyeLights.clear();
+						m_eyeLightTimer = 0.0f;
+						m_eyeLightNextInterval = 1.0f;
+
+						// 2) UI選択ワンショット
+						for (auto& fx : m_uiSelectFx)
+						{
+							if (fx.entity != (ECS::EntityID)-1)
+							{
+								if (effectSystem) effectSystem->StopEffectImmediate(fx.entity);
+								m_coordinator->DestroyEntity(fx.entity);
+							}
+						}
+						m_uiSelectFx.clear();
+
+						// 3) 流れ星（もし残っていたら全消し）
+						KillAllShootingStars();
+
+						// 4) デバッグ常駐グロー
+						if (m_debugStarEntity != (ECS::EntityID)-1)
+						{
+							if (effectSystem) effectSystem->StopEffectImmediate(m_debugStarEntity);
+							m_coordinator->DestroyEntity(m_debugStarEntity);
+							m_debugStarEntity = (ECS::EntityID)-1;
+						}
+
+
 						StartCardFocusAnim(m_focusCardEntity, uiPos);
 
-						// ★再生速度（StageSelectScene.h の LIST_TO_DETAIL_ANIM_SPEED で調整）
 						const float animSpeed = LIST_TO_DETAIL_ANIM_SPEED;
-
-						// アニメーション再生（これが唯一の再生者になるので正常速度になる）
 						if (m_coordinator->HasComponent<AnimationComponent>(m_focusCardEntity))
 						{
 							auto& anim = m_coordinator->GetComponent<AnimationComponent>(m_focusCardEntity);
 							anim.Play("A_CARD_COMEON", false, animSpeed);
 						}
 
-						// 遷移待ち開始
 						m_isWaitingForTransition = true;
 						m_transitionWaitTimer = 0.0f;
-
-						// 遷移待ち時間（StageSelectScene.h の LIST_TO_DETAIL_DELAY で調整）
-						// ※以前は m_cardFocus.duration や animSpeed から自動算出していたため、
-						//   LIST_TO_DETAIL_DELAY を変更しても反映されませんでした。
 						m_transitionDelayTime = LIST_TO_DETAIL_DELAY;
-
 						m_pendingStageID = id;
 					}
 				}
@@ -399,9 +531,18 @@ void StageSelectScene::Init()
 		if (!unlocked)
 		{
 			SetUIVisible(btn, false);
+			if (i < (int)m_listCardModelEntities.size())
+			{
+				SetUIVisible(m_listCardModelEntities[i], false);
+			}
 		}
 
 	}
+
+
+	// ★一覧カードのステージ番号ラベル（UI_FONT）を生成
+	BuildStageNumberLabels();
+	SyncStageNumberLabels(true);
 
 	// 解放済みステージの並びを「見えている数」に合わせて中央寄せ
 	ReflowUnlockedCardsLayout();
@@ -445,19 +586,28 @@ void StageSelectScene::Init()
 	// UI_STAGE_MAP (BACK=10.0, SIRO=9.0)
 	EntityID mapBack = m_coordinator->CreateEntity(
 		TransformComponent({ SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.38f, 10.0f }, { 0,0,0 }, { 500, 480, 1 }),
-		UIImageComponent("UI_STAGE_MAPBACK", baseDepth + 1.0f) // 0.90f -> baseDepth + 1.0f
+		UIImageComponent("UI_STAGE_MAPBACK", baseDepth + 1.0f)
 	);
 	m_detailUIEntities.push_back(mapBack);
 	m_stageMapEntity = mapBack;
 
-	EntityID mapSiro = m_coordinator->CreateEntity(
-		TransformComponent({ SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.38f, 9.0f }, { 0,0,0 }, { 500, 480, 1 }),
-		UIImageComponent("UI_STAGE_MAPSIRO", baseDepth + 2.0f) // 0.95f -> baseDepth + 2.0f
+	// ★ステージ固有マップ（UI_STAGE1～6）を、MAPBACK の上にオーバーレイ
+	EntityID mapOverlay = m_coordinator->CreateEntity(
+		TransformComponent({ SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.38f, 9.5f }, { 0,0,0 }, { 500, 480, 1 }),
+		UIImageComponent("UI_STAGE1", baseDepth + 1.5f)
 	);
-	m_detailUIEntities.push_back(mapSiro);
-	m_stageMapSiroEntity = mapSiro;
+	// 初期状態は未選択扱いなので非表示（押したカードに合わせて差し替える）
+	if (m_coordinator->HasComponent<UIImageComponent>(mapOverlay))
+	{
+		auto& ui = m_coordinator->GetComponent<UIImageComponent>(mapOverlay);
+		ui.isVisible = false;
+		ui.color.w = 0.0f;
+	}
+	m_detailUIEntities.push_back(mapOverlay);
+	m_stageMapOverlayEntity = mapOverlay;
 
-	// フレーム
+	// 城はそのまま前面
+// フレーム
 	m_detailUIEntities.push_back(m_coordinator->CreateEntity(
 		TransformComponent({ SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.83f, 0.0f }, { 0,0,0 }, { 500, 160, 1 }),
 		UIImageComponent("UI_FRAME", baseDepth + 3.0f) // 1.0f -> baseDepth + 3.0f
@@ -722,11 +872,24 @@ void StageSelectScene::ResetSelectToDetailAnimState(bool unlockInput, bool keepF
 		DestroyFocusCard();
 	}
 
-	// 集中演出で隠した一覧カードを復帰（一覧を薄く残す仕様のため）
+
+	// 集中演出で隠した一覧カード(ヒットボックス)を復帰
 	if (m_lastHiddenListCardEntity != (ECS::EntityID)-1)
 	{
 		SetUIVisible(m_lastHiddenListCardEntity, true);
 		m_lastHiddenListCardEntity = (ECS::EntityID)-1;
+	}
+
+	// ★3Dカードモデルとステージ番号も復帰（残像対策）
+	if (m_lastHiddenListCardModelEntity != (ECS::EntityID)-1)
+	{
+		SetUIVisible(m_lastHiddenListCardModelEntity, true);
+		m_lastHiddenListCardModelEntity = (ECS::EntityID)-1;
+	}
+	if (m_lastHiddenListStageNo != -1)
+	{
+		SetStageNumberLabelVisible(m_lastHiddenListStageNo, true);
+		m_lastHiddenListStageNo = -1;
 	}
 
 	// 詳細UIの出現アニメを停止
@@ -793,6 +956,9 @@ void StageSelectScene::Update(float deltaTime)
 	UpdateDetailAppear(dtSec);
 	UpdateButtonHoverScale(dtSec);
 
+	// ★一覧カードの番号ラベルをカードの可視/アルファに追従させる
+	SyncStageNumberLabels();
+
 	// ★解放カードの“遅延スタート”（既存カードは先に表示し、新規だけ後から浮かせる）
 // - リザルト → セレクト復帰時に「フェードイン」と同時に出ないよう、フェードが終わるまで待つ
 // - フェード完了後（必要なら少しだけ間を置いて）新規カードだけ Reveal を開始する
@@ -848,8 +1014,7 @@ void StageSelectScene::Update(float deltaTime)
 	{
 		m_gameStartTimer += dtSec;
 
-		// 指定時間（
-		// _DELAY）経過したらフェードアウト開始
+		// 指定時間（GAME_START_DELAY）経過したらフェードアウト開始
 		if (m_gameStartTimer >= 1.0f)
 		{
 			m_isWaitingForGameStart = false; // 多重発火防止
@@ -1019,183 +1184,190 @@ void StageSelectScene::Draw()
 	//		m_coordinator->GetComponent<UIButtonComponent>(s.id).isVisible = s.btnVis;
 	//}
 
-auto ui = ECSInitializer::GetSystem<UIRenderSystem>();
-auto rs = ECSInitializer::GetSystem<RenderSystem>();
-auto fx = ECSInitializer::GetSystem<EffectSystem>();
+	auto ui = ECSInitializer::GetSystem<UIRenderSystem>();
+	auto rs = ECSInitializer::GetSystem<RenderSystem>();
+	auto fx = ECSInitializer::GetSystem<EffectSystem>();
 
-// UIレンダラが無い場合は従来通り
-if (!ui)
-{
-	if (rs) { rs->DrawSetup(); rs->DrawEntities(); }
-	if (fx) fx->Render();
-	return;
-}
-
-// -----------------------------------------
-// 描画順序の制御 (レイヤー分け)
-// Layer 1: 背景UI (depth <= 0)
-// Layer 2: 通常UI (0 < depth <= 100,000)
-// Layer 3: 3Dモデル (カードなど)
-// Layer 4: 詳細UI (100,000 < depth < 200,000) ★ここを作る
-// Layer 5: エフェクト (詳細UIの上、フェードの下) ★ここで描画
-// Layer 6: フェード (depth >= 200,000)
-// -----------------------------------------
-
-const float kNormalUIEnd = 100000.0f;
-const float kFadeStart = 200000.0f; // フェード開始ライン
-
-struct VisState { ECS::EntityID id; bool uiVis; bool btnVis; };
-std::vector<VisState> savedStates;
-
-std::vector<ECS::EntityID> allTargets = m_listUIEntities;
-allTargets.insert(allTargets.end(), m_detailUIEntities.begin(), m_detailUIEntities.end());
-if (m_cursorEntity != (ECS::EntityID)-1) allTargets.push_back(m_cursorEntity);
-if (m_listBgEntity != (ECS::EntityID)-1) allTargets.push_back(m_listBgEntity);
-if (m_transitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_transitionEntity);
-if (m_blackTransitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_blackTransitionEntity);
-
-// 現在の表示状態を保存
-for (auto id : allTargets)
-{
-	if (id == (ECS::EntityID)-1) continue;
-	VisState s{ id,false,false };
-	if (m_coordinator->HasComponent<UIImageComponent>(id))
-		s.uiVis = m_coordinator->GetComponent<UIImageComponent>(id).isVisible;
-	if (m_coordinator->HasComponent<UIButtonComponent>(id))
-		s.btnVis = m_coordinator->GetComponent<UIButtonComponent>(id).isVisible;
-	savedStates.push_back(s);
-}
-
-auto SetVisible = [&](ECS::EntityID id, bool v)
+	// UIレンダラが無い場合は従来通り
+	if (!ui)
 	{
-		if (id == (ECS::EntityID)-1) return;
+		if (rs) { rs->DrawSetup(); rs->DrawEntities(); }
+		if (fx) fx->Render();
+		return;
+	}
+
+	// -----------------------------------------
+	// 描画順序の制御 (レイヤー分け)
+	// Layer 1: 背景UI (depth <= 0)
+	// Layer 2: 通常UI (0 < depth <= 100,000)
+	// Layer 3: 3Dモデル (カードなど)
+	// Layer 4: 詳細UI (100,000 < depth < 200,000) ★ここを作る
+	// Layer 5: エフェクト (詳細UIの上、フェードの下) ★ここで描画
+	// Layer 6: フェード (depth >= 200,000)
+	// -----------------------------------------
+
+	const float kNormalUIEnd = 100000.0f;
+	const float kFadeStart = 200000.0f; // フェード開始ライン
+
+	struct VisState { ECS::EntityID id; bool uiVis; bool btnVis; };
+	std::vector<VisState> savedStates;
+
+	std::vector<ECS::EntityID> allTargets = m_listUIEntities;
+
+	// ★ステージ番号ラベルも描画制御対象に含める
+	for (auto& v : m_listStageLabelEntities)
+	{
+		allTargets.insert(allTargets.end(), v.begin(), v.end());
+	}
+
+	allTargets.insert(allTargets.end(), m_detailUIEntities.begin(), m_detailUIEntities.end());
+	if (m_cursorEntity != (ECS::EntityID)-1) allTargets.push_back(m_cursorEntity);
+	if (m_listBgEntity != (ECS::EntityID)-1) allTargets.push_back(m_listBgEntity);
+	if (m_transitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_transitionEntity);
+	if (m_blackTransitionEntity != (ECS::EntityID)-1) allTargets.push_back(m_blackTransitionEntity);
+
+	// 現在の表示状態を保存
+	for (auto id : allTargets)
+	{
+		if (id == (ECS::EntityID)-1) continue;
+		VisState s{ id,false,false };
 		if (m_coordinator->HasComponent<UIImageComponent>(id))
-			m_coordinator->GetComponent<UIImageComponent>(id).isVisible = v;
+			s.uiVis = m_coordinator->GetComponent<UIImageComponent>(id).isVisible;
 		if (m_coordinator->HasComponent<UIButtonComponent>(id))
-			m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = v;
-	};
-
-auto GetDepth = [&](ECS::EntityID id) -> float
-	{
-		if (!m_coordinator->HasComponent<UIImageComponent>(id)) return 0.0f;
-		return m_coordinator->GetComponent<UIImageComponent>(id).depth;
-	};
-
-auto DrawUIOnce = [&]()
-	{
-		ui->Render(true);
-		ui->Render(false);
-	};
-
-// ------------------------------------------------------
-// 1) 背景UI (depth <= 0)
-// ------------------------------------------------------
-for (const auto& s : savedStates)
-{
-	if (s.id == (ECS::EntityID)-1) continue;
-	bool draw = false;
-	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
-	{
-		const float d = GetDepth(s.id);
-		draw = (d <= 0.0f) && s.uiVis;
+			s.btnVis = m_coordinator->GetComponent<UIButtonComponent>(id).isVisible;
+		savedStates.push_back(s);
 	}
-	SetVisible(s.id, draw);
-}
-DrawUIOnce();
 
-// ------------------------------------------------------
-// 2) 通常UI (0 < depth <= 100,000)
-// ------------------------------------------------------
-for (const auto& s : savedStates)
-{
-	if (s.id == (ECS::EntityID)-1) continue;
-	bool draw = false;
-	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
-	{
-		const float d = GetDepth(s.id);
-		draw = (d > 0.0f && d <= kNormalUIEnd) && s.uiVis;
-	}
-	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
-	{
-		const float d = GetDepth(s.id);
-		draw = draw || (s.btnVis && (d > 0.0f && d <= kNormalUIEnd));
-	}
-	SetVisible(s.id, draw);
-}
-DrawUIOnce();
+	auto SetVisible = [&](ECS::EntityID id, bool v)
+		{
+			if (id == (ECS::EntityID)-1) return;
+			if (m_coordinator->HasComponent<UIImageComponent>(id))
+				m_coordinator->GetComponent<UIImageComponent>(id).isVisible = v;
+			if (m_coordinator->HasComponent<UIButtonComponent>(id))
+				m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = v;
+		};
 
-// ------------------------------------------------------
-// 3) 3Dモデル (カードアニメーションなど)
-// ------------------------------------------------------
-if (rs)
-{
-	rs->DrawSetup();
-	rs->DrawEntities();
-}
+	auto GetDepth = [&](ECS::EntityID id) -> float
+		{
+			if (!m_coordinator->HasComponent<UIImageComponent>(id)) return 0.0f;
+			return m_coordinator->GetComponent<UIImageComponent>(id).depth;
+		};
 
-// ------------------------------------------------------
-// 4) 詳細UIなど (100,000 < depth < 200,000)
-// ★ここが重要：エフェクトより先に描画して「下敷き」にする
-// ------------------------------------------------------
-for (const auto& s : savedStates)
-{
-	if (s.id == (ECS::EntityID)-1) continue;
-	bool draw = false;
-	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
-	{
-		const float d = GetDepth(s.id);
-		draw = (d > kNormalUIEnd && d < kFadeStart) && s.uiVis;
-	}
-	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
-	{
-		const float d = GetDepth(s.id);
-		draw = draw || (s.btnVis && (d > kNormalUIEnd && d < kFadeStart));
-	}
-	SetVisible(s.id, draw);
-}
-DrawUIOnce();
+	auto DrawUIOnce = [&]()
+		{
+			ui->Render(true);
+			ui->Render(false);
+		};
 
-// ------------------------------------------------------
-// 5) エフェクト描画
-// ★詳細UIの上、かつフェード(200,000)の下に描画される
-// ------------------------------------------------------
-if (fx)
-{
-	fx->Render();
-}
-
-// ------------------------------------------------------
-// 6) フェードなど (depth >= 200,000)
-// ------------------------------------------------------
-for (const auto& s : savedStates)
-{
-	if (s.id == (ECS::EntityID)-1) continue;
-	bool draw = false;
-	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+	// ------------------------------------------------------
+	// 1) 背景UI (depth <= 0)
+	// ------------------------------------------------------
+	for (const auto& s : savedStates)
 	{
-		const float d = GetDepth(s.id);
-		draw = (d >= kFadeStart) && s.uiVis;
+		if (s.id == (ECS::EntityID)-1) continue;
+		bool draw = false;
+		if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+		{
+			const float d = GetDepth(s.id);
+			draw = (d <= 0.0f) && s.uiVis;
+		}
+		SetVisible(s.id, draw);
 	}
-	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
-	{
-		const float d = GetDepth(s.id);
-		draw = draw || (s.btnVis && (d >= kFadeStart));
-	}
-	SetVisible(s.id, draw);
-}
-DrawUIOnce();
+	DrawUIOnce();
 
-// ------------------------------------------------------
-// 復元
-// ------------------------------------------------------
-for (const auto& s : savedStates)
-{
-	if (s.id == (ECS::EntityID)-1) continue;
-	if (m_coordinator->HasComponent<UIImageComponent>(s.id))
-		m_coordinator->GetComponent<UIImageComponent>(s.id).isVisible = s.uiVis;
-	if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
-		m_coordinator->GetComponent<UIButtonComponent>(s.id).isVisible = s.btnVis;
-}
+	// ------------------------------------------------------
+	// 2) 通常UI (0 < depth <= 100,000)
+	// ------------------------------------------------------
+	for (const auto& s : savedStates)
+	{
+		if (s.id == (ECS::EntityID)-1) continue;
+		bool draw = false;
+		if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+		{
+			const float d = GetDepth(s.id);
+			draw = (d > 0.0f && d <= kNormalUIEnd) && s.uiVis;
+		}
+		if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+		{
+			const float d = GetDepth(s.id);
+			draw = draw || (s.btnVis && (d > 0.0f && d <= kNormalUIEnd));
+		}
+		SetVisible(s.id, draw);
+	}
+	DrawUIOnce();
+
+	// ------------------------------------------------------
+	// 3) 3Dモデル (カードアニメーションなど)
+	// ------------------------------------------------------
+	if (rs)
+	{
+		rs->DrawSetup();
+		rs->DrawEntities();
+	}
+
+	// ------------------------------------------------------
+	// 4) 詳細UIなど (100,000 < depth < 200,000)
+	// ★ここが重要：エフェクトより先に描画して「下敷き」にする
+	// ------------------------------------------------------
+	for (const auto& s : savedStates)
+	{
+		if (s.id == (ECS::EntityID)-1) continue;
+		bool draw = false;
+		if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+		{
+			const float d = GetDepth(s.id);
+			draw = (d > kNormalUIEnd && d < kFadeStart) && s.uiVis;
+		}
+		if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+		{
+			const float d = GetDepth(s.id);
+			draw = draw || (s.btnVis && (d > kNormalUIEnd && d < kFadeStart));
+		}
+		SetVisible(s.id, draw);
+	}
+	DrawUIOnce();
+
+	// ------------------------------------------------------
+	// 5) エフェクト描画
+	// ★詳細UIの上、かつフェード(200,000)の下に描画される
+	// ------------------------------------------------------
+	if (fx)
+	{
+		fx->Render();
+	}
+
+	// ------------------------------------------------------
+	// 6) フェードなど (depth >= 200,000)
+	// ------------------------------------------------------
+	for (const auto& s : savedStates)
+	{
+		if (s.id == (ECS::EntityID)-1) continue;
+		bool draw = false;
+		if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+		{
+			const float d = GetDepth(s.id);
+			draw = (d >= kFadeStart) && s.uiVis;
+		}
+		if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+		{
+			const float d = GetDepth(s.id);
+			draw = draw || (s.btnVis && (d >= kFadeStart));
+		}
+		SetVisible(s.id, draw);
+	}
+	DrawUIOnce();
+
+	// ------------------------------------------------------
+	// 復元
+	// ------------------------------------------------------
+	for (const auto& s : savedStates)
+	{
+		if (s.id == (ECS::EntityID)-1) continue;
+		if (m_coordinator->HasComponent<UIImageComponent>(s.id))
+			m_coordinator->GetComponent<UIImageComponent>(s.id).isVisible = s.uiVis;
+		if (m_coordinator->HasComponent<UIButtonComponent>(s.id))
+			m_coordinator->GetComponent<UIButtonComponent>(s.id).isVisible = s.btnVis;
+	}
 }
 
 void StageSelectScene::UpdateShootingStar(float dt)
@@ -1287,8 +1459,11 @@ void StageSelectScene::UpdateButtonHoverScale(float dt)
 	const float lerpK = 14.0f;
 	const float a = Clamp01(lerpK * dt);
 
-	// 拡大量（好みで 1.10f → 1.15f などに）
-	const float hoverMul = 1.10f;
+	// 拡大量（好みで調整）
+	// - ボタン(UI) : 少しだけ
+	// - カード(3Dモデル) : 少しだけ（こちらが見た目の本体）
+	const float hoverMulBtn = 1.10f;
+	const float hoverMulModel = 1.10f;
 
 	auto updateOne = [&](ECS::EntityID id)
 		{
@@ -1317,7 +1492,7 @@ void StageSelectScene::UpdateButtonHoverScale(float dt)
 
 			const bool hovered = allowHover && (cx >= left && cx <= right && cy >= top && cy <= bottom);
 
-			const float targetMul = hovered ? hoverMul : 1.0f;
+			const float targetMul = hovered ? hoverMulBtn : 1.0f;
 			const float curMul = (base.x != 0.0f) ? (tr.scale.x / base.x) : 1.0f;
 			const float newMul = curMul + (targetMul - curMul) * a;
 
@@ -1328,9 +1503,59 @@ void StageSelectScene::UpdateButtonHoverScale(float dt)
 
 	// 一覧/詳細の両方に対して適用（表示中かどうかは btn.isVisible で弾く）
 	// 詳細表示中は「一覧ボタン」に Hover 演出を当てない（見た目の誤誘導を避ける）
+	// ★一覧のステージカードは「見た目＝3Dモデル」なので、ヒットボックス自体は拡大しない
+	//   （当たり判定ズレ/番号の位置ズレ防止）。
 	if (!m_isDetailMode)
 	{
-		for (auto id : m_listUIEntities) updateOne(id);
+		// 1) Hover判定（UI座標）→ 2) 対応する3Dカード(M_SELECT1..6)だけ拡大
+		const int n = (int)std::min(m_listUIEntities.size(), m_listCardModelEntities.size());
+		for (int i = 0; i < n; ++i)
+		{
+			const ECS::EntityID hit = m_listUIEntities[i];
+			const ECS::EntityID mdl = m_listCardModelEntities[i];
+
+			if (hit == (ECS::EntityID)-1 || mdl == (ECS::EntityID)-1) continue;
+			if (!m_coordinator->HasComponent<UIButtonComponent>(hit)) continue;
+			if (!m_coordinator->HasComponent<TransformComponent>(hit)) continue;
+			if (!m_coordinator->HasComponent<TransformComponent>(mdl)) continue;
+
+			auto& btn = m_coordinator->GetComponent<UIButtonComponent>(hit);
+			if (!btn.isVisible) continue;
+
+			auto& hitTr = m_coordinator->GetComponent<TransformComponent>(hit);
+
+			// ヒットボックスの基準サイズ（Hover判定に使用）
+			auto itHitBase = m_buttonBaseScale.find(hit);
+			if (itHitBase == m_buttonBaseScale.end())
+			{
+				itHitBase = m_buttonBaseScale.emplace(hit, hitTr.scale).first;
+			}
+			const DirectX::XMFLOAT3 hitBase = itHitBase->second;
+
+			const float left = hitTr.position.x - hitBase.x * 0.5f;
+			const float right = hitTr.position.x + hitBase.x * 0.5f;
+			const float top = hitTr.position.y - hitBase.y * 0.5f;
+			const float bottom = hitTr.position.y + hitBase.y * 0.5f;
+
+			const bool hovered = allowHover && (cx >= left && cx <= right && cy >= top && cy <= bottom);
+
+			// 3Dモデルの基準スケール（初回だけ記録）
+			auto& mdlTr = m_coordinator->GetComponent<TransformComponent>(mdl);
+			auto itMdlBase = m_listCardModelBaseScale.find(mdl);
+			if (itMdlBase == m_listCardModelBaseScale.end())
+			{
+				itMdlBase = m_listCardModelBaseScale.emplace(mdl, mdlTr.scale).first;
+			}
+			const DirectX::XMFLOAT3 mdlBase = itMdlBase->second;
+
+			const float targetMul = hovered ? hoverMulModel : 1.0f;
+			const float curMul = (mdlBase.x != 0.0f) ? (mdlTr.scale.x / mdlBase.x) : 1.0f;
+			const float newMul = curMul + (targetMul - curMul) * a;
+
+			mdlTr.scale.x = mdlBase.x * newMul;
+			mdlTr.scale.y = mdlBase.y * newMul;
+			mdlTr.scale.z = mdlBase.z * newMul;
+		}
 	}
 	for (auto id : m_detailUIEntities) updateOne(id);
 }
@@ -1451,10 +1676,24 @@ void StageSelectScene::SwitchState(bool toDetail)
 		}
 	}
 
+	// ★一覧の3Dカードモデルも一覧/詳細に合わせて確実にON/OFF（残像対策）
+	for (int stageNo = 1; stageNo <= 6; ++stageNo)
+	{
+		const int idx = stageNo - 1;
+		if (idx < 0 || idx >= (int)m_listCardModelEntities.size()) continue;
+
+		const bool unlocked = IsStageUnlocked(stageNo);
+		const bool showModel = (!toDetail) && unlocked;
+		SetUIVisible(m_listCardModelEntities[idx], showModel);
+	}
+
 	if (!toDetail)
 	{
 		ReflowUnlockedCardsLayout();
 	}
+
+	// ★一覧/詳細切替でラベルも即同期（残像対策）
+	SyncStageNumberLabels(true);
 
 	// 詳細の制御
 	for (auto id : m_detailUIEntities)
@@ -1501,8 +1740,8 @@ void StageSelectScene::SwitchState(bool toDetail)
 	// 演出関連
 	if (toDetail)
 	{// ============================================================
-        // ★修正: エフェクトシステム経由で「即時停止」してから削除
-        // ============================================================
+		// ★修正: エフェクトシステム経由で「即時停止」してから削除
+		// ============================================================
 		auto effectSystem = ECSInitializer::GetSystem<EffectSystem>();
 
 		for (auto& pair : m_activeEyeLights)
@@ -1597,15 +1836,19 @@ void StageSelectScene::UpdateBestTimeDigitsByStageId(const std::string& stageId)
 	if (m_bestTimeDigitEntities.size() != 7) return;
 
 	const int stageNo = StageIdToStageNo(stageId);
-	const uint32_t bestMs = StageUnlockProgress::GetBestTimeMs(stageNo);
 
-	// 未選択/未記録は "--:--" を表示し、".d" は非表示にする
+	// 未選択/不正は "--:--" に固定（GetBestTimeMsを呼ばない）
+	uint32_t bestMs = 0;
+	if (stageNo >= 1 && stageNo <= 6)
+	{
+		bestMs = StageUnlockProgress::GetBestTimeMs(stageNo);
+	}
+
 	int digits[7] = { 10,10,11,10,10,12,10 }; // --:--.-
 	bool showDecimal = false;
 
 	if (bestMs != 0)
 	{
-		// ms -> 0.1秒単位に丸め（リザルトの表示と揃える）
 		const int t10 = static_cast<int>((bestMs + 50) / 100); // 0.1s
 		const int mm = (t10 / 600) % 100;
 		const int ss = (t10 / 10) % 60;
@@ -1628,13 +1871,13 @@ void StageSelectScene::UpdateBestTimeDigitsByStageId(const std::string& stageId)
 		if (!m_coordinator->HasComponent<UIImageComponent>(e)) continue;
 
 		auto& ui = m_coordinator->GetComponent<UIImageComponent>(e);
+
 		const int idx = digits[i];
 		const int r = (idx <= 9) ? (idx / 5) : 2;
 		const int c = (idx <= 9) ? (idx % 5) : (idx - 10);
 		ui.uvPos = { c * 0.2f,  r * 0.333f };
 		ui.uvScale = { 0.2f,     0.333f };
 
-		// 末尾の .d は、記録がある時だけ見せる
 		if (i >= 5) ui.isVisible = showDecimal;
 		else ui.isVisible = true;
 	}
@@ -1666,68 +1909,107 @@ void StageSelectScene::UpdateStarIconsByStageId(const std::string& stageId)
 	}
 }
 
+static int ExtractStageNoFromStageId(const std::string& stageId)
+{
+	// 1～6の最初の数字を拾う（"1-1", "STAGE2", "stage_3-1" など対応）
+	for (char c : stageId)
+	{
+		if (c >= '1' && c <= '6') return (c - '0');
+	}
+	return 0;
+}
+
 
 std::string StageSelectScene::GetStageMapTextureAssetId(int stageNo) const
 {
 	if (stageNo >= 1 && stageNo <= 6)
 	{
-		return std::string("Stage_") + std::to_string(stageNo);
+		return kStageMapUI[stageNo - 1];
 	}
-	// フォールバック（従来の城）
-	return "UI_STAGE_MAPSIRO";
+	// フォールバック（未選択/不正）
+	return kStageMapUI[0];
 }
 
+
+/**
+ * @brief ステージ詳細のマップ表示(UI_STAGE1～UI_STAGE6)を差し替える。
+ * @details UI_STAGE_MAPBACK の上に重ねるオーバーレイ(m_stageMapOverlayEntity)を作り直して更新する。
+ */
 void StageSelectScene::ApplyStageMapTextureByStageId(const std::string& stageId)
 {
-	if (!m_coordinator) return;
+	// オーバーレイ未生成なら何もしない
+	if (m_stageMapOverlayEntity == (ECS::EntityID)-1) return;
 
-	const int stageNo = StageIdToStageNo(stageId);
-	const std::string texId = GetStageMapTextureAssetId(stageNo);
+	// ----------------------------
+	// stageId からステージ番号(1～6)を推定
+	// ----------------------------
+	int stageNo = ExtractStageNoFromStageId(stageId);
 
-	// 対象が無ければ何もしない
-	if (m_stageMapSiroEntity == (ECS::EntityID)-1) return;
-	if (!m_coordinator->HasComponent<TransformComponent>(m_stageMapSiroEntity)) return;
-	if (!m_coordinator->HasComponent<UIImageComponent>(m_stageMapSiroEntity)) return;
-
-	// いったん「同じ場所に作り直す」方式で安全に差し替え
-	const ECS::EntityID oldId = m_stageMapSiroEntity;
-
-	const auto oldTr = m_coordinator->GetComponent<TransformComponent>(oldId);
-	const auto oldUi = m_coordinator->GetComponent<UIImageComponent>(oldId);
-
-	const ECS::EntityID newId = m_coordinator->CreateEntity(
-		TransformComponent(oldTr.position, oldTr.rotation, oldTr.scale),
-		UIImageComponent(texId, oldUi.depth)
-	);
-
-	// 表示状態と色を引き継ぐ（詳細出現演出/フェードと干渉しない程度に）
-	if (m_coordinator->HasComponent<UIImageComponent>(newId))
+	// 例: "STAGE1-1", "1-2", "Stage3", "STAGE_4" みたいなのでも拾えるように
+	for (char c : stageId)
 	{
-		auto& ui = m_coordinator->GetComponent<UIImageComponent>(newId);
-		ui.isVisible = oldUi.isVisible;
-		ui.color = oldUi.color;
-		ui.depth = oldUi.depth;
-	}
-
-	// m_detailUIEntities 内のIDを差し替え（無効IDを残さない）
-	for (auto& id : m_detailUIEntities)
-	{
-		if (id == oldId)
+		if (c >= '1' && c <= '6')
 		{
-			id = newId;
+			stageNo = (c - '0');
 			break;
 		}
 	}
 
-	// Transform キャッシュも更新（詳細のふわっと出現に効く）
-	m_detailBaseScale.erase(oldId);
-	m_detailBasePos.erase(oldId);
-	CacheDetailBaseTransform(newId);
+	// 有効か判定
+	const bool valid = (stageNo >= 1 && stageNo <= 6);
 
-	// 旧Entityを破棄
+	// valid の時だけ UI_STAGE1～UI_STAGE6 を選ぶ
+	const std::string texId = valid ? GetStageMapTextureAssetId(stageNo) : std::string("UI_STAGE1");
+
+	// ----------------------------
+	// 現在のオーバーレイのTransform/Depthを取り出す
+	// ----------------------------
+	const ECS::EntityID oldId = m_stageMapOverlayEntity;
+
+	if (!m_coordinator->HasComponent<TransformComponent>(oldId) ||
+		!m_coordinator->HasComponent<UIImageComponent>(oldId))
+	{
+		return;
+	}
+
+	const auto oldTr = m_coordinator->GetComponent<TransformComponent>(oldId);
+	const auto oldUi = m_coordinator->GetComponent<UIImageComponent>(oldId);
+
+	// ----------------------------
+	// 新しいオーバーレイEntityを生成（同じ位置/サイズ/深度）
+	// ----------------------------
+	ECS::EntityID newId = m_coordinator->CreateEntity(
+		TransformComponent(oldTr.position, oldTr.rotation, oldTr.scale),
+		UIImageComponent(texId, oldUi.depth)
+	);
+
+	// 表示/非表示（未選択状態なら消す）
+	if (m_coordinator->HasComponent<UIImageComponent>(newId))
+	{
+		auto& ui = m_coordinator->GetComponent<UIImageComponent>(newId);
+		ui.isVisible = valid;
+		ui.color.w = valid ? 1.0f : 0.0f; // アルファ
+	}
+
+	// 管理リストに追加
+	m_detailUIEntities.push_back(newId);
+
+	// ----------------------------
+	// 古いEntityを管理リストから外して破棄
+	// ----------------------------
+	for (auto it = m_detailUIEntities.begin(); it != m_detailUIEntities.end(); ++it)
+	{
+		if (*it == oldId)
+		{
+			m_detailUIEntities.erase(it);
+			break;
+		}
+	}
+
 	m_coordinator->DestroyEntity(oldId);
 
-	m_stageMapSiroEntity = newId;
+	// ID更新
+	m_stageMapOverlayEntity = newId;
 }
 
 void StageSelectScene::CacheDetailBaseTransform(ECS::EntityID id)
@@ -1840,54 +2122,62 @@ void StageSelectScene::UpdateDetailAppear(float dt)
 //--------------------------------------------------------------
 // Stage Unlock / Reveal（未解放は完全非表示、解放時に浮かび上がる）
 //--------------------------------------------------------------
+/**
+ * @brief ステージ決定後の詳細演出（リビール）を開始する
+ * * @param stageNo 決定されたステージ番号
+ * * 【修正内容】
+ * 詳細画面の右側に大きく表示されるモデルも、M_CARD 固定から
+ * M_SELECT1 ～ M_SELECT6 の固有モデルに切り替わるように修正しました。
+ */
+ /**
+  * @brief ステージ決定後の詳細演出（リビール）を開始する
+  * * @param stageNo 決定されたステージ番号
+  * * 【修正内容】
+  * 詳細画面の右側に大きく表示されるモデルも、M_SELECT1 ～ M_SELECT6 に切り替えました。
+  */
 void StageSelectScene::BeginStageReveal(int stageNo)
 {
-	if (!m_coordinator) return;
-	if (stageNo < 1 || stageNo > 6) return;
-	const int idx = stageNo - 1;
-	if (idx < 0 || idx >= (int)m_listUIEntities.size()) return;
-
-	ECS::EntityID id = m_listUIEntities[idx];
-	if (id == (ECS::EntityID)-1) return;
-
-	if (!m_coordinator->HasComponent<TransformComponent>(id) ||
-		!m_coordinator->HasComponent<UIImageComponent>(id))
-	{
-		return;
+	// 1. 古い演出用エンティティが残っていれば削除
+	if (m_revealingCardEntity != (ECS::EntityID)-1) {
+		m_coordinator->DestroyEntity(m_revealingCardEntity);
+		m_revealingCardEntity = (ECS::EntityID)-1;
 	}
 
-	auto& tr = m_coordinator->GetComponent<TransformComponent>(id);
-	auto& ui = m_coordinator->GetComponent<UIImageComponent>(id);
+	// --- 【BKB注釈】ここでも固有モデルIDを使用 ---
+	std::string modelID = "M_SELECT" + std::to_string(stageNo);
 
-	StageRevealAnim anim;
-	anim.active = true;
-	anim.entity = id;
+	// 2. 演出開始時の初期状態を設定
+	//    画面の右奥の方から、小さく、透明に近い状態で出現させる準備
+	DirectX::XMFLOAT3 startPos = { 400.0f, 0.0f, -5.0f };
+	DirectX::XMFLOAT3 startRot = { 0.0f, 0.0f, 0.0f };
+	DirectX::XMFLOAT3 startScale = { 0.1f, 0.1f, 0.1f };
+
+	// 3. 演出用エンティティの作成
+	m_revealingCardEntity = m_coordinator->CreateEntity(
+		TransformComponent(startPos, startRot, startScale),
+		RenderComponent(MESH_MODEL, { 1.0f, 1.0f, 1.0f, 1.0f }, CullMode::Front),
+		ModelComponent(modelID, 1.5f, Model::None) // 他のUIより少し手前に表示
+	);
+
+	// 4. アニメーション制御用データの初期化
+	//    m_stageReveal 構造体に、経過時間や期間をセット
+	auto& anim = m_stageReveal[stageNo];
+	anim.active = true;    // ★重要: アニメーションを有効化
+	anim.entity = m_revealingCardEntity; // ★重要: 動かす対象のIDをセット
+
 	anim.elapsed = 0.0f;
-	anim.duration = 0.90f;
-	anim.endY = tr.position.y;
-	anim.startY = tr.position.y + 60.0f; // 少し下から
+	anim.duration = 0.90f; // 0.9秒かけて演出
+
+	// その他アニメーションに必要なパラメータのリセット
+	anim.startY = 0.0f;
+	anim.endY = 0.0f;
 	anim.startAlpha = 0.0f;
 	anim.endAlpha = 1.0f;
-	anim.baseScale = tr.scale;
+	anim.baseScale = { 1.0f, 1.0f, 1.0f };
 
-	// 初期状態
-	tr.position.y = anim.startY;
-	ui.isVisible = true;
-	ui.color.w = anim.startAlpha;
-
-	// 演出中はクリック不可にする（見えない/半透明で誤クリック防止）
-	if (m_coordinator->HasComponent<UIButtonComponent>(id))
-	{
-		m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = false;
-	}
-
-	// RenderComponent 側も念のため同期（UI描画がこちらを参照する実装もあるため）
-	if (m_coordinator->HasComponent<RenderComponent>(id))
-	{
-		m_coordinator->GetComponent<RenderComponent>(id).color.w = anim.startAlpha;
-	}
-
-	m_stageReveal[stageNo] = anim;
+	// 状態を「リスト表示」から「詳細表示」へ切り替え（Update関数側で処理される）
+	// m_isDetailVisible ではなく、このプロジェクトではフラグ管理などが別にあるため
+	// ここではアニメーションデータ(anim)のセットアップに集中します
 }
 
 void StageSelectScene::UpdateStageReveal(float dt)
@@ -1902,7 +2192,7 @@ void StageSelectScene::UpdateStageReveal(float dt)
 		if (anim.entity == (ECS::EntityID)-1) { anim.active = false; continue; }
 
 		if (!m_coordinator->HasComponent<TransformComponent>(anim.entity) ||
-			!m_coordinator->HasComponent<UIImageComponent>(anim.entity))
+			!m_coordinator->HasComponent<RenderComponent>(anim.entity))
 		{
 			anim.active = false;
 			continue;
@@ -1914,25 +2204,21 @@ void StageSelectScene::UpdateStageReveal(float dt)
 		const float e = SmoothStep01(t);
 
 		auto& tr = m_coordinator->GetComponent<TransformComponent>(anim.entity);
-		auto& ui = m_coordinator->GetComponent<UIImageComponent>(anim.entity);
+		auto& rc = m_coordinator->GetComponent<RenderComponent>(anim.entity);
 
 		// 位置：下→定位置
 		tr.position.y = anim.startY + (anim.endY - anim.startY) * e;
 
 		// アルファ：0→1
 		const float a = anim.startAlpha + (anim.endAlpha - anim.startAlpha) * e;
-		ui.color.w = a;
-
-		if (m_coordinator->HasComponent<RenderComponent>(anim.entity))
-		{
-			m_coordinator->GetComponent<RenderComponent>(anim.entity).color.w = a;
-		}
+		rc.color.w = a;
 
 		// 仕上げ：最後にクリック可能化
 		if (t >= 1.0f)
 		{
 			tr.position.y = anim.endY;
-			ui.color.w = anim.endAlpha;
+			if (m_coordinator->HasComponent<RenderComponent>(anim.entity))
+				m_coordinator->GetComponent<RenderComponent>(anim.entity).color.w = anim.endAlpha;
 
 			if (m_coordinator->HasComponent<UIButtonComponent>(anim.entity))
 			{
@@ -2000,54 +2286,126 @@ void StageSelectScene::ApplyListVisibility(bool listVisible)
 // - 3列×2段（最大6枚）のスロットを常に同じ位置に置く
 // - 解放枚数が1枚でも「中央寄せ」しない（= 6枚ある時と同じ場所に出る）
 // - 演出中のステージは配置を上書きしない（浮かび上がりを維持）
+/**
+ * @brief 解放されているステージカードを生成し、レイアウトを再計算する
+ * * 【修正内容】
+ * 以前は全てのカードが M_CARD 固定でしたが、CSVの定義（M_SELECT1 ～ M_SELECT6）に
+ * 基づいて、ステージ番号に応じたモデルを生成するように変更しました。
+ */
+ /**
+  * @brief 解放されているステージカードを生成し、レイアウトを再計算する
+  * * 【修正内容】
+  * M_CARD 固定ではなく、CSVで定義された M_SELECT1 ～ M_SELECT6 を使用して
+  * ステージごとのユニークなモデルを表示します。
+  */
+  /**
+   * @brief 解放されているステージカードを生成し、レイアウトを再計算する
+   * * 【修正内容】
+   * ・M_SELECT1 ～ M_SELECT6 のモデルを使用するように変更
+   * ・存在しない m_currentSelectedStage の代わりに、m_selectedStageID を数値変換して使用するように修正
+   */
+   /**
+	* @brief 一覧カード(ステージ選択)の3Dモデル（M_SELECT1～M_SELECT6）を再配置する
+	* @details
+	* - 一覧の「見た目」は 3Dモデル（list_card_model）
+	* - クリック判定は UIボタン（list_card_hitbox）
+	* - ロック状態に合わせて表示/非表示を同期する
+	* - 何らかの理由でモデルが欠けていた場合はここで再生成する（安全復旧）
+	*/
 void StageSelectScene::ReflowUnlockedCardsLayout()
 {
 	if (!m_coordinator) return;
 
-	const int n = std::max(1, std::min(6, m_maxUnlockedStage));
-	const float gapX = 350.0f;
-	const float gapY = 250.0f;
+	constexpr int kTotalStages = 6;
 
-	// 6枚表示時の基準レイアウト（中央基準の3列）
-	const float centerX = SCREEN_WIDTH * 0.5f;
-	const float startY = SCREEN_HEIGHT * 0.32f;
-	const float baseRowStartX = centerX - gapX; // 3列(0..2)のとき: center - gapX
-
-	for (int stageNo = 1; stageNo <= n; ++stageNo)
+	// 配列を常に 6 に揃える（不足していたら埋める）
+	if ((int)m_listCardModelEntities.size() < kTotalStages)
 	{
-		const int listIdx = stageNo - 1;
-		if (listIdx < 0 || listIdx >= (int)m_listUIEntities.size()) continue;
-
-		// 演出中は位置を上書きしない
-		auto itReveal = m_stageReveal.find(stageNo);
-		if (itReveal != m_stageReveal.end() && itReveal->second.active)
-			continue;
-
-		ECS::EntityID id = m_listUIEntities[listIdx];
-		if (id == (ECS::EntityID)-1) continue;
-		if (!m_coordinator->HasComponent<TransformComponent>(id)) continue;
-
-		const int slotIndex = stageNo - 1; // 解放が連番(1..n)である前提
-		const int row = slotIndex / 3;
-		const int col = slotIndex % 3;
-
-		// ★ここが重要：rowStartX を「見えている数」で変えない。
-		// 1枚でも、6枚時と同じスロット位置に置く。
-		const float x = baseRowStartX + col * gapX;
-		const float y = startY + row * gapY;
-
-		auto& tr = m_coordinator->GetComponent<TransformComponent>(id);
-		tr.position.x = x;
-		tr.position.y = y;
-
-		// 一覧の基準サイズ（既存の見た目に合わせる）
-		tr.position.z = 5.0f;
-		tr.rotation = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
-		tr.scale = DirectX::XMFLOAT3(250.0f, 150.0f, 1.0f);
+		m_listCardModelEntities.resize(kTotalStages, (ECS::EntityID)-1);
 	}
+
+	// UI→3D 変換用
+	constexpr float kListCardZ = 4.8f;
+
+	// ★一覧カードは UI用カードモデル想定なので、ワールドスケールは小さく固定（大きすぎる症状対策）
+	constexpr float kListCardScale = 0.03f;
+
+	for (int stageNo = 1; stageNo <= kTotalStages; ++stageNo)
+	{
+		const int idx = stageNo - 1;
+		const bool unlocked = IsStageUnlocked(stageNo);
+
+		// スロット中心（UI座標）→ 3Dワールドへ変換して配置
+		const DirectX::XMFLOAT3 uiPos = GetListCardSlotCenterPos(stageNo);
+		const DirectX::XMFLOAT3 wpos = UIToWorld(uiPos.x, uiPos.y, kListCardZ);
+
+		// ----------------------------------------------------------
+		// 1) 3Dカード（見た目）
+		// ----------------------------------------------------------
+		ECS::EntityID cardModel = m_listCardModelEntities[idx];
+
+		const bool needRecreate =
+			(cardModel == (ECS::EntityID)-1) ||
+			(!m_coordinator->HasComponent<TransformComponent>(cardModel)) ||
+			(!m_coordinator->HasComponent<ModelComponent>(cardModel)) ||
+			(!m_coordinator->HasComponent<RenderComponent>(cardModel));
+
+		if (needRecreate)
+		{
+			const char* modelId = kSelectCardModel[idx];
+			cardModel = m_coordinator->CreateEntity(
+				TagComponent("list_card_model"),
+				TransformComponent(wpos, { 0.0f, DirectX::XM_PI, 0.0f }, MakeSelectCardScale(kListCardScale)),
+				RenderComponent(MESH_MODEL, { 1.0f, 1.0f, 1.0f, 1.0f }),
+				ModelComponent(modelId, 5.0f, Model::None)
+			);
+			m_listCardModelEntities[idx] = cardModel;
+		}
+		else
+		{
+			auto& tr = m_coordinator->GetComponent<TransformComponent>(cardModel);
+			tr.position = wpos;
+			tr.rotation = DirectX::XMFLOAT3(0.0f, DirectX::XM_PI, 0.0f);
+			tr.scale = MakeSelectCardScale(kListCardScale);
+		}
+
+		// 一覧表示中かつ解放済みなら表示、詳細中なら非表示
+		const bool showModel = (!m_isDetailMode) && unlocked;
+		SetUIVisible(cardModel, showModel);
+
+		// ----------------------------------------------------------
+		// 2) クリック判定（ヒットボックス）
+		// ----------------------------------------------------------
+		if (idx < (int)m_listUIEntities.size())
+		{
+			// ★重要：ヒットボックスの座標を「一覧カードのスロット中心」に必ず同期する
+			// - これをやらないと、カード(3D)だけ移動して「クリック判定」と「番号ラベル(1-1など)」がズレる。
+			// - SyncStageNumberLabel は GetUIRect(=ヒットボックス) を基準に中央揃え計算しているため。
+			const ECS::EntityID hit = m_listUIEntities[idx];
+			if (hit != (ECS::EntityID)-1 && m_coordinator->HasComponent<TransformComponent>(hit))
+			{
+				auto& tr = m_coordinator->GetComponent<TransformComponent>(hit);
+				tr.position.x = uiPos.x;
+				tr.position.y = uiPos.y;
+				tr.position.z = 5.0f;
+				// クリック判定のサイズは固定（Hoverで拡大しない前提）
+				tr.scale = DirectX::XMFLOAT3(250.0f, 150.0f, 1.0f);
+				tr.rotation = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
+			}
+
+			const bool showHitbox = (!m_isDetailMode) && unlocked;
+			SetUIVisible(hit, showHitbox);
+		}
+
+		// ----------------------------------------------------------
+		// 3) ステージ番号ラベル
+		// ----------------------------------------------------------
+		SetStageNumberLabelVisible(stageNo, (!m_isDetailMode) && unlocked);
+	}
+
+	// ★配置を変えたら、番号ラベルも必ず再同期（ここを外すと1フレームだけズレる環境がある）
+	SyncStageNumberLabels(true);
 }
-
-
 
 void StageSelectScene::SetUIVisible(ECS::EntityID id, bool visible)
 {
@@ -2081,9 +2439,20 @@ void StageSelectScene::SetUIVisible(ECS::EntityID id, bool visible)
 		m_coordinator->GetComponent<UIButtonComponent>(id).isVisible = visible;
 	}
 
+
 	if (m_coordinator->HasComponent<RenderComponent>(id))
 	{
 		auto& rc = m_coordinator->GetComponent<RenderComponent>(id);
+
+		// ★3Dモデルは「type」でON/OFFされることがあるため、ModelComponent を持つものは type も同期する
+		const bool isModelEntity =
+			m_coordinator->HasComponent<ModelComponent>(id) &&
+			!m_coordinator->HasComponent<UIImageComponent>(id);
+
+		if (isModelEntity)
+		{
+			rc.type = visible ? MESH_MODEL : MESH_NONE;
+		}
 
 		if (!visible)
 		{
@@ -2091,10 +2460,510 @@ void StageSelectScene::SetUIVisible(ECS::EntityID id, bool visible)
 		}
 		else
 		{
+			// 0のときだけ復帰（演出中の途中値を壊さない）
 			if (rc.color.w <= 0.001f) rc.color.w = targetAlpha;
 		}
 	}
 }
+
+
+// ------------------------------------------------------------
+// Stage number labels ("1-1" etc) : UI_STAGEMOJI* on list cards
+// ------------------------------------------------------------
+// 仕様：数字は UI_STAGEMOJI0～9、ハイフンは UI_STAGEMOJI_ をCSVで管理した切り出しで描画する。
+// 注意：uvPos/uvScale をコード側で上書きするとアトラス切り出しが壊れて「点/細線」になるので上書きしない。
+// 太さ：同じ文字を8方向に重ね描きして擬似ボールド化（画像自体は太くできないため）。
+static const char* StageMoji_GetAssetId(char c)
+{
+	static const char* kDigits[10] =
+	{
+		"UI_STAGEMOJI0",
+		"UI_STAGEMOJI1",
+		"UI_STAGEMOJI2",
+		"UI_STAGEMOJI3",
+		"UI_STAGEMOJI4",
+		"UI_STAGEMOJI5",
+		"UI_STAGEMOJI6",
+		"UI_STAGEMOJI7",
+		"UI_STAGEMOJI8",
+		"UI_STAGEMOJI9",
+	};
+
+	if (c >= '0' && c <= '9') return kDigits[(int)(c - '0')];
+	if (c == '-') return "UI_STAGEMOJI_";
+	return nullptr;
+}
+
+// ===== 調整用パラメータ（ここだけ触ればOK）=====
+static constexpr float kStageNoScale = 1.75f;            // 全体サイズ倍率
+static constexpr float kStageNoMarginBelow = 5.0f;      // カード下の余白
+static constexpr float kStageNoDepth = 5.0f;             // UIのdepth
+static constexpr float kStageNoBaseZ = 0.10f;            // Transform.z（擬似ボールドのZずらし基準）
+
+// ★ステージ番号背景（UI_STAGE_NUMBER）の設定
+static constexpr float kStageNoBgWidth = 180.0f;   // 背景の幅（元: 120.0f）
+static constexpr float kStageNoBgHeight = 75.0f;   // 背景の高さ（元: 50.0f）
+static constexpr float kStageNoBgDepth = 4.9f;     // 背景のdepth（文字より後ろ）
+// ★背景の微調整オフセット（文字が背景の中心からずれている場合に調整）
+static constexpr float kStageNoBgOffsetX = 10.0f;   // X方向のオフセット（正で右、負で左）
+static constexpr float kStageNoBgOffsetY = -35.0f;   // Y方向のオフセット（正で下、負で上）
+
+
+// ★★★ ステージ別の個別オフセット設定 ★★★
+// 各ステージのラベル位置を個別に調整できます
+// offsetX: 正の値で右に、負の値で左に移動
+// offsetY: 正の値で下に、負の値で上に移動
+struct StageNoOffset
+{
+	float textOffsetX;    // 文字のXオフセット
+	float textOffsetY;    // 文字のYオフセット
+	float bgOffsetX;      // 背景のXオフセット
+	float bgOffsetY;      // 背景のYオフセット
+};
+
+static const StageNoOffset kStageNoOffsets[6] =
+{
+	// { 文字X, 文字Y, 背景X, 背景Y }
+	{ 100.0f,  10.0f,  -90.0f,  -10.0f },  // ステージ1 (1-1)
+	{ 20.0f,   10.0f,   3.0f,  -10.0f },  // ステージ2 (1-2)
+	{ 110.0f,  10.0f,   92.0f,  -10.0f },  // ステージ3 (1-3)
+	{ -85.0f,  75.0f,   -90.0f,  55.0f },  // ステージ4 (2-1)
+	{ 20.0f,   75.0f,   3.0f,  55.0f },  // ステージ5 (2-2)
+	{ 110.0f,  75.0f,   92.0f,  55.0f },  // ステージ6 (2-3)
+};
+// 使用例：
+// ステージ1の文字を右に10px、下に5px、背景を左に5px移動したい場合:
+// { 10.0f,  5.0f,  -5.0f,  0.0f },  // ステージ1 (1-1)
+// ステージ3の文字はそのまま、背景だけを上に10px移動したい場合:
+// { 110.0f,  10.0f,  0.0f,  -10.0f },  // ステージ3 (1-3)
+// ★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+// ★★★ 文字ごとの個別オフセット（1-1 の「左数字」「-」「右数字」別に調整）★★★
+// ここを触ると、「1」だけ右へ / 「-」だけ上へ、などができます。
+// stageNo=1..6, charIndex=0..2  (例: "1-1" -> [0]='1', [1]='-', [2]='1')
+struct StageNoCharOffset2
+{
+	float x;
+	float y;
+};
+
+static const StageNoCharOffset2 kStageNoCharOffsets[6][3] =
+{
+	//  { 左数字(dx,dy),      '-'(dx,dy),        右数字(dx,dy) }
+	{ { -90.0f, -17.0f }, { -220.0f, -10.0f }, { -190.0f, -17.0f } },
+	// stage2 "1-2"
+	{ { 80.0f, -17.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },
+	// stage3 "1-3"
+	{ { 80.0f, -17.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },
+	// stage4 "2-1"
+	{ { 75.0f, -17.0f }, { -40.0f, -10.0f }, { -10.0f, -17.0f } },
+	// stage5 "2-2"
+	{ { 65.0f, -17.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },
+	// stage6 "2-3"
+	{ { 65.0f, -17.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },
+};
+
+// 例）
+// - ステージ1の「-」だけを 3px 上にしたい：kStageNoCharOffsets[0][1] = {0, -3}
+// - ステージ4の右数字だけを 5px 右へ：     kStageNoCharOffsets[3][2] = {+5, 0}
+// ★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+
+
+// 文字サイズ（基準値×kStageNoScale）
+// ★要望：UI_STAGEMOJI1～9 と UI_STAGEMOJI_ を UI_STAGEMOJI2 と同じサイズで表示する
+// ＝ グリフ毎の個別メトリクスをやめて「共通サイズ」に統一する。
+static constexpr float kStageNoGlyphWBase = 80.0f;        // UI_STAGEMOJI2 を基準
+static constexpr float kStageNoGlyphHBase = 75.0f;        // UI_STAGEMOJI2 を基準
+static constexpr float kStageNoGlyphAdvanceBase = 52.0f;  // UI_STAGEMOJI2 を基準（文字間隔）
+
+// "-"（UI_STAGEMOJI_）も同一サイズにする（必要なら kStageNoHyphenYOffsetBase で位置だけ微調整）
+static constexpr float kStageNoHyphenYOffsetBase = -5.0f; // '-'の上下位置（正で上、負で下）
+static constexpr float kStageNoHyphenXOffsetBase = 0.0f;  // '-'の左右位置（正で右、負で左）
+
+static inline void StageNo_GetGlyphMetrics(char c, float& outW, float& outH, float& outAdv)
+{
+	(void)c; // すべて同じメトリクス
+	outW = kStageNoGlyphWBase * kStageNoScale;
+	outH = kStageNoGlyphHBase * kStageNoScale;
+	outAdv = kStageNoGlyphAdvanceBase * kStageNoScale;
+}
+
+// 擬似ボールド設定
+static constexpr bool  kStageNoBoldEnabled = true;
+static constexpr int   kStageNoBoldPasses = 9;           // 1(本体)+8(周囲) = 9
+static constexpr float kStageNoBoldOffsetPxBase = 1.0f;  // 太さ（ピクセル）
+// 太さ（ピクセル）※太さはちょうど良いので触らない想定
+
+void StageSelectScene::BuildStageNumberLabels()
+{
+	if (!m_coordinator) return;
+
+	// 既存があれば破棄（本体）
+	for (auto& v : m_listStageLabelEntities)
+	{
+		for (auto id : v)
+		{
+			if (id != (ECS::EntityID)-1) m_coordinator->DestroyEntity(id);
+		}
+	}
+	// 既存があれば破棄（擬似ボールド）
+	for (auto& v : m_listStageLabelBoldEntities)
+	{
+		for (auto id : v)
+		{
+			if (id != (ECS::EntityID)-1) m_coordinator->DestroyEntity(id);
+		}
+	}
+
+	// 既存があれば破棄（背景）
+	for (auto id : m_listStageLabelBgEntities)
+	{
+		if (id != (ECS::EntityID)-1) m_coordinator->DestroyEntity(id);
+	}
+
+	m_listStageLabelEntities.clear();
+	m_listStageLabelBoldEntities.clear();
+	m_listStageLabelEntities.resize(6);
+	m_listStageLabelBoldEntities.resize(6);
+	m_listStageLabelBgEntities.clear();
+	m_listStageLabelBgEntities.resize(6, (ECS::EntityID)-1);
+
+
+	// 作成時の最大枠（後で文字ごとにscaleを上書きする）
+	// ★数字2と3の大きなサイズも考慮してmaxW/maxHを計算
+	const float maxW = kStageNoGlyphWBase * kStageNoScale;
+	const float maxH = kStageNoGlyphHBase * kStageNoScale;
+
+	for (int stageNo = 1; stageNo <= 6; ++stageNo)
+	{
+		const std::string text = StageNoToLabelText(stageNo);
+
+		// ★UI_STAGE_NUMBER背景を作成
+		const int idx = stageNo - 1;
+		m_listStageLabelBgEntities[idx] = m_coordinator->CreateEntity(
+			TransformComponent({ 0.0f, 0.0f, kStageNoBaseZ }, { 0,0,0 }, { kStageNoBgWidth, kStageNoBgHeight, 1.0f }),
+			UIImageComponent("UI_STAGE_NUMBER", kStageNoBgDepth, true, { 1,1,1,1 })
+		);
+
+
+		auto& vec = m_listStageLabelEntities[stageNo - 1];
+		auto& vecBold = m_listStageLabelBoldEntities[stageNo - 1];
+		vec.clear();
+		vecBold.clear();
+		vec.reserve((int)text.size());
+		if (kStageNoBoldEnabled && kStageNoBoldPasses >= 2)
+		{
+			vecBold.reserve((int)text.size() * (kStageNoBoldPasses - 1));
+		}
+
+		for (size_t i = 0; i < text.size(); ++i)
+		{
+			const char c = text[i];
+			const char* assetId = StageMoji_GetAssetId(c);
+			const std::string tex = assetId ? std::string(assetId) : std::string("UI_STAGEMOJI0");
+
+			ECS::EntityID e = m_coordinator->CreateEntity(
+				TransformComponent({ 0.0f, 0.0f, kStageNoBaseZ }, { 0,0,0 }, { maxW, maxH, 1.0f }),
+				UIImageComponent(tex, kStageNoDepth, true, { 1,1,1,1 })
+			);
+
+			// uvPos/uvScale はCSV側の切り出しを使う（上書きしない）
+			if (!assetId && m_coordinator->HasComponent<UIImageComponent>(e))
+			{
+				auto& ui = m_coordinator->GetComponent<UIImageComponent>(e);
+				ui.isVisible = false;
+				ui.color.w = 0.0f;
+			}
+
+			vec.push_back(e);
+
+			// 擬似ボールド（重ね描き：本体とは別Entity）
+			if (kStageNoBoldEnabled && kStageNoBoldPasses >= 2)
+			{
+				for (int p = 0; p < (kStageNoBoldPasses - 1); ++p)
+				{
+					const float passDepth = kStageNoDepth + 0.0001f * (float)(p + 1);
+					ECS::EntityID eb = m_coordinator->CreateEntity(
+						TransformComponent({ 0.0f, 0.0f, kStageNoBaseZ + 0.0001f * (float)(p + 1) }, { 0,0,0 }, { maxW, maxH, 1.0f }),
+						UIImageComponent(tex, passDepth, true, { 1,1,1,1 })
+					);
+
+					if (!assetId && m_coordinator->HasComponent<UIImageComponent>(eb))
+					{
+						auto& ui = m_coordinator->GetComponent<UIImageComponent>(eb);
+						ui.isVisible = false;
+						ui.color.w = 0.0f;
+					}
+					vecBold.push_back(eb);
+				}
+			}
+		}
+
+		SyncStageNumberLabel(stageNo);
+	}
+}
+
+void StageSelectScene::SetStageNumberLabelVisible(int stageNo, bool visible)
+{
+	if (stageNo < 1 || stageNo >(int)m_listStageLabelEntities.size()) return;
+
+	for (auto id : m_listStageLabelEntities[stageNo - 1]) SetUIVisible(id, visible);
+
+	if (stageNo >= 1 && stageNo <= (int)m_listStageLabelBoldEntities.size())
+	{
+		for (auto id : m_listStageLabelBoldEntities[stageNo - 1]) SetUIVisible(id, visible);
+
+		// ★背景の表示/非表示も同期
+		if (stageNo >= 1 && stageNo <= (int)m_listStageLabelBgEntities.size())
+		{
+			const int idx = stageNo - 1;
+			if (m_listStageLabelBgEntities[idx] != (ECS::EntityID)-1)
+			{
+				SetUIVisible(m_listStageLabelBgEntities[idx], visible);
+			}
+		}
+	}
+}
+
+void StageSelectScene::SyncStageNumberLabels(bool force)
+{
+	(void)force;
+	for (int stageNo = 1; stageNo <= 6; ++stageNo) SyncStageNumberLabel(stageNo);
+}
+
+void StageSelectScene::SyncStageNumberLabel(int stageNo)
+{
+	if (!m_coordinator) return;
+	if (stageNo < 1 || stageNo > 6) return;
+
+	const int idx = stageNo - 1;
+	if (idx < 0 || idx >= (int)m_listUIEntities.size()) return;
+	if (idx >= (int)m_listStageLabelEntities.size()) return;
+
+	const ECS::EntityID cardId = m_listUIEntities[idx];
+	if (cardId == (ECS::EntityID)-1) return;
+
+	float l, t, r, b;
+	if (!GetUIRect(cardId, l, t, r, b)) return;
+
+	// カード可視/アルファに追従（ただし薄すぎると読めないので下限を持つ）
+	bool cardVis = true;
+	float cardAlpha = 1.0f;
+
+	// 1) hitbox(UIButton) の可視を最優先
+	if (m_coordinator->HasComponent<UIButtonComponent>(cardId))
+	{
+		const auto& btn = m_coordinator->GetComponent<UIButtonComponent>(cardId);
+		cardVis = btn.isVisible;
+	}
+
+	// 2) 3Dモデル側の状態も反映（存在する場合）
+	if (idx >= 0 && idx < (int)m_listCardModelEntities.size())
+	{
+		const ECS::EntityID modelId = m_listCardModelEntities[idx];
+		if (modelId != (ECS::EntityID)-1 && m_coordinator->HasComponent<RenderComponent>(modelId))
+		{
+			const auto& rc = m_coordinator->GetComponent<RenderComponent>(modelId);
+			cardAlpha = rc.color.w;
+			// type が消されている(or 透明)ならラベルも消す
+			if (rc.type == MESH_NONE || rc.color.w <= 0.001f)
+			{
+				cardVis = false;
+			}
+		}
+	}
+
+	// 3) それでも情報がない場合のみ、cardId 自体の UIImage/Render を参照
+	if (m_coordinator->HasComponent<UIImageComponent>(cardId))
+	{
+		const auto& ui = m_coordinator->GetComponent<UIImageComponent>(cardId);
+		cardVis = ui.isVisible;
+		cardAlpha = ui.color.w;
+	}
+	else if (m_coordinator->HasComponent<RenderComponent>(cardId))
+	{
+		const auto& rc = m_coordinator->GetComponent<RenderComponent>(cardId);
+		cardAlpha = rc.color.w;
+		if (rc.type == MESH_NONE || rc.color.w <= 0.001f)
+		{
+			cardVis = false;
+		}
+	}
+
+	const float digitH = kStageNoGlyphHBase * kStageNoScale;
+	const float hyphenYOffset = kStageNoHyphenYOffsetBase * kStageNoScale;
+	const float hyphenXOffset = kStageNoHyphenXOffsetBase * kStageNoScale;
+
+	const float baseY = b + kStageNoMarginBelow;
+
+	// 文字列とメトリクスを復元（例："1-2"）
+	const std::string text = StageNoToLabelText(stageNo);
+	auto& vec = m_listStageLabelEntities[idx];
+
+	// 合計幅（プロポーショナル）- 正確な計算
+	float totalW = 0.0f;
+	for (size_t i = 0; i < text.size(); ++i)
+	{
+		float w = 0.0f, h = 0.0f, adv = 0.0f;
+		StageNo_GetGlyphMetrics(text[i], w, h, adv);
+
+		if (i == text.size() - 1)
+		{
+			// 最後の文字：現在の位置 + 文字の幅
+			totalW += w;
+		}
+		else
+		{
+			// 途中の文字：advance を加算
+			totalW += adv;
+		}
+	}
+
+	const float centerX = (l + r) * 0.5f;
+	const float baseX = centerX - totalW * 0.5f;
+
+	// ★ステージ別の個別オフセットを適用（文字用）
+	const float stageTextOffsetX = (idx >= 0 && idx < 6) ? kStageNoOffsets[idx].textOffsetX : 0.0f;
+	const float stageTextOffsetY = (idx >= 0 && idx < 6) ? kStageNoOffsets[idx].textOffsetY : 0.0f;
+	// ★ステージ別の個別オフセットを適用（背景用）
+	const float stageBgOffsetX = (idx >= 0 && idx < 6) ? kStageNoOffsets[idx].bgOffsetX : 0.0f;
+	const float stageBgOffsetY = (idx >= 0 && idx < 6) ? kStageNoOffsets[idx].bgOffsetY : 0.0f;
+
+	// 太さ（重ね描きのオフセット）
+	const float boldOffset = kStageNoBoldOffsetPxBase;
+
+	// 8方向オフセット
+	static const DirectX::XMFLOAT2 kOffsets[8] =
+	{
+		{ +1.0f,  0.0f },
+		{ -1.0f,  0.0f },
+		{  0.0f, +1.0f },
+		{  0.0f, -1.0f },
+		{ +1.0f, +1.0f },
+		{ +1.0f, -1.0f },
+		{ -1.0f, +1.0f },
+		{ -1.0f, -1.0f },
+	};
+
+	// 配置：cursorで横並び、ハイフンは専用advance＆yOffsetで数字の真ん中へ
+	float cursor = 0.0f;
+	for (int i = 0; i < (int)vec.size() && i < (int)text.size(); ++i)
+	{
+		const ECS::EntityID e = vec[i];
+		if (e == (ECS::EntityID)-1) continue;
+
+		const char c = text[(size_t)i];
+		const bool isHyphen = (c == '-');
+
+		float w = 0.0f, h = 0.0f, adv = 0.0f;
+		StageNo_GetGlyphMetrics(c, w, h, adv);
+
+		const float yOff = isHyphen ? hyphenYOffset : 0.0f;
+		const float xOff = isHyphen ? hyphenXOffset : 0.0f;
+
+		// ★ステージ別オフセットを適用
+		float perCharOffsetX = 0.0f;
+		float perCharOffsetY = 0.0f;
+		if (idx >= 0 && idx < 6 && i >= 0 && i < 3)
+		{
+			perCharOffsetX = kStageNoCharOffsets[idx][i].x;
+			perCharOffsetY = kStageNoCharOffsets[idx][i].y;
+		}
+
+		const float cx = baseX + cursor + w * 0.5f + xOff + stageTextOffsetX + perCharOffsetX;
+		const float cy = (baseY + digitH * 0.5f) + yOff + stageTextOffsetY + perCharOffsetY;
+
+		// Transform
+		if (m_coordinator->HasComponent<TransformComponent>(e))
+		{
+			auto& tr = m_coordinator->GetComponent<TransformComponent>(e);
+			tr.position.x = cx;
+			tr.position.y = cy;
+			tr.position.z = kStageNoBaseZ; // 本体
+			tr.scale = DirectX::XMFLOAT3(w, h, 1.0f);
+		}
+
+		// Visible/Alpha
+		if (m_coordinator->HasComponent<UIImageComponent>(e))
+		{
+			auto& ui = m_coordinator->GetComponent<UIImageComponent>(e);
+			ui.isVisible = cardVis;
+			ui.color.w = cardVis ? std::max(0.95f, cardAlpha) : 0.0f;
+		}
+
+		// 擬似ボールド：Zもずらす
+		if (kStageNoBoldEnabled && kStageNoBoldPasses >= 2 && idx < (int)m_listStageLabelBoldEntities.size())
+		{
+			auto& vb = m_listStageLabelBoldEntities[idx];
+			const int perChar = (kStageNoBoldPasses - 1);
+
+			for (int p = 0; p < perChar; ++p)
+			{
+				const int bi = i * perChar + p;
+				if (bi < 0 || bi >= (int)vb.size()) continue;
+
+				const ECS::EntityID eb = vb[bi];
+				if (eb == (ECS::EntityID)-1) continue;
+
+				const int oi = std::min(p, 7);
+				const float ox = kOffsets[oi].x * boldOffset;
+				const float oy = kOffsets[oi].y * boldOffset;
+				const float z = kStageNoBaseZ + 0.0001f * (float)(p + 1);
+
+				if (m_coordinator->HasComponent<TransformComponent>(eb))
+				{
+					auto& trb = m_coordinator->GetComponent<TransformComponent>(eb);
+					trb.position.x = cx + ox;
+					trb.position.y = cy + oy;
+					trb.position.z = z;
+					trb.scale = DirectX::XMFLOAT3(w, h, 1.0f);
+				}
+
+				if (m_coordinator->HasComponent<UIImageComponent>(eb))
+				{
+					auto& uib = m_coordinator->GetComponent<UIImageComponent>(eb);
+					uib.isVisible = cardVis;
+					uib.color.w = cardVis ? std::max(0.95f, cardAlpha) : 0.0f;
+				}
+			}
+		}
+
+		cursor += adv;
+
+		// ★UI_STAGE_NUMBER背景の位置とvisibilityを同期
+		if (idx >= 0 && idx < (int)m_listStageLabelBgEntities.size())
+		{
+			const ECS::EntityID bgId = m_listStageLabelBgEntities[idx];
+			if (bgId != (ECS::EntityID)-1)
+			{
+				// 背景の中心位置を計算（文字列全体の中心）
+				const float bgCenterX = centerX + stageBgOffsetX + kStageNoBgOffsetX;
+				// ★背景を文字と同じY座標に配置（baseYは文字の下端なので、文字の高さの半分を足す）
+				const float bgCenterY = (baseY + digitH * 0.5f) + stageBgOffsetY + kStageNoBgOffsetY;
+
+
+				if (m_coordinator->HasComponent<TransformComponent>(bgId))
+				{
+					auto& tr = m_coordinator->GetComponent<TransformComponent>(bgId);
+					tr.position.x = bgCenterX;
+					tr.position.y = bgCenterY;
+					tr.position.z = kStageNoBaseZ - 0.01f; // 文字より少し後ろ
+					tr.scale = DirectX::XMFLOAT3(kStageNoBgWidth, kStageNoBgHeight, 1.0f);
+				}
+
+				if (m_coordinator->HasComponent<UIImageComponent>(bgId))
+				{
+					auto& ui = m_coordinator->GetComponent<UIImageComponent>(bgId);
+					ui.isVisible = cardVis;
+					ui.color.w = cardVis ? std::max(0.95f, cardAlpha) : 0.0f;
+				}
+			}
+		}
+	}
+}
+
+
 
 /**
  * [void - PlayUISelectEffect]
@@ -2103,6 +2972,12 @@ void StageSelectScene::SetUIVisible(ECS::EntityID id, bool visible)
 void StageSelectScene::PlayUISelectEffect(ECS::EntityID uiEntity, const std::string& effectId, float scale)
 {
 	if (!m_coordinator) return;
+
+	// ★カード選択中/遷移中はエフェクトを出さない
+	if (m_inputLocked || m_isWaitingForTransition || m_cardFocus.active) return;
+	if (ScreenTransition::IsBusy(m_coordinator.get(), m_transitionEntity) ||
+		ScreenTransition::IsBusy(m_coordinator.get(), m_blackTransitionEntity)) return;
+
 
 	float l, t, r, b;
 	if (!GetUIRect(uiEntity, l, t, r, b)) return;
@@ -2187,47 +3062,114 @@ void StageSelectScene::UpdateEyeLight(float dt)
 		ScreenTransition::IsBusy(m_coordinator.get(), m_blackTransitionEntity)) return;
 
 	// タイマー更新
+
+	// ★カード選択中/遷移中は新規エフェクトを出さない
+	if (m_inputLocked || m_isWaitingForTransition || m_cardFocus.active) return;
+
 	m_eyeLightTimer += dt;
 
 	// 待ち時間を経過したら生成
 	if (m_eyeLightTimer >= m_eyeLightNextInterval)
 	{
-		// 次回の設定（例: 2.0秒 〜 4.0秒 の間でランダム）
+		// 次回の設定（例: 0.5秒 〜 1.5秒 の間でランダム）
 		m_eyeLightTimer = 0.0f;
 		std::uniform_real_distribution<float> dist(0.5f, 1.5f);
 		m_eyeLightNextInterval = dist(m_rng);
 
 		// ============================================================
-		// ★追加: 光らせたい場所のリスト（6箇所）
+		// ★解放済みステージカードの位置リストを作成
 		// ============================================================
-		// ※画面上の好きな座標(ピクセル)に書き換えてください
-		// SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720 想定
-		std::vector<DirectX::XMFLOAT2> points = {
-			{ SCREEN_WIDTH * 0.21f, SCREEN_HEIGHT * 0.33f }, // 1. 元の場所
-			//{ SCREEN_WIDTH * 0.42f,   SCREEN_HEIGHT * 0.33f   }, // 2. 左上あたり
-			//{ SCREEN_WIDTH * 0.63f,   SCREEN_HEIGHT * 0.33f   }, // 3. 右上あたり
-			//{ SCREEN_WIDTH * 0.21f,   SCREEN_HEIGHT * 0.66f   }, // 4. 左下あたり
-			//{ SCREEN_WIDTH * 0.42f,   SCREEN_HEIGHT * 0.66f   }, // 5. 右下あたり
-			//{ SCREEN_WIDTH * 0.63f,   SCREEN_HEIGHT * 0.66f   }  // 6. 中央上（タイトル付近）
+		// ============================================================
+		// ★解放済みステージカードの位置リストを作成
+		// ============================================================
+		struct EyePoint { int stageNo; float x; float y; };
+		std::vector<EyePoint> points;
+
+		// ------------------------------------------------------------
+		// ★目エフェクトの座標調整（ここだけ触ればOK）
+		//  - Global: 全体一括オフセット
+		//  - Stage : ステージ(カード)ごとの微調整
+		//  - Jitter: 少しだけランダムに揺らして自然に
+		// ------------------------------------------------------------
+		static constexpr float kEyeGlobalOffsetX = 0.0f;
+		static constexpr float kEyeGlobalOffsetY = 0.0f;
+		static constexpr DirectX::XMFLOAT2 kEyeStageOffset[6] =
+		{
+			{ -120.0f, -30.0f }, // stage1
+			{ -30.0f, -30.0f }, // stage2
+			{ 70.0f, -30.0f }, // stage3
+			{ -120.0f, 38.0f }, // stage4
+			{ -30.0f, 38.0f }, // stage5
+			{ 70.0f, 38.0f }, // stage6
 		};
+		static constexpr float kEyeJitterX = 0.0f; // 例: 6.0f で左右に少し揺れる
+		static constexpr float kEyeJitterY = 0.0f; // 例: 3.0f で上下に少し揺れる
+		static constexpr float kEyeZ = 0.0f;       // 目エフェクトのZ（前に出したいなら +）
+		static constexpr float kEyeScale = 5.0f;   // 大きすぎるなら 1.0f〜3.0f へ
+		static constexpr bool  kEyeDebugLog = false; // trueにすると座標がログに出る
+
+		// 解放済みステージのみを対象に
+		for (int stageNo = 1; stageNo <= m_maxUnlockedStage && stageNo <= 6; ++stageNo)
+		{
+			DirectX::XMFLOAT3 pos = GetListCardSlotCenterPos(stageNo);
+			points.push_back({ stageNo, pos.x, pos.y });
+		}
+
+		// 解放済みステージがない場合は何もしない
+		if (points.empty()) return;
 
 		// リストの中からランダムに1つ選ぶ
 		std::uniform_int_distribution<int> idxDist(0, (int)points.size() - 1);
-		int idx = idxDist(m_rng);
+		const int pick = idxDist(m_rng);
 
-		float cx = points[idx].x;
-		float cy = points[idx].y;
+		const int stageNo = points[pick].stageNo;
+		float cx = points[pick].x;
+		float cy = points[pick].y;
+
+		// ------------------------------------------------------------
+		// ★座標調整を適用（ここが“全ての目エフェクト”の基準）
+		// ------------------------------------------------------------
+		if (stageNo >= 1 && stageNo <= 6)
+		{
+			cx += kEyeGlobalOffsetX + kEyeStageOffset[stageNo - 1].x;
+			cy += kEyeGlobalOffsetY + kEyeStageOffset[stageNo - 1].y;
+		}
+		if (kEyeJitterX != 0.0f || kEyeJitterY != 0.0f)
+		{
+			std::uniform_real_distribution<float> jx(-kEyeJitterX, kEyeJitterX);
+			std::uniform_real_distribution<float> jy(-kEyeJitterY, kEyeJitterY);
+			cx += jx(m_rng);
+			cy += jy(m_rng);
+		}
+
+		if (kEyeDebugLog)
+		{
+			std::cout
+				<< "[StageSelect] EyeLight spawn stage=" << stageNo
+				<< " pos=(" << cx << "," << cy << ")"
+				<< " global=(" << kEyeGlobalOffsetX << "," << kEyeGlobalOffsetY << ")"
+				<< " stageOff=(";
+			if (stageNo >= 1 && stageNo <= 6)
+			{
+				std::cout << kEyeStageOffset[stageNo - 1].x << "," << kEyeStageOffset[stageNo - 1].y;
+			}
+			else
+			{
+				std::cout << "N/A";
+			}
+			std::cout << ")\n";
+		}
 
 		// --- エフェクト生成 ---
 		ECS::EntityID fxEntity = m_coordinator->CreateEntity(
 			TagComponent("effect_eyeslight"),
-			TransformComponent({ cx, cy, 0.0f}, { 0,0,0 }, { 1,1,1 }),
+			TransformComponent({ cx, cy, kEyeZ }, { 0,0,0 }, { 1,1,1 }),
 			EffectComponent(
 				"EFK_EYESLIGHT", // ★アセットID (要登録)
 				false,           // ループしない（1回再生）
 				true,            // 生成時に即再生
 				{ 0,0,0 },       // オフセット
-				5.0f            // ★スケール (大きすぎる場合は 1.0f 等に調整)
+				kEyeScale        // ★スケール (大きすぎる場合は 1.0f 等に調整)
 			)
 		);
 		m_activeEyeLights.push_back({ fxEntity, 2.0f });
@@ -2239,6 +3181,9 @@ void StageSelectScene::EnsureDebugEffectOnMap()
 	if (!m_debugShowGlowOnMap) return;
 	if (!m_coordinator) return;
 	if (!m_isDetailMode) return;
+
+	// ★カード選択中/遷移中はエフェクトを出さない
+	if (m_inputLocked || m_isWaitingForTransition || m_cardFocus.active) return;
 	if (ScreenTransition::IsBusy(m_coordinator.get(), m_transitionEntity) ||
 		ScreenTransition::IsBusy(m_coordinator.get(), m_blackTransitionEntity)) return; // 遷移中は見えないので作らない
 	if (m_stageMapEntity == (ECS::EntityID)-1) return;
@@ -2250,7 +3195,8 @@ void StageSelectScene::EnsureDebugEffectOnMap()
 	const float cx = (l + r) * 0.5f;
 	const float cy = (t + b) * 0.5f;
 
-	// ★まず「エフェクト自体が描けるか」を確実に確認するため、動作実績のある EFK_TREASURE_GLOW を常駐表示
+	// ★まず「エフェクト自体が描けるか」を確実に確認するため、動作実績のある 
+	// を常駐表示
 	m_debugStarEntity = m_coordinator->CreateEntity(
 		TagComponent("effect_debug"),
 		TransformComponent({ cx, cy, 9.5f }, { 0,0,0 }, { 1,1,1 }),
@@ -2436,6 +3382,9 @@ void StageSelectScene::SpawnShootingStar()
 {
 	if (!m_coordinator) return;
 	if (!m_isDetailMode) return;
+
+	// ★カード選択中/遷移中はエフェクトを出さない
+	if (m_inputLocked || m_isWaitingForTransition || m_cardFocus.active) return;
 	if (m_stageMapEntity == (ECS::EntityID)-1) return;
 
 	float l, t, r, b;
@@ -2479,7 +3428,7 @@ void StageSelectScene::SpawnShootingStar()
 	std::uniform_real_distribution<float> ydist(yMin, yMax);
 	const float x = START_X;
 	const float y = ydist(m_rng);
-	const float z = 0.0f; // MAPBACK(10.0) と MAPSIRO(9.0) の間
+	const float z = 0.0f; // MAPBACK(10.0) と  の間
 
 	// ★サイズ（必要ならここで一括調整）
 	const float starScale = 5.0f;

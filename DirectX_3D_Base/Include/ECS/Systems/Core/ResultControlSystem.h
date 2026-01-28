@@ -11,9 +11,21 @@ class ResultControlSystem : public ECS::System
 private:
     ECS::Coordinator* m_coordinator = nullptr;
     float m_timer = 0.0f;
-    bool m_playedStampEffect = false; // �G�t�F�N�g��1�񂾂��o���t���O
+    bool m_logoStoppingX = false;
+    bool m_logoMovingUp = false;
+    bool m_logoFinished = false;
+    bool m_moveRightToLeft = true;
+    bool m_waitEnterScreen = false;
+    bool m_cloudOutLeft = false;
+    bool m_cloud0Active = true;
+    bool m_cloud1Active = false;
+    bool m_playedStampEffect = false;
+    float m_seTimer = 0.0f;           // SEの間隔管理用
+    float m_displayTime = 0.0f; // 現在画面に表示されている数値（0.0から開始）
+    bool m_isFinishSoundPlayed = false; // 完了音の再生済みフラグ
 
-    std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_starTargetScale; // �ǉ�
+    std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_starTargetScale; // 追加
+    
 
     float m_starEffectTimer = 0.0f;
     int   m_starEffectStep = 0;

@@ -30,7 +30,7 @@
  */
 void AudioSystem::UpdatePersistentSound(ECS::EntityID entity)
 {
-	// 永続サウンド (BGM/Ambient) のロジック
+	// 永続サウンド (BGM/Ambient/停止可能SE) のロジック
 	auto& soundComp = m_coordinator->GetComponent<SoundComponent>(entity);
 
 	Asset::AssetInfo* info = Asset::AssetManager::GetInstance().LoadSound(soundComp.assetID);
@@ -53,6 +53,11 @@ void AudioSystem::UpdatePersistentSound(ECS::EntityID entity)
 		{
 			m_playingPersistentSounds.erase(entity);
 		}
+
+		// ★追加: 停止したらエンティティも破棄対象にする (SEの場合)
+		if (soundComp.type == SoundType::SE) {
+			m_entitiesToDestroy.insert(entity);
+		}
 		return;
 	}
 
@@ -74,12 +79,14 @@ void AudioSystem::UpdatePersistentSound(ECS::EntityID entity)
 		m_playingPersistentSounds[entity] = soundEffect;
 	}
 
-	// 3. 再生中状態の維持/終了チェック (基本的に永続サウンドはループしているため、IsPlayingチェックは不要だが、SE利用のために残す)
+	// 3. 再生終了チェック
 	if (soundComp.isPlaying && soundComp.type == SoundType::SE)
 	{
 		if (!soundEffect->IsPlaying())
 		{
 			soundComp.isPlaying = false;
+			// ★追加: 再生が終わったSEエンティティは破棄する
+			m_entitiesToDestroy.insert(entity);
 		}
 	}
 }

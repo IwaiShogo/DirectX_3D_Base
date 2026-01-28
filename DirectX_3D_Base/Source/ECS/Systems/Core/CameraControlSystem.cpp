@@ -17,7 +17,7 @@ float CameraControlSystem::m_mouseSensitivity = 0.005f;
 const float CAMERA_SENSITIVITY_X = 0.04f;
 const float CAMERA_SENSITIVITY_Y = 0.02f;
 const float PITCH_MAX = XM_PIDIV2 - 0.2f;
-const float PITCH_MIN = -XM_PIDIV4; // 下を見すぎないように制限緩和
+const float PITCH_MIN = -XM_PIDIV4 + 0.5f; // 下を見すぎないように制限緩和
 const float TOP_VIEW_HEIGHT = 100.0f;
 
 // ★調整: 注視点の高さオフセット

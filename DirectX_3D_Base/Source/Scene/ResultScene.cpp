@@ -27,7 +27,7 @@
 
 #include <DirectXMath.h>
 #include <cctype>
-#include <iostream>;
+#include <iostream>
 
 using namespace DirectX;
 using namespace ECS;
@@ -105,6 +105,62 @@ namespace
     }
 }
 
+
+namespace
+{
+    // アイテムIDの受け取り、｛アイコンテクスチャ, 名前テクスチャ｝のペアを返す
+    struct ItemTextureSet {
+        const char* iconTex;
+        const char* nameTex;
+    };
+}
+
+ItemTextureSet GetItemTextures(const std::string& itemID)
+{
+    // アイテムIDに応じて画像を切り替える
+    // ※アセットIDは実際のプロジェクトに合わせて調整する
+    if (itemID == "ICO_TREASURE1") {
+        return { "ICO_TREASURE1", "UI_RESULT_TREASURE1" }; // ダイア
+    }
+    else if (itemID == "ICO_TREASURE2") {
+        return { "ICO_TREASURE2", "UI_RESULT_TREASURE1" }; // クリスタル
+    }
+    else if (itemID == "ICO_TREASURE3") {
+        return { "ICO_TREASURE3", "UI_RESULT_TREASURE1" }; // 指輪
+    }
+    else if (itemID == "ICO_TREASURE4") {
+        return { "ICO_TREASURE4", "UI_RESULT_TREASURE2" }; // 絵画1（ひまわり）
+    }
+    else if (itemID == "ICO_TREASURE5") {
+        return { "ICO_TREASURE5", "UI_RESULT_TREASURE2" }; // 絵画2（女の人）
+    }
+    else if (itemID == "ICO_TREASURE6") {
+        return { "ICO_TREASURE6", "UI_RESULT_TREASURE2" }; // 絵画3（睡蓮花）
+    }
+    else if (itemID == "ICO_TREASURE7") {
+        return { "ICO_TREASURE7", "UI_RESULT_TREASURE4" }; // 陶器1（茶色）
+    }
+    else if (itemID == "ICO_TREASURE8") {
+        return { "ICO_TREASURE8", "UI_RESULT_TREASURE4" }; // 陶器2（水色）
+    }
+    else if (itemID == "ICO_TREASURE9") {
+        return { "ICO_TREASURE9", "UI_RESULT_TREASURE4" }; // 陶器3（紫色）
+    }
+    else if (itemID == "ICO_TREASURE10") {
+        return { "ICO_TREASURE10", "UI_RESULT_TREASURE3" }; // 化石1（頭部）
+    }
+    else if (itemID == "ICO_TREASURE11") {
+        return { "ICO_TREASURE11", "UI_RESULT_TREASURE3" }; // 化石2（アンモナイト）
+    }
+    else if (itemID == "ICO_TREASURE12") {
+        return { "ICO_TREASURE12", "UI_RESULT_TREASURE3" }; // 化石3（足）
+    }
+    // デフォルト（未知のID用）
+    return { "ICO_TREASURE1", "ICO_TREASURE1" };
+}
+
+
+
 void ResultScene::Init()
 {
     // --- 1. ECS 初期化 & カメラ ---
@@ -126,9 +182,8 @@ void ResultScene::Init()
         effectSystem->SetScreenSpaceCamera((float)SCREEN_WIDTH, (float)SCREEN_HEIGHT);
     }
 
-    const bool isClear = s_resultData.isCleared;
-    //  メンバに保存（CreateButtons で使う)
-    m_isClear = isClear;
+    ResultScene::isClear = s_resultData.isCleared;
+    m_isClear = ResultScene::isClear;
 
     // Stage progress / best-time update (safety: if SetResultData wasn't called)
     if (!g_progressHandled)
@@ -136,13 +191,20 @@ void ResultScene::Init()
         ResultScene::SetResultData(s_resultData);
     }
 
-
+    // すでに演出の中で再生されている可能性があるため、一度リセット
+    if (m_bgmEntity == ECS::INVALID_ENTITY_ID) {
+        m_bgmEntity = ECS::EntityFactory::CreateLoopSoundEntity(
+            m_coordinator.get(),
+            isClear ? "BGM_GAMECLEAR" : "BGM_GAMEOVER",
+            0.5f
+        );
+    }
 
     // NOTE:
     //  isCleared==true  : GAME CLEAR 表示
     //  isCleared==false : GAME OVER 表示
     //  ここが逆だと「クリアしてもゲームオーバー側」に見える。
-    if (isClear == true) //織田
+    if (isClear == true)
     {
         // 1) 背景
         m_coordinator->CreateEntity(
@@ -164,6 +226,8 @@ void ResultScene::Init()
             UIImageComponent("UI_GAME_CLEAR", -2.0f, true, { 1,1,1,1 })
         );
 
+       
+
 
 
         /*m_starEffectTimer = 0.0f;
@@ -176,10 +240,24 @@ void ResultScene::Init()
                 s_resultData.clearedInTime
             };
 
+            float limitSec = s_resultData.timeLimitStar;
+
+            // 2. 秒数に応じて出す画像の名前を決める
+            std::string timeConditionTex;
+            if (limitSec >= 180.0f) {
+                timeConditionTex = "STAR_TEXT3_3MINUTE"; // 180秒以上のステージ
+            }
+            else if (limitSec >= 120.0f) {
+                timeConditionTex = "STAR_TEXT3_2MINUTE"; // 120秒以上のステージ
+            }
+            else {
+                timeConditionTex = "STAR_TEXT3_1MINUTE"; // それ以外の短いステージ
+            }
+
             const char* conditionTex[3] = {
                 "STAR_TEXT1",
                 "STAR_TEXT2",
-                "STAR_TEXT3"
+                timeConditionTex.c_str()
             };
 
             float baseY = SCREEN_HEIGHT * 0.30f;
@@ -196,21 +274,37 @@ void ResultScene::Init()
             for (int i = 0; i < 3; ++i)
             {
                 float y = baseY + i * gapY;
-                // 3番目 (i==2) だけX座標を変える
                 float currentX = captionX;
-                if (i == 2)
-                {
-                    // 数値を大きくすると右へ、小さくすると左へ行きます。
-                    // 例: 30.0f だけ左にずらす
-                    currentX += 50.0f;
+
+                float baseW = 350.0f;
+                float baseH = 60.0f;
+
+                // ---------------------------------------------------------
+                // ここで 0, 1, 2 番目ごとの「ポジション」と「サイズ」を個別設定！
+                // ---------------------------------------------------------
+                if (i == 0) { // 1行目：ノーダメージ
+                    currentX = SCREEN_WIDTH * 0.67f;
+                    y = SCREEN_HEIGHT * 0.30f;
+                    baseW = 320.0f; baseH = 60.0f;
+                }
+                else if (i == 1) { // 2行目：アイテム全取得
+                    currentX = SCREEN_WIDTH * 0.67f;
+                    y = SCREEN_HEIGHT * 0.38f;
+                    baseW = 330.0f; baseH = 65.0f; // 少し大きく
+                }
+                else if (i == 2) { // 3行目：タイムクリア
+                    currentX = SCREEN_WIDTH * 0.66f; // 右へずらす
+                    y = SCREEN_HEIGHT * 0.46f;
+                    baseW = 340.0f; baseH = 55.0f; // 少し小さく
                 }
                 // 条件テキスト（そのまま）
                 if (stars[i])
                 {
                     m_coordinator->CreateEntity(
-                        TransformComponent({ currentX , y, 0.0f }, { 0,0,0 }, { 320.0f, 60.0f, 1.0f }),
+                        // ここで「個別設定した座標とサイズ」を流し込む
+                        TransformComponent({ currentX , y, 0.0f }, { 0,0,0 }, { baseW, baseH, 1.0f }),
                         UIImageComponent(conditionTex[i], 1.0f, true, { 1,1,1,1 }),
-                        TagComponent("AnimStarText")
+                        TagComponent("AnimStarText_" + std::to_string(i)) // タグを分ける
                     );
 
                     float centerX = 1920.0f * 0.36f;
@@ -282,73 +376,75 @@ void ResultScene::Init()
 
             // タイムの下：拾ったアイテム
             {
-                const auto& icons = s_resultData.collectedItemIcons;
-                int count = static_cast<int>(icons.size());
+                const auto& itemIDs = s_resultData.collectedItemIcons; // ここにはIDが入っているはず
+                int count = static_cast<int>(itemIDs.size());
+                // ★デバッグ用ログ出力：受け取っているID一覧を表示
+                std::cout << "=== ResultScene Item IDs ===" << std::endl;
+                for (int i = 0; i < count; ++i) {
+                    std::cout << "Index " << i << ": " << itemIDs[i] << std::endl;
+                }
+                std::cout << "============================" << std::endl;
+
                 if (count > 0)
                 {
                     const float iconW = 80.0f;
-                    float baseY2 = timeY + 80.0f;
+                    const float nameW = 330.0f;
+                    const float nameH = 80.0f;
+                    const  float baseY2 = timeY + 80.0f;
 
                     struct IconPos { float x; float y; };
                     IconPos positions[] = {
-                        { timeX - 160.0f, baseY2 + 40.5f},
-                        { timeX - 80.0f, baseY2 + 40.5f},
-                        { timeX - 0.0f,  baseY2 + 40.5f},
-                        { timeX + 405.0f, baseY2 + 50.0f },
-                        { timeX + 323.0f,  baseY2 + 50.0f },
-                        { timeX + 240.0f,  baseY2 + 50.0f }
+                        {timeX - 100.0f, baseY2 + 0.5f},
+                        {timeX - 100.0f, baseY2 + 120.5f},
+                        {timeX + 300.0f, baseY2 + 40.5f}
+                        /*{timeX + 405.0f, baseY2 + 50.0f},
+                        {timeX + 323.0f, baseY2 + 50.0f},
+                        {timeX + 240.0f, baseY2 + 50.0f}*/
+
+
                     };
 
                     int maxIcons = std::min(count, (int)(sizeof(positions) / sizeof(positions[0])));
+
                     for (int i = 0; i < maxIcons; ++i)
                     {
+
+                        // ★ここでも確認できます
+                        std::cout << "Processing Item: " << itemIDs[i] << std::endl;
+
+                        // 1. テクスチャ名の決定
+                        auto texSet = GetItemTextures(itemIDs[i]);
+
+                        // ★画像が見つからない場合の確認
+                        if (std::string(texSet.iconTex) == "ICO_UNKNOWN") {
+                            std::cout << "  -> WARNING: Unknown ID! Check GetItemTextures." << std::endl;
+                        }
+                       
+
+                        float x = positions[i].x;
+                        float y = positions[i].y;
+
                         m_coordinator->CreateEntity(
-                            TransformComponent({ positions[i].x, positions[i].y, 0 }, { 0,0,0 }, { iconW, iconW, 1 }),
-                            UIImageComponent(icons[i].c_str(), 1.0f, true, { 1,1,1,1 })
+                            TransformComponent({ x,y,0 }, { 0,0,0 }, { iconW, iconW, 1 }),
+                            UIImageComponent(texSet.iconTex, 1.0f, true, { 1,1,1,1 })
+                        );
+
+                        float nameX = x + 80.0f;
+                        float nameY = y;
+
+                        m_coordinator->CreateEntity(
+                            TransformComponent(
+                                { nameX, nameY, 0 },
+                                { 0,0,0 },
+                                { nameW * 0.4f, nameH * 0.4f, 1.0f }
+                            ),
+                            UIImageComponent(texSet.nameTex, 1.0f, true, { 1,1,1,1 })
                         );
                     }
                 }
             }
 
-            // ダイヤテキスト
-            m_coordinator->CreateEntity(
-                TransformComponent(
-                    { SCREEN_WIDTH * 0.46f, SCREEN_HEIGHT * 0.55f, 0 },
-                    { 0, 0, 0 },
-                    { 330.0f, 40.0f, 1.0f }
-                ),
-                UIImageComponent("GEMS_TEXT", 0.0f, true, { 1,1,1,1 })
-            );
-
-            // 絵画テキスト
-            m_coordinator->CreateEntity(
-                TransformComponent(
-                    { SCREEN_WIDTH * 0.77f, SCREEN_HEIGHT * 0.55f, 0 },
-                    { 0, 0, 0 },
-                    { 330.0f, 40.0f, 1.0f }
-                ),
-                UIImageComponent("PAINTING_TEXT", 0.0f, true, { 1,1,1,1 })
-            );
-
-            // 化石テキスト
-            m_coordinator->CreateEntity(
-                TransformComponent(
-                    { SCREEN_WIDTH * 0.27f, SCREEN_HEIGHT * 0.68f, 0 },
-                    { 0, 0, 0 },
-                    { 330.0f, 40.0f, 1.0f }
-                ),
-                UIImageComponent("FOSSIL_TEXT", 0.0f, true, { 1,1,1,1 })
-            );
-
-            // 陶器テキスト
-            m_coordinator->CreateEntity(
-                TransformComponent(
-                    { SCREEN_WIDTH * 0.57f, SCREEN_HEIGHT * 0.68f, 0 },
-                    { 0, 0, 0 },
-                    { 330.0f, 40.0f, 1.0f }
-                ),
-                UIImageComponent("POTTERY_TEXT", 0.0f, true, { 1,1,1,1 })
-            );
+           
 
 
             // スタンプ
@@ -373,27 +469,6 @@ void ResultScene::Init()
                 );
             }
 
-            //EffectComponent(
-            //    /* AssetID  */ "EFK_TITLE_SHINE",
-            //    /* Loop     */ true,
-            //    /* AutoPlay */ true,
-            //    /* Offset   */{ 0.0f, 0.0f, -3.0f },
-            //    /* Scale    */ 0.3f
-
-
-           /* {
-                m_coordinator->CreateEntity(
-                    TransformComponent(
-                        { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f,1.0f },
-                        { 0,0,0 },
-                        { 100.0f, 100.0f, 1.0f }
-                    ),
-                    EffectComponent("EFK_STAMP1", true,true, { 0,0,-3.0 },0.3f)
-                );
-            }*/
-
-
-
 
             // ベストタイムプレート
             {
@@ -410,6 +485,7 @@ void ResultScene::Init()
                 );
             }
         }
+        
     }
     else
     {
@@ -417,43 +493,90 @@ void ResultScene::Init()
         // GAME OVER 画面のレイアウト
         // ========================================================
 
-        // 背景
+        // --------------------------------------------------------
+        // GAME OVER 演出：初期位置定義
+        // --------------------------------------------------------
+        const float startX = SCREEN_WIDTH + 300.0f;   // 画面右外
+        const float startY = SCREEN_HEIGHT * 0.8f;    // 車・ガスのY位置
+        const float CloudX = SCREEN_WIDTH * 0.7f;  // 雲の初期位置
+
+        // 背景.空
         m_coordinator->CreateEntity(
             TransformComponent(
                 { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0 },
                 { 0, 0, 0 },
                 { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }
             ),
-            UIImageComponent("BG_GAME_OVER", 0.0f, true, { 1,1,1,1 })
-        );
-        // --------------------------------------------------------
-        // パラパラ漫画アニメーション（Result演出）
-        // --------------------------------------------------------
-        m_coordinator->CreateEntity(
-            TransformComponent(
-                { SCREEN_WIDTH * 0.6f, SCREEN_HEIGHT * 0.5f, 0.0f }, // 表示位置
-                { 0.0f, 0.0f, 0.0f },
-                { 600.0f, 600.0f, 1.0f } // 1枚分のサイズ
-            ),
-            UIImageComponent(
-                "RESULT_ANIM",   // ★ 最初のフレーム
-                1.0f,
-                true,
-                { 1,1,1,1 }
-            ),
-            TagComponent("RESULT_ANIM") // ★ ResultControlSystem が拾う
+            UIImageComponent("BG_GAMEOVER_SKY", 0.0f, true, { 1,1,1,1 })
         );
 
-        // GAME OVER ロゴ
+        // 背景.太陽
         m_coordinator->CreateEntity(
             TransformComponent(
-                { SCREEN_WIDTH * 0.2f, SCREEN_HEIGHT * 0.09f, 0.0f },//0.1,0.15
-                { 0.0f, 0.0f, 0.0f },
-                { 460,72,1 }//680,96
+                { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0 },
+                { 0, 0, 0 },
+                { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }
             ),
-            UIImageComponent("UI_GAME_OVER", 0.0f, true, { 1,1,1,1 })
+            UIImageComponent("BG_GAMEOVER_SUN", 0.0f, true, { 1,1,1,1 })
         );
 
+        // 背景.海
+        m_coordinator->CreateEntity(
+            TransformComponent(
+                { SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0 },
+                { 0, 0, 0 },
+                { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }
+            ),
+            UIImageComponent("BG_GAMEOVER_OCEAN", 0.0f, true, { 1,1,1,1 })
+        );
+
+        // 背景.雲
+        m_coordinator->CreateEntity(
+            TransformComponent(
+                { CloudX, SCREEN_HEIGHT * 0.5f, 0 },
+                { 0, 0, 0 },
+                { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }
+            ),
+            UIImageComponent("BG_GAMEOVER_CLOUD", 0.0f, true, { 1,1,1,1 }),
+            TagComponent("RESULT_ANIM_CLOUD")
+        );
+
+        // 背景.雲2
+        m_coordinator->CreateEntity(
+            TransformComponent(
+                { CloudX+1280, SCREEN_HEIGHT * 0.5f, 0 },
+                { 0, 0, 0 },
+                { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }
+            ),
+            UIImageComponent("BG_GAMEOVER_CLOUD2", 0.0f, true, { 1,1,1,1 }),
+            TagComponent("RESULT_ANIM_CLOUD")
+        );
+
+        // 車
+        m_coordinator->CreateEntity(
+            TransformComponent({ startX, startY, 0.0f }, { 0,0,0 }, { 900,532,1 }),
+            UIImageComponent("GAMEOVER_CHARACTER", 1.0f, true, { 1,1,1,1 }),
+            TagComponent("RESULT_ANIM_CAR")
+        );
+
+        // ガス
+        m_coordinator->CreateEntity(
+            TransformComponent({ startX + 750.0f, startY, 0.0f }, { 0,0,0 }, { 1080,555,1 }),
+            UIImageComponent("GAMEOVER_GAS", 1.0f, true, { 1,1,1,1 }),
+            TagComponent("RESULT_ANIM_GAS")
+        );
+
+        // GAME OVER ロゴ（真ん中で置いていく）
+        m_coordinator->CreateEntity(
+            TransformComponent(
+                { startX + 800.0f,startY+25 , 0.0f },
+                { 0,0,0 },
+                { 460,72,1 }
+            ),
+            UIImageComponent("UI_GAME_OVER", 1.2f, true, { 1,1,1,1 }),
+            TagComponent("RESULT_ANIM_LOGO")
+        );
+        
 
 
         // ステージ名プレート（ゲームオーバー時も表示）
@@ -478,43 +601,39 @@ void ResultScene::Init()
         //    );
         //}
 
-        // D) ゲームオーバー時：お宝一覧（順番どおり＋未取得灰色）
-        {
-            const auto& icons = s_resultData.orderedItemIcons;
-            const auto& flags = s_resultData.orderedItemCollected;
-            size_t count = std::min(icons.size(), flags.size());
+        //  1/20 つかわない
+        //// D) ゲームオーバー時：お宝一覧（順番どおり＋未取得灰色）
+        //{
+        //    const auto& icons = s_resultData.orderedItemIcons;
+        //    const auto& flags = s_resultData.orderedItemCollected;
+        //    size_t count = std::min(icons.size(), flags.size());
 
-            if (count > 0)
-            {
-                const float iconSize = 80.0f;
-                const float margin = 20.0f;
+        //    if (count > 0)
+        //    {
+        //        const float iconSize = 80.0f;
+        //        const float margin = 20.0f;
 
-                // 画面下部ボタンの少し上、左から右へ並べるイメージ
-                float baseY = SCREEN_HEIGHT * 0.25f;
-                float baseX = SCREEN_WIDTH * 0.05f;
+        //        // 画面下部ボタンの少し上、左から右へ並べるイメージ
+        //        float baseY = SCREEN_HEIGHT * 0.25f;
+        //        float baseX = SCREEN_WIDTH * 0.05f;
 
-                for (size_t i = 0; i < count; ++i)
-                {
-                    float x = baseX + (iconSize + margin) * static_cast<float>(i);
-                    float y = baseY;
+        //        for (size_t i = 0; i < count; ++i)
+        //        {
+        //            float x = baseX + (iconSize + margin) * static_cast<float>(i);
+        //            float y = baseY;
 
-                    bool collected = flags[i];
-                    DirectX::XMFLOAT4 color = collected ? DirectX::XMFLOAT4{ 1,1,1,1 } : DirectX::XMFLOAT4{ 0.3f,0.3f,0.3f,0.7f };
+        //            bool collected = flags[i];
+        //            DirectX::XMFLOAT4 color = collected ? DirectX::XMFLOAT4{ 1,1,1,1 } : DirectX::XMFLOAT4{ 0.3f,0.3f,0.3f,0.7f };
 
-                    m_coordinator->CreateEntity(
-                        TransformComponent({ x, y, 0.0f }, { 0,0,0 }, { iconSize, iconSize, 1.0f }),
-                        UIImageComponent(icons[i].c_str(), 1.0f, true, color)
-                    );
-                }
-            }
-        }
+        //            m_coordinator->CreateEntity(
+        //                TransformComponent({ x, y, 0.0f }, { 0,0,0 }, { iconSize, iconSize, 1.0f }),
+        //                UIImageComponent(icons[i].c_str(), 1.0f, true, color)
+        //            );
+        //        }
+        //    }
+        //}
 
-        // BGM再生
-        ECS::EntityID m_gameoverBGM = ECS::EntityFactory::CreateLoopSoundEntity(
-            m_coordinator.get(),
-            "BGM_TEST",
-            0.5f
-        );
+        
     }
 
     // 下部ボタン
@@ -528,18 +647,36 @@ void ResultScene::Init()
     );
 
     std::cout << "ResultScene::Init() - completed." << std::endl;
+
+    
 }
 
 void ResultScene::Uninit()
 {
-    if (auto effectSystem = ECS::ECSInitializer::GetSystem<EffectSystem>())
+    // BGMエンティティの停止リクエスト
+    if (m_bgmEntity != ECS::INVALID_ENTITY_ID)
     {
-        effectSystem->ClearOverrideCamera();
+        if (m_coordinator->HasComponent<SoundComponent>(m_bgmEntity)) {
+            auto& sound = m_coordinator->GetComponent<SoundComponent>(m_bgmEntity);
+            sound.RequestStop(); //
+
+            // ★重要：ここで物理的に音を止める命令を即座に実行させる
+            auto audioSystem = ECS::ECSInitializer::GetSystem<AudioSystem>();
+            if (audioSystem) {
+                audioSystem->Update(0.0f); // 強制的に1フレーム更新してStopを反映させる
+            }
+        }
+        m_coordinator->DestroyEntity(m_bgmEntity);
+        m_bgmEntity = ECS::INVALID_ENTITY_ID;
+    }
+
+    // エフェクト等の停止
+    if (auto effectSystem = ECS::ECSInitializer::GetSystem<EffectSystem>()) {
         effectSystem->Uninit();
     }
 
+    // 最後にECS全体を落とす
     ECS::ECSInitializer::UninitECS();
-    m_coordinator.reset();
 }
 
 void ResultScene::Update(float deltaTime)
@@ -549,36 +686,9 @@ void ResultScene::Update(float deltaTime)
 
 
     // 織田
-    m_elapsedTime += deltaTime;
-
-    for (const auto& pair : m_buttons)
-    {
-        auto& button = m_coordinator->GetComponent<UIButtonComponent>(pair.textEntity);
-
-        float targetScale = BUTTON_NORMAL_SCALE;
-
-        if (button.state == ButtonState::Hover)
-        {
-            targetScale = PULSE_CENTER_SCALE + PULSE_AMPLITUDE * std::sin(m_elapsedTime * PULSE_SPEED);
+    
 
 
-        }
-        auto UpdateEntityScale = [&](EntityID entity, float baseW, float baseH)
-            {
-                auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
-
-                float& currentRatio = transform.scale.z;
-
-                currentRatio += (targetScale - currentRatio) * LERP_SPEED * deltaTime;
-
-                transform.scale.x = baseW * currentRatio;
-                transform.scale.y = baseH * currentRatio;
-
-            };
-
-        UpdateEntityScale(pair.textEntity, 210.0f, 60.0f);
-        UpdateEntityScale(pair.frameEntity, 260.0f, 90.0f);
-    }
 
 }
 
@@ -634,7 +744,8 @@ void ResultScene::CreateTimeDisplay(float time, DirectX::XMFLOAT2 pos)
     {
         EntityID d = m_coordinator->CreateEntity(
             TransformComponent({ startX + i * w, pos.y, 0.0f }, { 0,0,0 }, { w,h,1 }),
-            UIImageComponent("UI_FONT", 1.0f, true, { 1,1,1,1 })
+            UIImageComponent("UI_FONT", 1.0f, true, { 1,1,1,1 }),
+            TagComponent("TimeDigit_" + std::to_string(i))
         );
 
         int idx = digits[i];
@@ -677,7 +788,7 @@ void ResultScene::CreateButtons()
 
     // ★ ここでクリア／ゲームオーバーで使う土台テクスチャを切り替える
     const char* frameTexId = isClear
-        ? "BTN_UNDER_CLEAR"  // ← btn_result_normal.png 用
+        ? "BTN_UNDER_GAMECLEAR"  // ← btn_result_normal.png 用
         : "BTN_UNDER_GAMEOVER";  // ← btn_result_normal1.png 用
 
     auto createResultButton =
@@ -702,6 +813,11 @@ void ResultScene::CreateButtons()
                 ),
                 TagComponent(textTex)
             );
+
+            // ★ 追加：土台の初期サイズを保存
+            auto& frameBtn = m_coordinator->GetComponent<UIButtonComponent>(frameEntity);
+            frameBtn.originalScale = { frameW, frameH, 1.0f };
+
             // 織田：textEntityにボタンテキストの情報を入れる
             EntityID textEntity = m_coordinator->CreateEntity(
                 TransformComponent({ x, y, 0.0f }, { 0,0,0 }, { textW, textH, 1.0f }),
@@ -719,6 +835,9 @@ void ResultScene::CreateButtons()
                 ),
                 TagComponent(textTex) // 追加
             );
+            // ★ 追加：文字の初期サイズを保存
+            auto& textBtn = m_coordinator->GetComponent<UIButtonComponent>(textEntity);
+            textBtn.originalScale = { textW, textH, 1.0f };
 
             m_buttons.push_back({ textEntity, frameEntity });// 織田：ペアにしてリストに保存
         };

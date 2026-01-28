@@ -47,9 +47,8 @@ namespace ECS
 		static EntityID CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY);
 
 		static EntityID CreateTaser(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
-		static EntityID CreateMapGimmick(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
-
-
+		
+		static EntityID CreateMapSignboard(Coordinator* coordinator, const DirectX::XMFLOAT3& position, float rotationY);
 
 		static EntityID CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume = 1.0f);
 
@@ -70,6 +69,9 @@ namespace ECS
 		static EntityID CreateTeleporter(ECS::Coordinator* coordinator, DirectX::XMFLOAT3 position);
 
 		static ECS::EntityID CreateStopTrap(ECS::Coordinator* coordinator, const DirectX::XMFLOAT3& position, float duration);
+		static ECS::EntityID CreateCeilingFan(ECS::Coordinator* coordinator, const DirectX::XMFLOAT3& position);
+		static ECS::EntityID CreateSecurityCamera(ECS::Coordinator* coordinator, const DirectX::XMFLOAT3& position, float rotationY);
+		static ECS::EntityID CreateWallPainting(ECS::Coordinator* coordinator, const DirectX::XMFLOAT3& position, float rotationY, const std::string& modelName);
 	private:
 		// 静的クラスのため、プライベートコンストラクタでインスタンス化を禁止
 		EntityFactory() = delete;
