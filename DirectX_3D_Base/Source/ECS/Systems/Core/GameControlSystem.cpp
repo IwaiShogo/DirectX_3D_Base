@@ -8,9 +8,14 @@
 #include "ECS/EntityFactory.h"
 #include "ECS/ECSInitializer.h"
 #include "Scene/ResultScene.h"
-#include "Systems/Input.h" 
+#include "Systems/Input.h"
+#include "ECS/Components/Gimmick/TeleportComponent.h"  // ★追加: テレポーターのペア判定用
 #include <cmath>
 #include <algorithm>
+#include <cfloat>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 using namespace DirectX;
 using namespace ECS;
@@ -82,10 +87,6 @@ void GameControlSystem::PlayStopableSE(const std::string& assetID, float volume)
     m_coordinator->GetComponent<SoundComponent>(entity).RequestPlay(volume, 0);
 }
 
-// 定数定義などの下、またはUpdate関数の直前あたりに静的変数を定義
-static GameMode s_prevMode = GameMode::SCOUTING_MODE; // 前フレームのモード
-static float s_modeSwitchCooldown = 0.0f;             // 切り替え防止タイマー
-
 // ==================================================================================
 //  Update メインループ
 // ==================================================================================
@@ -95,16 +96,6 @@ void GameControlSystem::Update(float deltaTime)
     if (controllerID == INVALID_ENTITY_ID) return;
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
-
-    if (s_modeSwitchCooldown > 0.0f) {
-        s_modeSwitchCooldown -= deltaTime;
-    }
-
-    // 外部（PlayerControlSystemなど）でモードが変更された場合を検知してクールダウンを設定
-    if (state.currentMode != s_prevMode) {
-        s_modeSwitchCooldown = 0.5f; // 0.5秒間は再切り替えを禁止
-        s_prevMode = state.currentMode;
-    }
 
     if (IsKeyTrigger(VK_ESCAPE) || IsButtonTriggered(BUTTON_START)) {
         TogglePauseRequest();
@@ -146,6 +137,7 @@ void GameControlSystem::Update(float deltaTime)
         CheckDoorUnlock(controllerID);
         UpdateDecorations(deltaTime);
         UpdateLights();
+        UpdateTeleportEffects(controllerID); // ★追加: テレポートエフェクト更新
 
         // 警備員の足音制御
         UpdateGuardFootsteps(deltaTime);
@@ -168,7 +160,10 @@ void GameControlSystem::Update(float deltaTime)
                         float rad = dTrans.rotation.y;
                         XMVECTOR camPosVec = doorPos + (XMVectorSet(sin(rad), 0, cos(rad), 0) * 3.0f) + XMVectorSet(0, 2, 0, 0);
                         XMVECTOR lookAtVec = doorPos + XMVectorSet(0, 1.5f, 0, 0);
-                        XMFLOAT3 camPos, lookAt; XMStoreFloat3(&camPos, camPosVec); XMStoreFloat3(&lookAt, lookAtVec);
+                        XMFLOAT3 camPos{};
+                        XMFLOAT3 lookAt{};
+                        ::DirectX::XMStoreFloat3(&camPos, camPosVec);
+                        ::DirectX::XMStoreFloat3(&lookAt, lookAtVec);
                         camSys->SetFixedCamera(camPos, lookAt);
                     }
                     StopBGM();
@@ -246,8 +241,10 @@ void GameControlSystem::TriggerCaughtSequence(ECS::EntityID guardID)
             XMVECTOR camOffset = XMVectorSet(2.0f, 2.5f, -3.0f, 0.0f);
             XMVECTOR camPosVec = midPoint + camOffset;
             XMVECTOR lookAtVec = midPoint;
-            XMFLOAT3 camPos, lookAt;
-            XMStoreFloat3(&camPos, camPosVec); XMStoreFloat3(&lookAt, lookAtVec);
+            XMFLOAT3 camPos{};
+            XMFLOAT3 lookAt{};
+            ::DirectX::XMStoreFloat3(&camPos, camPosVec);
+            ::DirectX::XMStoreFloat3(&lookAt, lookAtVec);
             camSys->SetFixedCamera(camPos, lookAt);
         }
 
@@ -1107,48 +1104,13 @@ void GameControlSystem::UpdateTimerAndRules(float deltaTime, ECS::EntityID contr
 #endif
 }
 
-void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
-{
-    if (s_modeSwitchCooldown > 0.0f) return;
-    
-    bool pressedSpace = IsKeyTrigger(VK_SPACE);
-    bool pressedA = IsButtonTriggered(BUTTON_A);
-
-    // キー入力がなければ何もしない
+void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID) {
+    bool pressedSpace = IsKeyTrigger(VK_SPACE); bool pressedA = IsButtonTriggered(BUTTON_A);
     if (!(pressedSpace || pressedA)) return;
-
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
-
-    // --- 1. スカウトモード（トップビュー）の場合 ---
     if (state.currentMode == GameMode::SCOUTING_MODE) {
-
-        // ★修正: 既にゲームが始まっている（トップビュー使用済み）場合は、
-        // スタート演出ではなく「TPSモードへの復帰」を行う
-        if (m_hasUsedTopView)
-        {
-            // モードをアクションに戻す
-            state.currentMode = GameMode::ACTION_MODE;
-
-            // 見た目の切り替え（黄色い箱 → モデル）
-            ApplyModeVisuals(controllerID);
-
-            // カメラの角度をTPS視点に戻す
-            // これをしないと真下を向いたままになる可能性がある
-            auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>();
-            if (camSys) {
-                camSys->m_currentPitch = 0.2f; // 水平より少し見下ろす程度にリセット
-                // Yaw（横回転）はそのまま維持
-            }
-
-            // キャンセル音などを鳴らす（任意）
-            ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_BACK", 0.5f);
-
-            return;
-        }
-
-        // ゲーム未開始時のみ、スタート演出を開始
-        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f);
+        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f); // 音量調整
         StartMosaicSequence(controllerID);
     }
     else if (state.currentMode == GameMode::ACTION_MODE) {
@@ -1205,6 +1167,59 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID) {
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
     bool showIcons = (state.currentMode == GameMode::SCOUTING_MODE);
+
+    // ★テレポーターのペアに色を割り当て（初回のみ）
+    if (showIcons && m_teleportColorMap.empty()) {
+        // 色のパレット（ペアごとに異なる色）
+        std::vector<DirectX::XMFLOAT4> colorPalette = {
+            {0.0f, 1.0f, 1.0f, 1.0f},    // シアン
+            {1.0f, 0.0f, 1.0f, 1.0f},    // マゼンタ
+            {1.0f, 1.0f, 0.0f, 1.0f},    // 黄色
+            {0.0f, 1.0f, 0.0f, 1.0f},    // 緑
+            {1.0f, 0.5f, 0.0f, 1.0f},    // オレンジ
+            {0.5f, 0.0f, 1.0f, 1.0f},    // 紫
+        };
+
+        int colorIndex = 0;
+        std::unordered_set<ECS::EntityID> processed;
+
+        // 全テレポーターを収集
+        std::vector<ECS::EntityID> teleporters;
+        for (auto const& entity : m_coordinator->GetActiveEntities()) {
+            if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
+            if (tag == "teleporter" && m_coordinator->HasComponent<TransformComponent>(entity)) {
+                teleporters.push_back(entity);
+            }
+        }
+
+        // ★修正: TeleportComponentのtargetEntityを基準にペアを判定
+        for (size_t i = 0; i < teleporters.size(); ++i) {
+            ECS::EntityID teleA = teleporters[i];
+            if (processed.count(teleA)) continue;
+
+            // このテレポーターに色を割り当て
+            DirectX::XMFLOAT4 pairColor = colorPalette[colorIndex % colorPalette.size()];
+            m_teleportColorMap[teleA] = pairColor;
+            processed.insert(teleA);
+
+            // ★TeleportComponentからtargetEntity（実際の接続先）を取得
+            ECS::EntityID linkedTele = ECS::INVALID_ENTITY_ID;
+            if (m_coordinator->HasComponent<TeleportComponent>(teleA)) {
+                auto& teleComp = m_coordinator->GetComponent<TeleportComponent>(teleA);
+                linkedTele = teleComp.targetEntity;
+            }
+
+            // ペアが見つかったら同じ色を割り当て
+            if (linkedTele != ECS::INVALID_ENTITY_ID && !processed.count(linkedTele)) {
+                m_teleportColorMap[linkedTele] = pairColor;
+                processed.insert(linkedTele);
+            }
+
+            colorIndex++;
+        }
+    }
+
     EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
     if (playerID != INVALID_ENTITY_ID) {
         if (showIcons) UpdateIcon(playerID, "ICO_PLAYER", { 1, 1, 1, 1 });
@@ -1222,7 +1237,15 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID) {
             if (tag == "taser") isGuard = true; if (tag == "teleporter") isTeleporter = true; if (tag == "stop_trap") isStopTrap = true;
         }
         if (isGuard) { if (showIcons) UpdateIcon(entity, "ICO_TASER", { 1, 1, 1, 1 }); else if (m_iconMap.count(entity)) m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false; }
-        if (isTeleporter) { if (showIcons) UpdateIcon(entity, "UI_TITLE_LOGO", { 0, 1, 1, 1 }); else if (m_iconMap.count(entity)) m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false; }
+        if (isTeleporter) {
+            // ★テレポーターの色を個別に設定
+            DirectX::XMFLOAT4 teleportColor = { 0, 1, 1, 1 }; // デフォルト色
+            if (m_teleportColorMap.count(entity)) {
+                teleportColor = m_teleportColorMap[entity];
+            }
+            if (showIcons) UpdateIcon(entity, "UI_TITLE_LOGO", teleportColor);
+            else if (m_iconMap.count(entity)) m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false;
+        }
         if (isStopTrap) { if (showIcons) UpdateIcon(entity, "UI_ASHIATO_BLUE", { 0.8f, 0.0f, 0.8f, 1.0f }); else if (m_iconMap.count(entity)) m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false; }
     }
     if (!showIcons) return;
@@ -1241,7 +1264,6 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID) {
         if (screenPos.z < 0.0f || screenPos.z > 1.0f) iconUI.isVisible = false;
     }
 }
-
 void GameControlSystem::UpdateCaughtSequence(float deltaTime, ECS::EntityID controllerID) {
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID); state.sequenceTimer += deltaTime;
@@ -1253,9 +1275,13 @@ void GameControlSystem::UpdateCaughtSequence(float deltaTime, ECS::EntityID cont
         XMVECTOR dirVec = XMVectorSubtract(pPos, gPos); dirVec = XMVectorSetY(dirVec, 0.0f);
         float distance = XMVectorGetX(XMVector3Length(dirVec)); dirVec = XMVector3Normalize(dirVec);
         if (distance > 1.5f) {
-            float moveSpeed = 3.5f * deltaTime; XMVECTOR newPos = gPos + (dirVec * moveSpeed);
-            float originalY = gTrans.position.y; XMStoreFloat3(&gTrans.position, newPos); gTrans.position.y = originalY;
-            float dx = XMVectorGetX(dirVec); float dz = XMVectorGetZ(dirVec);
+            const float moveSpeed = 3.5f * deltaTime;
+            const XMVECTOR newPos = gPos + (dirVec * moveSpeed);
+            const float originalY = gTrans.position.y;
+            ::DirectX::XMStoreFloat3(&gTrans.position, newPos);
+            gTrans.position.y = originalY;
+            const float dx = XMVectorGetX(dirVec);
+            const float dz = XMVectorGetZ(dirVec);
             gTrans.rotation.y = atan2(dx, dz); pTrans.rotation.y = atan2(-dx, -dz);
         }
         else {
@@ -1339,7 +1365,8 @@ void GameControlSystem::UpdateSonarEffect(float deltaTime, ECS::EntityID control
 
 DirectX::XMFLOAT3 GameControlSystem::GetScreenPosition(const DirectX::XMFLOAT3& worldPos, const DirectX::XMMATRIX& viewProj) {
     XMVECTOR wPos = XMLoadFloat3(&worldPos); XMVECTOR clipPos = XMVector3TransformCoord(wPos, viewProj);
-    XMFLOAT3 ndc; XMStoreFloat3(&ndc, clipPos);
+    XMFLOAT3 ndc{};
+    ::DirectX::XMStoreFloat3(&ndc, clipPos);
     float screenX = (ndc.x + 1.0f) * 0.5f * SCREEN_WIDTH; float screenY = (1.0f - ndc.y) * 0.5f * SCREEN_HEIGHT;
     return XMFLOAT3(screenX, screenY, ndc.z);
 }
@@ -1370,8 +1397,10 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
             XMVECTOR doorDir = XMVectorSet(sin(rad), 0.0f, cos(rad), 0.0f);
             XMVECTOR camPosVec = doorPos + (doorDir * 7.5f) + XMVectorSet(0.0f, 3.0f, 0.0f, 0.0f);
             XMVECTOR lookAtVec = doorPos;
-            XMFLOAT3 camPos, lookAt;
-            XMStoreFloat3(&camPos, camPosVec); XMStoreFloat3(&lookAt, lookAtVec);
+            XMFLOAT3 camPos{};
+            XMFLOAT3 lookAt{};
+            ::DirectX::XMStoreFloat3(&camPos, camPosVec);
+            ::DirectX::XMStoreFloat3(&lookAt, lookAtVec);
             camSys->SetFixedCamera(camPos, lookAt);
         }
         if (m_coordinator->HasComponent<AnimationComponent>(doorID)) m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_OPEN", false);
@@ -1517,9 +1546,6 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
     }
     if (state.currentMode == GameMode::SCOUTING_MODE && state.sequenceTimer > 2.0f) {
         state.currentMode = GameMode::ACTION_MODE;
-
-        m_hasUsedTopView = true;
-
         if (m_blackBackID != INVALID_ENTITY_ID) m_coordinator->GetComponent<UIImageComponent>(m_blackBackID).color.w = 1.0f;
 
         // 音関連
@@ -1563,9 +1589,10 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
                 XMVECTOR camPosVec = doorPos + (doorDir * 7.5f) + XMVectorSet(0.0f, 3.0f, 0.0f, 0.0f);
                 XMVECTOR lookAtVec = doorPos;
 
-                XMFLOAT3 camPos, lookAt;
-                XMStoreFloat3(&camPos, camPosVec);
-                XMStoreFloat3(&lookAt, lookAtVec);
+                XMFLOAT3 camPos{};
+                XMFLOAT3 lookAt{};
+                ::DirectX::XMStoreFloat3(&camPos, camPosVec);
+                ::DirectX::XMStoreFloat3(&lookAt, lookAtVec);
 
                 // 1. システムに固定カメラ設定を通知
                 camSys->SetFixedCamera(camPos, lookAt);
@@ -1623,8 +1650,7 @@ void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID) {
         else if (m_coordinator->HasComponent<TagComponent>(entity)) {
             const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
             if (tag == "guard") { actionType = MESH_MODEL; scoutType = MESH_NONE; }
-            else if (tag == "taser") { actionType = MESH_NONE; scoutType = MESH_NONE; }
-            else if (tag == "TopViewTrigger") { actionType = MESH_MODEL; scoutType = MESH_BOX; }
+            else if (tag == "taser" || tag == "map_gimmick") { actionType = MESH_NONE; scoutType = MESH_NONE; }
             else if (tag == "ground" || tag == "wall") { actionType = MESH_MODEL; scoutType = MESH_BOX; }
             else if (tag == "door") { actionType = MESH_MODEL; scoutType = MESH_MODEL; }
             else if (tag == "propeller" || tag == "security_camera" || tag == "painting") {
@@ -1633,5 +1659,86 @@ void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID) {
             }
         }
         render.type = isScoutingVisual ? scoutType : actionType;
+    }
+}
+
+// ==================================================================================
+// テレポートエフェクトの更新
+// ==================================================================================
+void GameControlSystem::UpdateTeleportEffects(ECS::EntityID controllerID)
+{
+    if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
+    auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+
+    bool shouldShowEffects = (state.currentMode == GameMode::ACTION_MODE);
+    EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
+    if (playerID == INVALID_ENTITY_ID) return;
+    auto& playerTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
+
+    for (auto const& entity : m_coordinator->GetActiveEntities()) {
+        if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+        const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
+        if (tag != "teleporter") continue;
+        if (!m_coordinator->HasComponent<TransformComponent>(entity)) continue;
+        auto& teleTrans = m_coordinator->GetComponent<TransformComponent>(entity);
+
+        float distSq = XMVectorGetX(XMVector3LengthSq(
+            XMLoadFloat3(&playerTrans.position) - XMLoadFloat3(&teleTrans.position)
+        ));
+
+        if (distSq < 9.0f) {
+            if (m_teleportEffectMap.count(entity)) {
+                EntityID effectID = m_teleportEffectMap[entity];
+                if (m_coordinator->HasComponent<EffectComponent>(effectID)) {
+                    m_coordinator->DestroyEntity(effectID);
+                }
+                m_teleportEffectMap.erase(entity);
+            }
+            m_usedTeleporters.insert(entity);
+        }
+        else if (shouldShowEffects && !m_usedTeleporters.count(entity)) {
+            if (!m_teleportEffectMap.count(entity)) {
+                // ★トップビューで記録した色を取得
+                XMFLOAT4 effectColor = XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f); // デフォルトはシアン
+                if (m_teleportColorMap.count(entity)) {
+                    effectColor = m_teleportColorMap[entity];
+                }
+
+                // エフェクトを生成
+                EntityID effectID = m_coordinator->CreateEntity(
+                    TransformComponent(
+                        teleTrans.position,
+                        XMFLOAT3(0.0f, 0.0f, 0.0f),
+                        XMFLOAT3(1.0f, 1.0f, 1.0f)
+                    ),
+                    EffectComponent(
+                        "EFK_EYESLIGHT",
+                        0.0f,
+                        true
+                    )
+                );
+
+                // マップに登録
+                m_teleportEffectMap[entity] = effectID;
+
+                // ★対応方法1: RenderComponentで色を制御
+                if (m_coordinator->HasComponent<RenderComponent>(effectID)) {
+                    auto& render = m_coordinator->GetComponent<RenderComponent>(effectID);
+                    render.color = effectColor;
+                }
+
+                // エフェクトを再生開始
+                if (m_coordinator->HasComponent<EffectComponent>(effectID)) {
+                    m_coordinator->GetComponent<EffectComponent>(effectID).Play();
+                }
+            }
+        }
+        else if (!shouldShowEffects && m_teleportEffectMap.count(entity)) {
+            EntityID effectID = m_teleportEffectMap[entity];
+            if (m_coordinator->HasComponent<EffectComponent>(effectID)) {
+                m_coordinator->DestroyEntity(effectID);
+            }
+            m_teleportEffectMap.erase(entity);
+        }
     }
 }

@@ -10,6 +10,7 @@
 #include "ECS/ECS.h"
 #include "Scene/SceneManager.h" 
 #include <unordered_map>
+#include <unordered_set>
 #include <DirectXMath.h>
 #include <functional>
 #include <vector>
@@ -37,6 +38,9 @@ public:
         m_mosaicTiles.clear();
         m_pauseUIEntities.clear();
         m_btnBgMap.clear();
+        m_teleportEffectMap.clear(); // ★追加: テレポートエフェクトマップのクリア
+        m_usedTeleporters.clear();   // ★追加: 使用済みテレポーターのクリア
+        m_teleportColorMap.clear();  // ★追加: テレポート色マップのクリア
 
         // 変数初期化
         m_sonarSpawnTimer = 0.0f;
@@ -198,11 +202,17 @@ private:
     ECS::EntityID m_lastHoveredID = ECS::INVALID_ENTITY_ID; // カーソル音用
     float m_sliderSoundTimer = 0.0f;    // スライダー音の間隔
 
+    // --- ★追加: テレポートエフェクト管理用 ---
+    std::unordered_map<ECS::EntityID, ECS::EntityID> m_teleportEffectMap; // テレポートID -> エフェクトID
+    std::unordered_set<ECS::EntityID> m_usedTeleporters; // 使用済みテレポーターのセット
+    std::unordered_map<ECS::EntityID, DirectX::XMFLOAT4> m_teleportColorMap; // テレポートID -> 色
+
     // 関数
     void InitVisualEffects(); // 演出初期化
     void UpdateVisualEffects(float deltaTime, ECS::EntityID controllerID); // 演出更新
     void UpdateDecorations(float deltaTime); // 賑やかしアニメーション
     void UpdateLights(); // ポイントライト更新
+    void UpdateTeleportEffects(ECS::EntityID controllerID); // ★追加: テレポートエフェクト更新
 
     // BGM管理用
     void PlayBGM(const std::string& assetID, float volume = 0.15f);
