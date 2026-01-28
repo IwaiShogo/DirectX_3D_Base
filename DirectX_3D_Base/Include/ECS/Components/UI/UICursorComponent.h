@@ -32,7 +32,7 @@ struct UICursorComponent
 	// 設定
 	float moveSpeed;	// スティック操作時の移動速度（px / frame）
 
-	UICursorComponent(float speed = 5.0f)
+	UICursorComponent(float speed = 10.0f)
 		: isTriggered(false)
 		, moveSpeed(speed)
 	{}

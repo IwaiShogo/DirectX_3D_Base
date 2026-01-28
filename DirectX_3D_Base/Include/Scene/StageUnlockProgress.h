@@ -7,12 +7,15 @@
  * @file StageUnlockProgress.h
  * @brief ステージ解放/ベストタイム/スター(星)の永続化管理
  */
-	namespace StageUnlockProgress
+namespace StageUnlockProgress
 {
 	/**
 	 * @brief セーブデータ読込
 	 */
 	void Load();
+
+	void ResetToNewGame();
+
 
 	/**
 	 * @brief 強制的にファイルから再読み込みする（既に Load 済みでも読み直す）

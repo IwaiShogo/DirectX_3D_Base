@@ -141,6 +141,18 @@ namespace StageUnlockProgress
 		}
 	}
 
+	/**
+	 * @brief 「はじめから」：進捗を完全初期化して保存する
+	 * - 解放ステージ: 1 (1-1のみ)
+	 * - ベストタイム: 全て 0
+	 * - スター: 全て 0
+	 * - 解放演出の保留もクリア
+	 */
+	void ResetToNewGame()
+	{
+		ResetAllAndSave();
+	}
+
 	void ForceReload()
 	{
 		g_loaded = false;
@@ -167,7 +179,6 @@ namespace StageUnlockProgress
 
 		Save(); // ファイルも上書きして「次回起動」でも最初からになる
 	}
-
 
 	void Save()
 	{

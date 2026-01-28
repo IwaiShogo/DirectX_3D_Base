@@ -37,6 +37,7 @@
 class CameraControlSystem : public ECS::System
 {
 	friend class PlayerControlSystem;
+	friend class GameControlSystem;
 
 private:
 	ECS::Coordinator* m_coordinator = nullptr;

@@ -31,3 +31,10 @@ M_KAIGA_ROSE,Model,Assets/Model/Stage/obj_kaiga_rose.fbx
 M_KAIGA_SKELETON,Model,Assets/Model/Stage/obj_kaiga_skeleton.fbx
 M_KAIGA_MAGICALGIRL,Model,Assets/Model/Stage/obj_kaiga_magicalgirl.fbx
 M_KAIGA_SIBAKO,Model,Assets/Model/Stage/obj_kaiga_sibako.fbx
+M_SELECT1,Model,Assets/Model/Stage/anim_yokokujo4_2.fbx
+M_SELECT2,Model,Assets/Model/Stage/anim_yokokujo4_3.fbx
+M_SELECT3,Model,Assets/Model/Stage/anim_yokokujo4_4.fbx
+M_SELECT4,Model,Assets/Model/Stage/anim_yokokujo4_5.fbx
+M_SELECT5,Model,Assets/Model/Stage/anim_yokokujo4_6.fbx
+M_SELECT6,Model,Assets/Model/Stage/anim_yokokujo4_7.fbx
+M_KANBAN,Model,Assets/Model/Gimmick/obj_kanban.fbx

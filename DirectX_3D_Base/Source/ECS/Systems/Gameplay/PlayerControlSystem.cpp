@@ -156,7 +156,7 @@ void PlayerControlSystem::Update(float deltaTime)
 
 				auto& tagComp = m_coordinator->GetComponent<TagComponent>(otherEntity);
 
-				if (tagComp.tag == "TopViewTrigger" || tagComp.tag == "map_gimmick")
+				if (tagComp.tag == "TopViewTrigger")
 				{
 					auto& otherTransform = m_coordinator->GetComponent<TransformComponent>(otherEntity);
 
@@ -184,8 +184,10 @@ void PlayerControlSystem::Update(float deltaTime)
 							gameControlSystem->ApplyModeVisuals(gameControllerID);
 						}
 
+						// ★削除またはコメントアウトしてください★
 						// ギミックを消す（もし一度きりにしたいなら）
-						m_coordinator->DestroyEntity(otherEntity);
+						// m_coordinator->DestroyEntity(otherEntity); 
+						// ↑ ここを消すことで、何度でもアクセス可能になります
 
 						std::cout << "[SUCCESS] Scouting Mode ON!" << std::endl;
 						return; // 処理完了
