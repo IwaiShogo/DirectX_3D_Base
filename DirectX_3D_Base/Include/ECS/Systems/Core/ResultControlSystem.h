@@ -20,6 +20,9 @@ private:
     bool m_cloud0Active = true;
     bool m_cloud1Active = false;
     bool m_playedStampEffect = false;
+    float m_seTimer = 0.0f;           // SEの間隔管理用
+    float m_displayTime = 0.0f; // 現在画面に表示されている数値（0.0から開始）
+    bool m_isFinishSoundPlayed = false; // 完了音の再生済みフラグ
 
     std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_starTargetScale; // 追加
     

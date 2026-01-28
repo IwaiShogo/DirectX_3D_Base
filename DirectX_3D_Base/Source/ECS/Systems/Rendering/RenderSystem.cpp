@@ -1,19 +1,19 @@
 /*****************************************************************//**
  * @file	RenderSystem.cpp
  * @brief	TransformComponentとRenderComponentを持つEntityを描画するSystemの実装。
- * 
- * @details	
- * 
+ *
+ * @details
+ *
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
- * 
+ *
  * @date	2025/10/27	初回作成日
  * 			作業内容：	- 追加：RenderSystemの描画ロジックを実装。Main.cppからデモ描画とカメラ設定を移管。
- * 
+ *
  * @update	2025/xx/xx	最終更新日
  * 			作業内容：	- XX：
- * 
+ *
  * @note	（省略可）
  *********************************************************************/
 
@@ -60,12 +60,12 @@ void RenderSystem::DrawSetup()
 	}
 
 	// ★ 修正箇所 ★
-	// 以下の「軸（XYZ）」の描画が画面中央の線の正体です。
+	// 以下は「軸（XYZ）」の描画が画面中央の線の正体です。
 	// 不要な場合はコメントアウトすることで、画面上の邪魔な線を消せます。
 
 	/* // X軸（赤）
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(size, 0, 0), XMFLOAT4(1, 0, 0, 1));
-	// Y軸（緑） <- これが中央の横線の正体！
+	// Y軸（緑）← これが中央の横線の正体！
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(0, size, 0), XMFLOAT4(0, 1, 0, 1));
 	// Z軸（青）
 	Geometory::AddLine(XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, size), XMFLOAT4(0, 0, 1, 1));
@@ -76,7 +76,7 @@ void RenderSystem::DrawSetup()
 
 #endif
 
-	// マップ生成システムのデバッグ行（これも必要に応じてMapGenerationSystem内で緑色の線を引いている可能性があります）
+	// マップ生成システムのデバッグ描画（これも必要に応じてMapGenerationSystem内で緑色の線を引いている可能性があります）
 	auto mapGenSystem = ECS::ECSInitializer::GetSystem<MapGenerationSystem>();
 	if (mapGenSystem)
 	{
@@ -86,12 +86,15 @@ void RenderSystem::DrawSetup()
 	// 登録されたすべてのラインを描画
 	//Geometory::DrawLines();
 
-	
+
 }
 
 /**
  * @brief 1つのエンティティを描画する内部関数
  */
+ /**
+  * @brief 1つのエンティティを描画する内部関数
+  */
 void RenderSystem::DrawEntityInternal(ECS::EntityID entity, const DirectX::XMFLOAT4X4& viewMat, const DirectX::XMFLOAT4X4& projMat, bool isTransparentPass)
 {
 	TransformComponent& transform = m_coordinator->GetComponent<TransformComponent>(entity);
@@ -135,11 +138,10 @@ void RenderSystem::DrawEntityInternal(ECS::EntityID entity, const DirectX::XMFLO
 
 	case MESH_MODEL:
 	{
-
 		ModelComponent& model = m_coordinator->GetComponent<ModelComponent>(entity);
 		if (model.pModel)
 		{
-			// シェーダー設定 (変更なし)
+			// シェーダー設定
 			if (m_coordinator->HasComponent<AnimationComponent>(entity))
 				model.pModel->SetVertexShader(ShaderList::GetVS(ShaderList::VS_ANIME));
 			else
@@ -147,7 +149,25 @@ void RenderSystem::DrawEntityInternal(ECS::EntityID entity, const DirectX::XMFLO
 
 			model.pModel->SetPixelShader(ShaderList::GetPS(ShaderList::PS_LAMBERT));
 
-			// ★修正: メッシュごとのループ内で選別を行う
+			// ★修正: 関数名を SetCullingMode に、定数を D3D11_... に変更
+			switch (render.cullMode)
+			{
+			case CullMode::None:
+				SetCullingMode(D3D11_CULL_NONE);  // 両面描画
+				break;
+			case CullMode::Back:
+				SetCullingMode(D3D11_CULL_BACK);  // 裏面カリング（通常）
+				break;
+			case CullMode::Front:
+				SetCullingMode(D3D11_CULL_FRONT); // 表面カリング（負スケール用）
+				break;
+			case CullMode::Default:
+			default:
+				SetCullingMode(D3D11_CULL_BACK);  // デフォルト
+				break;
+			}
+
+			// メッシュごとのループ内で選別を行う
 			for (uint32_t i = 0; i < model.pModel->GetMeshNum(); ++i)
 			{
 				const Model::Mesh* pMesh = model.pModel->GetMesh(i);
@@ -159,7 +179,7 @@ void RenderSystem::DrawEntityInternal(ECS::EntityID entity, const DirectX::XMFLO
 				// このメッシュは透明か？ (0.99f以下なら透明とみなす)
 				bool isMeshTransparent = (finalAlpha < 0.99f);
 
-				// ★判定: 今の描画パスと、メッシュの性質が合致しなければスキップ
+				// 判定: 今の描画パスと、メッシュの性質が合致しなければスキップ
 				if (isTransparentPass)
 				{
 					// 透明パス中: 「不透明なメッシュ」は描かない
@@ -177,27 +197,32 @@ void RenderSystem::DrawEntityInternal(ECS::EntityID entity, const DirectX::XMFLO
 				ShaderList::SetMaterial(material);
 				model.pModel->Draw(i);
 			}
+
+			// ★修正: 描画後はデフォルト（裏面カリング）に戻す
+			SetCullingMode(D3D11_CULL_BACK);
 		}
 	}
 	break;
 	}
 }
-
 /**
- * @brief 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- とRenderComponentを持つ全てのEntityを描画する
+ * @brief
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	とRenderComponentを持つ全てのEntityを描画する
  */
 void RenderSystem::DrawEntities()
 {
@@ -369,8 +394,8 @@ void RenderSystem::DrawEntities()
 
 		// エンティティ全体が半透明設定(0.5など)なら、不透明パスでは描かない
 		// ただし、モデルの場合は「部分的に不透明」な場合もあるが、
-		// 通常RenderComponentのAlphaは「全体フェード」に使うため、ここではスキップでOKとします。
-		// もし「半透明な幽霊の中に不透明な骨がある」表現をしたい場合は条件を緩める必要がありますが、
+		// 通常RenderComponentのAlphaは「全体フェード」に使うため、ここでのスキップでOKとします。
+		// もし「半透明な幽霊の中に不透明な骨がある」表現をしたい場合は条件を絞める必要がありますが、
 		// 今回のケース（ガラス）ならこのままで大丈夫です。
 		if (render.type != MESH_MODEL && render.color.w < 1.0f) continue;
 
@@ -387,8 +412,8 @@ void RenderSystem::DrawEntities()
 	// パス2: 半透明 (Transparent) オブジェクトの描画
 	// ========================================================================
 	SetBlendMode(BLEND_ALPHA);
-	
-	// ★ガラスなどが綺麗に見えるよう、デプス書き込みをOFFにする場合もありますが、
+
+	// ★ガラスなどが後ろ側に見えるよう、デプス書き込みをOFFにする場合もありますが、
 	//  複雑なモデルの場合はONのままでも構いません（お好みで調整してください）
 	// SetDepthWrite(false); 
 

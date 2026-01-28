@@ -1,6 +1,7 @@
 #include "ECS/Systems/Core/ResultControlSystem.h"
 #include "ECS/ECS.h"
 #include "ECS/EntityFactory.h"
+#include "Scene/ResultScene.h"
 
 #include <ECS/Components/Core/TransformComponent.h>
 #include <ECS/Components/Core/TagComponent.h>
@@ -22,6 +23,160 @@ void ResultControlSystem::Update(float deltaTime)
     if (!m_coordinator) return;
 
     m_timer += deltaTime;
+
+    // ---------------------------------------------------------
+// Resultボタンにカーソルが重なったとき
+// ---------------------------------------------------------
+    for (auto entity : m_coordinator->GetActiveEntities())
+    {
+        if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+        if (!m_coordinator->HasComponent<UIButtonComponent>(entity)) continue;
+        if (!m_coordinator->HasComponent<TransformComponent>(entity)) continue;
+
+        const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
+
+        if (tag != "BTN_BACK_STAGE_SELECT" &&
+            tag != "BTN_RETRY" &&
+            tag != "BTN_BACK_TITLE")
+        {
+            continue;
+        }
+
+
+        auto& btn = m_coordinator->GetComponent<UIButtonComponent>(entity);
+        auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+
+
+        // 1. �ڕW�{��
+        float targetRatio =
+            (btn.state == ButtonState::Hover) ? 1.08f : 1.0f;
+
+        // 2. ���T�C�Y �~ �{��
+        float targetX = btn.originalScale.x * targetRatio;
+        float targetY = btn.originalScale.y * targetRatio;
+
+        // 3. Lerp
+        float speed = 15.0f * deltaTime;
+        trans.scale.x += (targetX - trans.scale.x) * speed;
+        trans.scale.y += (targetY - trans.scale.y) * speed;
+
+        // ================================
+        // �� Hoverが有効な時
+        // ================================
+        if (btn.prevState != ButtonState::Hover &&
+            btn.state == ButtonState::Hover)
+        {
+            // �{�^���ɃJ�[�\�������Ԃ������Ƃ�SE��‚炷
+            ECS::EntityFactory::CreateOneShotSoundEntity(
+                m_coordinator,
+                "SE_CLEAR",  // SE
+                0.8f         // ����       
+            );
+        }
+        btn.prevState = btn.state;
+
+    }
+
+
+
+
+    {
+        // アニメーション設定
+        const float BASE_W = 40.0f; // 元の幅
+        const float BASE_H = 60.0f; // 元の高さ
+
+
+
+        const float START_TIME = 0.8f; // テキスト同じ「0.8秒後」に開始
+        const float SPEED = 6.0f; // テキストと同じ速さ
+        const float AMOUNT = 0.05f;
+
+        // 計算用の変数
+        float currentScale = 1.0f;
+
+        // 時間が 0.8秒 を過ぎていたら波打つ
+        if (m_timer >= START_TIME)
+        {
+            float t = m_timer - START_TIME;
+            // sin(時間 * 6.0) で波を作る
+            currentScale = 1.0f + AMOUNT * std::sin(t * SPEED);
+        }
+
+        // 全ての数字に適用
+        for (auto const& entity : m_coordinator->GetActiveEntities())
+        {
+            if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+
+            // "AnimNumber" というタグが付いているものを探して適用
+            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
+            if (tag == "AnimNumber")
+            {
+                auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+                trans.scale = { BASE_W * currentScale, BASE_H * currentScale, 1.0f };
+            }
+        }
+    }
+
+
+    if (ResultScene::isClear )
+    {
+        float targetTime = ResultScene::s_resultData.clearTime;
+
+        // --- 【新ロジック】表示時間を目標時間まで進める ---
+        if (m_displayTime < targetTime)
+        {
+            // 1.5秒で目標に到達するスピードで加算
+            float addSpeed = targetTime / 1.5f;
+            m_displayTime += addSpeed * deltaTime;
+
+            // 超えすぎ防止
+            if (m_displayTime >= targetTime) m_displayTime = targetTime;
+
+            // --- SE再生：0.1秒（表示上の値）進むごとに鳴らす ---
+            // 表示時間が進んでいる間、一定周期でタイマーを回す
+            m_seTimer += deltaTime;
+            if (m_seTimer >= 0.06f)
+            {
+                ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_CURSOR", 0.3f);
+                m_seTimer = 0.0f;
+            }
+        }
+       
+
+        // --- 数字のUV更新 (m_displayTime を使う) ---
+        int tInt = static_cast<int>(m_displayTime * 10.0f);
+        int digits[7] = {
+            (tInt / 600) / 10, (tInt / 600) % 10, 11,
+            ((tInt / 10) % 60) / 10, ((tInt / 10) % 60) % 10, 12,
+            tInt % 10
+        };
+
+        // --- 数字エンティティのUV更新 (独立したループで実行) ---
+        for (auto const& entity : m_coordinator->GetActiveEntities())
+        {
+            if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
+
+            const std::string& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
+
+            // "TimeDigit_0" ～ "TimeDigit_6" を探す
+            if (tag.find("TimeDigit_") == 0)
+            {
+                // 文字列の10文字目以降（数字部分）を数値に変換
+                int index = std::stoi(tag.substr(10));
+                if (index < 0 || index >= 7) continue;
+
+                auto& ui = m_coordinator->GetComponent<UIImageComponent>(entity);
+                int val = digits[index];
+
+                // UI_FONT のレイアウト(0-9が2行に分かれている)に合わせたUV計算
+                int r = (val <= 9) ? val / 5 : 2;
+                int c = (val <= 9) ? val % 5 : (val - 10);
+
+                ui.uvPos = { c * 0.2f, r * 0.333f };
+                ui.uvScale = { 0.2f, 0.333f };
+            }
+        }
+    }
 
     // ---------------------------------------------------------
     // 1. 星のアニメーション (0.5秒間隔で 1つずつポップ)
@@ -121,6 +276,13 @@ void ResultControlSystem::Update(float deltaTime)
             {
                 m_playedStampEffect = true;
 
+                ECS::EntityFactory::CreateOneShotSoundEntity(
+                    m_coordinator, // 第1引数はスマートポインタ(m_coordinator)でOK
+                    "SE_STAMP",    // AssetManagerに登録してあるスタンプ音のID
+                    0.8f           // ボリューム
+                );
+
+
                 std::cout << "Stamp Effect Played!" << std::endl;
                 float centerX = 1920.0f * 0.52f;
                 float centerY = 1080.0f * 0.18f;
@@ -201,20 +363,37 @@ void ResultControlSystem::Update(float deltaTime)
             float t = m_timer - waveStartTime;
             float waveScale = 1.0f + 0.05f * std::sin(t * 6.0f);
 
+            // --- ★ここを追加：種類ごとの設定テーブル ---
+            struct TextConfig { float w, h, x, y; };
+            TextConfig configs[3] = {
+                { 320.0f, 60.0f }, // 0番目: ノーダメージ
+                { 350.0f, 65.0f }, // 1番目: アイテム全取得
+                { 300.0f, 55.0f }  // 2番目: タイムクリア
+            };
+
             for (auto const& entity : m_coordinator->GetActiveEntities())
             {
                 if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
 
-                const auto& tag = m_coordinator->GetComponent<TagComponent>(entity);
-                if (tag.tag != "AnimStarText") continue;
+                const std::string& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
 
-                auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
+                // "AnimStarText_" で始まるタグを探す
+                if (tag.find("AnimStarText_") == 0)
+                {
+                    int idx = std::stoi(tag.substr(13));
+                    if (idx < 0 || idx >= 3) continue;
 
-                const float baseW = 320.0f;
-                const float baseH = 60.0f;
+                    auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
 
-                trans.scale.x = baseW * waveScale;
-                trans.scale.y = baseH * waveScale;
+                    // 個別のベースサイズをSystem側でも定義（Sceneと合わせる）
+                    
+
+                   
+                    trans.scale.x = trans.scale.x * waveScale;
+                    trans.scale.y = trans.scale.y * waveScale;
+
+                    
+                }
             }
         }
     }
@@ -432,96 +611,5 @@ void ResultControlSystem::Update(float deltaTime)
             }
         }
     }
-// ---------------------------------------------------------
-// Resultボタンにカーソルが重なったとき
-// ---------------------------------------------------------
-    for (auto entity : m_coordinator->GetActiveEntities())
-    {
-        if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
-        if (!m_coordinator->HasComponent<UIButtonComponent>(entity)) continue;
-        if (!m_coordinator->HasComponent<TransformComponent>(entity)) continue;
 
-        const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
-
-        if (tag != "BTN_BACK_STAGE_SELECT" &&
-            tag != "BTN_RETRY" &&
-            tag != "BTN_BACK_TITLE")
-        {
-            continue;
-        }
-
-
-        auto& btn = m_coordinator->GetComponent<UIButtonComponent>(entity);
-        auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
-
-
-        // 1. �ڕW�{��
-        float targetRatio =
-            (btn.state == ButtonState::Hover) ? 1.08f : 1.0f;
-
-        // 2. ���T�C�Y �~ �{��
-        float targetX = btn.originalScale.x * targetRatio;
-        float targetY = btn.originalScale.y * targetRatio;
-
-        // 3. Lerp
-        float speed = 15.0f * deltaTime;
-        trans.scale.x += (targetX - trans.scale.x) * speed;
-        trans.scale.y += (targetY - trans.scale.y) * speed;
-            
-        // ================================
-        // �� Hoverが有効な時
-        // ================================
-        if (btn.prevState != ButtonState::Hover &&
-            btn.state == ButtonState::Hover)
-        {
-            // �{�^���ɃJ�[�\�������Ԃ������Ƃ�SE��‚炷
-            ECS::EntityFactory::CreateOneShotSoundEntity(
-                m_coordinator,
-                "SE_CLEAR",  // SE
-                0.8f         // ����       
-            );
-        }
-        btn.prevState = btn.state;
-
-    }
-
-
-
-
-    {
-        // アニメーション設定
-        const float BASE_W = 40.0f; // 元の幅
-        const float BASE_H = 60.0f; // 元の高さ
-
-
-
-        const float START_TIME = 0.8f; // テキスト同じ「0.8秒後」に開始
-        const float SPEED = 6.0f; // テキストと同じ速さ
-        const float AMOUNT = 0.05f;
-
-        // 計算用の変数
-        float currentScale = 1.0f;
-
-        // 時間が 0.8秒 を過ぎていたら波打つ
-        if (m_timer >= START_TIME)
-        {
-            float t = m_timer - START_TIME;
-            // sin(時間 * 6.0) で波を作る
-            currentScale = 1.0f + AMOUNT * std::sin(t * SPEED);
-        }
-
-        // 全ての数字に適用
-        for (auto const& entity : m_coordinator->GetActiveEntities())
-        {
-            if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
-
-            // "AnimNumber" というタグが付いているものを探して適用
-            const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
-            if (tag == "AnimNumber")
-            {
-                auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
-                trans.scale = { BASE_W * currentScale, BASE_H * currentScale, 1.0f };
-            }
-        }
-    }
 }
