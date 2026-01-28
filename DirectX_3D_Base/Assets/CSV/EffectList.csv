@@ -1,8 +1,9 @@
 AssetID,AssetType,FilePath
-EFK_TREASURE_GLOW,Effect,Assets/Effect/effect_taser.efkefc
+EFK_TREASURE_GLOW,Effect,Assets/Effect/effect_shine.efkefc
 EFK_TITLE_SHINE,Effect,Assets/Effect/effect_title_shine.efkefc
 EFK_DOOR,Effect,Assets/Effect/effect_door.efkefc
 EFK_ALERT,Effect,Assets/Effect/effect_alert.efkefc
 EFK_TITLE_SHINE2,Effect,Assets/Effect/effect_title_shine2.efkefc
 EFK_STAMP,Effect,Assets/Effect/effect_stamp.efkefc
 EFK_EYESLIGHT,Effect,Assets/Effect/effect_eyeslight.efkefc
+EFK_TASER,Effect,Assets/Effect/effect_taser.efkefc
