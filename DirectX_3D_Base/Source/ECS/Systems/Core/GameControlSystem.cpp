@@ -1,6 +1,6 @@
-ï»¿/*****************************************************************//**
+/*****************************************************************//**
  * @file    GameControlSystem.cpp
- * @brief   ã‚²ãƒ¼ãƒ æœ¬ç·¨ã®åˆ¶å¾¡å®Ÿè£… (ãƒªãƒ³ã‚¯ã‚¨ãƒ©ãƒ¼ä¿®æ­£ãƒ»ã‚µã‚¦ãƒ³ãƒ‰å®Œå…¨å¯¾å¿œç‰ˆ)
+ * @brief   ƒQ[ƒ€–{•Ò‚Ì§ŒäÀ‘• (ƒŠƒ“ƒNƒGƒ‰[C³EƒTƒEƒ“ƒhŠ®‘S‘Î‰”Å)
  *********************************************************************/
 
 #include "ECS/Systems/Core/GameControlSystem.h"
@@ -9,7 +9,7 @@
 #include "ECS/ECSInitializer.h"
 #include "Scene/ResultScene.h"
 #include "Systems/Input.h"
-#include "ECS/Components/Gimmick/TeleportComponent.h"  // â˜…è¿½åŠ : ãƒ†ãƒ¬ãƒãƒ¼ã‚¿ãƒ¼ã®ãƒšã‚¢åˆ¤å®šç”¨
+#include "ECS/Components/Gimmick/TeleportComponent.h"  // š’Ç‰Á: ƒeƒŒƒ|[ƒ^[‚ÌƒyƒA”»’è—p
 #include <cmath>
 #include <algorithm>
 #include <cfloat>
@@ -20,12 +20,12 @@
 using namespace DirectX;
 using namespace ECS;
 
-// å®šæ•°å®šç¾©
+// ’è”’è‹`
 static const int TILE_COLS = 8;
 static const int TILE_ROWS = 5;
 static const float TILE_ANIM_DELAY = 0.05f;
 
-// ã‚¢ã‚¤ã‚³ãƒ³ãƒ‘ã‚¹å–å¾—ãƒ˜ãƒ«ãƒ‘ãƒ¼
+// ƒAƒCƒRƒ“ƒpƒXæ“¾ƒwƒ‹ƒp[
 std::string GetItemIconPath(const std::string& itemID)
 {
     if (itemID == "Takara_Daiya")   return "ICO_TREASURE1";
@@ -44,18 +44,18 @@ std::string GetItemIconPath(const std::string& itemID)
 }
 
 // ---------------------------------------------------------
-// ã‚µã‚¦ãƒ³ãƒ‰ãƒ˜ãƒ«ãƒ‘ãƒ¼é–¢æ•°
+// ƒTƒEƒ“ƒhƒwƒ‹ƒp[ŠÖ”
 // ---------------------------------------------------------
 
-// BGMå†ç”Ÿ (BGMã‚¿ã‚°ã®ã¤ã„ãŸéŸ³ã‚’å…¨ã¦æ­¢ã‚ã¦ã‹ã‚‰å†ç”Ÿ)
+// BGMÄ¶ (BGMƒ^ƒO‚Ì‚Â‚¢‚½‰¹‚ğ‘S‚Ä~‚ß‚Ä‚©‚çÄ¶)
 void GameControlSystem::PlayBGM(const std::string& assetID, float volume)
 {
     StopBGM();
-    // éŸ³é‡ 0.15
+    // ‰¹—Ê 0.15
     ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator, assetID, volume);
 }
 
-// å…¨ã¦ã®éŸ³ï¼ˆBGMã¨SEå«ã‚€ï¼‰ã‚’åœæ­¢
+// ‘S‚Ä‚Ì‰¹iBGM‚ÆSEŠÜ‚Şj‚ğ’â~
 void GameControlSystem::StopBGM()
 {
     for (auto const& entity : m_coordinator->GetActiveEntities()) {
@@ -65,12 +65,12 @@ void GameControlSystem::StopBGM()
     }
 }
 
-// åœæ­¢å¯èƒ½ãªSEã‚’å†ç”Ÿã™ã‚‹ï¼ˆè¶³éŸ³ã€ã‚¢ãƒ©ãƒ¼ãƒˆç”¨ï¼‰
-// ã‚·ãƒ¼ãƒ³é·ç§»æ™‚ã«StopBGM()ã§æ­¢ã‚ã‚‰ã‚Œã‚‹ã‚ˆã†ã«SoundComponentã‚’ä½¿ç”¨
+// ’â~‰Â”\‚ÈSE‚ğÄ¶‚·‚éi‘«‰¹AƒAƒ‰[ƒg—pj
+// ƒV[ƒ“‘JˆÚ‚ÉStopBGM()‚Å~‚ß‚ç‚ê‚é‚æ‚¤‚ÉSoundComponent‚ğg—p
 void GameControlSystem::PlayStopableSE(const std::string& assetID, float volume)
 {
-    // é‡è¤‡å†ç”Ÿã‚’é˜²ãï¼ˆè¶³éŸ³ãªã©ãŒé‡ãªã‚Šã™ããªã„ã‚ˆã†ã«ã™ã‚‹ç°¡æ˜“åˆ¶å¾¡ï¼‰
-    // å¿…è¦ã§ã‚ã‚Œã°ã“ã®ãƒã‚§ãƒƒã‚¯ã¯å¤–ã—ã¦ãã ã•ã„
+    // d•¡Ä¶‚ğ–h‚®i‘«‰¹‚È‚Ç‚ªd‚È‚è‚·‚¬‚È‚¢‚æ‚¤‚É‚·‚éŠÈˆÕ§Œäj
+    // •K—v‚Å‚ ‚ê‚Î‚±‚Ìƒ`ƒFƒbƒN‚ÍŠO‚µ‚Ä‚­‚¾‚³‚¢
     /*
     for (auto const& entity : m_coordinator->GetActiveEntities()) {
         if (!m_coordinator->HasComponent<SoundComponent>(entity)) continue;
@@ -81,14 +81,14 @@ void GameControlSystem::PlayStopableSE(const std::string& assetID, float volume)
 
     EntityID entity = m_coordinator->CreateEntity(
         TagComponent("SE"),
-        SoundComponent(assetID, SoundType::SE, volume, 0) // Loop=0 (1å›å†ç”Ÿ)
+        SoundComponent(assetID, SoundType::SE, volume, 0) // Loop=0 (1‰ñÄ¶)
     );
-    // å†ç”Ÿè¦æ±‚
+    // Ä¶—v‹
     m_coordinator->GetComponent<SoundComponent>(entity).RequestPlay(volume, 0);
 }
 
 // ==================================================================================
-//  Update ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ—
+//  Update ƒƒCƒ“ƒ‹[ƒv
 // ==================================================================================
 void GameControlSystem::Update(float deltaTime)
 {
@@ -137,9 +137,9 @@ void GameControlSystem::Update(float deltaTime)
         CheckDoorUnlock(controllerID);
         UpdateDecorations(deltaTime);
         UpdateLights();
-        UpdateTeleportEffects(controllerID); // â˜…è¿½åŠ : ãƒ†ãƒ¬ãƒãƒ¼ãƒˆã‚¨ãƒ•ã‚§ã‚¯ãƒˆæ›´æ–°
+        UpdateTeleportEffects(deltaTime, controllerID); // š’Ç‰Á: ƒeƒŒƒ|[ƒgƒGƒtƒFƒNƒgXV
 
-        // è­¦å‚™å“¡ã®è¶³éŸ³åˆ¶å¾¡
+        // Œx”õˆõ‚Ì‘«‰¹§Œä
         UpdateGuardFootsteps(deltaTime);
     }
 
@@ -175,7 +175,7 @@ void GameControlSystem::Update(float deltaTime)
     }
 }
 
-// è­¦å‚™å“¡ã®è¶³éŸ³åˆ¶å¾¡
+// Œx”õˆõ‚Ì‘«‰¹§Œä
 void GameControlSystem::UpdateGuardFootsteps(float deltaTime)
 {
     EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
@@ -192,18 +192,18 @@ void GameControlSystem::UpdateGuardFootsteps(float deltaTime)
         auto& rb = m_coordinator->GetComponent<RigidBodyComponent>(entity);
 
         float speedSq = rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z;
-        if (speedSq > 0.1f) { // å‹•ã„ã¦ã„ã‚‹ã‹
+        if (speedSq > 0.1f) { // “®‚¢‚Ä‚¢‚é‚©
             float distSq = XMVectorGetX(XMVector3LengthSq(XMLoadFloat3(&pTrans.position) - XMLoadFloat3(&gTrans.position)));
             float maxDist = 15.0f;
             float dist = sqrt(distSq);
             if (dist < maxDist) {
-                // è·é›¢ã«ã‚ˆã‚‹éŸ³é‡æ¸›è¡°
+                // ‹——£‚É‚æ‚é‰¹—ÊŒ¸Š
                 float volume = 1.0f - (dist / maxDist);
-                volume = std::max(0.0f, volume * 0.5f); // æœ€å¤§éŸ³é‡0.5
+                volume = std::max(0.0f, volume * 0.5f); // Å‘å‰¹—Ê0.5
 
-                // ãƒ©ãƒ³ãƒ€ãƒ å†ç”Ÿ (ç´„1ç§’ã«1å›)
+                // ƒ‰ƒ“ƒ_ƒ€Ä¶ (–ñ1•b‚É1‰ñ)
                 if (rand() % 60 == 0) {
-                    // â˜…ä¿®æ­£: åœæ­¢å¯èƒ½ãªSEã¨ã—ã¦å†ç”Ÿ (ã‚·ãƒ¼ãƒ³é·ç§»ã§æ¶ˆãˆã‚‹ã‚ˆã†ã«)
+                    // šC³: ’â~‰Â”\‚ÈSE‚Æ‚µ‚ÄÄ¶ (ƒV[ƒ“‘JˆÚ‚ÅÁ‚¦‚é‚æ‚¤‚É)
                     PlayStopableSE("SE_RUN", volume);
                 }
             }
@@ -248,13 +248,13 @@ void GameControlSystem::TriggerCaughtSequence(ECS::EntityID guardID)
             camSys->SetFixedCamera(camPos, lookAt);
         }
 
-        // â˜…ä¿®æ­£: åœæ­¢å¯èƒ½ãªSEã¨ã—ã¦å†ç”Ÿ (SE_ALERT)
+        // šC³: ’â~‰Â”\‚ÈSE‚Æ‚µ‚ÄÄ¶ (SE_ALERT)
         PlayStopableSE("SE_ALERT", 0.5f);
     }
 }
 
 // ---------------------------------------------------------
-// UIåˆæœŸåŒ–
+// UI‰Šú‰»
 // ---------------------------------------------------------
 void GameControlSystem::InitGameUI()
 {
@@ -284,7 +284,7 @@ void GameControlSystem::InitGameUI()
 
     InitVisualEffects();
 
-    // BGMåˆæœŸåŒ– (ãƒˆãƒƒãƒ—ãƒ“ãƒ¥ãƒ¼BGM)
+    // BGM‰Šú‰» (ƒgƒbƒvƒrƒ…[BGM)
     PlayBGM("BGM_TOPVIEW", 0.7f);
 }
 
@@ -300,7 +300,7 @@ void GameControlSystem::InitVisualEffects()
     SafeDestroy(m_crosshair.left); SafeDestroy(m_crosshair.right);
     SafeDestroy(m_cinemaBarTop); SafeDestroy(m_cinemaBarBottom);
 
-    // ã‚¯ãƒ­ã‚¹ãƒ˜ã‚¢å‰Šé™¤
+    // ƒNƒƒXƒwƒAíœ
 
     m_cinemaBarTop = m_coordinator->CreateEntity(
         TransformComponent({ 0,0,0 }, { 0,0,0 }, { 1,1,1 }),
@@ -313,7 +313,7 @@ void GameControlSystem::InitVisualEffects()
 }
 
 // ---------------------------------------------------------
-// UIæ›´æ–° (æ¼”å‡ºå«ã‚€)
+// UIXV (‰‰oŠÜ‚Ş)
 // ---------------------------------------------------------
 void GameControlSystem::UpdateGameUI(float deltaTime, ECS::EntityID controllerID)
 {
@@ -422,12 +422,12 @@ void GameControlSystem::UpdateVisualEffects(float deltaTime, ECS::EntityID contr
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
-    // å…¥åŠ›ãƒã‚§ãƒƒã‚¯
+    // “ü—Íƒ`ƒFƒbƒN
     bool isInputMoving = (IsKeyPress('W') || IsKeyPress('A') || IsKeyPress('S') || IsKeyPress('D'));
     XMFLOAT2 stick = GetLeftStick();
     if (abs(stick.x) > 0.1f || abs(stick.y) > 0.1f) isInputMoving = true;
 
-    // é€Ÿåº¦ãƒã‚§ãƒƒã‚¯
+    // ‘¬“xƒ`ƒFƒbƒN
     bool isVelocityMoving = false;
     EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
     if (playerID != INVALID_ENTITY_ID && m_coordinator->HasComponent<RigidBodyComponent>(playerID)) {
@@ -442,7 +442,7 @@ void GameControlSystem::UpdateVisualEffects(float deltaTime, ECS::EntityID contr
     if (isInputMoving && isVelocityMoving && isAction) {
         m_footstepTimer += deltaTime;
         if (m_footstepTimer > 0.4f) {
-            // â˜…ä¿®æ­£: åœæ­¢å¯èƒ½ãªSEã¨ã—ã¦å†ç”Ÿ (SE_RUN)
+            // šC³: ’â~‰Â”\‚ÈSE‚Æ‚µ‚ÄÄ¶ (SE_RUN)
             PlayStopableSE("SE_RUN", 0.3f);
             m_footstepTimer = 0.0f;
         }
@@ -479,7 +479,7 @@ void GameControlSystem::UpdateVisualEffects(float deltaTime, ECS::EntityID contr
 }
 
 // ---------------------------------------------------------
-// ãƒãƒ¼ã‚ºé–¢é€£
+// ƒ|[ƒYŠÖ˜A
 // ---------------------------------------------------------
 void GameControlSystem::TogglePauseRequest() {
     if (m_pauseState == PauseState::Hidden) {
@@ -509,7 +509,7 @@ ECS::EntityID GameControlSystem::CreateStyledButton(float targetX, float targetY
     m_pauseUIEntities.push_back(lineID);
     ECS::EntityID btnID = m_coordinator->CreateEntity(
         TransformComponent({ targetX - 600.0f, targetY, 0.0f }, { 0.0f, 0.0f, tiltRad }, { w, h, 1.0f }),
-        // â˜…ä¿®æ­£: è‰²ã‚’ {1,1,1,1} ã«è¨­å®šã—ã¦ç”»åƒã‚’è¡¨ç¤º
+        // šC³: F‚ğ {1,1,1,1} ‚Éİ’è‚µ‚Ä‰æ‘œ‚ğ•\¦
         UIImageComponent(assetID, 12.0f, true, { 1.0f, 1.0f, 1.0f, 1.0f }),
         UIButtonComponent(ButtonState::Normal, true, onClick)
     );
@@ -519,7 +519,7 @@ ECS::EntityID GameControlSystem::CreateStyledButton(float targetX, float targetY
 }
 
 // ---------------------------------------------------------------------
-// 1. CreateStylePauseUI (CAMERAãƒ©ãƒ™ãƒ«è¿½åŠ )
+// 1. CreateStylePauseUI (CAMERAƒ‰ƒxƒ‹’Ç‰Á)
 // ---------------------------------------------------------------------
 void GameControlSystem::CreateStylePauseUI() {
     m_pauseUIEntities.clear(); m_btnBgMap.clear();
@@ -527,21 +527,21 @@ void GameControlSystem::CreateStylePauseUI() {
 
     float tiltRad = XMConvertToRadians(12.0f);
 
-    // --- 1. èƒŒæ™¯ã‚ªãƒ¼ãƒãƒ¼ãƒ¬ã‚¤ ---
+    // --- 1. ”wŒiƒI[ƒo[ƒŒƒC ---
     m_pauseBgOverlayID = m_coordinator->CreateEntity(
         TransformComponent({ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f }, { 0,0,0 }, { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }),
         UIImageComponent("FADE_WHITE", 10.0f, true, { 0.0f, 0.0f, 0.0f, 0.0f })
     );
     m_pauseUIEntities.push_back(m_pauseBgOverlayID);
 
-    // --- 2. èƒŒæ™¯å¸¯ ---
+    // --- 2. ”wŒi‘Ñ ---
     m_pauseDecoSlashID = m_coordinator->CreateEntity(
         TransformComponent({ -SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f }, { 0.0f, 0.0f, tiltRad }, { SCREEN_WIDTH * 0.55f, SCREEN_HEIGHT * 2.5f, 1.0f }),
         UIImageComponent("FADE_WHITE", 11.0f, true, { 0.02f, 0.02f, 0.05f, 0.95f })
     );
     m_pauseUIEntities.push_back(m_pauseDecoSlashID);
 
-    // --- 3. å¹¾ä½•å­¦æ¨¡æ§˜ ---
+    // --- 3. Šô‰½Šw–Í—l ---
     for (int i = 0; i < 15; ++i) {
         float rndW = (float)(rand() % 300 + 50);
         float rndH = (float)(rand() % 5 + 1);
@@ -560,14 +560,14 @@ void GameControlSystem::CreateStylePauseUI() {
     );
     m_pauseUIEntities.push_back(frame);
 
-    // --- 4. ã‚¢ã‚¯ã‚»ãƒ³ãƒˆãƒ©ã‚¤ãƒ³ ---
+    // --- 4. ƒAƒNƒZƒ“ƒgƒ‰ƒCƒ“ ---
     m_pauseDecoLineID = m_coordinator->CreateEntity(
         TransformComponent({ -SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f }, { 0.0f, 0.0f, tiltRad }, { 4.0f, SCREEN_HEIGHT * 2.5f, 1.0f }),
         UIImageComponent("FADE_WHITE", 11.1f, true, { 0.0f, 1.0f, 1.0f, 1.0f })
     );
     m_pauseUIEntities.push_back(m_pauseDecoLineID);
 
-    // --- 5. å·¨å¤§ãƒãƒ¼ã‚ºã‚·ãƒ³ãƒœãƒ« "||" ---
+    // --- 5. ‹‘åƒ|[ƒYƒVƒ“ƒ{ƒ‹ "||" ---
     {
         float symH = SCREEN_HEIGHT * 0.6f;
         float symW = 60.0f;
@@ -587,7 +587,7 @@ void GameControlSystem::CreateStylePauseUI() {
         m_pauseUIEntities.push_back(bar2);
     }
 
-    // --- 6. ã‚»ãƒ¬ã‚¯ã‚¿ãƒ¼ (é»„è‰²ã„é•·æ–¹å½¢ãƒ»å›è»¢æ¼”å‡ºã‚ã‚Š) ---
+    // --- 6. ƒZƒŒƒNƒ^[ (‰©F‚¢’·•ûŒ`E‰ñ“]‰‰o‚ ‚è) ---
     ECS::EntityID selector = m_coordinator->CreateEntity(
         TransformComponent({ -200.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 30.0f, 30.0f, 1.0f }),
         UIImageComponent("FADE_WHITE", 12.5f, true, { 1.0f, 1.0f, 0.0f, 1.0f })
@@ -599,7 +599,7 @@ void GameControlSystem::CreateStylePauseUI() {
     m_pauseUIEntities.push_back(selector);
     m_pauseUIEntities.push_back(selectorOuter);
 
-    // --- 7. ãƒ¡ãƒ‹ãƒ¥ãƒ¼ãƒœã‚¿ãƒ³ç”Ÿæˆ ---
+    // --- 7. ƒƒjƒ…[ƒ{ƒ^ƒ“¶¬ ---
     float screenRefX = SCREEN_WIDTH * 0.22f;
     float baseY = SCREEN_HEIGHT * 0.25f;
     float gapY = 130.0f;
@@ -633,13 +633,13 @@ void GameControlSystem::CreateStylePauseUI() {
     float sliderY = baseY + gapY * 3.3f;
     float sliderX = GetXForY(sliderY);
 
-    // â˜…è¿½åŠ : [CAMERA] ãƒ©ãƒ™ãƒ«
-    // ã‚¹ãƒ©ã‚¤ãƒ€ãƒ¼ã®å°‘ã—ä¸Š (Y - 40) ã«é…ç½®
+    // š’Ç‰Á: [CAMERA] ƒ‰ƒxƒ‹
+    // ƒXƒ‰ƒCƒ_[‚Ì­‚µã (Y - 40) ‚É”z’u
     {
         float lblY = sliderY - 40.0f;
         float lblX = GetXForY(lblY);
-        // ç”»åƒã‚µã‚¤ã‚º 1700x320 -> ã‚¢ã‚¹ãƒšã‚¯ãƒˆæ¯” ç´„ 5.31
-        // å¹…ã‚’ 130 ãã‚‰ã„ã«ã™ã‚‹ã¨ é«˜ã•ã¯ 24 ãã‚‰ã„
+        // ‰æ‘œƒTƒCƒY 1700x320 -> ƒAƒXƒyƒNƒg”ä –ñ 5.31
+        // •‚ğ 130 ‚­‚ç‚¢‚É‚·‚é‚Æ ‚‚³‚Í 24 ‚­‚ç‚¢
         ECS::EntityID camLabel = m_coordinator->CreateEntity(
             TransformComponent({ lblX, lblY, 0.0f }, { 0.0f, 0.0f, tiltRad }, { 130.0f, 24.0f, 1.0f }),
             UIImageComponent("UI_CAMERA_POSE", 12.2f, true, { 1.0f, 1.0f, 1.0f, 1.0f })
@@ -669,7 +669,7 @@ void GameControlSystem::CreateStylePauseUI() {
 }
 
 // ---------------------------------------------------------------------
-// 2. UpdatePauseSequence (ãƒ©ãƒ™ãƒ«ã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å¯¾å¿œ)
+// 2. UpdatePauseSequence (ƒ‰ƒxƒ‹‚ÌƒAƒjƒ[ƒVƒ‡ƒ“‘Î‰)
 // ---------------------------------------------------------------------
 void GameControlSystem::UpdatePauseSequence(float deltaTime, ECS::EntityID controllerID) {
     m_pauseTimer += deltaTime;
@@ -680,18 +680,18 @@ void GameControlSystem::UpdatePauseSequence(float deltaTime, ECS::EntityID contr
     ECS::EntityID selectorID = INVALID_ENTITY_ID;
     ECS::EntityID selectorOuterID = INVALID_ENTITY_ID;
 
-    // UI_CAMERA_POSEã‚’æŒã¤ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã‚’æ¢ã™ï¼ˆã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ç”¨ï¼‰
+    // UI_CAMERA_POSE‚ğ‚ÂƒGƒ“ƒeƒBƒeƒB‚ğ’T‚·iƒAƒjƒ[ƒVƒ‡ƒ“—pj
     ECS::EntityID camLabelID = INVALID_ENTITY_ID;
 
     for (auto id : m_pauseUIEntities) {
         if (!m_coordinator->HasComponent<TransformComponent>(id)) continue;
         auto& t = m_coordinator->GetComponent<TransformComponent>(id);
 
-        // ã‚»ãƒ¬ã‚¯ã‚¿ãƒ¼åˆ¤å®š (ã‚µã‚¤ã‚º)
+        // ƒZƒŒƒNƒ^[”»’è (ƒTƒCƒY)
         if (t.scale.x == 30.0f && t.scale.y == 30.0f && t.rotation.z != tiltRad) selectorID = id;
         if (t.scale.x == 40.0f && t.scale.y == 40.0f && t.rotation.z != tiltRad) selectorOuterID = id;
 
-        // ãƒ©ãƒ™ãƒ«åˆ¤å®š (ã‚¢ã‚»ãƒƒãƒˆID)
+        // ƒ‰ƒxƒ‹”»’è (ƒAƒZƒbƒgID)
         if (m_coordinator->HasComponent<UIImageComponent>(id)) {
             if (m_coordinator->GetComponent<UIImageComponent>(id).assetID == "UI_CAMERA_POSE") {
                 camLabelID = id;
@@ -728,10 +728,10 @@ void GameControlSystem::UpdatePauseSequence(float deltaTime, ECS::EntityID contr
         if (m_pauseDecoLineID != INVALID_ENTITY_ID)
             m_coordinator->GetComponent<TransformComponent>(m_pauseDecoLineID).position.x = curX + slashW * 0.55f + paraX;
 
-        // â˜…è¿½åŠ : camLabelID ã‚‚ä¸€ç·’ã«ã‚¹ãƒ©ã‚¤ãƒ‰ã•ã›ã‚‹
+        // š’Ç‰Á: camLabelID ‚àˆê‚ÉƒXƒ‰ƒCƒh‚³‚¹‚é
         std::vector<ECS::EntityID> items = {
             m_pauseItems.btnReverse, m_pauseItems.btnRetry, m_pauseItems.btnStage,
-            camLabelID, // ã“ã“ã«è¿½åŠ 
+            camLabelID, // ‚±‚±‚É’Ç‰Á
             m_pauseItems.sliderBar, m_pauseItems.sliderKnob
         };
         auto GetTargetX = [&](float y) { return (SCREEN_WIDTH * 0.22f) - ((y - SCREEN_HEIGHT * 0.5f) * tanf(tiltRad)); };
@@ -823,12 +823,12 @@ void GameControlSystem::UpdatePauseSequence(float deltaTime, ECS::EntityID contr
 
         if (!anyHover) m_lastHoveredID = INVALID_ENTITY_ID;
 
-        // --- ã‚»ãƒ¬ã‚¯ã‚¿ãƒ¼ (å›è»¢æ¼”å‡º) ---
+        // --- ƒZƒŒƒNƒ^[ (‰ñ“]‰‰o) ---
         if (selectorID != INVALID_ENTITY_ID) {
             auto& sTrans = m_coordinator->GetComponent<TransformComponent>(selectorID);
             auto& sUI = m_coordinator->GetComponent<UIImageComponent>(selectorID);
 
-            // å¸¸ã«å›è»¢
+            // í‚É‰ñ“]
             sTrans.rotation.z += 3.0f * deltaTime;
 
             if (anyHover) {
@@ -844,7 +844,7 @@ void GameControlSystem::UpdatePauseSequence(float deltaTime, ECS::EntityID contr
                 auto& soTrans = m_coordinator->GetComponent<TransformComponent>(selectorOuterID);
                 auto& soUI = m_coordinator->GetComponent<UIImageComponent>(selectorOuterID);
                 soTrans.position = sTrans.position;
-                soTrans.rotation.z -= 1.5f * deltaTime; // é€†å›è»¢
+                soTrans.rotation.z -= 1.5f * deltaTime; // ‹t‰ñ“]
                 soUI.color.w = sUI.color.w * 0.4f;
             }
         }
@@ -882,7 +882,7 @@ void GameControlSystem::UpdatePauseSequence(float deltaTime, ECS::EntityID contr
 }
 
 // ---------------------------------------------------------------------
-// 3. UpdatePauseSliderState (ã‚¹ãƒ©ã‚¤ãƒ€ãƒ¼ä½ç½®ã®å³å¯†ãªè£œæ­£)
+// 3. UpdatePauseSliderState (ƒXƒ‰ƒCƒ_[ˆÊ’u‚ÌŒµ–§‚È•â³)
 // ---------------------------------------------------------------------
 void GameControlSystem::UpdatePauseSliderState() {
     if (m_pauseItems.sliderKnob == INVALID_ENTITY_ID || m_pauseItems.sliderBar == INVALID_ENTITY_ID) return;
@@ -892,19 +892,19 @@ void GameControlSystem::UpdatePauseSliderState() {
     auto& barTrans = m_coordinator->GetComponent<TransformComponent>(m_pauseItems.sliderBar);
 
     float barW = barTrans.scale.x;
-    // å‚¾ãã‚’è€ƒæ…®ã—ãŸãƒ­ãƒ¼ã‚«ãƒ«åº§æ¨™ç³»ã§ã®å·¦ç«¯ãƒ»å³ç«¯ (ãƒãƒ¼ã®ä¸­å¿ƒã‹ã‚‰ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆ)
+    // ŒX‚«‚ğl—¶‚µ‚½ƒ[ƒJƒ‹À•WŒn‚Å‚Ì¶’[E‰E’[ (ƒo[‚Ì’†S‚©‚ç‚ÌƒIƒtƒZƒbƒg)
     float localLeft = -barW * 0.5f;
     float localRight = barW * 0.5f;
 
-    float tiltRad = XMConvertToRadians(12.0f); // å…±é€šã®å‚¾ã
+    float tiltRad = XMConvertToRadians(12.0f); // ‹¤’Ê‚ÌŒX‚«
     float cosT = cosf(tiltRad);
     float sinT = sinf(tiltRad);
 
-    // ãƒãƒ¼ã®ä¸­å¿ƒåº§æ¨™
+    // ƒo[‚Ì’†SÀ•W
     float barCX = barTrans.position.x;
     float barCY = barTrans.position.y;
 
-    // ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ã§ã®å·¦ç«¯ã¨å³ç«¯ã®Xåº§æ¨™
+    // ƒ[ƒ‹ƒhÀ•W‚Å‚Ì¶’[‚Æ‰E’[‚ÌXÀ•W
     float worldLeftX = barCX + (localLeft * cosT);
     float worldRightX = barCX + (localRight * cosT);
 
@@ -917,11 +917,11 @@ void GameControlSystem::UpdatePauseSliderState() {
             bool isHold = IsMousePress(0) || IsButtonPress(BUTTON_A);
 
             if (isTrigger) {
-                // å½“ãŸã‚Šåˆ¤å®šã‚‚å‚¾ãã‚’è€ƒæ…®ã—ã¦ç°¡æ˜“çš„ã«Xè»¸ã¨Yè»¸ã®è·é›¢ã§è¦‹ã‚‹
+                // “–‚½‚è”»’è‚àŒX‚«‚ğl—¶‚µ‚ÄŠÈˆÕ“I‚ÉX²‚ÆY²‚Ì‹——£‚ÅŒ©‚é
                 float cx = cTrans.position.x;
                 float cy = cTrans.position.y;
 
-                // ãƒãƒ¼ä¸Šã«ã‚ã‚‹ã‹åˆ¤å®š (å³å¯†ã«ã¯ç‚¹ã¨ç›´ç·šã®è·é›¢ã ãŒã€ç°¡æ˜“çš„ã«è¿‘å‚åˆ¤å®š)
+                // ƒo[ã‚É‚ ‚é‚©”»’è (Œµ–§‚É‚Í“_‚Æ’¼ü‚Ì‹——£‚¾‚ªAŠÈˆÕ“I‚É‹ß–T”»’è)
                 float distY = std::abs(cy - (barCY - (cx - barCX) * tanf(tiltRad)));
                 if (cx >= worldLeftX - 40 && cx <= worldRightX + 40 && distY < 60) {
                     m_isDraggingSlider = true;
@@ -934,7 +934,7 @@ void GameControlSystem::UpdatePauseSliderState() {
                 float cx = cTrans.position.x;
                 float newX = std::max(worldLeftX, std::min(worldRightX, cx));
 
-                // å‰²åˆt (0.0 ~ 1.0)
+                // Š„‡t (0.0 ~ 1.0)
                 float t = (newX - worldLeftX) / (worldRightX - worldLeftX);
 
                 float minSens = 0.001f, maxSens = 0.02f;
@@ -951,7 +951,7 @@ void GameControlSystem::UpdatePauseSliderState() {
         }
     }
 
-    // ç¾åœ¨å€¤ã‹ã‚‰ä½ç½®ã‚’é€†ç®—
+    // Œ»İ’l‚©‚çˆÊ’u‚ğ‹tZ
     float currentSens = 0.005f;
     if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
         currentSens = camSys->GetMouseSensitivity();
@@ -960,11 +960,11 @@ void GameControlSystem::UpdatePauseSliderState() {
     float t = (currentSens - minSens) / (maxSens - minSens);
     t = std::max(0.0f, std::min(1.0f, t));
 
-    // ãƒãƒ–ã®ä½ç½®ã‚’ãƒãƒ¼ã®å‚¾ãã«åˆã‚ã›ã¦æ›´æ–°
-    // ãƒ­ãƒ¼ã‚«ãƒ«åº§æ¨™ã§ã®Xã‚ªãƒ•ã‚»ãƒƒãƒˆ
+    // ƒmƒu‚ÌˆÊ’u‚ğƒo[‚ÌŒX‚«‚É‡‚í‚¹‚ÄXV
+    // ƒ[ƒJƒ‹À•W‚Å‚ÌXƒIƒtƒZƒbƒg
     float localX = localLeft + (barW * t);
 
-    // ãƒ¯ãƒ¼ãƒ«ãƒ‰åº§æ¨™ã¸å¤‰æ›
+    // ƒ[ƒ‹ƒhÀ•W‚Ö•ÏŠ·
     knobTrans.position.x = barCX + (localX * cosT);
     knobTrans.position.y = barCY - (localX * sinT);
 
@@ -1090,7 +1090,7 @@ void GameControlSystem::UpdateLights()
 }
 
 // ---------------------------------------------------------------------
-// â˜…ä¿®æ­£: UpdateTimerAndRules ãªã©ã®ãƒªãƒ³ã‚¯ã‚¨ãƒ©ãƒ¼ã«ãªã£ã¦ã„ãŸé–¢æ•°ç¾¤ã®å®Ÿè£…
+// šC³: UpdateTimerAndRules ‚È‚Ç‚ÌƒŠƒ“ƒNƒGƒ‰[‚É‚È‚Á‚Ä‚¢‚½ŠÖ”ŒQ‚ÌÀ‘•
 // ---------------------------------------------------------------------
 
 void GameControlSystem::UpdateTimerAndRules(float deltaTime, ECS::EntityID controllerID) {
@@ -1110,7 +1110,7 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID) {
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
     if (state.currentMode == GameMode::SCOUTING_MODE) {
-        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f); // éŸ³é‡èª¿æ•´
+        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f); // ‰¹—Ê’²®
         StartMosaicSequence(controllerID);
     }
     else if (state.currentMode == GameMode::ACTION_MODE) {
@@ -1120,11 +1120,11 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID) {
         state.currentMode = GameMode::SCOUTING_MODE;
         m_hasUsedTopView = true;
 
-        // â˜…ä¿®æ­£: ãƒˆãƒƒãƒ—ãƒ“ãƒ¥ãƒ¼é·ç§»æ™‚ã¯ BGM_TOPVIEW ã‚’å†ç”Ÿ
+        // šC³: ƒgƒbƒvƒrƒ…[‘JˆÚ‚Í BGM_TOPVIEW ‚ğÄ¶
         PlayBGM("BGM_TOPVIEW", 0.7f);
 
         ApplyModeVisuals(controllerID);
-        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f); // éŸ³é‡èª¿æ•´
+        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f); // ‰¹—Ê’²®
     }
     ApplyModeVisuals(controllerID);
 }
@@ -1134,11 +1134,11 @@ void GameControlSystem::CheckSceneTransition(ECS::EntityID controllerID) {
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
     if (state.isGameOver || state.isGameClear) {
 
-        // â˜…ä¿®æ­£: ã‚²ãƒ¼ãƒ çµ‚äº†æ™‚ã«BGMåœæ­¢
+        // šC³: ƒQ[ƒ€I—¹‚ÉBGM’â~
         StopBGM();
 
         if (state.isGameOver) {
-            EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_ARREST", 0.5f); // éŸ³é‡èª¿æ•´
+            EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_ARREST", 0.5f); // ‰¹—Ê’²®
         }
 
         ResultData data; data.isCleared = state.isGameClear; data.clearTime = state.elapsedTime; data.clearedInTime = (state.elapsedTime <= state.timeLimitStar); data.timeLimitStar = state.timeLimitStar; data.wasSpotted = state.wasSpotted; data.stageID = GameScene::GetStageNo();
@@ -1168,22 +1168,22 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID) {
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
     bool showIcons = (state.currentMode == GameMode::SCOUTING_MODE);
 
-    // â˜…ãƒ†ãƒ¬ãƒãƒ¼ã‚¿ãƒ¼ã®ãƒšã‚¢ã«è‰²ã‚’å‰²ã‚Šå½“ã¦ï¼ˆåˆå›ã®ã¿ï¼‰
+    // šƒeƒŒƒ|[ƒ^[‚ÌƒyƒA‚ÉF‚ğŠ„‚è“–‚Äi‰‰ñ‚Ì‚İj
     if (showIcons && m_teleportColorMap.empty()) {
-        // è‰²ã®ãƒ‘ãƒ¬ãƒƒãƒˆï¼ˆãƒšã‚¢ã”ã¨ã«ç•°ãªã‚‹è‰²ï¼‰
+        // F‚ÌƒpƒŒƒbƒgiƒyƒA‚²‚Æ‚ÉˆÙ‚È‚éFj
         std::vector<DirectX::XMFLOAT4> colorPalette = {
-            {0.0f, 1.0f, 1.0f, 1.0f},    // ã‚·ã‚¢ãƒ³
-            {1.0f, 0.0f, 1.0f, 1.0f},    // ãƒã‚¼ãƒ³ã‚¿
-            {1.0f, 1.0f, 0.0f, 1.0f},    // é»„è‰²
-            {0.0f, 1.0f, 0.0f, 1.0f},    // ç·‘
-            {1.0f, 0.5f, 0.0f, 1.0f},    // ã‚ªãƒ¬ãƒ³ã‚¸
-            {0.5f, 0.0f, 1.0f, 1.0f},    // ç´«
+            {0.0f, 1.0f, 1.0f, 1.0f},    // ƒVƒAƒ“
+            {1.0f, 0.0f, 1.0f, 1.0f},    // ƒ}ƒ[ƒ“ƒ^
+            {1.0f, 1.0f, 0.0f, 1.0f},    // ‰©F
+            {0.0f, 1.0f, 0.0f, 1.0f},    // —Î
+            {1.0f, 0.5f, 0.0f, 1.0f},    // ƒIƒŒƒ“ƒW
+            {0.5f, 0.0f, 1.0f, 1.0f},    // ‡
         };
 
         int colorIndex = 0;
         std::unordered_set<ECS::EntityID> processed;
 
-        // å…¨ãƒ†ãƒ¬ãƒãƒ¼ã‚¿ãƒ¼ã‚’åé›†
+        // ‘SƒeƒŒƒ|[ƒ^[‚ğûW
         std::vector<ECS::EntityID> teleporters;
         for (auto const& entity : m_coordinator->GetActiveEntities()) {
             if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
@@ -1193,24 +1193,24 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID) {
             }
         }
 
-        // â˜…ä¿®æ­£: TeleportComponentã®targetEntityã‚’åŸºæº–ã«ãƒšã‚¢ã‚’åˆ¤å®š
+        // šC³: TeleportComponent‚ÌtargetEntity‚ğŠî€‚ÉƒyƒA‚ğ”»’è
         for (size_t i = 0; i < teleporters.size(); ++i) {
             ECS::EntityID teleA = teleporters[i];
             if (processed.count(teleA)) continue;
 
-            // ã“ã®ãƒ†ãƒ¬ãƒãƒ¼ã‚¿ãƒ¼ã«è‰²ã‚’å‰²ã‚Šå½“ã¦
+            // ‚±‚ÌƒeƒŒƒ|[ƒ^[‚ÉF‚ğŠ„‚è“–‚Ä
             DirectX::XMFLOAT4 pairColor = colorPalette[colorIndex % colorPalette.size()];
             m_teleportColorMap[teleA] = pairColor;
             processed.insert(teleA);
 
-            // â˜…TeleportComponentã‹ã‚‰targetEntityï¼ˆå®Ÿéš›ã®æ¥ç¶šå…ˆï¼‰ã‚’å–å¾—
+            // šTeleportComponent‚©‚çtargetEntityiÀÛ‚ÌÚ‘±æj‚ğæ“¾
             ECS::EntityID linkedTele = ECS::INVALID_ENTITY_ID;
             if (m_coordinator->HasComponent<TeleportComponent>(teleA)) {
                 auto& teleComp = m_coordinator->GetComponent<TeleportComponent>(teleA);
                 linkedTele = teleComp.targetEntity;
             }
 
-            // ãƒšã‚¢ãŒè¦‹ã¤ã‹ã£ãŸã‚‰åŒã˜è‰²ã‚’å‰²ã‚Šå½“ã¦
+            // ƒyƒA‚ªŒ©‚Â‚©‚Á‚½‚ç“¯‚¶F‚ğŠ„‚è“–‚Ä
             if (linkedTele != ECS::INVALID_ENTITY_ID && !processed.count(linkedTele)) {
                 m_teleportColorMap[linkedTele] = pairColor;
                 processed.insert(linkedTele);
@@ -1238,8 +1238,8 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID) {
         }
         if (isGuard) { if (showIcons) UpdateIcon(entity, "ICO_TASER", { 1, 1, 1, 1 }); else if (m_iconMap.count(entity)) m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false; }
         if (isTeleporter) {
-            // â˜…ãƒ†ãƒ¬ãƒãƒ¼ã‚¿ãƒ¼ã®è‰²ã‚’å€‹åˆ¥ã«è¨­å®š
-            DirectX::XMFLOAT4 teleportColor = { 0, 1, 1, 1 }; // ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆè‰²
+            // šƒeƒŒƒ|[ƒ^[‚ÌF‚ğŒÂ•Ê‚Éİ’è
+            DirectX::XMFLOAT4 teleportColor = { 0, 1, 1, 1 }; // ƒfƒtƒHƒ‹ƒgF
             if (m_teleportColorMap.count(entity)) {
                 teleportColor = m_teleportColorMap[entity];
             }
@@ -1288,7 +1288,7 @@ void GameControlSystem::UpdateCaughtSequence(float deltaTime, ECS::EntityID cont
             m_caughtAnimPlayed = true; state.sequenceTimer = 0.0f;
             if (m_coordinator->HasComponent<AnimationComponent>(m_catchingGuardID)) m_coordinator->GetComponent<AnimationComponent>(m_catchingGuardID).Play("A_GUARD_ATTACK", false);
             if (m_coordinator->HasComponent<AnimationComponent>(playerID)) m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_CAUGHT", false);
-            // éŸ³é‡èª¿æ•´ (1.0 -> 0.5)
+            // ‰¹—Ê’²® (1.0 -> 0.5)
             EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_HIT", 0.5f);
         }
     }
@@ -1405,7 +1405,7 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
         }
         if (m_coordinator->HasComponent<AnimationComponent>(doorID)) m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_OPEN", false);
         if (m_coordinator->HasComponent<CollisionComponent>(doorID)) m_coordinator->GetComponent<CollisionComponent>(doorID).type = COLLIDER_TRIGGER;
-        // â˜…ä¿®æ­£: SE_DOOR_OPEN (åœæ­¢å¯èƒ½SE)
+        // šC³: SE_DOOR_OPEN (’â~‰Â”\SE)
         PlayStopableSE("SE_DOOR", 0.5f);
     }
 }
@@ -1427,7 +1427,7 @@ void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID control
             if (doorID != INVALID_ENTITY_ID) {
                 if (m_coordinator->HasComponent<AnimationComponent>(doorID)) m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE", false);
                 if (m_coordinator->HasComponent<CollisionComponent>(doorID)) m_coordinator->GetComponent<CollisionComponent>(doorID).type = COLLIDER_STATIC;
-                // â˜…ä¿®æ­£: SE_DOOR_CLOSE (åœæ­¢å¯èƒ½SE)
+                // šC³: SE_DOOR_CLOSE (’â~‰Â”\SE)
                 PlayStopableSE("SE_DOOR", 0.5f);
             }
         }
@@ -1454,7 +1454,7 @@ void GameControlSystem::CheckDoorUnlock(EntityID controllerID) {
                     auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
                     if (sound.assetID == "BGM_TEST" || sound.assetID == "BGM_TEST2") sound.RequestStop();
                 }
-                // éŸ³é‡èª¿æ•´ (1.0 -> 0.5)
+                // ‰¹—Ê’²® (1.0 -> 0.5)
                 PlayStopableSE("SE_DOOR", 0.5f);
                 PlayBGM("BGM_GAME_2");
             }
@@ -1513,7 +1513,7 @@ bool GameControlSystem::IsAABBOverlap(ECS::EntityID a, ECS::EntityID b) {
 }
 
 void GameControlSystem::CheckMapGimmickTrigger(ECS::EntityID controllerID) {
-    // è‡ªå‹•é·ç§»ã¯ç„¡åŠ¹åŒ– (ãƒ¦ãƒ¼ã‚¶ãƒ¼æŒ‡ç¤º)
+    // ©“®‘JˆÚ‚Í–³Œø‰» (ƒ†[ƒU[w¦)
 }
 
 void GameControlSystem::StartMosaicSequence(ECS::EntityID controllerID) {
@@ -1548,7 +1548,7 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
         state.currentMode = GameMode::ACTION_MODE;
         if (m_blackBackID != INVALID_ENTITY_ID) m_coordinator->GetComponent<UIImageComponent>(m_blackBackID).color.w = 1.0f;
 
-        // éŸ³é–¢é€£
+        // ‰¹ŠÖ˜A
         for (auto const& e : m_coordinator->GetActiveEntities()) {
             if (!m_coordinator->HasComponent<SoundComponent>(e)) continue;
             auto& snd = m_coordinator->GetComponent<SoundComponent>(e);
@@ -1557,7 +1557,7 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
         }
         ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator, "BGM_ACTION", 0.5f);
 
-        // UIéè¡¨ç¤ºå‡¦ç†
+        // UI”ñ•\¦ˆ—
         for (auto& pair : m_iconMap) { if (m_coordinator->HasComponent<UIImageComponent>(pair.second)) m_coordinator->GetComponent<UIImageComponent>(pair.second).isVisible = false; }
         for (auto const& e : m_coordinator->GetActiveEntities()) {
             if (m_coordinator->HasComponent<ScanLineComponent>(e) || m_coordinator->HasComponent<SonarComponent>(e)) {
@@ -1566,7 +1566,7 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
         }
         ApplyModeVisuals(controllerID);
 
-        // --- â˜…ã“ã“ã‹ã‚‰ã‚«ãƒ¡ãƒ©ä½ç½®ä¿®æ­£ ---
+        // --- š‚±‚±‚©‚çƒJƒƒ‰ˆÊ’uC³ ---
         EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
         EntityID doorID = FindEntranceDoor();
 
@@ -1574,7 +1574,7 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
             auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
             auto& dTrans = m_coordinator->GetComponent<TransformComponent>(doorID);
 
-            // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ä½ç½®ã‚’ãƒ‰ã‚¢å‰ã«å†é…ç½®
+            // ƒvƒŒƒCƒ„[ˆÊ’u‚ğƒhƒA‘O‚ÉÄ”z’u
             float rad = dTrans.rotation.y;
             float startDist = 5.0f;
             pTrans.position.x = dTrans.position.x - sin(rad) * startDist;
@@ -1585,7 +1585,7 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
                 XMVECTOR doorPos = XMLoadFloat3(&dTrans.position);
                 XMVECTOR doorDir = XMVectorSet(sin(rad), 0.0f, cos(rad), 0.0f);
 
-                // ã‚«ãƒ¡ãƒ©ä½ç½®è¨ˆç®— (StartEntranceSequenceã¨åŒã˜è¨ˆç®—å¼)
+                // ƒJƒƒ‰ˆÊ’uŒvZ (StartEntranceSequence‚Æ“¯‚¶ŒvZ®)
                 XMVECTOR camPosVec = doorPos + (doorDir * 7.5f) + XMVectorSet(0.0f, 3.0f, 0.0f, 0.0f);
                 XMVECTOR lookAtVec = doorPos;
 
@@ -1594,10 +1594,10 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
                 ::DirectX::XMStoreFloat3(&camPos, camPosVec);
                 ::DirectX::XMStoreFloat3(&lookAt, lookAtVec);
 
-                // 1. ã‚·ã‚¹ãƒ†ãƒ ã«å›ºå®šã‚«ãƒ¡ãƒ©è¨­å®šã‚’é€šçŸ¥
+                // 1. ƒVƒXƒeƒ€‚ÉŒÅ’èƒJƒƒ‰İ’è‚ğ’Ê’m
                 camSys->SetFixedCamera(camPos, lookAt);
 
-                // 2. â˜…é‡è¦: ã‚«ãƒ¡ãƒ©ã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£ã®åº§æ¨™ã‚’ç›´æ¥æ›¸ãæ›ãˆã¦ãƒ¯ãƒ¼ãƒ—ã‚’é˜²æ­¢
+                // 2. šd—v: ƒJƒƒ‰ƒGƒ“ƒeƒBƒeƒB‚ÌÀ•W‚ğ’¼Ú‘‚«Š·‚¦‚Äƒ[ƒv‚ğ–h~
                 EntityID camEntity = FindFirstEntityWithComponent<CameraComponent>(m_coordinator);
                 if (camEntity != INVALID_ENTITY_ID) {
                     m_coordinator->GetComponent<TransformComponent>(camEntity).position = camPos;
@@ -1663,10 +1663,19 @@ void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID) {
 }
 
 // ==================================================================================
-// ãƒ†ãƒ¬ãƒãƒ¼ãƒˆã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®æ›´æ–°
+// ƒeƒŒƒ|[ƒgƒGƒtƒFƒNƒg‚ÌXV
 // ==================================================================================
-void GameControlSystem::UpdateTeleportEffects(ECS::EntityID controllerID)
+// GameControlSystem.cpp
+
+// GameControlSystem.cpp
+
+void GameControlSystem::UpdateTeleportEffects(float deltaTime, ECS::EntityID controllerID)
 {
+    // EFK_TELEPORT ‚Ì’†‚Åu—Ö‚Á‚©v“™‚ªˆê‰ñ‚µ‚©”­¶‚µ‚È‚¢\¬‚¾‚ÆAloop=true ‚Å‚à
+    // gí—Ö‚Á‚©‚ªo‚Ä‚¢‚éhŒ©‚½–Ú‚É‚È‚ç‚È‚¢‚±‚Æ‚ª‚ ‚éB
+    // ‚»‚Ìê‡‚Å‚àˆê’èŠÔŠu‚Å EFK_TELEPORT ‚ğÄƒgƒŠƒK[‚µ‚ÄŒp‘±•\¦‚É‚·‚éB
+    constexpr float kTeleportFxRestartSec = 1.0f; // •K—v‚È‚ç’²®
+
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
@@ -1686,28 +1695,39 @@ void GameControlSystem::UpdateTeleportEffects(ECS::EntityID controllerID)
             XMLoadFloat3(&playerTrans.position) - XMLoadFloat3(&teleTrans.position)
         ));
 
-        // ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ãŒãƒ†ãƒ¬ãƒãƒ¼ãƒˆã‚’è¸ã‚“ã å ´åˆ
+        // ƒvƒŒƒCƒ„[‚ªƒeƒŒƒ|[ƒg‚ğ“¥‚ñ‚¾ê‡
         if (distSq < 9.0f) {
             if (m_teleportEffectMap.count(entity)) {
-                EntityID effectID = m_teleportEffectMap[entity];
-                if (m_coordinator->HasComponent<EffectComponent>(effectID)) {
-                    m_coordinator->DestroyEntity(effectID);
+                const auto& fx = m_teleportEffectMap[entity];
+
+                if (fx.glow != INVALID_ENTITY_ID) {
+                    if (m_coordinator->HasComponent<EffectComponent>(fx.glow)) {
+                        m_coordinator->DestroyEntity(fx.glow);
+                    }
                 }
+                if (fx.teleport != INVALID_ENTITY_ID) {
+                    if (m_coordinator->HasComponent<EffectComponent>(fx.teleport)) {
+                        m_coordinator->DestroyEntity(fx.teleport);
+                    }
+                }
+
                 m_teleportEffectMap.erase(entity);
+                m_teleportFxRestartTimer.erase(entity);
             }
             m_usedTeleporters.insert(entity);
         }
-        // ã¾ã ä½¿ç”¨ã•ã‚Œã¦ã„ãªã„ãƒ†ãƒ¬ãƒãƒ¼ãƒˆ
+        // ‚Ü‚¾g—p‚³‚ê‚Ä‚¢‚È‚¢ƒeƒŒƒ|[ƒg
         else if (shouldShowEffects && !m_usedTeleporters.count(entity)) {
             if (!m_teleportEffectMap.count(entity)) {
-                // â˜…ãƒˆãƒƒãƒ—ãƒ“ãƒ¥ãƒ¼ã§è¨˜éŒ²ã—ãŸè‰²ã‚’å–å¾—
-                XMFLOAT4 effectColor = XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f); // ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã¯ã‚·ã‚¢ãƒ³
+                // šƒgƒbƒvƒrƒ…[‚Å‹L˜^‚µ‚½F‚ğæ“¾
+                XMFLOAT4 effectColor = XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f); // ƒfƒtƒHƒ‹ƒg‚ÍƒVƒAƒ“
                 if (m_teleportColorMap.count(entity)) {
                     effectColor = m_teleportColorMap[entity];
                 }
 
-                // ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã‚’ç”Ÿæˆï¼ˆloop=trueã§ç¶™ç¶šå†ç”Ÿï¼‰
-                EntityID effectID = m_coordinator->CreateEntity(
+                // ƒGƒtƒFƒNƒg‚ğ¶¬iloop=true‚ÅŒp‘±Ä¶j
+                // šC³: RenderComponent(MESH_NONE, effectColor) ‚ğ’Ç‰Á‚µ‚ÄFî•ñ‚ğ‚½‚¹‚é
+                EntityID glowID = m_coordinator->CreateEntity(
                     TransformComponent(
                         teleTrans.position,
                         XMFLOAT3(0.0f, 0.0f, 0.0f),
@@ -1715,31 +1735,137 @@ void GameControlSystem::UpdateTeleportEffects(ECS::EntityID controllerID)
                     ),
                     EffectComponent(
                         "EFK_TREASURE_GLOW",
-                        true,      // isActive: ç”Ÿæˆæ™‚ã«å³å†ç”Ÿ
-                        true,      // loop: ãƒ«ãƒ¼ãƒ—å†ç”Ÿ
-                        XMFLOAT3(0.0f, 0.0f, 0.0f),  // offset
-                        0.3f       // scale
-                    )
+                        true,
+                        true,
+                        XMFLOAT3(0.0f, 0.0f, 0.0f),
+                        0.3f
+                    ),
+                    RenderComponent(MESH_NONE, effectColor) // š‚±‚±‚ğ’Ç‰ÁI
                 );
+                if (m_coordinator->HasComponent<EffectComponent>(glowID)) {
+                    auto& ec = m_coordinator->GetComponent<EffectComponent>(glowID);
+                    ec.useColor = true;
+                    ec.color = effectColor;
+                }
 
-                // ãƒãƒƒãƒ—ã«ç™»éŒ²
-                m_teleportEffectMap[entity] = effectID;
+                EntityID teleportFxID = m_coordinator->CreateEntity(
+                    TransformComponent(
+                        teleTrans.position,
+                        XMFLOAT3(0.0f, 0.0f, 0.0f),
+                        XMFLOAT3(1.0f, 1.0f, 1.0f)
+                    ),
+                    EffectComponent(
+                        "EFK_TELEPORT",
+                        true,
+                        true,
+                        XMFLOAT3(0.0f, 0.0f, 0.0f),
+                        0.1f
+                    ),
+                    RenderComponent(MESH_NONE, effectColor) // š‚±‚±‚ğ’Ç‰ÁI
+                );
+                    if (m_coordinator->HasComponent<EffectComponent>(teleportFxID)) {
+                        auto& ec = m_coordinator->GetComponent<EffectComponent>(teleportFxID);
+                        ec.useColor = true;
+                        ec.color = effectColor;
+                    }
 
-                // â˜…è‰²ã‚’è¨­å®š
-                if (m_coordinator->HasComponent<RenderComponent>(effectID)) {
-                    auto& render = m_coordinator->GetComponent<RenderComponent>(effectID);
-                    render.color = effectColor;
+                // ƒ}ƒbƒv‚É“o˜^
+                TeleporterEffectSet fx{};
+                fx.glow = glowID;
+                fx.teleport = teleportFxID;
+                m_teleportEffectMap[entity] = fx;
+
+                // ÄƒgƒŠƒK[—pƒ^ƒCƒ}[‰Šú‰»
+                m_teleportFxRestartTimer[entity] = 0.0f;
+            }
+            else {
+                // Šù‚É‘¶İ‚·‚éê‡
+                auto& fx = m_teleportEffectMap[entity];
+
+                // ---------------------------------------------------------
+                // –ˆƒtƒŒ[ƒ€‹­§“I‚ÉF‚ğ“K—p‚·‚é
+                // ---------------------------------------------------------
+                XMFLOAT4 effectColor = XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f);
+                if (m_teleportColorMap.count(entity)) {
+                    effectColor = m_teleportColorMap[entity];
+                }
+
+                // RenderComponent‚ª‚ ‚é‚Í‚¸‚È‚Ì‚ÅA‚±‚±‚ÅF‚ª“K—p‚³‚ê‚é
+                if (fx.glow != INVALID_ENTITY_ID && m_coordinator->HasComponent<RenderComponent>(fx.glow)) {
+                    m_coordinator->GetComponent<RenderComponent>(fx.glow).color = effectColor;
+                }
+                if (fx.teleport != INVALID_ENTITY_ID && m_coordinator->HasComponent<RenderComponent>(fx.teleport)) {
+                    m_coordinator->GetComponent<RenderComponent>(fx.teleport).color = effectColor;
+                }
+                // ---------------------------------------------------------
+
+                if (fx.glow != INVALID_ENTITY_ID && m_coordinator->HasComponent<EffectComponent>(fx.glow)) {
+                    auto& ec = m_coordinator->GetComponent<EffectComponent>(fx.glow);
+                    ec.useColor = true;
+                    ec.color = effectColor;
+                }
+                if (fx.teleport != INVALID_ENTITY_ID && m_coordinator->HasComponent<EffectComponent>(fx.teleport)) {
+                    auto& ec = m_coordinator->GetComponent<EffectComponent>(fx.teleport);
+                    ec.useColor = true;
+                    ec.color = effectColor;
+                }
+                m_teleportFxRestartTimer[entity] += deltaTime;
+
+                if (m_teleportFxRestartTimer[entity] >= kTeleportFxRestartSec) {
+                    m_teleportFxRestartTimer[entity] = 0.0f;
+
+                    // šteleport ‘¤‚¾‚¯ƒŠƒXƒ^[ƒgiglow ‚Í‚»‚Ì‚Ü‚Üj
+                    if (fx.teleport != INVALID_ENTITY_ID) {
+                        if (m_coordinator->HasComponent<EffectComponent>(fx.teleport)) {
+                            m_coordinator->DestroyEntity(fx.teleport);
+                        }
+                        fx.teleport = INVALID_ENTITY_ID;
+                    }
+
+                    // teleportƒGƒtƒFƒNƒg‚ğ“¯‚¶êŠ‚ÅÄ¶¬
+                    // š‚±‚±‚Å‚à RenderComponent ‚ğ’Ç‰Á‚·‚é‚Ì‚ğ–Y‚ê‚¸‚ÉI
+                    EntityID teleportFxID = m_coordinator->CreateEntity(
+                        TransformComponent(
+                            teleTrans.position,
+                            XMFLOAT3(0.0f, 0.0f, 0.0f),
+                            XMFLOAT3(1.0f, 1.0f, 1.0f)
+                        ),
+                        EffectComponent(
+                            "EFK_TELEPORT",
+                            true,
+                            true,
+                            XMFLOAT3(0.0f, 0.0f, 0.0f),
+                            0.1f
+                        ),
+                        RenderComponent(MESH_NONE, effectColor) // š‚±‚±‚ğ’Ç‰ÁI
+                    );
+                    if (m_coordinator->HasComponent<EffectComponent>(teleportFxID)) {
+                        auto& ec = m_coordinator->GetComponent<EffectComponent>(teleportFxID);
+                        ec.useColor = true;
+                        ec.color = effectColor;
+                    }
+
+                    fx.teleport = teleportFxID;
                 }
             }
-            // ã‚¨ãƒ•ã‚§ã‚¯ãƒˆãŒæ—¢ã«å­˜åœ¨ã™ã‚‹å ´åˆã¯ä½•ã‚‚ã—ãªã„ï¼ˆãƒ«ãƒ¼ãƒ—å†ç”ŸãŒç¶™ç¶šä¸­ï¼‰
         }
-        // ãƒˆãƒƒãƒ—ãƒ“ãƒ¥ãƒ¼ãƒ¢ãƒ¼ãƒ‰ã«åˆ‡ã‚Šæ›¿ã‚ã£ãŸå ´åˆ
+        // ƒgƒbƒvƒrƒ…[ƒ‚[ƒh‚ÉØ‚è‘Ö‚í‚Á‚½ê‡
         else if (!shouldShowEffects && m_teleportEffectMap.count(entity)) {
-            EntityID effectID = m_teleportEffectMap[entity];
-            if (m_coordinator->HasComponent<EffectComponent>(effectID)) {
-                m_coordinator->DestroyEntity(effectID);
+            const auto& fx = m_teleportEffectMap[entity];
+
+            if (fx.glow != INVALID_ENTITY_ID) {
+                if (m_coordinator->HasComponent<EffectComponent>(fx.glow)) {
+                    m_coordinator->DestroyEntity(fx.glow);
+                }
             }
+            if (fx.teleport != INVALID_ENTITY_ID) {
+                if (m_coordinator->HasComponent<EffectComponent>(fx.teleport)) {
+                    m_coordinator->DestroyEntity(fx.teleport);
+                }
+            }
+
             m_teleportEffectMap.erase(entity);
+            m_teleportFxRestartTimer.erase(entity);
         }
     }
 }
