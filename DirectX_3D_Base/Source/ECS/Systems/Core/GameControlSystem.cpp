@@ -1686,6 +1686,7 @@ void GameControlSystem::UpdateTeleportEffects(ECS::EntityID controllerID)
             XMLoadFloat3(&playerTrans.position) - XMLoadFloat3(&teleTrans.position)
         ));
 
+        // プレイヤーがテレポートを踏んだ場合
         if (distSq < 9.0f) {
             if (m_teleportEffectMap.count(entity)) {
                 EntityID effectID = m_teleportEffectMap[entity];
@@ -1696,6 +1697,7 @@ void GameControlSystem::UpdateTeleportEffects(ECS::EntityID controllerID)
             }
             m_usedTeleporters.insert(entity);
         }
+        // まだ使用されていないテレポート
         else if (shouldShowEffects && !m_usedTeleporters.count(entity)) {
             if (!m_teleportEffectMap.count(entity)) {
                 // ★トップビューで記録した色を取得
@@ -1704,7 +1706,7 @@ void GameControlSystem::UpdateTeleportEffects(ECS::EntityID controllerID)
                     effectColor = m_teleportColorMap[entity];
                 }
 
-                // エフェクトを生成
+                // エフェクトを生成（loop=trueで継続再生）
                 EntityID effectID = m_coordinator->CreateEntity(
                     TransformComponent(
                         teleTrans.position,
@@ -1712,27 +1714,26 @@ void GameControlSystem::UpdateTeleportEffects(ECS::EntityID controllerID)
                         XMFLOAT3(1.0f, 1.0f, 1.0f)
                     ),
                     EffectComponent(
-                        "EFK_EYESLIGHT",
-                        0.0f,
-                        true
+                        "EFK_TREASURE_GLOW",
+                        true,      // isActive: 生成時に即再生
+                        true,      // loop: ループ再生
+                        XMFLOAT3(0.0f, 0.0f, 0.0f),  // offset
+                        0.3f       // scale
                     )
                 );
 
                 // マップに登録
                 m_teleportEffectMap[entity] = effectID;
 
-                // ★対応方法1: RenderComponentで色を制御
+                // ★色を設定
                 if (m_coordinator->HasComponent<RenderComponent>(effectID)) {
                     auto& render = m_coordinator->GetComponent<RenderComponent>(effectID);
                     render.color = effectColor;
                 }
-
-                // エフェクトを再生開始
-                if (m_coordinator->HasComponent<EffectComponent>(effectID)) {
-                    m_coordinator->GetComponent<EffectComponent>(effectID).Play();
-                }
             }
+            // エフェクトが既に存在する場合は何もしない（ループ再生が継続中）
         }
+        // トップビューモードに切り替わった場合
         else if (!shouldShowEffects && m_teleportEffectMap.count(entity)) {
             EntityID effectID = m_teleportEffectMap[entity];
             if (m_coordinator->HasComponent<EffectComponent>(effectID)) {
