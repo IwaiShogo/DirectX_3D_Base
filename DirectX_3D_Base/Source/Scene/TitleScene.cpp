@@ -35,7 +35,7 @@ namespace TitleLayout
     const XMFLOAT3 BTN_BASE_SCALE = { 300.0f, 140.0f, 1.0f };
     const XMFLOAT3 LOGO_BASE_SCALE = { 550.0f, 410.0f, 1.0f };
     const XMFLOAT3 START_BTN_SCALE = { 450.0f, 150.0f, 1.0f };
-	const XMFLOAT3 TITLE_KAIGA_SCALE = { 1280.0f, 720.0f, 1.0f };
+    const XMFLOAT3 TITLE_KAIGA_SCALE = { 1280.0f, 720.0f, 1.0f };
 
     constexpr float CARD_STATIC_ROT_Z_DEG = 20.0f;
 }
@@ -99,7 +99,7 @@ void TitleScene::Init()
         titleCtrl.cardEndScale.y * 0.25f,
         titleCtrl.cardEndScale.z * 0.25f
     };
-    
+
     // タイトルカード
     titleCtrl.cardEntityID = m_coordinator->CreateEntity(
         TransformComponent(
@@ -205,7 +205,11 @@ void TitleScene::Init()
             UIButtonComponent(
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
-                /* Callback */ []() { SceneManager::ChangeScene<OpeningScene>(); },//StageSelectScene
+                /* Callback */ []() {
+                    // ★はじめから：進捗を完全リセット（1-1のみ解放）
+                    StageUnlockProgress::ResetToNewGame();
+                    SceneManager::ChangeScene<OpeningScene>();
+                },//StageSelectScene
                 /* HitScale */ hitScale
             )
         );
