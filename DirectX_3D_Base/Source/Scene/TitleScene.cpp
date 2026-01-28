@@ -118,19 +118,6 @@ void TitleScene::Init()
         )
     );
 
-    titleCtrl.TitlekaigaEntityID = m_coordinator->CreateEntity(
-        TransformComponent(
-            /* Position */{ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f },
-            /* Rotation */{ 1.0f, 0.0f, 0.0f },
-            /* Scale    */ TitleLayout::TITLE_KAIGA_SCALE
-        ),
-        UIImageComponent(
-            /* AssetID */ "UI_TITLE_KAIGA",
-            /* Depth   */ 0.0f,
-            /* Visible */ true,
-            /* Color   */{ 1.0f, 1.0f, 1.0f, 0.0f }
-        )
-    );
 
     // ガラスケース
     m_coordinator->CreateEntity(

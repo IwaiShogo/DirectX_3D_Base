@@ -102,7 +102,7 @@ void StopTrapSystem::Update(float deltaTime)
                     // 2. エフェクト再生
                     EntityFactory::CreateOneShotEffect(
                         m_coordinator,
-                        "EFK_TASER ",
+                        "EFK_TASER",
                         effectPos,
                         effectDuration,
                         1.0f
