@@ -1,21 +1,15 @@
 /*****************************************************************//**
- * @file	RenderComponent.h
- * @brief	Entityの描画方法に関する情報を定義するComponent。
- * 
- * @details	
- * 描画する形状の種類（ボックス、スフィアなど）や、色情報、テクスチャIDなどを保持する。
- * 
- * ------------------------------------------------------------
- * @author	Iwai Shogo
- * ------------------------------------------------------------
- * 
- * @date	2025/10/27	初回作成日
- * 			作業内容：	- 追加：描画に必要な形状と色を保持する `RenderComponent` を作成。
- * 
- * @update	2025/xx/xx	最終更新日
- * 			作業内容：	- XX：
- * 
- * @note	（省略可）
+ * @file    RenderComponent.h
+ * @brief   描画に必要な最低限の情報を保持するComponent。
+ *
+ * @details
+ *  - 形状種別（プリミティブ/モデル）
+ *  - 乗算カラー（RGBA）
+ *  - カリング設定（両面描画など）
+ *
+ * 以前は type と color のみでしたが、
+ * 「左右反転（負スケール）」で裏面が正面扱いになった際に真っ黒に見える問題の対策として、
+ * エンティティ単位でカリングを制御できるよう CullMode を追加しています。
  *********************************************************************/
 
 #ifndef ___RENDER_COMPONENT_H___
@@ -26,41 +20,58 @@
 
  /**
   * @enum MeshType
-  * @brief 描画するメッシュの形状を識別するための列挙型。
+  * @brief 描画するメッシュ種別。
   */
 enum MeshType : uint8_t
 {
-	MESH_BOX,			///< 箱（立方体）
-	MESH_SPHERE,		///< 球
-	MESH_MODEL,			///< 外部ファイルからのロードモデル (未実装)
-	MESH_NONE,			///< 描画を行わない（デバッグ用など）
+    MESH_BOX,       ///< 立方体
+    MESH_SPHERE,    ///< 球
+    MESH_MODEL,     ///< 外部モデル（FBX等）
+    MESH_NONE,      ///< 描画しない
+};
+
+/**
+ * @enum CullMode
+ * @brief ラスタライザのカリング設定。
+ */
+enum class CullMode : uint8_t
+{
+    Default = 0,    ///< エンジン既定（通常はBack）
+    None,           ///< 両面描画
+    Back,           ///< 裏面をカリング
+    Front,          ///< 表面をカリング
 };
 
 /**
  * @struct RenderComponent
- * @brief Entityの外観（形状、色、テクスチャ）に関するデータ
+ * @brief Entity の描画情報。
  */
 struct RenderComponent
 {
-	MeshType type;				///< 描画するメッシュの形状
-	DirectX::XMFLOAT4 color;	///< 描画時の色 (R, G, B, A)
+    MeshType type;                  ///< メッシュ種別
+    DirectX::XMFLOAT4 color;        ///< 乗算カラー (R,G,B,A)
+    CullMode cullMode;              ///< カリング設定
 
-	/**
-	 * @brief コンストラクタ
-	 * @param type - メッシュ形状
-	 * @param color - 描画色
-	 */
-	RenderComponent(
-		MeshType type = MESH_BOX,
-		DirectX::XMFLOAT4 color = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f)
-	)
-		: type(type)
-		, color(color)
-	{}
+    /**
+     * @brief コンストラクタ
+     * @param type     メッシュ種別
+     * @param color    乗算カラー
+     * @param cullMode カリング設定（省略時はDefault）
+     */
+    RenderComponent(
+        MeshType type = MESH_BOX,
+        DirectX::XMFLOAT4 color = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
+        CullMode cullMode = CullMode::Default
+    )
+        : type(type)
+        , color(color)
+        , cullMode(cullMode)
+    {
+    }
 };
 
-// Componentの自動登録
+// Component の自動登録
 #include "ECS/ComponentRegistry.h"
 REGISTER_COMPONENT_TYPE(RenderComponent)
 
-#endif // !___RENDER_COMPONENT_H___
+#endif // ___RENDER_COMPONENT_H___

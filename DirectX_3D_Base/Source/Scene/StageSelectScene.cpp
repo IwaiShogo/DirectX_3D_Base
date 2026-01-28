@@ -1,7 +1,4 @@
-﻿/*****************************************************************//**
- * @file	StageSelectScene.cpp
- *********************************************************************/
-
+﻿
 #include "Scene/SceneManager.h"
 #include "Scene/ResultScene.h"
 #include "Scene/GameScene.h"
@@ -15,7 +12,7 @@
 #include "ECS/EntityFactory.h"
 #include "ECS/Systems/Rendering/EffectSystem.h"
 
- // 共通画面遷移（System + Component）
+// 共通画面遷移（System + Component）
 #include "ECS/Systems/Core/ScreenTransition.h"
 #include "ECS/Components/Rendering/AnimationComponent.h"
 #include <DirectXMath.h>
@@ -43,6 +40,24 @@ static float Clamp01(float x)
 	if (x < 0.0f) return 0.0f;
 	if (x > 1.0f) return 1.0f;
 	return x;
+}
+
+// ============================================================
+// M_SELECT1～6 の左右反転について
+//
+// ============================================================
+// M_SELECT1～6 の左右反転について
+//
+// ★注意: 現在は反転を無効にしています
+// SetCullMode関数をDirectX.h/cppに追加してから、反転を有効にしてください。
+// 詳細は「SetCullMode関数追加ガイド.md」を参照
+// ============================================================
+static constexpr bool kMirrorSelectCardTexture = false;  // ★一時的にfalse
+
+static DirectX::XMFLOAT3 MakeSelectCardScale(float s)
+{
+	// 反転を無効化（SetCullMode実装後にtrueに変更）
+	return DirectX::XMFLOAT3(-s, s, s);
 }
 
 static DirectX::XMFLOAT3 UIToWorld(float sx, float sy, float zWorld)
@@ -192,24 +207,18 @@ void StageSelectScene::StartCardFocusAnim(ECS::EntityID cardEntity, const Direct
 	m_cardFocus.elapsed = 0.0f;
 	m_cardFocus.duration = kDuration;
 
-	m_cardFocus.startPos = UIToWorld(uiPos.x, uiPos.y, kCardZ);
-
-	// ------------------------------------------------------------
-	// ★開始位置の微調整（pixel単位）
-	// - UIToWorld の内部実装がどんな変換でも効くように、
-	//   「pixel -> world の差分」を差し引きで求めて加算する。
-	// - ここを調整しても全く変化が無い場合は、別の StageSelectScene.cpp が
-	//   ビルド対象になっている可能性が高い。
-	// ------------------------------------------------------------
-	constexpr float kFocusStartOffsetXPx = 65.0f;  // 右に寄せたいなら +, 左なら -
-	constexpr float kFocusStartOffsetYPx = 25.0f;  // 上に寄せたいなら +, 下なら -
-
-	if (kFocusStartOffsetXPx != 0.0f || kFocusStartOffsetYPx != 0.0f)
+	// ★修正: カードの実際の表示位置を開始位置として使用
+	// uiPos（クリック位置）ではなく、カードエンティティの現在のTransformから取得
+	if (m_coordinator->HasComponent<TransformComponent>(cardEntity))
 	{
-		const auto w0 = UIToWorld(0.0f, 0.0f, kCardZ);
-		const auto w1 = UIToWorld(kFocusStartOffsetXPx, kFocusStartOffsetYPx, kCardZ);
-		m_cardFocus.startPos.x += (w1.x - w0.x);
-		m_cardFocus.startPos.y += (w1.y - w0.y);
+		auto& transform = m_coordinator->GetComponent<TransformComponent>(cardEntity);
+		// カードの現在位置をそのまま開始位置にする（UI座標→ワールド座標変換）
+		m_cardFocus.startPos = UIToWorld(transform.position.x, transform.position.y, kCardZ);
+	}
+	else
+	{
+		// フォールバック: Transformがない場合は従来通り
+		m_cardFocus.startPos = UIToWorld(uiPos.x, uiPos.y, kCardZ);
 	}
 
 	m_cardFocus.endPos = UIToWorld(
@@ -219,16 +228,16 @@ void StageSelectScene::StartCardFocusAnim(ECS::EntityID cardEntity, const Direct
 	);
 
 	const float endScale = kStartScale * kEndScaleMul;
-	m_cardFocus.startScale = DirectX::XMFLOAT3(kStartScale, kStartScale, kStartScale);
-	m_cardFocus.endScale = DirectX::XMFLOAT3(endScale, endScale, endScale);
+	m_cardFocus.startScale = MakeSelectCardScale(kStartScale);
+	m_cardFocus.endScale = MakeSelectCardScale(endScale);
 
 	m_cardFocus.baseRot = DirectX::XMFLOAT3(0.0f, DirectX::XM_PI, 0.0f); // カード表向きの向きに合わせる
 	m_cardFocus.extraRollRad = kExtraRollRad;
 
 	{
 		auto& tr = m_coordinator->GetComponent<TransformComponent>(cardEntity);
-		// ★生成直後の1フレーム目から「同じ場所・同じ大きさ」で始める（瞬間ズレ対策）
-		tr.position = m_cardFocus.startPos;
+		// ★修正: 位置は既に正しい場所にあるので、スケールと回転だけ初期化
+		// tr.position は上書きしない（元のカードの位置を保持）
 		tr.scale = m_cardFocus.startScale;
 		tr.rotation = m_cardFocus.baseRot;
 	}
@@ -372,8 +381,8 @@ void StageSelectScene::Init()
 			constexpr float kListCardScale = 0.03f;
 			ECS::EntityID cardModel = m_coordinator->CreateEntity(
 				TagComponent("list_card_model"),
-				TransformComponent(UIToWorld(x, y, kListCardZ), { 0.0f, DirectX::XM_PI, 0.0f }, { kListCardScale, kListCardScale, kListCardScale }),
-				RenderComponent(MESH_MODEL, { 1.0f, 1.0f, 1.0f, 1.0f }),
+				TransformComponent(UIToWorld(x, y, kListCardZ), { 0.0f, DirectX::XM_PI, 0.0f }, MakeSelectCardScale(kListCardScale)),
+				RenderComponent(MESH_MODEL, { 1.0f, 1.0f, 1.0f, 1.0f }, CullMode::Front),
 				ModelComponent(modelID, 5.0f, Model::None)
 			);
 			m_listCardModelEntities.push_back(cardModel);
@@ -434,8 +443,8 @@ void StageSelectScene::Init()
 						std::string focusModelID = "M_SELECT" + std::to_string((int)i + 1);
 						m_focusCardEntity = m_coordinator->CreateEntity(
 							TagComponent("focus_card"),
-							TransformComponent({ 0.0f, 0.0f, 0.0f }, { 0,0,0 }, { 1.0f, 1.0f, 1.0f }),
-							RenderComponent(MESH_MODEL, { 1.0f, 1.0f, 1.0f, 1.0f }),
+							TransformComponent({ uiPos.x, uiPos.y, 5.0f }, { 0,0,0 }, { 1.0f, 1.0f, 1.0f }), // ★修正: 元のカード位置で作成
+							RenderComponent(MESH_MODEL, { 1.0f, 1.0f, 1.0f, 1.0f }, CullMode::Front),
 							ModelComponent(focusModelID, 5.0f, Model::None),
 							AnimationComponent({ "A_CARD_COMEON" })
 						);
@@ -448,6 +457,53 @@ void StageSelectScene::Init()
 							}
 							m_coordinator->DestroyEntity(oldFocus);
 						}
+
+						// ★カード選択時に目のエフェクトを即座に消す
+						auto effectSystem = ECSInitializer::GetSystem<EffectSystem>();
+
+						// ============================================================
+						// ★要求: ステージカードを選択した瞬間に「全てのエフェクト」を停止
+						//  - 目の光(EFK_EYESLIGHT)
+						//  - UI選択エフェクト(PlayUISelectEffect)
+						//  - 詳細マップの流れ星(EFK_SHOOTINGSTAR*)
+						//  - デバッグ常駐グロー(EFK_TREASURE_GLOW)
+						// ============================================================
+
+						// 1) 目の光
+						for (auto& pair : m_activeEyeLights)
+						{
+							if (pair.first != (ECS::EntityID)-1)
+							{
+								if (effectSystem) effectSystem->StopEffectImmediate(pair.first);
+								m_coordinator->DestroyEntity(pair.first);
+							}
+						}
+						m_activeEyeLights.clear();
+						m_eyeLightTimer = 0.0f;
+						m_eyeLightNextInterval = 1.0f;
+
+						// 2) UI選択ワンショット
+						for (auto& fx : m_uiSelectFx)
+						{
+							if (fx.entity != (ECS::EntityID)-1)
+							{
+								if (effectSystem) effectSystem->StopEffectImmediate(fx.entity);
+								m_coordinator->DestroyEntity(fx.entity);
+							}
+						}
+						m_uiSelectFx.clear();
+
+						// 3) 流れ星（もし残っていたら全消し）
+						KillAllShootingStars();
+
+						// 4) デバッグ常駐グロー
+						if (m_debugStarEntity != (ECS::EntityID)-1)
+						{
+							if (effectSystem) effectSystem->StopEffectImmediate(m_debugStarEntity);
+							m_coordinator->DestroyEntity(m_debugStarEntity);
+							m_debugStarEntity = (ECS::EntityID)-1;
+						}
+
 
 						StartCardFocusAnim(m_focusCardEntity, uiPos);
 
@@ -2099,7 +2155,7 @@ void StageSelectScene::BeginStageReveal(int stageNo)
 	// 3. 演出用エンティティの作成
 	m_revealingCardEntity = m_coordinator->CreateEntity(
 		TransformComponent(startPos, startRot, startScale),
-		RenderComponent(MESH_MODEL, { 1.0f, 1.0f, 1.0f, 1.0f }),
+		RenderComponent(MESH_MODEL, { 1.0f, 1.0f, 1.0f, 1.0f }, CullMode::Front),
 		ModelComponent(modelID, 1.5f, Model::None) // 他のUIより少し手前に表示
 	);
 
@@ -2299,7 +2355,7 @@ void StageSelectScene::ReflowUnlockedCardsLayout()
 			const char* modelId = kSelectCardModel[idx];
 			cardModel = m_coordinator->CreateEntity(
 				TagComponent("list_card_model"),
-				TransformComponent(wpos, { 0.0f, DirectX::XM_PI, 0.0f }, { kListCardScale, kListCardScale, kListCardScale }),
+				TransformComponent(wpos, { 0.0f, DirectX::XM_PI, 0.0f }, MakeSelectCardScale(kListCardScale)),
 				RenderComponent(MESH_MODEL, { 1.0f, 1.0f, 1.0f, 1.0f }),
 				ModelComponent(modelId, 5.0f, Model::None)
 			);
@@ -2310,7 +2366,7 @@ void StageSelectScene::ReflowUnlockedCardsLayout()
 			auto& tr = m_coordinator->GetComponent<TransformComponent>(cardModel);
 			tr.position = wpos;
 			tr.rotation = DirectX::XMFLOAT3(0.0f, DirectX::XM_PI, 0.0f);
-			tr.scale = DirectX::XMFLOAT3(kListCardScale, kListCardScale, kListCardScale);
+			tr.scale = MakeSelectCardScale(kListCardScale);
 		}
 
 		// 一覧表示中かつ解放済みなら表示、詳細中なら非表示
@@ -2440,7 +2496,7 @@ static const char* StageMoji_GetAssetId(char c)
 
 // ===== 調整用パラメータ（ここだけ触ればOK）=====
 static constexpr float kStageNoScale = 1.75f;            // 全体サイズ倍率
-static constexpr float kStageNoMarginBelow = 12.0f;      // カード下の余白
+static constexpr float kStageNoMarginBelow = 5.0f;      // カード下の余白
 static constexpr float kStageNoDepth = 5.0f;             // UIのdepth
 static constexpr float kStageNoBaseZ = 0.10f;            // Transform.z（擬似ボールドのZずらし基準）
 
@@ -2449,8 +2505,8 @@ static constexpr float kStageNoBgWidth = 180.0f;   // 背景の幅（元: 120.0f
 static constexpr float kStageNoBgHeight = 75.0f;   // 背景の高さ（元: 50.0f）
 static constexpr float kStageNoBgDepth = 4.9f;     // 背景のdepth（文字より後ろ）
 // ★背景の微調整オフセット（文字が背景の中心からずれている場合に調整）
-static constexpr float kStageNoBgOffsetX = 0.0f;   // X方向のオフセット（正で右、負で左）
-static constexpr float kStageNoBgOffsetY = 0.0f;   // Y方向のオフセット（正で下、負で上）
+static constexpr float kStageNoBgOffsetX = 10.0f;   // X方向のオフセット（正で右、負で左）
+static constexpr float kStageNoBgOffsetY = -35.0f;   // Y方向のオフセット（正で下、負で上）
 
 
 // ★★★ ステージ別の個別オフセット設定 ★★★
@@ -2468,7 +2524,7 @@ struct StageNoOffset
 static const StageNoOffset kStageNoOffsets[6] =
 {
 	// { 文字X, 文字Y, 背景X, 背景Y }
-	{ -85.0f,  10.0f,  -90.0f,  -10.0f },  // ステージ1 (1-1)
+	{ 100.0f,  10.0f,  -90.0f,  -10.0f },  // ステージ1 (1-1)
 	{ 20.0f,   10.0f,   3.0f,  -10.0f },  // ステージ2 (1-2)
 	{ 110.0f,  10.0f,   92.0f,  -10.0f },  // ステージ3 (1-3)
 	{ -85.0f,  75.0f,   -90.0f,  55.0f },  // ステージ4 (2-1)
@@ -2482,48 +2538,55 @@ static const StageNoOffset kStageNoOffsets[6] =
 // { 110.0f,  10.0f,  0.0f,  -10.0f },  // ステージ3 (1-3)
 // ★★★★★★★★★★★★★★★★★★★★★★★★★★★
 
+// ★★★ 文字ごとの個別オフセット（1-1 の「左数字」「-」「右数字」別に調整）★★★
+// ここを触ると、「1」だけ右へ / 「-」だけ上へ、などができます。
+// stageNo=1..6, charIndex=0..2  (例: "1-1" -> [0]='1', [1]='-', [2]='1')
+struct StageNoCharOffset2
+{
+	float x;
+	float y;
+};
+
+static const StageNoCharOffset2 kStageNoCharOffsets[6][3] =
+{
+	//  { 左数字(dx,dy),      '-'(dx,dy),        右数字(dx,dy) }
+	{ { -90.0f, -17.0f }, { -220.0f, -10.0f }, { -190.0f, -17.0f } },
+	// stage2 "1-2"
+	{ { 80.0f, -17.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },
+	// stage3 "1-3"
+	{ { 80.0f, -17.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },
+	// stage4 "2-1"
+	{ { 75.0f, -17.0f }, { -40.0f, -10.0f }, { -10.0f, -17.0f } },
+	// stage5 "2-2"
+	{ { 65.0f, -17.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },
+	// stage6 "2-3"
+	{ { 65.0f, -17.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },
+};
+
+// 例）
+// - ステージ1の「-」だけを 3px 上にしたい：kStageNoCharOffsets[0][1] = {0, -3}
+// - ステージ4の右数字だけを 5px 右へ：     kStageNoCharOffsets[3][2] = {+5, 0}
+// ★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+
 
 // 文字サイズ（基準値×kStageNoScale）
-static constexpr float kStageNoDigitWBase = 32.0f;
-static constexpr float kStageNoDigitHBase = 36.0f;
-// ★数字の進み（大きいと "1 - 1" がバラけて見える）
-static constexpr float kStageNoDigitAdvanceBase = 28.0f;
+// ★要望：UI_STAGEMOJI1～9 と UI_STAGEMOJI_ を UI_STAGEMOJI2 と同じサイズで表示する
+// ＝ グリフ毎の個別メトリクスをやめて「共通サイズ」に統一する。
+static constexpr float kStageNoGlyphWBase = 80.0f;        // UI_STAGEMOJI2 を基準
+static constexpr float kStageNoGlyphHBase = 75.0f;        // UI_STAGEMOJI2 を基準
+static constexpr float kStageNoGlyphAdvanceBase = 52.0f;  // UI_STAGEMOJI2 を基準（文字間隔）
 
-// ★"1" は細く、余白が大きく見えることが多いので詰める
-static constexpr float kStageNoDigit1WBase = 20.0f;
-static constexpr float kStageNoDigit1AdvanceBase = 22.0f;
+// "-"（UI_STAGEMOJI_）も同一サイズにする（必要なら kStageNoHyphenYOffsetBase で位置だけ微調整）
+static constexpr float kStageNoHyphenYOffsetBase = -5.0f; // '-'の上下位置（正で上、負で下）
+static constexpr float kStageNoHyphenXOffsetBase = 0.0f;  // '-'の左右位置（正で右、負で左）
 
-// "-" は横棒に見えるように横長・低め
-static constexpr float kStageNoHyphenWBase = 30.0f;
-static constexpr float kStageNoHyphenHBase = 10.0f;
-static constexpr float kStageNoHyphenAdvanceBase = 30.0f;
-static constexpr float kStageNoHyphenYOffsetBase = -5.0f;
-// ★ハイフンのXオフセットは 0 を基準にする（負にすると中心がズレやすい）
-static constexpr float kStageNoHyphenXOffsetBase = -15.0f;
-
-// グリフ毎のメトリクス（見た目の中心合わせ用）
 static inline void StageNo_GetGlyphMetrics(char c, float& outW, float& outH, float& outAdv)
 {
-	if (c == '-')
-	{
-		outW = kStageNoHyphenWBase * kStageNoScale;
-		outH = kStageNoHyphenHBase * kStageNoScale;
-		outAdv = kStageNoHyphenAdvanceBase * kStageNoScale;
-		return;
-	}
-
-	// "1" だけ詰める
-	if (c == '1')
-	{
-		outW = kStageNoDigit1WBase * kStageNoScale;
-		outH = kStageNoDigitHBase * kStageNoScale;
-		outAdv = kStageNoDigit1AdvanceBase * kStageNoScale;
-		return;
-	}
-
-	outW = kStageNoDigitWBase * kStageNoScale;
-	outH = kStageNoDigitHBase * kStageNoScale;
-	outAdv = kStageNoDigitAdvanceBase * kStageNoScale;
+	(void)c; // すべて同じメトリクス
+	outW = kStageNoGlyphWBase * kStageNoScale;
+	outH = kStageNoGlyphHBase * kStageNoScale;
+	outAdv = kStageNoGlyphAdvanceBase * kStageNoScale;
 }
 
 // 擬似ボールド設定
@@ -2568,8 +2631,9 @@ void StageSelectScene::BuildStageNumberLabels()
 
 
 	// 作成時の最大枠（後で文字ごとにscaleを上書きする）
-	const float maxW = std::max(kStageNoDigitWBase, kStageNoHyphenWBase) * kStageNoScale;
-	const float maxH = std::max(kStageNoDigitHBase, kStageNoHyphenHBase) * kStageNoScale;
+	// ★数字2と3の大きなサイズも考慮してmaxW/maxHを計算
+	const float maxW = kStageNoGlyphWBase * kStageNoScale;
+	const float maxH = kStageNoGlyphHBase * kStageNoScale;
 
 	for (int stageNo = 1; stageNo <= 6; ++stageNo)
 	{
@@ -2727,7 +2791,7 @@ void StageSelectScene::SyncStageNumberLabel(int stageNo)
 		}
 	}
 
-	const float digitH = kStageNoDigitHBase * kStageNoScale;
+	const float digitH = kStageNoGlyphHBase * kStageNoScale;
 	const float hyphenYOffset = kStageNoHyphenYOffsetBase * kStageNoScale;
 	const float hyphenXOffset = kStageNoHyphenXOffsetBase * kStageNoScale;
 
@@ -2799,8 +2863,16 @@ void StageSelectScene::SyncStageNumberLabel(int stageNo)
 		const float xOff = isHyphen ? hyphenXOffset : 0.0f;
 
 		// ★ステージ別オフセットを適用
-		const float cx = baseX + cursor + w * 0.5f + xOff + stageTextOffsetX;
-		const float cy = (baseY + digitH * 0.5f) + yOff + stageTextOffsetY;
+		float perCharOffsetX = 0.0f;
+		float perCharOffsetY = 0.0f;
+		if (idx >= 0 && idx < 6 && i >= 0 && i < 3)
+		{
+			perCharOffsetX = kStageNoCharOffsets[idx][i].x;
+			perCharOffsetY = kStageNoCharOffsets[idx][i].y;
+		}
+
+		const float cx = baseX + cursor + w * 0.5f + xOff + stageTextOffsetX + perCharOffsetX;
+		const float cy = (baseY + digitH * 0.5f) + yOff + stageTextOffsetY + perCharOffsetY;
 
 		// Transform
 		if (m_coordinator->HasComponent<TransformComponent>(e))
@@ -2901,6 +2973,12 @@ void StageSelectScene::PlayUISelectEffect(ECS::EntityID uiEntity, const std::str
 {
 	if (!m_coordinator) return;
 
+	// ★カード選択中/遷移中はエフェクトを出さない
+	if (m_inputLocked || m_isWaitingForTransition || m_cardFocus.active) return;
+	if (ScreenTransition::IsBusy(m_coordinator.get(), m_transitionEntity) ||
+		ScreenTransition::IsBusy(m_coordinator.get(), m_blackTransitionEntity)) return;
+
+
 	float l, t, r, b;
 	if (!GetUIRect(uiEntity, l, t, r, b)) return;
 
@@ -2984,47 +3062,114 @@ void StageSelectScene::UpdateEyeLight(float dt)
 		ScreenTransition::IsBusy(m_coordinator.get(), m_blackTransitionEntity)) return;
 
 	// タイマー更新
+
+	// ★カード選択中/遷移中は新規エフェクトを出さない
+	if (m_inputLocked || m_isWaitingForTransition || m_cardFocus.active) return;
+
 	m_eyeLightTimer += dt;
 
 	// 待ち時間を経過したら生成
 	if (m_eyeLightTimer >= m_eyeLightNextInterval)
 	{
-		// 次回の設定（例: 2.0秒 〜 4.0秒 の間でランダム）
+		// 次回の設定（例: 0.5秒 〜 1.5秒 の間でランダム）
 		m_eyeLightTimer = 0.0f;
 		std::uniform_real_distribution<float> dist(0.5f, 1.5f);
 		m_eyeLightNextInterval = dist(m_rng);
 
 		// ============================================================
-		// ★追加: 光らせたい場所のリスト（6箇所）
+		// ★解放済みステージカードの位置リストを作成
 		// ============================================================
-		// ※画面上の好きな座標(ピクセル)に書き換えてください
-		// SCREEN_WIDTH = 1280, SCREEN_HEIGHT = 720 想定
-		std::vector<DirectX::XMFLOAT2> points = {
-			{ SCREEN_WIDTH * 0.21f, SCREEN_HEIGHT * 0.33f }, // 1. 元の場所
-			//{ SCREEN_WIDTH * 0.42f,   SCREEN_HEIGHT * 0.33f   }, // 2. 左上あたり
-			//{ SCREEN_WIDTH * 0.63f,   SCREEN_HEIGHT * 0.33f   }, // 3. 右上あたり
-			//{ SCREEN_WIDTH * 0.21f,   SCREEN_HEIGHT * 0.66f   }, // 4. 左下あたり
-			//{ SCREEN_WIDTH * 0.42f,   SCREEN_HEIGHT * 0.66f   }, // 5. 右下あたり
-			//{ SCREEN_WIDTH * 0.63f,   SCREEN_HEIGHT * 0.66f   }  // 6. 中央上（タイトル付近）
+		// ============================================================
+		// ★解放済みステージカードの位置リストを作成
+		// ============================================================
+		struct EyePoint { int stageNo; float x; float y; };
+		std::vector<EyePoint> points;
+
+		// ------------------------------------------------------------
+		// ★目エフェクトの座標調整（ここだけ触ればOK）
+		//  - Global: 全体一括オフセット
+		//  - Stage : ステージ(カード)ごとの微調整
+		//  - Jitter: 少しだけランダムに揺らして自然に
+		// ------------------------------------------------------------
+		static constexpr float kEyeGlobalOffsetX = 0.0f;
+		static constexpr float kEyeGlobalOffsetY = 0.0f;
+		static constexpr DirectX::XMFLOAT2 kEyeStageOffset[6] =
+		{
+			{ -120.0f, -30.0f }, // stage1
+			{ -30.0f, -30.0f }, // stage2
+			{ 70.0f, -30.0f }, // stage3
+			{ -120.0f, 38.0f }, // stage4
+			{ -30.0f, 38.0f }, // stage5
+			{ 70.0f, 38.0f }, // stage6
 		};
+		static constexpr float kEyeJitterX = 0.0f; // 例: 6.0f で左右に少し揺れる
+		static constexpr float kEyeJitterY = 0.0f; // 例: 3.0f で上下に少し揺れる
+		static constexpr float kEyeZ = 0.0f;       // 目エフェクトのZ（前に出したいなら +）
+		static constexpr float kEyeScale = 5.0f;   // 大きすぎるなら 1.0f〜3.0f へ
+		static constexpr bool  kEyeDebugLog = false; // trueにすると座標がログに出る
+
+		// 解放済みステージのみを対象に
+		for (int stageNo = 1; stageNo <= m_maxUnlockedStage && stageNo <= 6; ++stageNo)
+		{
+			DirectX::XMFLOAT3 pos = GetListCardSlotCenterPos(stageNo);
+			points.push_back({ stageNo, pos.x, pos.y });
+		}
+
+		// 解放済みステージがない場合は何もしない
+		if (points.empty()) return;
 
 		// リストの中からランダムに1つ選ぶ
 		std::uniform_int_distribution<int> idxDist(0, (int)points.size() - 1);
-		int idx = idxDist(m_rng);
+		const int pick = idxDist(m_rng);
 
-		float cx = points[idx].x;
-		float cy = points[idx].y;
+		const int stageNo = points[pick].stageNo;
+		float cx = points[pick].x;
+		float cy = points[pick].y;
+
+		// ------------------------------------------------------------
+		// ★座標調整を適用（ここが“全ての目エフェクト”の基準）
+		// ------------------------------------------------------------
+		if (stageNo >= 1 && stageNo <= 6)
+		{
+			cx += kEyeGlobalOffsetX + kEyeStageOffset[stageNo - 1].x;
+			cy += kEyeGlobalOffsetY + kEyeStageOffset[stageNo - 1].y;
+		}
+		if (kEyeJitterX != 0.0f || kEyeJitterY != 0.0f)
+		{
+			std::uniform_real_distribution<float> jx(-kEyeJitterX, kEyeJitterX);
+			std::uniform_real_distribution<float> jy(-kEyeJitterY, kEyeJitterY);
+			cx += jx(m_rng);
+			cy += jy(m_rng);
+		}
+
+		if (kEyeDebugLog)
+		{
+			std::cout
+				<< "[StageSelect] EyeLight spawn stage=" << stageNo
+				<< " pos=(" << cx << "," << cy << ")"
+				<< " global=(" << kEyeGlobalOffsetX << "," << kEyeGlobalOffsetY << ")"
+				<< " stageOff=(";
+			if (stageNo >= 1 && stageNo <= 6)
+			{
+				std::cout << kEyeStageOffset[stageNo - 1].x << "," << kEyeStageOffset[stageNo - 1].y;
+			}
+			else
+			{
+				std::cout << "N/A";
+			}
+			std::cout << ")\n";
+		}
 
 		// --- エフェクト生成 ---
 		ECS::EntityID fxEntity = m_coordinator->CreateEntity(
 			TagComponent("effect_eyeslight"),
-			TransformComponent({ cx, cy, 0.0f }, { 0,0,0 }, { 1,1,1 }),
+			TransformComponent({ cx, cy, kEyeZ }, { 0,0,0 }, { 1,1,1 }),
 			EffectComponent(
 				"EFK_EYESLIGHT", // ★アセットID (要登録)
 				false,           // ループしない（1回再生）
 				true,            // 生成時に即再生
 				{ 0,0,0 },       // オフセット
-				5.0f            // ★スケール (大きすぎる場合は 1.0f 等に調整)
+				kEyeScale        // ★スケール (大きすぎる場合は 1.0f 等に調整)
 			)
 		);
 		m_activeEyeLights.push_back({ fxEntity, 2.0f });
@@ -3036,6 +3181,9 @@ void StageSelectScene::EnsureDebugEffectOnMap()
 	if (!m_debugShowGlowOnMap) return;
 	if (!m_coordinator) return;
 	if (!m_isDetailMode) return;
+
+	// ★カード選択中/遷移中はエフェクトを出さない
+	if (m_inputLocked || m_isWaitingForTransition || m_cardFocus.active) return;
 	if (ScreenTransition::IsBusy(m_coordinator.get(), m_transitionEntity) ||
 		ScreenTransition::IsBusy(m_coordinator.get(), m_blackTransitionEntity)) return; // 遷移中は見えないので作らない
 	if (m_stageMapEntity == (ECS::EntityID)-1) return;
@@ -3233,6 +3381,9 @@ void StageSelectScene::SpawnShootingStar()
 {
 	if (!m_coordinator) return;
 	if (!m_isDetailMode) return;
+
+	// ★カード選択中/遷移中はエフェクトを出さない
+	if (m_inputLocked || m_isWaitingForTransition || m_cardFocus.active) return;
 	if (m_stageMapEntity == (ECS::EntityID)-1) return;
 
 	float l, t, r, b;
