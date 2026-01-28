@@ -6,7 +6,7 @@
 #include <ECS/Components/Rendering/RenderComponent.h>
 #include <algorithm>
 #include <cmath>
-
+#include "ECS/EntityFactory.h"
 using namespace ECS;
 using namespace DirectX;
 
@@ -85,7 +85,11 @@ void TitleControlSystem::Update(float deltaTime)
                 }
             }
 
-            if (IsKeyTrigger(VK_RETURN) || IsButtonTriggered(BUTTON_A)) {
+            if (IsKeyTrigger(VK_RETURN) || IsButtonTriggered(BUTTON_A))
+            {
+                ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_DECISION", 10.0f);
+
+
                 ctrl.state = TitleState::ZoomAnimation;
                 ctrl.animTimer = 0.0f; // 次のステートのためにリセット
             }

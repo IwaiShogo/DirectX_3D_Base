@@ -23,6 +23,7 @@ public:
 private:
 	std::shared_ptr<ECS::Coordinator> m_coordinator;
 	ECS::EntityID m_transitionEntity = ECS::INVALID_ENTITY_ID; // タイトル→遷移用フェード(黒)
+	ECS::EntityID m_bgmEntity = ECS::INVALID_ENTITY_ID;
 	enum class NextScene
 	{
 		None,
@@ -35,7 +36,5 @@ private:
 	float m_loadingTimer = 0.0f;
 	NextScene m_nextScene = NextScene::None;
 
-	void CreateLoadingUI();
-	void SetLoadingVisible(bool visible);
-	void StartLoadingTransition(NextScene nextScene, float durationSec);};
+};
 #endif //!___TitleScene_H___
