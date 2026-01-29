@@ -23,7 +23,7 @@
       },
       {
         "type": "Teleporter",
-        "count": 0
+        "count": 5
       },
       {
         "type": "StopTrap",
