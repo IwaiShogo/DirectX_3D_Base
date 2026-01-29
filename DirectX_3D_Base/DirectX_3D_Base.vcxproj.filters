@@ -149,7 +149,7 @@
       <Filter>Source Files\ECS\Systems\Gimmick</Filter>
     </ClCompile>
     <ClCompile Include="Source\ECS\ECSInitializer.cpp">
-      <Filter>Source Files\ECS\Systems\UI</Filter>
+      <Filter>Source Files\ECS</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
