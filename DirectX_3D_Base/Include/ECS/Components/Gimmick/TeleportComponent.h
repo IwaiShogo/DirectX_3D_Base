@@ -1,5 +1,5 @@
 //作成:2026.1.04
-//福留宏明
+//福留広明
 
 #ifndef ___TELEPORT_COMPONENT_H___
 #define ___TELEPORT_COMPONENT_H___
@@ -13,8 +13,8 @@
  */
 enum class TeleportState {
     Idle,       // 待機中
-    FadingOut,  // 暗転中(テレポート前)
-    FadingIn    // 明転中(テレポート後)
+    FadingOut,  // 暗転中（テレポート前）
+    FadingIn    // 明転中（テレポート後）
 };
 
 /**
@@ -27,14 +27,8 @@ struct TeleportComponent {
     static constexpr float COOLDOWN_MAX = 3000.0f;         // 秒
 
     TeleportState state = TeleportState::Idle;
-    float currentAlpha = 0.0f;              // 現在の不透明度 (0.0~1.0)
+    float currentAlpha = 0.0f;              // 現在の不透明度 (0.0～1.0)
     static constexpr float FADE_SPEED = 4.0f; // 0.5秒で暗転 (1.0 / 0.5)
-
-    // --- ワープアニメーション用 ---
-    float warpAnimTimer = 0.0f;  // ワープアニメの経時
-    float warpYOffset = 0.0f;    // Y方向オフセット
-    static constexpr float WARP_ANIM_DURATION = 0.3f; // ワープアニメの合計時間(秒)
-    static constexpr float WARP_HEIGHT = 3.0f;        // ワープ時の移動距離
 
 };
 

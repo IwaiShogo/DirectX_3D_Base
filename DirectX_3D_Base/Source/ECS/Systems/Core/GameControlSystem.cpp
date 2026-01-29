@@ -87,6 +87,10 @@ void GameControlSystem::PlayStopableSE(const std::string& assetID, float volume)
     m_coordinator->GetComponent<SoundComponent>(entity).RequestPlay(volume, 0);
 }
 
+// 定数定義などの下、またはUpdate関数の直前あたりに静的変数を定義
+static GameMode s_prevMode = GameMode::SCOUTING_MODE; // 前フレームのモード
+static float s_modeSwitchCooldown = 0.0f;             // 切り替え防止タイマー
+
 // ==================================================================================
 //  Update メインループ
 // ==================================================================================
@@ -96,6 +100,16 @@ void GameControlSystem::Update(float deltaTime)
     if (controllerID == INVALID_ENTITY_ID) return;
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+
+    if (s_modeSwitchCooldown > 0.0f) {
+        s_modeSwitchCooldown -= deltaTime;
+    }
+
+    // 外部（PlayerControlSystemなど）でモードが変更された場合を検知してクールダウンを設定
+    if (state.currentMode != s_prevMode) {
+        s_modeSwitchCooldown = 0.5f; // 0.5秒間は再切り替えを禁止
+        s_prevMode = state.currentMode;
+    }
 
     if (IsKeyTrigger(VK_ESCAPE) || IsButtonTriggered(BUTTON_START)) {
         TogglePauseRequest();
@@ -137,7 +151,7 @@ void GameControlSystem::Update(float deltaTime)
         CheckDoorUnlock(controllerID);
         UpdateDecorations(deltaTime);
         UpdateLights();
-        UpdateTeleportEffects(deltaTime, controllerID); // ★追加: テレポートエフェクト更新
+        UpdateTeleportEffects(controllerID); // ★追加: テレポートエフェクト更新
 
         // 警備員の足音制御
         UpdateGuardFootsteps(deltaTime);
@@ -1104,16 +1118,50 @@ void GameControlSystem::UpdateTimerAndRules(float deltaTime, ECS::EntityID contr
 #endif
 }
 
-void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID) {
-    bool pressedSpace = IsKeyTrigger(VK_SPACE); bool pressedA = IsButtonTriggered(BUTTON_A);
+void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID)
+{
+    if (s_modeSwitchCooldown > 0.0f) return;
+
+    bool pressedSpace = IsKeyTrigger(VK_SPACE);
+    bool pressedA = IsButtonTriggered(BUTTON_A);
+
+    // キー入力がなければ何もしない
     if (!(pressedSpace || pressedA)) return;
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+    // --- 1. スカウトモード（トップビュー）の場合 ---
     if (state.currentMode == GameMode::SCOUTING_MODE) {
-        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f); // 音量調整
+
+        // ★修正: 既にゲームが始まっている（トップビュー使用済み）場合は、
+        // スタート演出ではなく「TPSモードへの復帰」を行う
+        if (m_hasUsedTopView)
+        {
+            // モードをアクションに戻す
+            state.currentMode = GameMode::ACTION_MODE;
+
+            // 見た目の切り替え（黄色い箱 → モデル）
+            ApplyModeVisuals(controllerID);
+
+            // カメラの角度をTPS視点に戻す
+            // これをしないと真下を向いたままになる可能性がある
+            auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>();
+            if (camSys) {
+                camSys->m_currentPitch = 0.2f; // 水平より少し見下ろす程度にリセット
+                // Yaw（横回転）はそのまま維持
+            }
+
+            // キャンセル音などを鳴らす（任意）
+            ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_BACK", 0.5f);
+
+            return;
+        }
+
+        // ゲーム未開始時のみ、スタート演出を開始
+        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f);
         StartMosaicSequence(controllerID);
     }
-    else if (state.currentMode == GameMode::ACTION_MODE) {
+    else if (state.currentMode == GameMode::ACTION_MODE)
+    {
 #ifndef _DEBUG
         if (m_hasUsedTopView) return;
 #endif
@@ -1546,6 +1594,9 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
     }
     if (state.currentMode == GameMode::SCOUTING_MODE && state.sequenceTimer > 2.0f) {
         state.currentMode = GameMode::ACTION_MODE;
+
+        m_hasUsedTopView = true;
+
         if (m_blackBackID != INVALID_ENTITY_ID) m_coordinator->GetComponent<UIImageComponent>(m_blackBackID).color.w = 1.0f;
 
         // 音関連
@@ -1650,7 +1701,8 @@ void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID) {
         else if (m_coordinator->HasComponent<TagComponent>(entity)) {
             const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
             if (tag == "guard") { actionType = MESH_MODEL; scoutType = MESH_NONE; }
-            else if (tag == "taser" || tag == "map_gimmick") { actionType = MESH_NONE; scoutType = MESH_NONE; }
+            else if (tag == "taser") { actionType = MESH_NONE; scoutType = MESH_NONE; }
+            else if (tag == "TopViewTrigger") { actionType = MESH_MODEL; scoutType = MESH_BOX; }
             else if (tag == "ground" || tag == "wall") { actionType = MESH_MODEL; scoutType = MESH_BOX; }
             else if (tag == "door") { actionType = MESH_MODEL; scoutType = MESH_MODEL; }
             else if (tag == "propeller" || tag == "security_camera" || tag == "painting") {
@@ -1665,17 +1717,8 @@ void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID) {
 // ==================================================================================
 // テレポートエフェクトの更新
 // ==================================================================================
-// GameControlSystem.cpp
-
-// GameControlSystem.cpp
-
-void GameControlSystem::UpdateTeleportEffects(float deltaTime, ECS::EntityID controllerID)
+void GameControlSystem::UpdateTeleportEffects(ECS::EntityID controllerID)
 {
-    // EFK_TELEPORT の中で「輪っか」等が一回しか発生しない構成だと、loop=true でも
-    // “常時輪っかが出ている”見た目にならないことがある。
-    // その場合でも一定間隔で EFK_TELEPORT を再トリガーして継続表示にする。
-    constexpr float kTeleportFxRestartSec = 1.0f; // 必要なら調整
-
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
@@ -1695,28 +1738,16 @@ void GameControlSystem::UpdateTeleportEffects(float deltaTime, ECS::EntityID con
             XMLoadFloat3(&playerTrans.position) - XMLoadFloat3(&teleTrans.position)
         ));
 
-        // プレイヤーがテレポートを踏んだ場合
         if (distSq < 9.0f) {
             if (m_teleportEffectMap.count(entity)) {
-                const auto& fx = m_teleportEffectMap[entity];
-
-                if (fx.glow != INVALID_ENTITY_ID) {
-                    if (m_coordinator->HasComponent<EffectComponent>(fx.glow)) {
-                        m_coordinator->DestroyEntity(fx.glow);
-                    }
+                EntityID effectID = m_teleportEffectMap[entity];
+                if (m_coordinator->HasComponent<EffectComponent>(effectID)) {
+                    m_coordinator->DestroyEntity(effectID);
                 }
-                if (fx.teleport != INVALID_ENTITY_ID) {
-                    if (m_coordinator->HasComponent<EffectComponent>(fx.teleport)) {
-                        m_coordinator->DestroyEntity(fx.teleport);
-                    }
-                }
-
                 m_teleportEffectMap.erase(entity);
-                m_teleportFxRestartTimer.erase(entity);
             }
             m_usedTeleporters.insert(entity);
         }
-        // まだ使用されていないテレポート
         else if (shouldShowEffects && !m_usedTeleporters.count(entity)) {
             if (!m_teleportEffectMap.count(entity)) {
                 // ★トップビューで記録した色を取得
@@ -1725,147 +1756,41 @@ void GameControlSystem::UpdateTeleportEffects(float deltaTime, ECS::EntityID con
                     effectColor = m_teleportColorMap[entity];
                 }
 
-                // エフェクトを生成（loop=trueで継続再生）
-                // ★修正: RenderComponent(MESH_NONE, effectColor) を追加して色情報を持たせる
-                EntityID glowID = m_coordinator->CreateEntity(
+                // エフェクトを生成
+                EntityID effectID = m_coordinator->CreateEntity(
                     TransformComponent(
                         teleTrans.position,
                         XMFLOAT3(0.0f, 0.0f, 0.0f),
                         XMFLOAT3(1.0f, 1.0f, 1.0f)
                     ),
                     EffectComponent(
-                        "EFK_TREASURE_GLOW",
-                        true,
-                        true,
-                        XMFLOAT3(0.0f, 0.0f, 0.0f),
-                        0.3f
-                    ),
-                    RenderComponent(MESH_NONE, effectColor) // ★ここを追加！
+                        "EFK_EYESLIGHT",
+                        0.0f,
+                        true
+                    )
                 );
-                if (m_coordinator->HasComponent<EffectComponent>(glowID)) {
-                    auto& ec = m_coordinator->GetComponent<EffectComponent>(glowID);
-                    ec.useColor = true;
-                    ec.color = effectColor;
-                }
-
-                EntityID teleportFxID = m_coordinator->CreateEntity(
-                    TransformComponent(
-                        teleTrans.position,
-                        XMFLOAT3(0.0f, 0.0f, 0.0f),
-                        XMFLOAT3(1.0f, 1.0f, 1.0f)
-                    ),
-                    EffectComponent(
-                        "EFK_TELEPORT",
-                        true,
-                        true,
-                        XMFLOAT3(0.0f, 0.0f, 0.0f),
-                        0.1f
-                    ),
-                    RenderComponent(MESH_NONE, effectColor) // ★ここを追加！
-                );
-                if (m_coordinator->HasComponent<EffectComponent>(teleportFxID)) {
-                    auto& ec = m_coordinator->GetComponent<EffectComponent>(teleportFxID);
-                    ec.useColor = true;
-                    ec.color = effectColor;
-                }
 
                 // マップに登録
-                TeleporterEffectSet fx{};
-                fx.glow = glowID;
-                fx.teleport = teleportFxID;
-                m_teleportEffectMap[entity] = fx;
+                m_teleportEffectMap[entity] = effectID;
 
-                // 再トリガー用タイマー初期化
-                m_teleportFxRestartTimer[entity] = 0.0f;
-            }
-            else {
-                // 既に存在する場合
-                auto& fx = m_teleportEffectMap[entity];
-
-                // ---------------------------------------------------------
-                // 毎フレーム強制的に色を適用する
-                // ---------------------------------------------------------
-                XMFLOAT4 effectColor = XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f);
-                if (m_teleportColorMap.count(entity)) {
-                    effectColor = m_teleportColorMap[entity];
+                // ★対応方法1: RenderComponentで色を制御
+                if (m_coordinator->HasComponent<RenderComponent>(effectID)) {
+                    auto& render = m_coordinator->GetComponent<RenderComponent>(effectID);
+                    render.color = effectColor;
                 }
 
-                // RenderComponentがあるはずなので、ここで色が適用される
-                if (fx.glow != INVALID_ENTITY_ID && m_coordinator->HasComponent<RenderComponent>(fx.glow)) {
-                    m_coordinator->GetComponent<RenderComponent>(fx.glow).color = effectColor;
-                }
-                if (fx.teleport != INVALID_ENTITY_ID && m_coordinator->HasComponent<RenderComponent>(fx.teleport)) {
-                    m_coordinator->GetComponent<RenderComponent>(fx.teleport).color = effectColor;
-                }
-                // ---------------------------------------------------------
-
-                if (fx.glow != INVALID_ENTITY_ID && m_coordinator->HasComponent<EffectComponent>(fx.glow)) {
-                    auto& ec = m_coordinator->GetComponent<EffectComponent>(fx.glow);
-                    ec.useColor = true;
-                    ec.color = effectColor;
-                }
-                if (fx.teleport != INVALID_ENTITY_ID && m_coordinator->HasComponent<EffectComponent>(fx.teleport)) {
-                    auto& ec = m_coordinator->GetComponent<EffectComponent>(fx.teleport);
-                    ec.useColor = true;
-                    ec.color = effectColor;
-                }
-                m_teleportFxRestartTimer[entity] += deltaTime;
-
-                if (m_teleportFxRestartTimer[entity] >= kTeleportFxRestartSec) {
-                    m_teleportFxRestartTimer[entity] = 0.0f;
-
-                    // ★teleport 側だけリスタート（glow はそのまま）
-                    if (fx.teleport != INVALID_ENTITY_ID) {
-                        if (m_coordinator->HasComponent<EffectComponent>(fx.teleport)) {
-                            m_coordinator->DestroyEntity(fx.teleport);
-                        }
-                        fx.teleport = INVALID_ENTITY_ID;
-                    }
-
-                    // teleportエフェクトを同じ場所で再生成
-                    // ★ここでも RenderComponent を追加するのを忘れずに！
-                    EntityID teleportFxID = m_coordinator->CreateEntity(
-                        TransformComponent(
-                            teleTrans.position,
-                            XMFLOAT3(0.0f, 0.0f, 0.0f),
-                            XMFLOAT3(1.0f, 1.0f, 1.0f)
-                        ),
-                        EffectComponent(
-                            "EFK_TELEPORT",
-                            true,
-                            true,
-                            XMFLOAT3(0.0f, 0.0f, 0.0f),
-                            0.1f
-                        ),
-                        RenderComponent(MESH_NONE, effectColor) // ★ここを追加！
-                    );
-                    if (m_coordinator->HasComponent<EffectComponent>(teleportFxID)) {
-                        auto& ec = m_coordinator->GetComponent<EffectComponent>(teleportFxID);
-                        ec.useColor = true;
-                        ec.color = effectColor;
-                    }
-
-                    fx.teleport = teleportFxID;
+                // エフェクトを再生開始
+                if (m_coordinator->HasComponent<EffectComponent>(effectID)) {
+                    m_coordinator->GetComponent<EffectComponent>(effectID).Play();
                 }
             }
         }
-        // トップビューモードに切り替わった場合
         else if (!shouldShowEffects && m_teleportEffectMap.count(entity)) {
-            const auto& fx = m_teleportEffectMap[entity];
-
-            if (fx.glow != INVALID_ENTITY_ID) {
-                if (m_coordinator->HasComponent<EffectComponent>(fx.glow)) {
-                    m_coordinator->DestroyEntity(fx.glow);
-                }
+            EntityID effectID = m_teleportEffectMap[entity];
+            if (m_coordinator->HasComponent<EffectComponent>(effectID)) {
+                m_coordinator->DestroyEntity(effectID);
             }
-            if (fx.teleport != INVALID_ENTITY_ID) {
-                if (m_coordinator->HasComponent<EffectComponent>(fx.teleport)) {
-                    m_coordinator->DestroyEntity(fx.teleport);
-                }
-            }
-
             m_teleportEffectMap.erase(entity);
-            m_teleportFxRestartTimer.erase(entity);
         }
     }
 }
