@@ -2,8 +2,8 @@
   "ST_001": {
     "name": "Stage 1",
     "image": "UI_ST_001",
-    "gridSizeX": 10,
-    "gridSizeY": 10,
+    "gridSizeX": 11,
+    "gridSizeY": 11,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
@@ -23,7 +23,7 @@
       },
       {
         "type": "Teleporter",
-        "count": 5
+        "count": 0
       },
       {
         "type": "StopTrap",
@@ -39,8 +39,8 @@
   "ST_002": {
     "name": "Stage 2",
     "image": "UI_ST_002",
-    "gridSizeX": 12,
-    "gridSizeY": 12,
+    "gridSizeX": 13,
+    "gridSizeY": 13,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
@@ -58,8 +58,8 @@
   "ST_003": {
     "name": "Stage 3",
     "image": "UI_ST_003",
-    "gridSizeX": 12,
-    "gridSizeY": 12,
+    "gridSizeX": 13,
+    "gridSizeY": 13,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
@@ -83,8 +83,8 @@
   "ST_004": {
     "name": "Stage 4",
     "image": "UI_ST_004",
-    "gridSizeX": 12,
-    "gridSizeY": 12,
+    "gridSizeX": 13,
+    "gridSizeY": 13,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
@@ -113,8 +113,8 @@
   "ST_005": {
     "name": "Stage 5",
     "image": "UI_ST_005",
-    "gridSizeX": 20,
-    "gridSizeY": 12,
+    "gridSizeX": 21,
+    "gridSizeY": 13,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
@@ -143,8 +143,8 @@
   "ST_006": {
     "name": "Stage 6",
     "image": "UI_ST_006",
-    "gridSizeX": 20,
-    "gridSizeY": 12,
+    "gridSizeX": 21,
+    "gridSizeY": 13,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
@@ -177,7 +177,7 @@
   "ST_007": {
     "name": "Stage 7",
     "image": "UI_ST_001",
-    "gridSizeX": 20,
+    "gridSizeX": 21,
     "gridSizeY": 15,
     "tileSize": 5.0,
     "wallHeight": 20.0,
@@ -215,7 +215,7 @@
   "ST_008": {
     "name": "Stage 8",
     "image": "UI_ST_002",
-    "gridSizeX": 20,
+    "gridSizeX": 21,
     "gridSizeY": 15,
     "tileSize": 5.0,
     "wallHeight": 20.0,
@@ -370,7 +370,7 @@
   "ST_012": {
     "name": "Stage 12",
     "image": "UI_ST_006",
-    "gridSizeX": 30,
+    "gridSizeX": 31,
     "gridSizeY": 15,
     "tileSize": 5.0,
     "wallHeight": 20.0,
@@ -409,7 +409,7 @@
   "ST_013": {
     "name": "Stage 13",
     "image": "UI_ST_001",
-    "gridSizeX": 30,
+    "gridSizeX": 31,
     "gridSizeY": 15,
     "tileSize": 4.0,
     "wallHeight": 20.0,
@@ -447,7 +447,7 @@
   "ST_014": {
     "name": "Stage 14",
     "image": "UI_ST_002",
-    "gridSizeX": 30,
+    "gridSizeX": 31,
     "gridSizeY": 15,
     "tileSize": 4.0,
     "wallHeight": 20.0,
@@ -486,8 +486,8 @@
   "ST_015": {
     "name": "Stage 15",
     "image": "UI_ST_003",
-    "gridSizeX": 30,
-    "gridSizeY": 20,
+    "gridSizeX": 31,
+    "gridSizeY": 21,
     "tileSize": 4.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
@@ -525,8 +525,8 @@
   "ST_016": {
     "name": "Stage 16",
     "image": "UI_ST_004",
-    "gridSizeX": 30,
-    "gridSizeY": 20,
+    "gridSizeX": 31,
+    "gridSizeY": 21,
     "tileSize": 4.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
@@ -564,8 +564,8 @@
   "ST_017": {
     "name": "Stage 17",
     "image": "UI_ST_005",
-    "gridSizeX": 30,
-    "gridSizeY": 20,
+    "gridSizeX": 31,
+    "gridSizeY": 21,
     "tileSize": 4.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
@@ -604,8 +604,8 @@
   "ST_018": {
     "name": "Stage 18",
     "image": "UI_ST_006",
-    "gridSizeX": 30,
-    "gridSizeY": 20,
+    "gridSizeX": 31,
+    "gridSizeY": 21,
     "tileSize": 4.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
@@ -644,7 +644,7 @@
   "ST_999": {
     "name": "Stage 999",
     "image": "UI_ST_999",
-    "gridSizeX": 40,
+    "gridSizeX": 41,
     "gridSizeY": 25,
     "tileSize": 5.0,
     "wallHeight": 20.0,
