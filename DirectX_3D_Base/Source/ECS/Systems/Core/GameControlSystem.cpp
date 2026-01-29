@@ -1691,30 +1691,69 @@ void GameControlSystem::UpdateTeleportEffects(float deltaTime, ECS::EntityID con
         if (!m_coordinator->HasComponent<TransformComponent>(entity)) continue;
         auto& teleTrans = m_coordinator->GetComponent<TransformComponent>(entity);
 
-        float distSq = XMVectorGetX(XMVector3LengthSq(
-            XMLoadFloat3(&playerTrans.position) - XMLoadFloat3(&teleTrans.position)
-        ));
+        // ★修正: テレポートが実際に発動した時のみエフェクトを消すように変更
+        // TeleportComponentの状態を確認
+        bool isTeleporting = false;
+        if (m_coordinator->HasComponent<TeleportComponent>(entity)) {
+            auto& tp = m_coordinator->GetComponent<TeleportComponent>(entity);
+            // FadingOut状態になったらテレポートが発動したと判断
+            isTeleporting = (tp.state == TeleportState::FadingOut);
+        }
 
-        // プレイヤーがテレポートを踏んだ場合
-        if (distSq < 9.0f) {
+        // プレイヤーがテレポートを実際に使用した場合のみエフェクトを削除
+        if (isTeleporting) {
+            // このテレポートのエフェクトを削除（わっかは残す）
             if (m_teleportEffectMap.count(entity)) {
                 const auto& fx = m_teleportEffectMap[entity];
 
+                // ★修正: glowだけ削除、teleport（わっか）は残す
                 if (fx.glow != INVALID_ENTITY_ID) {
                     if (m_coordinator->HasComponent<EffectComponent>(fx.glow)) {
                         m_coordinator->DestroyEntity(fx.glow);
                     }
                 }
+                // teleport（わっか）は削除しない
+                /*
                 if (fx.teleport != INVALID_ENTITY_ID) {
                     if (m_coordinator->HasComponent<EffectComponent>(fx.teleport)) {
                         m_coordinator->DestroyEntity(fx.teleport);
                     }
                 }
+                */
 
                 m_teleportEffectMap.erase(entity);
                 m_teleportFxRestartTimer.erase(entity);
             }
             m_usedTeleporters.insert(entity);
+
+            // ★追加: 連携先のテレポートのエフェクトも削除（わっかは残す）
+            if (m_coordinator->HasComponent<TeleportComponent>(entity)) {
+                auto& tp = m_coordinator->GetComponent<TeleportComponent>(entity);
+                EntityID targetEntity = tp.targetEntity;
+
+                if (targetEntity != INVALID_ENTITY_ID && m_teleportEffectMap.count(targetEntity)) {
+                    const auto& targetFx = m_teleportEffectMap[targetEntity];
+
+                    // ★修正: glowだけ削除、teleport（わっか）は残す
+                    if (targetFx.glow != INVALID_ENTITY_ID) {
+                        if (m_coordinator->HasComponent<EffectComponent>(targetFx.glow)) {
+                            m_coordinator->DestroyEntity(targetFx.glow);
+                        }
+                    }
+                    // teleport（わっか）は削除しない
+                    /*
+                    if (targetFx.teleport != INVALID_ENTITY_ID) {
+                        if (m_coordinator->HasComponent<EffectComponent>(targetFx.teleport)) {
+                            m_coordinator->DestroyEntity(targetFx.teleport);
+                        }
+                    }
+                    */
+
+                    m_teleportEffectMap.erase(targetEntity);
+                    m_teleportFxRestartTimer.erase(targetEntity);
+                    m_usedTeleporters.insert(targetEntity);
+                }
+            }
         }
         // まだ使用されていないテレポート
         else if (shouldShowEffects && !m_usedTeleporters.count(entity)) {
