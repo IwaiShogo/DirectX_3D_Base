@@ -2,6 +2,7 @@
 #include "ECS/Systems/Core/OpeningControlSystem.h"
 
 #include <ECS/ECSInitializer.h>
+#include "ECS/EntityFactory.h"
 #include <ECS/Systems/UI/UIRenderSystem.h>
 
 using namespace ECS;
@@ -17,6 +18,12 @@ void OpeningScene::Init()
 
         system->StartOpening();
     }
+    // BGMçƒê∂
+    ECS::EntityID m_gameoverBGM = ECS::EntityFactory::CreateLoopSoundEntity(
+        m_coordinator.get(),
+        "BGM_OPENING",
+        0.5f
+    );
 }
 
 void OpeningScene::Uninit()

@@ -599,8 +599,8 @@ void ResultScene::Init()
         // BGM再生
         ECS::EntityID m_gameoverBGM = ECS::EntityFactory::CreateLoopSoundEntity(
             m_coordinator.get(),
-            "BGM_TEST",
-            0.5f
+            "BGM_GAMEOVER",
+            0.8f
         );
     }
 

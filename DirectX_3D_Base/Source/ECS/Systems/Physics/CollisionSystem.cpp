@@ -35,6 +35,7 @@ namespace MathHelper
 	}
 }
 
+
 /**
  * @brief AABB間の衝突検出と最小移動ベクトル(MTV)を計算する。
  * @param entityA, entityB - 衝突チェック対象のEntityID
@@ -300,26 +301,47 @@ void CollisionSystem::Update(float deltaTime)
 				return;
 			}
 
-			// 2. ITEM COLLECTION TRIGGER (Player vs Collectable)
-			if (tagB.tag == "goal")
-			{
-				ItemTrackerComponent& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(controllerID);
-
-				if (tracker.totalItems > 0 && tracker.collectedItems == tracker.totalItems)
-				{
-					ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST4");
-
-					state.isGameClear = true;
-				}
-			}
 			if (tagB.tag == "taser")
 			{
-				ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST6");
-				
-				state.isGameOver = true;
-				
+				// GameStateの取得と状態チェック
+				auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+
+				// 既にトラップ中なら処理をスキップ
+				if (state.isPlayerTrapped)
+					continue;
+				// 1. GameStateにトラップ状態を設定
+				state.isPlayerTrapped = true;
+				state.playerTrappedTimer = 5.0f; // トラップ継続時間（適宜調整）
+				// 2. プレイヤーの速度を止める
+				if (m_coordinator->HasComponent<RigidBodyComponent>(playerID))
+				{
+					auto& rb = m_coordinator->GetComponent<RigidBodyComponent>(playerID);
+					rb.velocity.x = 0.0f;
+					rb.velocity.z = 0.0f;
+				}
+				// 3. プレイヤーのアニメーション再生
+				if (m_coordinator->HasComponent<AnimationComponent>(playerID))
+				{
+					auto& anim = m_coordinator->GetComponent<AnimationComponent>(playerID);
+					anim.Play("A_PLAYER_CAUGHT", false);
+				}
+				// 4. エフェクト再生（プレイヤーの位置でループ再生）
+				auto& playerTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
+				DirectX::XMFLOAT3 effectPos = playerTrans.position;
+
+				//  ループエフェクトとして再生
+				ECS::EntityID effectEntity = m_coordinator->CreateEntity(
+					TransformComponent(effectPos, { 0,0,0 }, { 1.0f, 1.0f, 1.0f }),
+					EffectComponent("EFK_TASER", true)
+				);
+
+				// 5. SE再生（1回のみ）
+				ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TASER", 0.8f);
+
 				return;
+
 			}
+
 		}
 	}
 
