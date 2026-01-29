@@ -23,6 +23,7 @@
 #include <ECS/Systems/Rendering/EffectSystem.h>
 #include <ECS/Systems/Core/ResultControlSystem.h>
 
+
 #include <ECS/Components/Rendering/EffectComponent.h>
 
 #include <DirectXMath.h>
@@ -163,9 +164,12 @@ ItemTextureSet GetItemTextures(const std::string& itemID)
 
 void ResultScene::Init()
 {
+
     // --- 1. ECS 初期化 & カメラ ---
     m_coordinator = std::make_shared<ECS::Coordinator>();
     ECS::ECSInitializer::InitECS(m_coordinator);
+
+    PlayerControlSystem::ResetFadeState();//テーザーでゲームオーバーになったときフェード初期化
 
     // エフェクトシステムに対して「UI用カメラ設定」を適用::織田
     if (auto effectSystem = ECS::ECSInitializer::GetSystem<EffectSystem>())
@@ -174,6 +178,8 @@ void ResultScene::Init()
         // 奥行きやスケールが正しく反映されません。
         effectSystem->ClearOverrideCamera();
     }
+
+
 
     EntityFactory::CreateBasicCamera(m_coordinator.get(), { 0,0,0 });
 
