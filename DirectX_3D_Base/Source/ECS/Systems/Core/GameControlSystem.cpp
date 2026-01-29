@@ -97,7 +97,7 @@ void GameControlSystem::Update(float deltaTime)
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
-    if (IsKeyTrigger(VK_ESCAPE) || IsButtonTriggered(BUTTON_START)) {
+    if ((IsKeyTrigger(VK_ESCAPE) || IsButtonTriggered(BUTTON_START)) && state.currentMode != GameMode::SCOUTING_MODE) {
         TogglePauseRequest();
     }
 
