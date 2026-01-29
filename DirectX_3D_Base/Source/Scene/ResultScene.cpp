@@ -633,7 +633,12 @@ void ResultScene::Init()
         //    }
         //}
 
-        
+        // BGM再生
+        ECS::EntityID m_gameoverBGM = ECS::EntityFactory::CreateLoopSoundEntity(
+            m_coordinator.get(),
+            "BGM_GAMEOVER",
+            0.8f
+        );
     }
 
     // 下部ボタン

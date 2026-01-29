@@ -394,8 +394,8 @@ void OpeningControlSystem::Update(float deltaTime)
         {
             ECS::EntityFactory::CreateOneShotSoundEntity(
                 m_coordinator,
-                "SE_CLEAR",  // SE_DECIDE
-                0.8f         //   
+                "SE_DECISION",  // SE_DECIDE
+                1.0f         //   
             );
             CreateFadeEntity(0.0f);
             s_fadeState = FadeState::FadeOut;
@@ -407,7 +407,7 @@ void OpeningControlSystem::Update(float deltaTime)
             {
                 ECS::EntityFactory::CreateOneShotSoundEntity(
                     m_coordinator,
-                    "SE_CLEAR",  // SE_BACK
+                    "SE_BACK",  // SE_BACK
                     0.8f         //     
                 );
                 s_moveBackward = true;

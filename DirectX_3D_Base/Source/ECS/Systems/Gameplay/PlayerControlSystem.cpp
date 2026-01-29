@@ -35,11 +35,14 @@
 
 using namespace DirectX;
 
+
 /**
  * @brief 入力に応じてRigidBodyの速度を更新する
  */
 void PlayerControlSystem::Update(float deltaTime)
 {
+	
+
 	if (m_coordinator)
 	{
 		ECS::EntityID stateID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
@@ -47,6 +50,32 @@ void PlayerControlSystem::Update(float deltaTime)
 		{
 			if (m_coordinator->GetComponent<GameStateComponent>(stateID).isPaused) return;
 		}
+	}
+
+	// プレイヤーがトラップ中の場合
+	ECS::EntityID controllerID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
+	if (controllerID == ECS::INVALID_ENTITY_ID) return;
+	GameStateComponent& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+	if (state.isPlayerTrapped)
+	{
+		// トラップタイマーを減らす
+		state.playerTrappedTimer -= deltaTime;
+
+		// トラップ中はプレイヤーを完全停止
+		for (auto const& entity : m_entities)
+		{
+			auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(entity);
+			rigidBody.velocity.x = 0.0f;
+			rigidBody.velocity.z = 0.0f;
+		}
+
+		if (state.playerTrappedTimer <= 0.0f)
+		{
+			state.isGameOver = true;
+		}
+
+		// 移動・アニメーション処理をスキップ
+		return;
 	}
 
 	// CameraControlSystemはECSInitializerによって登録されている前提

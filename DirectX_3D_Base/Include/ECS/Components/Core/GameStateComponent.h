@@ -41,6 +41,7 @@ enum class GameSequenceState
 	Playing,	// 通常プレイ
 	Exiting,	// 脱出演出
 	Caught,		// 捕まった
+	Taser
 };
 /**
  * @struct GameStateComponent
@@ -62,11 +63,15 @@ struct GameStateComponent
 	bool isGameOver = false;		// 警備員に追いつかれた
 	bool isGameClear = false;		// アイテム全回収後に脱出地点に到達
 	bool requestRestart = false;	// 次のフレームでリトライを要求
+	bool isPlayerTrapped = false;
+	float playerTrappedTimer = 0.0f;
+
+
 	bool requestNextStage = false;	// 次のフレームで次のステージへ遷移を要求
 	bool wasSpotted = false;		// 警備員に見つかったか
-
 	bool isPaused = false;
 	ECS::EntityID startLogoID = ECS::INVALID_ENTITY_ID;
+	ECS::EntityID taserEffectEntity = 0;
 
 	GameSequenceState sequenceState = GameSequenceState::None;
 	float sequenceTimer = 0.0f;
