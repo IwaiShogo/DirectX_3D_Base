@@ -37,7 +37,7 @@ static const int SCREEN_WIDTH	= 1280;
 static const int SCREEN_HEIGHT	= 720;
 
 // @brief	タイトル
-static const char* APP_TITLE = "DirectX 3D Game + ECS";
+static const char* APP_TITLE = "記憶のカイトウ";
 
 // @brief	グリッドサイズ（デバッグ用）
 static const int	DEBUG_GRID_NUM = 10;				// グリッド中心から端までの線の本数

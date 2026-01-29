@@ -26,6 +26,15 @@ using namespace DirectX;
 
 void EnemySpawnSystem::Update(float deltaTime)
 {
+    if (m_coordinator)
+    {
+        ECS::EntityID stateID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
+        if (stateID != ECS::INVALID_ENTITY_ID)
+        {
+            if (m_coordinator->GetComponent<GameStateComponent>(stateID).isPaused) return;
+        }
+    }
+
     // TPSモード＆プレイ中チェック (これが重要！)
     ECS::EntityID controllerID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
     if (controllerID != ECS::INVALID_ENTITY_ID)
