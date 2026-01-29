@@ -35,6 +35,8 @@ struct EffectComponent
 	bool isLooping = false;         // ループするか
 	DirectX::XMFLOAT3 offset = { 0,0,0 };
 	float scale = 1.0f;
+	bool useColor = false;
+	DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	// 制御フラグ
 	bool requestPlay = false;
@@ -65,3 +67,4 @@ struct EffectComponent
 REGISTER_COMPONENT_TYPE(EffectComponent)
 
 #endif // !___EFFECT_COMPONENT_H___
+
