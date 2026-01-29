@@ -67,4 +67,3 @@ struct EffectComponent
 REGISTER_COMPONENT_TYPE(EffectComponent)
 
 #endif // !___EFFECT_COMPONENT_H___
-
