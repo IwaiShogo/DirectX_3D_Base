@@ -22,8 +22,19 @@
 #include "Systems/AssetManager.h"
 #include "Systems/DirectX/DirectX.h"
 #include "Main.h"
+#include <cstdint>
 
-	using namespace DirectX;
+using namespace DirectX;
+
+static Effekseer::Color ToEffekseerColor(const DirectX::XMFLOAT4& color)
+{
+	auto toByte = [](float value) -> uint8_t {
+		if (value < 0.0f) value = 0.0f;
+		if (value > 1.0f) value = 1.0f;
+		return static_cast<uint8_t>(value * 255.0f);
+		};
+	return Effekseer::Color(toByte(color.x), toByte(color.y), toByte(color.z), toByte(color.w));
+}
 
 void EffectSystem::Init(ECS::Coordinator* coordinator)
 {
@@ -252,6 +263,11 @@ void EffectSystem::Update(float deltaTime)
 				transform.scale.y * effectComp.scale,
 				transform.scale.z * effectComp.scale
 			);
+
+			if (effectComp.useColor)
+			{
+				m_manager->SetAllColor(effectComp.handle, ToEffekseerColor(effectComp.color));
+			}
 		}
 		else
 		{

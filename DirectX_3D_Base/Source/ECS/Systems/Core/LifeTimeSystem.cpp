@@ -18,6 +18,10 @@
  *********************************************************************/
 
 #include "ECS/Systems/Core/LifeTimeSystem.h"
+#include "ECS/Components/Rendering/EffectComponent.h"
+#include "ECS/Systems/Rendering/EffectSystem.h"
+#include "ECS/ECSInitializer.h"
+
 
 void LifeTimeSystem::Update(float deltaTime)
 {
@@ -36,9 +40,18 @@ void LifeTimeSystem::Update(float deltaTime)
         }
     }
 
+    auto effectSystem = ECS::ECSInitializer::GetSystem<EffectSystem>();
+
     // 寿命が尽きたエンティティを一括削除
     for (auto const& entity : entitiesToDestroy)
     {
+        if (m_coordinator->HasComponent<EffectComponent>(entity))
+        {
+            if (effectSystem)
+            {
+                effectSystem->StopEffectImmediate(entity);
+            }
+        }
         m_coordinator->DestroyEntity(entity);
     }
 }

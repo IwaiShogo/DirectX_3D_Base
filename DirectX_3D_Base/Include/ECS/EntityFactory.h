@@ -47,9 +47,8 @@ namespace ECS
 		static EntityID CreateWall(Coordinator* coordinator, const DirectX::XMFLOAT3& position, const DirectX::XMFLOAT3& scale, const float rotationY);
 
 		static EntityID CreateTaser(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
-		static EntityID CreateMapGimmick(Coordinator* coordinator, const DirectX::XMFLOAT3& position);
-
-
+		
+		static EntityID CreateMapSignboard(Coordinator* coordinator, const DirectX::XMFLOAT3& position, float rotationY);
 
 		static EntityID CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume = 1.0f);
 

@@ -128,13 +128,14 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 {
 	std::string modelPath = "M_TREASURE1";
 	DirectX::XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	float rot = 0.0f;
 
 	if (itemID == "Takara_Daiya") { modelPath = "M_TREASURE1"; }
 	else if (itemID == "Takara_Crystal") { modelPath = "M_TREASURE2"; }
 	else if (itemID == "Takara_Yubiwa") { modelPath = "M_TREASURE3"; }
-	else if (itemID == "Takara_Kaiga1") { modelPath = "M_TREASURE4"; }
-	else if (itemID == "Takara_Kaiga2") { modelPath = "M_TREASURE5"; }
-	else if (itemID == "Takara_Kaiga3") { modelPath = "M_TREASURE6"; }
+	else if (itemID == "Takara_Kaiga1") { modelPath = "M_TREASURE4"; rot = 1.57f; }
+	else if (itemID == "Takara_Kaiga2") { modelPath = "M_TREASURE5"; rot = 1.57f; }
+	else if (itemID == "Takara_Kaiga3") { modelPath = "M_TREASURE6"; rot = 1.57f; }
 	else if (itemID == "Takara_Doki") { modelPath = "M_TREASURE7"; }
 	else if (itemID == "Takara_Tubo_Blue") { modelPath = "M_TREASURE8"; }
 	else if (itemID == "Takara_Tubo_Gouyoku") { modelPath = "M_TREASURE9"; }
@@ -148,7 +149,7 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 		),
 		TransformComponent(
 			/* Position	*/	position,
-			/* Rotation	*/	XMFLOAT3(0.0f, 0.0f, 0.0f),
+			/* Rotation	*/	XMFLOAT3(rot, 0.0f, 0.0f),
 			/* Scale	*/	XMFLOAT3(1.0f, 1.0f, 1.0f)
 		),
 		RenderComponent(
@@ -160,7 +161,7 @@ EntityID EntityFactory::CreateCollectable(Coordinator* coordinator, const Direct
 			/* Scale	*/	0.1f,
 			/* Flip		*/	Model::None
 		),
-		CollectableComponent(1.0f, orderIndex, itemID),
+		CollectableComponent(1.5f, orderIndex, itemID),
 		//浮遊コンポーネント
 		FloatingComponent(
 			/* Amplitude */ 0.5f,     // 上下 0.5 の範囲で揺れる
@@ -368,39 +369,48 @@ EntityID ECS::EntityFactory::CreateTaser(Coordinator* coordinator, const DirectX
 	return taser;
 }
 
-
-
-EntityID ECS::EntityFactory::CreateMapGimmick(Coordinator* coordinator, const DirectX::XMFLOAT3& position)
+/**
+ * @brief マップ確認用の看板（衝立）を生成
+ * @param position 配置座標（床の中心）
+ * @param rotationY 回転角度（壁に沿わせるため）
+ */
+EntityID ECS::EntityFactory::CreateMapSignboard(Coordinator* coordinator, const DirectX::XMFLOAT3& position, float rotationY)
 {
-	ECS::EntityID gimmick = coordinator->CreateEntity(
-		TagComponent(
-			/* Tag */    "map_gimmick"
-		),
+	// 見た目のモデル用エンティティ
+	XMFLOAT3 placePos = position;
+
+	// ★修正: Y=0.0f だと中心が床に来て埋まるため、高さ(1.5f)の半分ほど浮かせる
+	// 看板の高さが1.5f程度なら、0.75f付近を中心にすると床の上に立つ
+	placePos.y = 3.7;
+
+	return coordinator->CreateEntity(
+		TagComponent("TopViewTrigger"),
 		TransformComponent(
-			/* Position */	position,
-			/* Rotation */	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Scale */	XMFLOAT3(3.0f, 3.0f, 3.0f)
+			placePos,
+			XMFLOAT3(0.0f, rotationY, 0.0f),
+			XMFLOAT3(1.5f, 1.5f, 1.5f) // スケール
 		),
 		RenderComponent(
-			/* MeshType */	MESH_NONE,
-			/* Color */	XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f)
+			MESH_BOX,
+			XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f) // ★修正: 黄色に変更 (R=1, G=1, B=0)
+		),
+		ModelComponent(
+			"M_KANBAN",
+			0.1f,
+			Model::None
+		),
+		PointLightComponent(0.2f, 1.5f, 3.0f, 4.0f, { 0.0f, 0.5f, 0.5f }),
+		CollisionComponent(
+			XMFLOAT3(2.0f, 2.0f, 2.0f),
+			XMFLOAT3(0.0f, 1.0f, 0.0f),
+			COLLIDER_TRIGGER
 		),
 		RigidBodyComponent(
-			/* Velocity */		XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Acceleration */	XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* Mass */			0.0f,
-			/* Friction */		0.5f,
-			/* Restitution */	0.1f
-		),
-		CollisionComponent(
-			/* Size */			XMFLOAT3(2.5f, 2.5f, 2.5f),
-			/* Offset */		XMFLOAT3(0.0f, 0.0f, 0.0f),
-			/* ColliderType */	COLLIDER_STATIC
+			XMFLOAT3(0, 0, 0), XMFLOAT3(0, 0, 0), 0.0f, 0.5f, 0.0f
 		)
 	);
-
-	return gimmick;
 }
+
 EntityID ECS::EntityFactory::CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume)
 {
 	EntityID entity = coordinator->CreateEntity(

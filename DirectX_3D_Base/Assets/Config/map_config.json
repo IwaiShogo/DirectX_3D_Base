@@ -2,13 +2,13 @@
   "ST_001": {
     "name": "Stage 1",
     "image": "UI_ST_001",
-    "gridSizeX": 15,
-    "gridSizeY": 15,
+    "gridSizeX": 11,
+    "gridSizeY": 11,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
     "maxRoomSize": 3,
-    "maxRoomCount": 4,
+    "maxRoomCount": 1,
     "timeLimitStar": 180.0,
     "minPathPercentage": 0.5,
     "useOrderedCollection": false,
@@ -16,23 +16,40 @@
       "Takara_Yubiwa"
     ],
     "guardCount": 1,
-    "gimmicks": []
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 0
+      },
+      {
+        "type": "Teleporter",
+        "count": 0
+      },
+      {
+        "type": "StopTrap",
+        "count": 0,
+        "duration": 3.0
+      },
+      {
+        "type": "Signboard",
+        "count": 0
+      }
+    ]
   },
   "ST_002": {
     "name": "Stage 2",
     "image": "UI_ST_002",
-    "gridSizeX": 15,
-    "gridSizeY": 15,
+    "gridSizeX": 13,
+    "gridSizeY": 13,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
     "maxRoomSize": 3,
-    "maxRoomCount": 4,
+    "maxRoomCount": 2,
     "timeLimitStar": 180.0,
     "minPathPercentage": 0.5,
     "useOrderedCollection": true,
     "items": [
-      "Takara_Yubiwa",
       "Takara_Daiya"
     ],
     "guardCount": 0,
@@ -41,39 +58,39 @@
   "ST_003": {
     "name": "Stage 3",
     "image": "UI_ST_003",
-    "gridSizeX": 15,
-    "gridSizeY": 15,
+    "gridSizeX": 13,
+    "gridSizeY": 13,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
     "maxRoomSize": 3,
-    "maxRoomCount": 4,
+    "maxRoomCount": 2,
     "timeLimitStar": 180.0,
     "minPathPercentage": 0.5,
     "useOrderedCollection": true,
     "items": [
       "Takara_Yubiwa",
-      "Takara_Daiya"
+      "Takara_Crystal"
     ],
     "guardCount": 0,
     "gimmicks": [
       {
         "type": "Taser",
-        "count": 1
+        "count": 0
       }
     ]
   },
   "ST_004": {
     "name": "Stage 4",
     "image": "UI_ST_004",
-    "gridSizeX": 15,
-    "gridSizeY": 15,
+    "gridSizeX": 13,
+    "gridSizeY": 13,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
     "maxRoomSize": 3,
-    "maxRoomCount": 4,
-    "timeLimitStar": 60.0,
+    "maxRoomCount": 2,
+    "timeLimitStar": 180.0,
     "minPathPercentage": 0.5,
     "useOrderedCollection": true,
     "items": [
@@ -88,7 +105,7 @@
       },
       {
         "type": "StopTrap",
-        "count": 1,
+        "count": 0,
         "duration": 10.0
       }
     ]
@@ -96,19 +113,18 @@
   "ST_005": {
     "name": "Stage 5",
     "image": "UI_ST_005",
-    "gridSizeX": 15,
-    "gridSizeY": 15,
+    "gridSizeX": 21,
+    "gridSizeY": 13,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
     "maxRoomSize": 3,
-    "maxRoomCount": 4,
-    "timeLimitStar": 60.0,
+    "maxRoomCount": 3,
+    "timeLimitStar": 180.0,
     "minPathPercentage": 0.5,
     "useOrderedCollection": true,
     "items": [
       "Takara_Doki",
-      "Takara_Tubo_Blue",
       "Takara_Tubo_Gouyoku"
     ],
     "guardCount": 1,
@@ -119,7 +135,7 @@
       },
       {
         "type": "StopTrap",
-        "count": 1,
+        "count": 0,
         "duration": 10.0
       }
     ]
@@ -127,18 +143,17 @@
   "ST_006": {
     "name": "Stage 6",
     "image": "UI_ST_006",
-    "gridSizeX": 15,
-    "gridSizeY": 15,
+    "gridSizeX": 21,
+    "gridSizeY": 13,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
     "maxRoomSize": 3,
-    "maxRoomCount": 4,
-    "timeLimitStar": 60.0,
+    "maxRoomCount": 3,
+    "timeLimitStar": 180.0,
     "minPathPercentage": 0.5,
     "useOrderedCollection": true,
     "items": [
-      "Takara_Doki",
       "Takara_Tubo_Blue",
       "Takara_Tubo_Gouyoku"
     ],
@@ -154,16 +169,483 @@
       },
       {
         "type": "StopTrap",
-        "count": 1,
+        "count": 0,
         "duration": 10.0
+      }
+    ]
+  },
+  "ST_007": {
+    "name": "Stage 7",
+    "image": "UI_ST_001",
+    "gridSizeX": 21,
+    "gridSizeY": 15,
+    "tileSize": 5.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 3,
+    "timeLimitStar": 180.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": true,
+    "items": [
+      "Takara_Dinosaur",
+      "Takara_Ammonite"
+    ],
+    "guardCount": 1,
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 0
+      },
+      {
+        "type": "Teleporter",
+        "count": 0
+      },
+      {
+        "type": "StopTrap",
+        "count": 1,
+        "duration": 3.0
+      },
+      {
+        "type": "Signboard",
+        "count": 0
+      }
+    ]
+  },
+  "ST_008": {
+    "name": "Stage 8",
+    "image": "UI_ST_002",
+    "gridSizeX": 21,
+    "gridSizeY": 15,
+    "tileSize": 5.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 4,
+    "timeLimitStar": 180.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": true,
+    "items": [
+      "Takara_Dinosaur",
+      "Takara_Ammonite",
+      "Takara_Dinosaur_Foot"
+    ],
+    "guardCount": 0,
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 0
+      },
+      {
+        "type": "Teleporter",
+        "count": 0
+      },
+      {
+        "type": "StopTrap",
+        "count": 2,
+        "duration": 3.0
+      },
+      {
+        "type": "Signboard",
+        "count": 0
+      }
+    ]
+  },
+  "ST_009": {
+    "name": "Stage 9",
+    "image": "UI_ST_003",
+    "gridSizeX": 25,
+    "gridSizeY": 15,
+    "tileSize": 4.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 5,
+    "timeLimitStar": 180.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": true,
+    "items": [
+      "Takara_Dinosaur",
+      "Takara_Ammonite",
+      "Takara_Dinosaur_Foot"
+    ],
+    "guardCount": 0,
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 1
+      },
+      {
+        "type": "Teleporter",
+        "count": 0
+      },
+      {
+        "type": "StopTrap",
+        "count": 2,
+        "duration": 3.0
+      },
+      {
+        "type": "Signboard",
+        "count": 0
+      }
+    ]
+  },
+  "ST_010": {
+    "name": "Stage 10",
+    "image": "UI_ST_004",
+    "gridSizeX": 25,
+    "gridSizeY": 15,
+    "tileSize": 4.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 5,
+    "timeLimitStar": 180.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": true,
+    "items": [
+      "Takara_Kaiga1",
+      "Takara_Kaiga2"
+    ],
+    "guardCount": 1,
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 0
+      },
+      {
+        "type": "Teleporter",
+        "count": 0
+      },
+      {
+        "type": "StopTrap",
+        "count": 0,
+        "duration": 3.0
+      },
+      {
+        "type": "Signboard",
+        "count": 2
+      }
+    ]
+  },
+  "ST_011": {
+    "name": "Stage 11",
+    "image": "UI_ST_005",
+    "gridSizeX": 25,
+    "gridSizeY": 15,
+    "tileSize": 4.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 5,
+    "timeLimitStar": 180.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": true,
+    "items": [
+      "Takara_Kaiga1",
+      "Takara_Kaiga2",
+      "Takara_Kaiga3"
+    ],
+    "guardCount": 1,
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 1
+      },
+      {
+        "type": "Teleporter",
+        "count": 0
+      },
+      {
+        "type": "StopTrap",
+        "count": 0,
+        "duration": 3.0
+      },
+      {
+        "type": "Signboard",
+        "count": 2
+      }
+    ]
+  },
+  "ST_012": {
+    "name": "Stage 12",
+    "image": "UI_ST_006",
+    "gridSizeX": 31,
+    "gridSizeY": 15,
+    "tileSize": 5.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 6,
+    "timeLimitStar": 180.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": true,
+    "items": [
+      "Takara_Kaiga1",
+      "Takara_Kaiga2",
+      "Takara_Kaiga3"
+    ],
+    "guardCount": 1,
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 2
+      },
+      {
+        "type": "Teleporter",
+        "count": 0
+      },
+      {
+        "type": "StopTrap",
+        "count": 2,
+        "duration": 3.0
+      },
+      {
+        "type": "Signboard",
+        "count": 4
+      }
+    ]
+  },
+  "ST_013": {
+    "name": "Stage 13",
+    "image": "UI_ST_001",
+    "gridSizeX": 31,
+    "gridSizeY": 15,
+    "tileSize": 4.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 6,
+    "timeLimitStar": 180.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": true,
+    "items": [
+      "Takara_Daiya",
+      "Takara_Doki"
+    ],
+    "guardCount": 1,
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 1
+      },
+      {
+        "type": "Teleporter",
+        "count": 1
+      },
+      {
+        "type": "StopTrap",
+        "count": 0,
+        "duration": 3.0
+      },
+      {
+        "type": "Signboard",
+        "count": 0
+      }
+    ]
+  },
+  "ST_014": {
+    "name": "Stage 14",
+    "image": "UI_ST_002",
+    "gridSizeX": 31,
+    "gridSizeY": 15,
+    "tileSize": 4.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 6,
+    "timeLimitStar": 180.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": true,
+    "items": [
+      "Takara_Kaiga1",
+      "Takara_Tubo_Gouyoku",
+      "Takara_Dinosaur_Foot"
+    ],
+    "guardCount": 0,
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 1
+      },
+      {
+        "type": "Teleporter",
+        "count": 2
+      },
+      {
+        "type": "StopTrap",
+        "count": 0,
+        "duration": 3.0
+      },
+      {
+        "type": "Signboard",
+        "count": 0
+      }
+    ]
+  },
+  "ST_015": {
+    "name": "Stage 15",
+    "image": "UI_ST_003",
+    "gridSizeX": 31,
+    "gridSizeY": 21,
+    "tileSize": 4.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 7,
+    "timeLimitStar": 180.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": true,
+    "items": [
+      "Takara_Yubiwa",
+      "Takara_Kaiga1",
+      "Takara_Dinosaur"
+    ],
+    "guardCount": 0,
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 2
+      },
+      {
+        "type": "Teleporter",
+        "count": 2
+      },
+      {
+        "type": "StopTrap",
+        "count": 0,
+        "duration": 3.0
+      },
+      {
+        "type": "Signboard",
+        "count": 0
+      }
+    ]
+  },
+  "ST_016": {
+    "name": "Stage 16",
+    "image": "UI_ST_004",
+    "gridSizeX": 31,
+    "gridSizeY": 21,
+    "tileSize": 4.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 7,
+    "timeLimitStar": 180.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": true,
+    "items": [
+      "Takara_Crystal",
+      "Takara_Kaiga3",
+      "Takara_Ammonite"
+    ],
+    "guardCount": 1,
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 2
+      },
+      {
+        "type": "Teleporter",
+        "count": 2
+      },
+      {
+        "type": "StopTrap",
+        "count": 1,
+        "duration": 3.0
+      },
+      {
+        "type": "Signboard",
+        "count": 2
+      }
+    ]
+  },
+  "ST_017": {
+    "name": "Stage 17",
+    "image": "UI_ST_005",
+    "gridSizeX": 31,
+    "gridSizeY": 21,
+    "tileSize": 4.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 7,
+    "timeLimitStar": 180.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": true,
+    "items": [
+      "Takara_Daiya",
+      "Takara_Kaiga1",
+      "Takara_Doki",
+      "Takara_Dinosaur_Foot"
+    ],
+    "guardCount": 1,
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 2
+      },
+      {
+        "type": "Teleporter",
+        "count": 2
+      },
+      {
+        "type": "StopTrap",
+        "count": 2,
+        "duration": 3.0
+      },
+      {
+        "type": "Signboard",
+        "count": 3
+      }
+    ]
+  },
+  "ST_018": {
+    "name": "Stage 18",
+    "image": "UI_ST_006",
+    "gridSizeX": 31,
+    "gridSizeY": 21,
+    "tileSize": 4.0,
+    "wallHeight": 20.0,
+    "minRoomSize": 3,
+    "maxRoomSize": 3,
+    "maxRoomCount": 7,
+    "timeLimitStar": 180.0,
+    "minPathPercentage": 0.5,
+    "useOrderedCollection": true,
+    "items": [
+      "Takara_Yubiwa",
+      "Takara_Kaiga2",
+      "Takara_Tubo_Blue",
+      "Takara_Dinosaur"
+    ],
+    "guardCount": 1,
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 3
+      },
+      {
+        "type": "Teleporter",
+        "count": 2
+      },
+      {
+        "type": "StopTrap",
+        "count": 2,
+        "duration": 3.0
+      },
+      {
+        "type": "Signboard",
+        "count": 4
       }
     ]
   },
   "ST_999": {
     "name": "Stage 999",
     "image": "UI_ST_999",
-    "gridSizeX": 15,
-    "gridSizeY": 15,
+    "gridSizeX": 41,
+    "gridSizeY": 25,
     "tileSize": 5.0,
     "wallHeight": 20.0,
     "minRoomSize": 3,
@@ -183,10 +665,29 @@
       "Takara_Tubo_Blue",
       "Takara_Tubo_Gouyoku",
       "Takara_Dinosaur",
-      "Takara_Ammonite"
+      "Takara_Ammonite",
+      "Takara_Dinosaur_Foot"
     ],
     "guardCount": 1,
-    "gimmicks": []
+    "gimmicks": [
+      {
+        "type": "Taser",
+        "count": 10
+      },
+      {
+        "type": "Teleporter",
+        "count": 4
+      },
+      {
+        "type": "StopTrap",
+        "count": 5,
+        "duration": 3.0
+      },
+      {
+        "type": "Signboard",
+        "count": 7
+      }
+    ]
   }
 }
 
@@ -203,3 +704,18 @@
 // Takara_Dinosaur 恐竜
 // Takara_Ammonite アンモナイト
 // Takara_Dinosaur_Foot 恐竜の足跡
+
+// ギミック一覧
+// {
+//   "type": "Taser",
+//   "count": 0
+// },
+// {
+//   "type": "Teleporter",
+//   "count": 0
+// },
+// {
+//   "type": "StopTrap",
+//   "count": 0,
+//   "duration": 10.0
+// }

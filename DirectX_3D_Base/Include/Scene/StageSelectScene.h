@@ -11,7 +11,6 @@
 
 #include <DirectXMath.h>   // ★DirectX::XMFLOAT2 用
 
-
 #include <functional>
 #include <memory>
 #include <map>
@@ -19,7 +18,6 @@
 #include <string>
 #include <random>
 #include <unordered_map>
-
 
 struct StageData {
 	std::string name;
@@ -34,11 +32,17 @@ struct StageData {
 	std::vector<GimmickInfo> gimmicks;
 };
 
+// StageSelectScene.h
+
 class StageSelectScene : public Scene
 {
 private:
 	std::shared_ptr<ECS::Coordinator> m_coordinator;
 	static ECS::Coordinator* s_coordinator;
+
+	std::unordered_map<int, ECS::EntityID> m_stageCards;
+
+	ECS::EntityID m_revealingCardEntity = (ECS::EntityID)-1;
 
 public:
 	StageSelectScene() : m_coordinator(nullptr) {}
@@ -49,12 +53,40 @@ public:
 	void Update(float deltaTime) override;
 	void Draw() override;
 
-
-
-
 	static ECS::Coordinator* GetCoordinator() { return s_coordinator; }
 
 private:
+	// ステージマップのUIアセットID（CSVに登録されてる“正しい名前”に合わせる）
+	static constexpr const char* kStageMapUI[6] =
+	{
+		// TextureList.csv の AssetID に合わせる（UI_STAGE1～UI_STAGE6）
+		"UI_STAGE1",
+		"UI_STAGE2",
+		"UI_STAGE3",
+		"UI_STAGE4",
+		"UI_STAGE5",
+		"UI_STAGE6",
+	};
+
+	// ★一覧カード(3D)のモデル AssetID（CSVに登録されてる“正しい名前”に合わせる）
+	static constexpr const char* kSelectCardModel[6] =
+	{
+		"M_SELECT1",
+		"M_SELECT2",
+		"M_SELECT3",
+		"M_SELECT4",
+		"M_SELECT5",
+		"M_SELECT6",
+	};
+
+	// 一覧カードの見た目（3Dモデル）
+	std::vector<ECS::EntityID> m_listCardModelEntities;
+	// Hover拡大用：一覧カード(3D)の基準スケール
+	std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_listCardModelBaseScale;
+
+	ECS::EntityID m_lastHiddenListCardModelEntity = (ECS::EntityID)-1;
+	int m_lastHiddenListStageNo = -1;
+
 
 	// ===== UI Select FX（OK / BACK）=====
 	struct UISelectFxInstance
@@ -65,34 +97,31 @@ private:
 	std::vector<UISelectFxInstance> m_uiSelectFx;
 
 	void UpdateUISelectFx(float dt);
-	// Hover中だけボタンを少し拡大（UIButtonSystem側の演出が無い/効かない場合の保険）
 	void UpdateButtonHoverScale(float dt);
 	std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_buttonBaseScale;
 
-
-	// ===== Card Focus Animation（ボタン押下→カードが画面中央へ出てくる）=====
+	// ===== Card Focus Animation =====
 	struct CardFocusAnim
 	{
 		bool active = false;
 		ECS::EntityID entity = (ECS::EntityID)-1;
 
 		float elapsed = 0.0f;
-		float duration = 0.45f; // ここを短く/長くすると「中央へ来る速さ」が変わる
+		float duration = 0.45f;
 
 		DirectX::XMFLOAT3 startPos = { 0,0,0 };
 		DirectX::XMFLOAT3 endPos = { 0,0,0 };
 		DirectX::XMFLOAT3 startScale = { 1,1,1 };
 		DirectX::XMFLOAT3 endScale = { 1,1,1 };
 
-		DirectX::XMFLOAT3 baseRot = { 0,0,0 }; // 通常は (0, PI, 0)
-		float extraRollRad = 0.0f;             // 追加で少しだけZ回転（演出）
+		DirectX::XMFLOAT3 baseRot = { 0,0,0 };
+		float extraRollRad = 0.0f;
 	};
 	CardFocusAnim m_cardFocus;
 
 	void StartCardFocusAnim(ECS::EntityID cardEntity, const DirectX::XMFLOAT3& uiPos);
 	void UpdateCardFocusAnim(float dt);
 
-	// 毎回新規作成する「集中カード」(情報画面へ行く際の回転/拡大演出用)
 	ECS::EntityID m_focusCardEntity = (ECS::EntityID)-1;
 	void DestroyFocusCard();
 
@@ -105,130 +134,97 @@ private:
 
 	// UI
 	void SwitchState(bool toDetail);
-	// 一覧カードの「スロット中心座標」を返す（押下時の一瞬のズレ対策用）
 	DirectX::XMFLOAT3 GetListCardSlotCenterPos(int stageNo) const;
-	// ★画面(一覧↔詳細)の切替時や再入場時に、演出状態を必ず初期化する
-	// keepFocusCard=true の場合は、フォーカスカードの Destroy を呼ばない（EntityID 再利用によるアニメ状態持ち越し対策）
 	void ResetSelectToDetailAnimState(bool unlockInput = false, bool keepFocusCard = false);
 	void SetUIVisible(ECS::EntityID id, bool visible);
-	// ★UIエンティティの中心にワンショットエフェクトを出す
 	void PlayUISelectEffect(ECS::EntityID uiEntity, const std::string& effectId, float scale);
-	// START / FINISH 押下エフェクト用
+
 	ECS::EntityID m_startBtnEntity = (ECS::EntityID)-1;
 	ECS::EntityID m_finishBtnEntity = (ECS::EntityID)-1;
 
-	// UIエンティティの中心にワンショットエフェクトを出す
-// 既存のフェードを呼ぶための接続口（既にあるならそれを使う）
-// 既存のシーン切替関数（既にあるならそれを使う）
 	std::vector<ECS::EntityID> m_listUIEntities;
-	std::vector<ECS::EntityID> m_detailUIEntities;
-	std::vector<ECS::EntityID> m_bestTimeDigitEntities; // mm:ss (UI_FONT)
 
-	// ★獲得スター表示（詳細UI）: ONアイコンを常に作って、ステージ選択で可視/不可視を切り替える
+	std::vector<std::vector<ECS::EntityID>> m_listStageLabelEntities;
+	// 擬似ボールド用：重ね描きの追加スプライト群（文字数*(pass-1)）
+	std::vector<std::vector<ECS::EntityID>> m_listStageLabelBoldEntities;
+	// ★ステージ番号の背景（UI_STAGE_NUMBER）
+	std::vector<ECS::EntityID> m_listStageLabelBgEntities;
+	void BuildStageNumberLabels();
+	void SyncStageNumberLabels(bool force = false);
+	void SyncStageNumberLabel(int stageNo);
+	void SetStageNumberLabelVisible(int stageNo, bool visible);
+
+	std::vector<ECS::EntityID> m_detailUIEntities;
+	std::vector<ECS::EntityID> m_bestTimeDigitEntities;
+
 	ECS::EntityID m_detailStarOnEntities[3] = { (ECS::EntityID)-1, (ECS::EntityID)-1, (ECS::EntityID)-1 };
 
-	// ★スターON表示は「カード選択アニメ終了後」に反映する（押した瞬間に出るバグ対策）
 	bool        m_starRevealPending = false;
 	std::string m_starRevealStageId;
-
-
-	// ★スター表示を更新（StageUnlockProgressの保存値から）
 	void UpdateStarIconsByStageId(const std::string& stageId);
 
-
-	// ===== 詳細UIを「一覧の上に重ねる」ための補助 =====
-	ECS::EntityID m_lastHiddenListCardEntity = (ECS::EntityID)-1; // 集中演出で一時的に隠したカード
+	ECS::EntityID m_lastHiddenListCardEntity = (ECS::EntityID)-1;
 	bool m_detailAppearActive = false;
 	float m_detailAppearTimer = 0.0f;
-	float DETAIL_APPEAR_DURATION = 0.25f; // 詳細UIがふわっと出るまでの時間
+	float DETAIL_APPEAR_DURATION = 0.25f;
 	std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_detailBaseScale;
 	std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_detailBasePos;
 	void CacheDetailBaseTransform(ECS::EntityID id);
 	void BeginDetailAppear();
 	void UpdateDetailAppear(float dt);
 
-
-	// カーソルは常駐（消さない）
 	ECS::EntityID m_cursorEntity = (ECS::EntityID)-1;
 
-	// ===== Screen Transition (System + Component) =====
-	// どのシーンでも「呼ぶだけ」で使える共通フェード。
-	// StageSelectScene 側の直書きフェードは撤去し、このEntityに依頼する。
 	ECS::EntityID m_transitionEntity = (ECS::EntityID)-1;
-
-	ECS::EntityID m_blackTransitionEntity = (ECS::EntityID)-1; // ゲーム遷移専用：全面黒フェード
-	// 入力ロック（多重押し防止）。基本は遷移開始時に true、
-	// 「同一シーン内で戻ってくる遷移」の完了コールバックで false。
+	ECS::EntityID m_blackTransitionEntity = (ECS::EntityID)-1;
 
 	bool m_enableSlideFade = false;
 
-	// ===== FadeManager（カメラ非依存のフェード）=====
 	bool m_waitingSceneFadeIn = false;
 	std::function<void()> m_onFadeOutComplete = nullptr;
-
 
 	bool m_inputLocked = false;
 	bool m_isWaitingForTransition = false;
 	float m_transitionWaitTimer = 0.0f;
-	float m_transitionDelayTime = 1.0f; // アニメーション開始から何秒後に遷移するか
-	// 調整ポイント：一覧→情報（詳細）へ切り替わるまでの待ち時間（秒）
-	float LIST_TO_DETAIL_DELAY = 1.50f; // 0.80=現状(0.45+0.35)相当
-	// 調整ポイント：カード回転アニメ（A_CARD_COMEON）の再生速度
-	float LIST_TO_DETAIL_ANIM_SPEED = 1.5f; // 1.0=等速, 2.0=2倍速
-	std::string m_pendingStageID = "";  // 遷移予定のステージID
+	float m_transitionDelayTime = 1.0f;
+	float LIST_TO_DETAIL_DELAY = 1.50f;
+	float LIST_TO_DETAIL_ANIM_SPEED = 1.5f;
+	std::string m_pendingStageID = "";
 
 	void  KillAllShootingStars();
 
-	// ===== Shooting Star（UI_STAGE_MAP内でたまに）=====
+	// ★StageMap
 	ECS::EntityID m_stageMapEntity = (ECS::EntityID)-1;
-	ECS::EntityID m_stageMapSiroEntity = (ECS::EntityID)-1; // 城(手前)
-
-	// ===== Stage Map Texture (per-stage) =====
+	ECS::EntityID m_stageMapOverlayEntity = (ECS::EntityID)-1;
 	int StageIdToStageNo(const std::string& stageId) const;
-	// ベストタイム(mm:ss) 表示を更新（UI_BEST_TIME の右）
 	void UpdateBestTimeDigitsByStageId(const std::string& stageId);
 	std::string GetStageMapTextureAssetId(int stageNo) const;
 	void ApplyStageMapTextureByStageId(const std::string& stageId);
 
-	// ===== Shooting Star instance =====
+	// ===== Shooting Star =====
 	struct ShootingStarInstance
 	{
-		ECS::EntityID star = (ECS::EntityID)-1;   // 本体
-
-		// 軌跡（重ねる）
-		ECS::EntityID trails[3] = {
-			(ECS::EntityID)-1,
-			(ECS::EntityID)-1,
-			(ECS::EntityID)-1
-		};
-
-		DirectX::XMFLOAT2 velocity = { -320.0f, 110.0f }; // 右上→左下（※座標系により符号は調整）
-		float remaining = 0.0f; // 残り時間
-		float life = 0.0f;      // 生成時寿命（進行度計算用）
+		ECS::EntityID star = (ECS::EntityID)-1;
+		ECS::EntityID trails[3] = { (ECS::EntityID)-1,(ECS::EntityID)-1,(ECS::EntityID)-1 };
+		DirectX::XMFLOAT2 velocity = { -320.0f, 110.0f };
+		float remaining = 0.0f;
+		float life = 0.0f;
 	};
 
 	std::vector<ShootingStarInstance> m_activeShootingStars;
-
 	void UpdateActiveShootingStars(float dt);
 
-
-	// ★デバッグ用：マップ上に確実に見えるエフェクト（TREASURE_GLOW）を常駐表示して切り分け
 	ECS::EntityID m_debugStarEntity = (ECS::EntityID)-1;
 	bool m_debugShowGlowOnMap = true;
 
 	bool m_isDetailMode = false;
 
-
-	// ===== Stage Unlock / Reveal (Stage Select) =====
-	// 起動時は Stage1 のみ表示。クリア後に次ステージを解放し、StageSelect復帰時に「浮かび上がり」演出を出す。
-	int m_maxUnlockedStage = 1;      // 1..6
-	int m_pendingRevealStage = -1;   // -1 or 2..6（今回の復帰で演出するステージ）
-	// ★追加：既に解放済みは先に表示し、新規解放だけを後から浮かせる（遅延Reveal）
-	int   m_scheduledRevealStage = -1; // -1 or 2..6
+	// ===== Unlock / Reveal =====
+	int m_maxUnlockedStage = 1;
+	int m_pendingRevealStage = -1;
+	int   m_scheduledRevealStage = -1;
 	float m_revealDelayTimer = 0.0f;
 
-
-	// m_listUIEntities と同じ順（ST_001..ST_006）
 	std::vector<int> m_listStageNos;
 
 	struct StageRevealAnim
@@ -236,7 +232,7 @@ private:
 		bool active = false;
 		ECS::EntityID entity = (ECS::EntityID)-1;
 		float elapsed = 0.0f;
-		float duration = 0.90f; // 演出時間（秒）
+		float duration = 0.90f;
 
 		float startY = 0.0f;
 		float endY = 0.0f;
@@ -254,33 +250,26 @@ private:
 	void ApplyListVisibility(bool listVisible);
 	void ReflowUnlockedCardsLayout();
 
-	// ★追加: ゲーム開始遷移待ち用
 	bool m_isWaitingForGameStart = false;
-
-	// ★追加: 一覧へ戻る遷移待ち用
 	bool m_isWaitingForBackToList = false;
 
 	float m_gameStartTimer = 0.0f;
-	const float 
-		_DELAY = 1.0f; // ★ここで待機時間を調整（秒）
+	const float GAME_START_DELAY = 1.0f;
 
-	// ★出現間隔（秒）ここを変えると頻度が変わる
-	float m_shootingStarIntervalMin = 3.0f; // 例：頻繁=1.0f、レア=3.0f
-	float m_shootingStarIntervalMax = 8.0f; // 例：頻繁=2.5f、レア=8.0f
+	float m_shootingStarIntervalMin = 3.0f;
+	float m_shootingStarIntervalMax = 8.0f;
 
 	float m_shootingStarTimer = 0.0f;
-	float m_nextShootingStarWait = 0.0f; // ★0で開始し、最初の抽選で決める
+	float m_nextShootingStarWait = 0.0f;
 	bool  m_enableShootingStar = true;
 
-	// ★追加：詳細に入ったあと、フェードが終わった瞬間に1回だけ出す
 	bool  m_spawnStarOnEnterDetail = false;
 
 	std::mt19937 m_rng;
 
 	void UpdateShootingStar(float dt);
 	void SpawnShootingStar();
-	void EnsureDebugEffectOnMap(); // ★追加：切り分け用にGLOWを常駐
-
+	void EnsureDebugEffectOnMap();
 
 	bool GetUIRect(ECS::EntityID id, float& left, float& top, float& right, float& bottom) const;
 
@@ -289,9 +278,9 @@ private:
 	float m_eyeLightNextInterval = 0.0f;
 	void UpdateEyeLight(float dt);
 
-	std::vector<ECS::EntityID> m_stageSpecificEntities; // ステージごとの固有UI管理用
-	void CreateStageInfoUI(const std::string& stageID); // 専用UI作成関数
-	void ClearStageInfoUI();                            // お片付け関数
+	std::vector<ECS::EntityID> m_stageSpecificEntities;
+	void CreateStageInfoUI(const std::string& stageID);
+	void ClearStageInfoUI();
 };
 
 #endif // !___STAGE_SELECT_SCENE_H___

@@ -1173,6 +1173,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                         orderIndex = m_itemSpawnIndex + 1;
                     }
 
+                    cellCenter.y += 0.3f;
                     EntityFactory::CreateCollectable(m_coordinator, cellCenter, orderIndex, itemID);
 
                     m_itemSpawnIndex++;
@@ -1231,8 +1232,8 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
 
     // 絵画のバリエーション
     std::vector<std::string> paintModels = {
-        "M_KAIGA_BIRD", "M_KAIGA_CAT", "M_KAIGA_PANCAKES",
-        "M_KAIGA_PENGUIN", "M_KAIGA_ROSE", "M_KAIGA_SKELETON", "M_KAIGA_MAGICALGIRL"
+        "M_KAIGA_BIRD", "M_KAIGA_CAT", "M_KAIGA_PANCAKES","M_KAIGA_PENGUIN",
+        "M_KAIGA_ROSE", "M_KAIGA_SKELETON", "M_KAIGA_MAGICALGIRL", "M_KAIGA_SIBAKO"
     };
 
     // A. 天井プロペラ (通路の天井に配置)
@@ -1250,6 +1251,82 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                     EntityFactory::CreateCeilingFan(m_coordinator, pos);
                 }
             }
+        }
+    }
+
+    // --- B. 看板 (Signboard) の生成 [Config制御] ---
+    // コンフィグから看板の生成数を取得
+    int signboardCount = 0;
+    for (const auto& g : config.gimmicks) {
+        if (g.type == "Signboard") {
+            signboardCount = g.count;
+            break;
+        }
+    }
+
+    if (signboardCount > 0)
+    {
+        // 配置候補の収集
+        struct SignboardCandidate {
+            DirectX::XMFLOAT3 pos;
+            float rotY;
+        };
+        std::vector<SignboardCandidate> candidates;
+
+        // 相対方向（Path -> Wall）
+        // 0:北(y-1), 1:南(y+1), 2:西(x-1), 3:東(x+1)
+        int dx[] = { 0, 0, -1, 1 };
+        int dy[] = { -1, 1, 0, 0 };
+        // 壁を背にして通路中心を向く角度 (0度=North基準と仮定)
+        // 北壁(背中)→南向き(180), 南壁(背中)→北向き(0), 西壁(背中)→東向き(90), 東壁(背中)→西向き(270)
+        float rots[] = { 270.0f, 90.0f, 0.0f, 180.0f };
+
+        for (int y = 1; y < GRID_SIZE_Y - 1; ++y) {
+            for (int x = 1; x < GRID_SIZE_X - 1; ++x) {
+                // 通路セルのみ対象
+                if (mapComp.grid[y][x].type == CellType::Path) {
+
+                    // 隣接する壁を探す
+                    std::vector<int> validWallDirs;
+                    for (int i = 0; i < 4; ++i) {
+                        int nx = x + dx[i];
+                        int ny = y + dy[i];
+                        if (mapComp.grid[ny][nx].type == CellType::Wall) {
+                            validWallDirs.push_back(i);
+                        }
+                    }
+
+                    // 壁に隣接している場合、候補に追加
+                    if (!validWallDirs.empty()) {
+                        // 1つのセルに複数の壁がある場合、ランダムに1つ選んで配置候補とする（1セル1看板制限）
+                        int dirIdx = validWallDirs[rand() % validWallDirs.size()];
+
+                        // 座標計算
+                        DirectX::XMFLOAT3 pos = GetWorldPosition(x, y, config);
+                        pos.x += TILE_SIZE / 2.0f;
+                        pos.z += TILE_SIZE / 2.0f;
+
+                        // 壁の方向に少し寄せる
+                        float offset = TILE_SIZE * 0.4f; // 中心から40%壁寄り
+                        pos.x += dx[dirIdx] * offset;
+                        pos.z += dy[dirIdx] * offset;
+                        pos.y = 0.0f; // 床置き
+
+                        float rot = DirectX::XMConvertToRadians(rots[dirIdx]);
+                        candidates.push_back({ pos, rot });
+                    }
+                }
+            }
+        }
+
+        // 候補をシャッフルして、指定数だけ生成
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(candidates.begin(), candidates.end(), g);
+
+        for (int i = 0; i < signboardCount && i < candidates.size(); ++i) {
+            auto& c = candidates[i];
+            EntityFactory::CreateMapSignboard(m_coordinator, c.pos, c.rotY);
         }
     }
 
@@ -1271,7 +1348,7 @@ void MapGenerationSystem::SpawnMapEntities(MapComponent& mapComp, const MapStage
                     CellType nType = mapComp.grid[ny][nx].type;
                     if (nType == CellType::Path || nType == CellType::Room || nType == CellType::Start) {
 
-                        if (rand() % 100 < 15) {
+                        if (rand() % 100 < 20) {
                             XMFLOAT3 pos = GetWorldPosition(x, y, config);
                             pos.x += TILE_SIZE / 2.0f;
                             pos.z += TILE_SIZE / 2.0f;

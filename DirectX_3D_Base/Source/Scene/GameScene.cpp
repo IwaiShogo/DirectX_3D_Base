@@ -387,10 +387,6 @@ void GameScene::Init()
     // --- 3. JSONRtBOgĈꌂI ---
     ECS::EntityFactory::GenerateStageFromConfig(m_coordinator.get(), s_StageNo);
 
-    // Map-check gimmick (green cube). Touch it in ACTION_MODE to force TopView.
-    // Position is a simple default near the assumed start; adjust if needed.
-    ECS::EntityFactory::CreateMapGimmick(m_coordinator.get(), ChooseMapGimmickPosition(m_coordinator.get()));
-
 
 
     // --- 4. ̑̋Entity̍쐬 ---
@@ -532,7 +528,6 @@ void GameScene::Init()
             XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f) // ESsX^[g
         )
     );
-
 
 
 //#ifdef _DEBUG

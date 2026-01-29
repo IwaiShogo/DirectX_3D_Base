@@ -18,7 +18,7 @@
 #include "ECS/Systems/Core/TitleControlSystem.h"
 #include "ECS/Systems/Core/ScreenTransition.h"
 #include "ECS/Components/Rendering/RenderComponent.h"
-
+#include "ECS/Components/Core/SoundComponent.h"
 using namespace DirectX;
 
 namespace TitleLayout
@@ -35,7 +35,7 @@ namespace TitleLayout
     const XMFLOAT3 BTN_BASE_SCALE = { 300.0f, 140.0f, 1.0f };
     const XMFLOAT3 LOGO_BASE_SCALE = { 550.0f, 410.0f, 1.0f };
     const XMFLOAT3 START_BTN_SCALE = { 450.0f, 150.0f, 1.0f };
-	const XMFLOAT3 TITLE_KAIGA_SCALE = { 1280.0f, 720.0f, 1.0f };
+    const XMFLOAT3 TITLE_KAIGA_SCALE = { 1280.0f, 720.0f, 1.0f };
 
     constexpr float CARD_STATIC_ROT_Z_DEG = 20.0f;
 }
@@ -89,12 +89,23 @@ void TitleScene::Init()
         )
     );
 
+    XMFLOAT3 finalCardPos = { 0.0f,1.4f,-3.5f };
+    titleCtrl.cardEndPos = finalCardPos;
+    titleCtrl.cardStartPos = { -1.0f, 2.5f, -12.8f };
+
+    titleCtrl.cardEndScale = TitleLayout::CARD_3D_SCALE;
+    titleCtrl.cardStartScale = {
+        titleCtrl.cardEndScale.x * 0.25f,
+        titleCtrl.cardEndScale.y * 0.25f,
+        titleCtrl.cardEndScale.z * 0.25f
+    };
+
     // タイトルカード
     titleCtrl.cardEntityID = m_coordinator->CreateEntity(
         TransformComponent(
-            /* Position */{ 0.0f, 1.4f, -3.5f },
-            /* Rotation */{ 0.0f, XMConvertToRadians(180.0f), XMConvertToRadians(TitleLayout::CARD_STATIC_ROT_Z_DEG) },
-            /* Scale    */ TitleLayout::CARD_3D_SCALE
+            /* Position */titleCtrl.cardStartPos,
+            /* Rotation */{ 0.0f,0.0f, XMConvertToRadians(45.0f) },
+            /* Scale    */ titleCtrl.cardStartScale
         ),
         RenderComponent(
             /* Type  */ MESH_MODEL,
@@ -107,19 +118,6 @@ void TitleScene::Init()
         )
     );
 
-    titleCtrl.TitlekaigaEntityID = m_coordinator->CreateEntity(
-        TransformComponent(
-            /* Position */{ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f },
-            /* Rotation */{ 1.0f, 0.0f, 0.0f },
-            /* Scale    */ TitleLayout::TITLE_KAIGA_SCALE
-        ),
-        UIImageComponent(
-            /* AssetID */ "UI_TITLE_KAIGA",
-            /* Depth   */ 0.0f,
-            /* Visible */ true,
-            /* Color   */{ 1.0f, 1.0f, 1.0f, 0.0f }
-        )
-    );
 
     // ガラスケース
     m_coordinator->CreateEntity(
@@ -194,7 +192,16 @@ void TitleScene::Init()
             UIButtonComponent(
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
-                /* Callback */ []() { SceneManager::ChangeScene<OpeningScene>(); },//StageSelectScene
+                /* Callback */ [this]() { 
+                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 0.5f);
+                    for (auto const& entity : m_coordinator->GetActiveEntities()) {
+                        if (m_coordinator->HasComponent<SoundComponent>(entity)) {
+                            auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+                            sound.RequestStop();
+                        }
+                    }
+                    
+                    SceneManager::ChangeScene<OpeningScene>(); },//StageSelectScene
                 /* HitScale */ hitScale
             )
         );
@@ -215,7 +222,15 @@ void TitleScene::Init()
             UIButtonComponent(
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
-                /* Callback */ []() { SceneManager::ChangeScene<StageSelectScene>(); },
+                /* Callback */ [this]() {
+                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 0.5f);
+                    for (auto const& entity : m_coordinator->GetActiveEntities()) {
+                        if (m_coordinator->HasComponent<SoundComponent>(entity)) {
+                            auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+                            sound.RequestStop();
+                        }
+                    }
+                    SceneManager::ChangeScene<StageSelectScene>(); },
                 /* HitScale */ hitScale
             )
         );
@@ -244,10 +259,18 @@ void TitleScene::Init()
         UICursorComponent()
     );
 
+   
+	// --- BGM再生 ---
+    ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator.get(), "BGM_TITLE", 0.5f);
     std::cout << "TitleScene::Init() - Layout Completed with Commented Parameters." << std::endl;
 }
 void TitleScene::Uninit()
 {
+    for (auto const& entity : m_coordinator->GetActiveEntities()) {
+        if (!m_coordinator->HasComponent<SoundComponent>(entity)) continue;
+        auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+        sound.RequestStop();
+    }
     if (auto effectSystem = ECS::ECSInitializer::GetSystem<EffectSystem>()) effectSystem->Uninit();
     ECS::ECSInitializer::UninitECS();
     m_coordinator.reset();
