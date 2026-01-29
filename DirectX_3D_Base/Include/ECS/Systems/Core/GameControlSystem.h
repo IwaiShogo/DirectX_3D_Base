@@ -203,7 +203,15 @@ private:
     float m_sliderSoundTimer = 0.0f;    // スライダー音の間隔
 
     // --- ★追加: テレポートエフェクト管理用 ---
-    std::unordered_map<ECS::EntityID, ECS::EntityID> m_teleportEffectMap; // テレポートID -> エフェクトID
+    struct TeleporterEffectSet {
+        ECS::EntityID glow = ECS::INVALID_ENTITY_ID;     //!< EFK_TREASURE_GLOW
+        ECS::EntityID teleport = ECS::INVALID_ENTITY_ID; //!< EFK_TELEPORT
+    };
+
+    std::unordered_map<ECS::EntityID, TeleporterEffectSet> m_teleportEffectMap; // テレポートID -> エフェクト群
+    // ★追加: EFK_TELEPORT 内の「一瞬だけ出る輪っか」を定期的に再トリガーするためのタイマー
+    // （エフェクトデータ側で輪っかが一回発生のみの場合でも、一定間隔で再生し直して“常時出ている感”を作る）
+    std::unordered_map<ECS::EntityID, float> m_teleportFxRestartTimer; // テレポートID -> 経過秒
     std::unordered_set<ECS::EntityID> m_usedTeleporters; // 使用済みテレポーターのセット
     std::unordered_map<ECS::EntityID, DirectX::XMFLOAT4> m_teleportColorMap; // テレポートID -> 色
 
@@ -212,7 +220,7 @@ private:
     void UpdateVisualEffects(float deltaTime, ECS::EntityID controllerID); // 演出更新
     void UpdateDecorations(float deltaTime); // 賑やかしアニメーション
     void UpdateLights(); // ポイントライト更新
-    void UpdateTeleportEffects(ECS::EntityID controllerID); // ★追加: テレポートエフェクト更新
+    void UpdateTeleportEffects(float deltaTime, ECS::EntityID controllerID); // ★追加: テレポートエフェクト更新
 
     // BGM管理用
     void PlayBGM(const std::string& assetID, float volume = 0.15f);
