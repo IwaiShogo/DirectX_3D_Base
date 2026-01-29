@@ -311,7 +311,7 @@ void CollisionSystem::Update(float deltaTime)
 					continue;
 				// 1. GameStateにトラップ状態を設定
 				state.isPlayerTrapped = true;
-				state.playerTrappedTimer = 5.0f; // トラップ継続時間（適宜調整）
+				state.playerTrappedTimer = 3.0f; // トラップ継続時間（適宜調整）
 				// 2. プレイヤーの速度を止める
 				if (m_coordinator->HasComponent<RigidBodyComponent>(playerID))
 				{

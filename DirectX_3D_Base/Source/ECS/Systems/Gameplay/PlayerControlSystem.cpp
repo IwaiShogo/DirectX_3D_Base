@@ -1,23 +1,23 @@
 /*****************************************************************//**
  * @file	PlayerControlSystem.cpp
  * @brief	プレイヤーのキー入力に基づいてEntityの運動状態を走査するSystemの実装。
- * 
- * @details	
- * 
+ *
+ * @details
+ *
  * ------------------------------------------------------------
  * @author	Iwai Shogo / Oda Kaito
  * ------------------------------------------------------------
- * 
+ *
  * @date	2025/10/27	初回作成日
  * 			作業内容：	- 追加：キー入力（左右移動、ジャンプ）に基づいてRigidBodyの速度を更新するロジックを実装。
- * 
+ *
  * @update	2025/xx/xx	最終更新日
  * 			作業内容：	- XX：
- * 
+ *
  * @note	（省略可）
  *********************************************************************/
 
-// ===== インクルード =====
+ // ===== インクルード =====
 #include "ECS/ECSInitializer.h"
 #include "ECS/Systems/Gameplay/PlayerControlSystem.h"
 #include "ECS/ECS.h"
@@ -35,13 +35,91 @@
 
 using namespace DirectX;
 
+namespace
+{
+	enum class FadeState
+	{
+		None,
+		FadeOut,
+		FadeIn
+	};
+
+	constexpr float FADE_TIME = 0.5f;		//フェードにかかる時間
+	constexpr float FADE_STAY_TIME = 1.0f;	//赤い画面を映す時間
+	FadeState s_fadeState = FadeState::None;
+	float s_fadeTimer = 0.0f;
+	ECS::EntityID s_fadeEntity = ECS::INVALID_ENTITY_ID;
+}
+
+static void CreateFadeEntity(ECS::Coordinator* coordinator, float alpha)
+{
+	if (s_fadeEntity != ECS::INVALID_ENTITY_ID)
+		return;
+
+	s_fadeEntity = coordinator->CreateEntity(
+		TransformComponent(
+			{ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f },
+			{ 0,0,0 },
+			{ (float)SCREEN_WIDTH, (float)SCREEN_HEIGHT, 1.0f }
+		),
+		UIImageComponent(
+			"FADE_WHITE",
+			100.0f, // 最前面に表示
+			true,
+			{ 0.2f, 0, 0, alpha }
+		),
+		TagComponent("PLAYER_FADE")
+	);
+}
+
+// フェード状態をリセットする関数
+void PlayerControlSystem::ResetFadeState()
+{
+	s_fadeState = FadeState::None;
+	s_fadeTimer = 0.0f;
+	s_fadeEntity = ECS::INVALID_ENTITY_ID;
+}
 
 /**
  * @brief 入力に応じてRigidBodyの速度を更新する
  */
 void PlayerControlSystem::Update(float deltaTime)
 {
-	
+	// ==============================
+	// フェード処理（フェードアウトのみ）
+	// ==============================
+	if (s_fadeState == FadeState::FadeOut)
+	{
+		s_fadeTimer += deltaTime;
+		float t = s_fadeTimer / FADE_TIME;
+		if (t > 1.0f) t = 1.0f;
+
+		auto& fadeImg =
+			m_coordinator->GetComponent<UIImageComponent>(s_fadeEntity);
+
+		fadeImg.color.w = t; // 0.0 → 1.0 へ（透明→不透明）
+
+		if (s_fadeTimer >= FADE_TIME + FADE_STAY_TIME)
+		{
+			// ==============================
+			// フェードアウト完了 → ゲームオーバー確定
+			// ==============================
+			ECS::EntityID stateID =
+				ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
+
+			if (stateID != ECS::INVALID_ENTITY_ID)
+			{
+				m_coordinator
+					->GetComponent<GameStateComponent>(stateID)
+					.isGameOver = true;
+			}
+
+			// ★ エンティティは破棄しない（赤い画面を維持したままシーン遷移）
+			// エンティティの破棄やリセットは次のシーンのInit()で行われる
+		}
+
+		return; // フェード中は操作停止
+	}
 
 	if (m_coordinator)
 	{
@@ -56,10 +134,32 @@ void PlayerControlSystem::Update(float deltaTime)
 	ECS::EntityID controllerID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
 	if (controllerID == ECS::INVALID_ENTITY_ID) return;
 	GameStateComponent& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+
 	if (state.isPlayerTrapped)
 	{
 		// トラップタイマーを減らす
 		state.playerTrappedTimer -= deltaTime;
+
+		// GameControlSystemのほうで設定した数値を経過したらフェード開始
+		if (state.playerTrappedTimer <= 0.0f)
+		{
+			for (auto const& entity : m_coordinator->GetActiveEntities())
+			{
+				if (!m_coordinator->HasComponent<SoundComponent>(entity)) continue;
+				auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+				sound.RequestStop();
+			}
+
+			// ==============================
+			// ゲームオーバーフェード開始
+			// ==============================
+			if (s_fadeState == FadeState::None)
+			{
+				CreateFadeEntity(m_coordinator, 0.0f);
+				s_fadeState = FadeState::FadeOut;
+				s_fadeTimer = 0.0f;
+			}
+		}
 
 		// トラップ中はプレイヤーを完全停止
 		for (auto const& entity : m_entities)
@@ -67,11 +167,6 @@ void PlayerControlSystem::Update(float deltaTime)
 			auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(entity);
 			rigidBody.velocity.x = 0.0f;
 			rigidBody.velocity.z = 0.0f;
-		}
-
-		if (state.playerTrappedTimer <= 0.0f)
-		{
-			state.isGameOver = true;
 		}
 
 		// 移動・アニメーション処理をスキップ
@@ -89,9 +184,9 @@ void PlayerControlSystem::Update(float deltaTime)
 	float cameraYaw = cameraSystem->m_currentYaw;
 
 	ECS::EntityID gameControllerID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
-	
-	if (gameControllerID == ECS::INVALID_ENTITY_ID)return;
-	
+
+	if (gameControllerID != ECS::INVALID_ENTITY_ID)
+	{
 		auto& state = m_coordinator->GetComponent<GameStateComponent>(gameControllerID);
 
 		// 条件: 
@@ -99,8 +194,7 @@ void PlayerControlSystem::Update(float deltaTime)
 		// 2. プレイ中 (Playing) ではない場合 (Entering:入場演出, Exiting:脱出演出)
 		bool isScouting = (state.currentMode == GameMode::SCOUTING_MODE);
 		bool isCutscene = (state.sequenceState != GameSequenceState::Playing);
-		bool pressedSpace = IsKeyTrigger(VK_SPACE);
-		bool pressedA = IsButtonTriggered(BUTTON_A);
+
 		if (isScouting || isCutscene)
 		{
 			// プレイヤーエンティティ全ての動きを止める
@@ -116,7 +210,7 @@ void PlayerControlSystem::Update(float deltaTime)
 			// ここでリターンして、以降のキー入力処理を行わない
 			return;
 		}
-	
+	}
 
 	// =====================================
 	// 入力取得とベクトル合成
@@ -172,61 +266,7 @@ void PlayerControlSystem::Update(float deltaTime)
 		auto& transform = m_coordinator->GetComponent<TransformComponent>(entity);
 		auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(entity);
 		auto& playerControl = m_coordinator->GetComponent<PlayerControlComponent>(entity);
-		auto& animComp = m_coordinator->GetComponent<AnimationComponent>(entity); 
-
-		// --- ギミック判定 ＋ 入力判定 ---
-		if (pressedSpace || pressedA)
-		{
-			auto const& allEntities = m_coordinator->GetActiveEntities();
-			for (auto const& otherEntity : allEntities)
-			{
-				if (otherEntity == entity) continue;
-				if (!m_coordinator->HasComponent<TagComponent>(otherEntity)) continue;
-
-				auto& tagComp = m_coordinator->GetComponent<TagComponent>(otherEntity);
-
-				if (tagComp.tag == "TopViewTrigger")
-				{
-					auto& otherTransform = m_coordinator->GetComponent<TransformComponent>(otherEntity);
-
-					// 板のサイズ（Scale）の半分を取得
-					float halfW = otherTransform.scale.x * 0.5f;
-					float halfD = otherTransform.scale.z * 0.5f;
-
-					// プレイヤーと板の中心座標の差を計算
-					float diffX = std::abs(transform.position.x - otherTransform.position.x);
-					float diffZ = std::abs(transform.position.z - otherTransform.position.z);
-
-					// ? 判定：板の範囲内（遊びとして+0.5fの余裕を持たせる）にプレイヤーがいれば実行
-					if (diffX <= (halfW + 0.5f) && diffZ <= (halfD + 0.5f))
-					{
-						// モード切替
-						state.currentMode = GameMode::SCOUTING_MODE;
-
-						// カメラの設定
-						cameraSystem->m_currentPitch = -1.57f; // 真下を向く
-						cameraSystem->m_currentYaw = 0.0f;
-
-						// 見た目をトップビュー用に一新
-						auto gameControlSystem = ECS::ECSInitializer::GetSystem<GameControlSystem>();
-						if (gameControlSystem) {
-							gameControlSystem->ApplyModeVisuals(gameControllerID);
-						}
-
-						// ★削除またはコメントアウトしてください★
-						// ギミックを消す（もし一度きりにしたいなら）
-						// m_coordinator->DestroyEntity(otherEntity); 
-						// ↑ ここを消すことで、何度でもアクセス可能になります
-
-						std::cout << "[SUCCESS] Scouting Mode ON!" << std::endl;
-						return; // 処理完了
-					}
-				}
-			}
-		}
-
-		// トップビューに切り替わった直後なら移動をスキップ
-		if (isScouting) continue;
+		auto& animComp = m_coordinator->GetComponent<AnimationComponent>(entity);
 
 		// =====================================
 		// 1. 移動 (カメラ基準での移動)
