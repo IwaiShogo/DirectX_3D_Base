@@ -3195,7 +3195,8 @@ void StageSelectScene::EnsureDebugEffectOnMap()
 	const float cx = (l + r) * 0.5f;
 	const float cy = (t + b) * 0.5f;
 
-	// ★まず「エフェクト自体が描けるか」を確実に確認するため、動作実績のある EFK_TREASURE_GLOW を常駐表示
+	// ★まず「エフェクト自体が描けるか」を確実に確認するため、動作実績のある 
+	// を常駐表示
 	m_debugStarEntity = m_coordinator->CreateEntity(
 		TagComponent("effect_debug"),
 		TransformComponent({ cx, cy, 9.5f }, { 0,0,0 }, { 1,1,1 }),

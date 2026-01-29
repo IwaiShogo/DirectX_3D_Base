@@ -18,7 +18,7 @@
 #include "ECS/Systems/Core/TitleControlSystem.h"
 #include "ECS/Systems/Core/ScreenTransition.h"
 #include "ECS/Components/Rendering/RenderComponent.h"
-
+#include "ECS/Components/Core/SoundComponent.h"
 using namespace DirectX;
 
 namespace TitleLayout
@@ -205,11 +205,16 @@ void TitleScene::Init()
             UIButtonComponent(
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
-                /* Callback */ []() {
-                    // ★はじめから：進捗を完全リセット（1-1のみ解放）
-                    StageUnlockProgress::ResetToNewGame();
-                    SceneManager::ChangeScene<OpeningScene>();
-                },//StageSelectScene
+                /* Callback */ [this]() { 
+                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 0.5f);
+                    for (auto const& entity : m_coordinator->GetActiveEntities()) {
+                        if (m_coordinator->HasComponent<SoundComponent>(entity)) {
+                            auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+                            sound.RequestStop();
+                        }
+                    }
+                    
+                    SceneManager::ChangeScene<OpeningScene>(); },//StageSelectScene
                 /* HitScale */ hitScale
             )
         );
@@ -230,7 +235,15 @@ void TitleScene::Init()
             UIButtonComponent(
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
-                /* Callback */ []() { SceneManager::ChangeScene<StageSelectScene>(); },
+                /* Callback */ [this]() {
+                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 0.5f);
+                    for (auto const& entity : m_coordinator->GetActiveEntities()) {
+                        if (m_coordinator->HasComponent<SoundComponent>(entity)) {
+                            auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+                            sound.RequestStop();
+                        }
+                    }
+                    SceneManager::ChangeScene<StageSelectScene>(); },
                 /* HitScale */ hitScale
             )
         );
@@ -259,10 +272,18 @@ void TitleScene::Init()
         UICursorComponent()
     );
 
+   
+	// --- BGM再生 ---
+    ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator.get(), "BGM_TITLE", 0.5f);
     std::cout << "TitleScene::Init() - Layout Completed with Commented Parameters." << std::endl;
 }
 void TitleScene::Uninit()
 {
+    for (auto const& entity : m_coordinator->GetActiveEntities()) {
+        if (!m_coordinator->HasComponent<SoundComponent>(entity)) continue;
+        auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+        sound.RequestStop();
+    }
     if (auto effectSystem = ECS::ECSInitializer::GetSystem<EffectSystem>()) effectSystem->Uninit();
     ECS::ECSInitializer::UninitECS();
     m_coordinator.reset();
