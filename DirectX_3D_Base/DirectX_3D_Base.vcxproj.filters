@@ -442,6 +442,7 @@
     <ClInclude Include="Include\Scene\LoadingScene.h">
       <Filter>Header Files\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -596,5 +597,15 @@
     <None Include="Assets\CSV\EffectList.csv">
       <Filter>Assets\CSV</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DirectX_3D_Base.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Assets\Texture\icon.ico" />
+    <Image Include="Assets\Texture\btn_stage_select.png" />
+    <Image Include="assets\texture\icon2.ico" />
+    <Image Include="assets\texture\icon3.ico" />
+    <Image Include="assets\texture\icon4.ico" />
   </ItemGroup>
 </Project>
