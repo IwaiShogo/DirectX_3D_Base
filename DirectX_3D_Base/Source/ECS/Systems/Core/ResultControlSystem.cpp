@@ -34,47 +34,29 @@ void ResultControlSystem::Update(float deltaTime)
         if (!m_coordinator->HasComponent<TransformComponent>(entity)) continue;
 
         const auto& tag = m_coordinator->GetComponent<TagComponent>(entity).tag;
-
-        if (tag != "BTN_BACK_STAGE_SELECT" &&
-            tag != "BTN_RETRY" &&
-            tag != "BTN_BACK_TITLE")
-        {
-            continue;
-        }
-
-
-        auto& btn = m_coordinator->GetComponent<UIButtonComponent>(entity);
+        auto& button = m_coordinator->GetComponent<UIButtonComponent>(entity);
         auto& trans = m_coordinator->GetComponent<TransformComponent>(entity);
 
+        // --- 修正箇所：BTN_ で始まるタグ、または _Frame で終わるタグを対象にする ---
+        bool isTargetButton = StartsWith(tag, "BTN_");
 
-        // 1. �ڕW�{��
-        float targetRatio =
-            (btn.state == ButtonState::Hover) ? 1.08f : 1.0f;
-
-        // 2. ���T�C�Y �~ �{��
-        float targetX = btn.originalScale.x * targetRatio;
-        float targetY = btn.originalScale.y * targetRatio;
-
-        // 3. Lerp
-        float speed = 15.0f * deltaTime;
-        trans.scale.x += (targetX - trans.scale.x) * speed;
-        trans.scale.y += (targetY - trans.scale.y) * speed;
-
-        // ================================
-        // �� Hoverが有効な時
-        // ================================
-        if (btn.prevState != ButtonState::Hover &&
-            btn.state == ButtonState::Hover)
+        if (isTargetButton)
         {
-            // �{�^���ɃJ�[�\�������Ԃ������Ƃ�SE��‚炷
-            ECS::EntityFactory::CreateOneShotSoundEntity(
-                m_coordinator,
-                "SE_CLEAR",  // SE
-                0.8f         // ����       
-            );
-        }
-        btn.prevState = btn.state;
+            // ここに拡大縮小のロジック（Lerp等）を記述
+            // カーソルが重なっている(Hover)なら拡大、そうでないなら元に戻す
+            float targetScaleMultiplier = (button.state == ButtonState::Hover) ? 1.1f : 1.0f;
 
+            // originalScaleに対して目標倍率を掛ける
+            DirectX::XMFLOAT3 targetScale = {
+                button.originalScale.x * targetScaleMultiplier,
+                button.originalScale.y * targetScaleMultiplier,
+                1.0f
+            };
+
+            // 線形補間(Lerp)で滑らかにサイズを変更する
+            trans.scale.x += (targetScale.x - trans.scale.x) * 0.2f;
+            trans.scale.y += (targetScale.y - trans.scale.y) * 0.2f;
+        }
     }
 
 

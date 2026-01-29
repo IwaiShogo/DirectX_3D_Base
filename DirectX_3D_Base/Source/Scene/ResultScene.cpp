@@ -765,118 +765,85 @@ void ResultScene::CreateTimeDisplay(float time, DirectX::XMFLOAT2 pos)
 
 void ResultScene::CreateButtons()
 {
-    m_buttons.clear(); // 織田：ペアリストをクリア
-
-    m_elapsedTime = 0.0f; // 織田：初期化
+    m_buttons.clear();
+    m_elapsedTime = 0.0f;
 
     const bool isClear = s_resultData.isCleared;
+    const char* frameTexId = isClear ? "BTN_UNDER_GAMECLEAR" : "BTN_UNDER_KUMO";
 
-    // ボタンの中心Y（必要ならゲームオーバーだけ少し上げてもOK）
-    const float y = SCREEN_HEIGHT * 0.94f;//0.93
-
-    // 土台フレームのサイズ
-    const float frameW = 260.0f;//260
-    const float frameH = 90.0f;//90
-
-    // 中の文字画像(RETRY/SELECT/TITLE) のサイズ
-    const float textW = 210.0f;//210
-    const float textH = 60.0f;//60
-
-    // ボタン同士の間隔
-    const float spacing = 5.0f;//15
-
-    const float totalWidth = frameW * 3.0f + spacing * 2.0f;
-
-    // 一番左のボタンの中心X
-    const float firstX = (SCREEN_WIDTH * 0.740f) - totalWidth * 0.6f + frameW * 0.5f;
-    //    const float firstX = (SCREEN_WIDTH * 0.6f) - totalWidth * 0.5f + frameW * 0.5f;
-
-    // ★ ここでクリア／ゲームオーバーで使う土台テクスチャを切り替える
-    const char* frameTexId = isClear
-        ? "BTN_UNDER_GAMECLEAR"  // ← btn_result_normal.png 用
-        : "BTN_UNDER_GAMEOVER";  // ← btn_result_normal1.png 用
-
+    // --- ラムダ関数の定義変更 ---
+    // indexによる計算を廃止し、pos(座標)とframeSize(土台サイズ)を引数に追加
     auto createResultButton =
-        [&](int index, const char* textTex, std::function<void()> onClick)
+        [&](const char* textTex,
+            DirectX::XMFLOAT2 basePos,     // 1. 土台を置く中心座標
+            DirectX::XMFLOAT2 frameSize,    // 2. 土台の大きさ
+            DirectX::XMFLOAT2 textSize,     // 3. 文字の大きさ
+            DirectX::XMFLOAT2 textOffset,   // 4. 土台の中心から文字をどれだけズラすか
+            std::function<void()> onClick)
         {
-            const float x = firstX + index * (frameW + spacing);
-
-            // 織田：frameEntityに背景フレームの情報を入れる
+            // 1) 土台フレームの生成
             EntityID frameEntity = m_coordinator->CreateEntity(
-                TransformComponent({ x, y, 0.0f }, { 0,0,0 }, { frameW, frameH, 1.0f }),
-                UIImageComponent(
-                    frameTexId,   // ← ここが切り替わる
-                    1.5f,
-                    true,
-                    { 1,1,1,1 }
-                ),
-                UIButtonComponent(
-                    ButtonState::Normal,
-                    true,
-                    nullptr,                     // ★ 背景はクリック処理しない
-                    { frameW, frameH, 1.0f }
-                ),
+                TransformComponent({ basePos.x, basePos.y, 0.0f }, { 0,0,0 }, { frameSize.x, frameSize.y, 1.0f }),
+                UIImageComponent(frameTexId, 1.5f, true, { 1,1,1,1 }),
+                UIButtonComponent(ButtonState::Normal, true, nullptr, { frameSize.x, frameSize.y, 1.0f }),
+                TagComponent(std::string(textTex) + "_Frame")
+            );
+            // 元のサイズを記憶（アニメーション用）
+            m_coordinator->GetComponent<UIButtonComponent>(frameEntity).originalScale = { frameSize.x, frameSize.y, 1.0f };
+
+            // 2) ボタンテキストの生成（座標に offset を加算）
+            EntityID textEntity = m_coordinator->CreateEntity(
+                TransformComponent({ basePos.x + textOffset.x, basePos.y + textOffset.y, 0.0f }, { 0,0,0 }, { textSize.x, textSize.y, 1.0f }),
+                UIImageComponent(textTex, 2.0f, true, { 1,1,1,1 }),
+                UIButtonComponent(ButtonState::Normal, true, onClick, { textSize.x, textSize.y, 1.0f }),
                 TagComponent(textTex)
             );
+            // 元のサイズを記憶（アニメーション用）
+            m_coordinator->GetComponent<UIButtonComponent>(textEntity).originalScale = { textSize.x, textSize.y, 1.0f };
 
-            // ★ 追加：土台の初期サイズを保存
-            auto& frameBtn = m_coordinator->GetComponent<UIButtonComponent>(frameEntity);
-            frameBtn.originalScale = { frameW, frameH, 1.0f };
+            m_buttons.push_back({ textEntity, frameEntity });
+    };
 
-            // 織田：textEntityにボタンテキストの情報を入れる
-            EntityID textEntity = m_coordinator->CreateEntity(
-                TransformComponent({ x, y, 0.0f }, { 0,0,0 }, { textW, textH, 1.0f }),
-                UIImageComponent(
-                    textTex,
-                    2.0f,
-                    true,
-                    { 1,1,1,1 }
-                ),
-                UIButtonComponent(
-                    ButtonState::Normal,
-                    true,
-                    onClick,
-                    { textW, textH, 1.0f }//
-                ),
-                TagComponent(textTex) // 追加
-            );
-            // ★ 追加：文字の初期サイズを保存
-            auto& textBtn = m_coordinator->GetComponent<UIButtonComponent>(textEntity);
-            textBtn.originalScale = { textW, textH, 1.0f };
-
-            m_buttons.push_back({ textEntity, frameEntity });// 織田：ペアにしてリストに保存
-        };
-
-    // LEFT: SELECT（ステージセレクト）
+    // 1. SELECTボタン
     createResultButton(
-        0,
         "BTN_BACK_STAGE_SELECT",
-        []()
-        {
+        { SCREEN_WIDTH * 0.49f, SCREEN_HEIGHT * 0.93f }, // ポジション
+        { 260.0f, 120.0f },                             // 【土台サイズ】
+        { 220.0f, 60.0f },                              // 【文字サイズ】
+        { 0.0f, 5.0f },                                 // 【文字のズレ】
+        []() {
+            ResultScene::isClear = false;
             SceneManager::ChangeScene<StageSelectScene>();
         }
     );
-    // CENTER: RETRY
+
+    // 2. RETRYボタン
     createResultButton(
-        1,
         "BTN_RETRY",
-        []()
-        {
+        { SCREEN_WIDTH * 0.69f, SCREEN_HEIGHT * 0.93f },
+        { 260.0f, 120.0f },                             // 【土台サイズ】
+        { 220.0f, 60.0f },                              // 【文字サイズ】
+        { 20.0f, 5.0f },                                 // 【文字のズレ】
+        []() {
+            ResultScene::isClear = false;
             GameScene::SetStageNo(ResultScene::s_resultData.stageID);
             SceneManager::ChangeScene<GameScene>();
         }
     );
 
-
-    // RIGHT: TITLE
+    // 3. TITLEボタン
     createResultButton(
-        2,
         "BTN_BACK_TITLE",
-        []()
-        {
+        { SCREEN_WIDTH * 0.89f, SCREEN_HEIGHT * 0.93f },
+        { 260.0f, 120.0f },                             // 【土台サイズ】
+        { 220.0f, 60.0f },                              // 【文字サイズ】
+        { 20.0f, 5.0f },                                 // 【文字のズレ】
+        []() {
+            ResultScene::isClear = false;
             SceneManager::ChangeScene<TitleScene>();
         }
     );
+    
 }
 
 void ResultScene::CreateNumberDisplay(int number, DirectX::XMFLOAT2 pos)

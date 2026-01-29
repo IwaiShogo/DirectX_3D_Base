@@ -163,3 +163,4 @@ UI_STAGE3,Texture,Assets/Texture/ui_stagemap_castle4.png
 UI_STAGE4,Texture,Assets/Texture/ui_stagemap_castle5.png
 UI_STAGE5,Texture,Assets/Texture/ui_stagemap_castle6.png
 UI_STAGE6,Texture,Assets/Texture/ui_stagemap_castle7.png
+BTN_UNDER_KUMO,Texture,Assets/Texture/btm_gameover_cloud.png

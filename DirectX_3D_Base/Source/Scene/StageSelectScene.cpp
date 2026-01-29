@@ -678,12 +678,12 @@ void StageSelectScene::Init()
 
 	// ★スター表示（保存値を表示：選択中ステージに応じてONを切り替える）
 	{
-		const char* conditionTex[3] = { "STAR_TEXT1","STAR_TEXT2","STAR_TEXT3" };
+		const char* conditionTex[3] = { "STAR_TEXT1","STAR_TEXT2","STAR_TEXT3_3MINUTE" };
 
 		float baseY = SCREEN_HEIGHT * 0.50f;
-		float gapY = 55.0f;
+		float gapY = 70.0f;
 		float starX = SCREEN_WIDTH * 0.6f;
-		float captionX = SCREEN_WIDTH * 0.75f;
+		float captionX = SCREEN_WIDTH * 0.80f;
 
 		for (int i = 0; i < 3; ++i)
 		{
@@ -691,7 +691,7 @@ void StageSelectScene::Init()
 
 			// 条件テキスト
 			m_detailUIEntities.push_back(m_coordinator->CreateEntity(
-				TransformComponent({ captionX, y, 0.0f }, { 0,0,0 }, { 320.0f, 60.0f, 1.0f }),
+				TransformComponent({ captionX, y, 0.0f }, { 0,0,0 }, { 420.0f, 75.0f, 1.0f }),
 				UIImageComponent(conditionTex[i], baseDepth + 5.0f, true, { 1,1,1,1 })
 			));
 
