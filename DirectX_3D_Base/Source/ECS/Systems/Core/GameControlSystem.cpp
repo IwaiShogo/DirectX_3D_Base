@@ -1,6 +1,6 @@
-﻿/*****************************************************************//**
+/*****************************************************************//**
  * @file    GameControlSystem.cpp
- * @brief   ゲーム本編の制御実装 (リンクエラー修正・サウンド完全対応版)
+ * @brief   �Q�[���{�҂̐������ (�����N�G���[�C���E�T�E���h���S�Ή���)
  *********************************************************************/
 
 #include "ECS/Systems/Core/GameControlSystem.h"
@@ -9,7 +9,7 @@
 #include "ECS/ECSInitializer.h"
 #include "Scene/ResultScene.h"
 #include "Systems/Input.h"
-#include "ECS/Components/Gimmick/TeleportComponent.h"  // ★追加: テレポーターのペア判定用
+#include "ECS/Components/Gimmick/TeleportComponent.h"  // ���ǉ�: �e���|�[�^�[�̃y�A����p
 #include <cmath>
 #include <algorithm>
 #include <cfloat>
@@ -20,12 +20,12 @@
 using namespace DirectX;
 using namespace ECS;
 
-// 定数定義
+// �萔��`
 static const int TILE_COLS = 8;
 static const int TILE_ROWS = 5;
 static const float TILE_ANIM_DELAY = 0.05f;
 
-// アイコンパス取得ヘルパー
+// �A�C�R���p�X�擾�w���p�[
 std::string GetItemIconPath(const std::string& itemID)
 {
     if (itemID == "Takara_Daiya")   return "ICO_TREASURE1";
@@ -44,18 +44,18 @@ std::string GetItemIconPath(const std::string& itemID)
 }
 
 // ---------------------------------------------------------
-// サウンドヘルパー関数
+// �T�E���h�w���p�[�֐�
 // ---------------------------------------------------------
 
-// BGM再生 (BGMタグのついた音を全て止めてから再生)
+// BGM�Đ� (BGM�^�O�̂�������S�Ď~�߂Ă���Đ�)
 void GameControlSystem::PlayBGM(const std::string& assetID, float volume)
 {
     StopBGM();
-    // 音量 0.15
+    // ���� 0.15
     ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator, assetID, volume);
 }
 
-// 全ての音（BGMとSE含む）を停止
+// �S�Ẳ��iBGM��SE�܂ށj���~
 void GameControlSystem::StopBGM()
 {
     for (auto const& entity : m_coordinator->GetActiveEntities()) {
@@ -65,12 +65,12 @@ void GameControlSystem::StopBGM()
     }
 }
 
-// 停止可能なSEを再生する（足音、アラート用）
-// シーン遷移時にStopBGM()で止められるようにSoundComponentを使用
+// ��~�\��SE���Đ�����i�����A�A���[�g�p�j
+// �V�[���J�ڎ���StopBGM()�Ŏ~�߂���悤��SoundComponent���g�p
 void GameControlSystem::PlayStopableSE(const std::string& assetID, float volume)
 {
-    // 重複再生を防ぐ（足音などが重なりすぎないようにする簡易制御）
-    // 必要であればこのチェックは外してください
+    // �d���Đ���h���i�����Ȃǂ��d�Ȃ肷���Ȃ��悤�ɂ���ȈՐ���j
+    // �K�v�ł���΂��̃`�F�b�N�͊O���Ă�������
     /*
     for (auto const& entity : m_coordinator->GetActiveEntities()) {
         if (!m_coordinator->HasComponent<SoundComponent>(entity)) continue;
@@ -81,14 +81,14 @@ void GameControlSystem::PlayStopableSE(const std::string& assetID, float volume)
 
     EntityID entity = m_coordinator->CreateEntity(
         TagComponent("SE"),
-        SoundComponent(assetID, SoundType::SE, volume, 0) // Loop=0 (1回再生)
+        SoundComponent(assetID, SoundType::SE, volume, 0) // Loop=0 (1��Đ�)
     );
-    // 再生要求
+    // �Đ��v��
     m_coordinator->GetComponent<SoundComponent>(entity).RequestPlay(volume, 0);
 }
 
 // ==================================================================================
-//  Update メインループ
+//  Update ���C�����[�v
 // ==================================================================================
 void GameControlSystem::Update(float deltaTime)
 {
@@ -139,7 +139,7 @@ void GameControlSystem::Update(float deltaTime)
         UpdateLights();
         UpdateTeleportEffects(deltaTime, controllerID); // ★追加: テレポートエフェクト更新
 
-        // 警備員の足音制御
+        // �x�����̑�������
         UpdateGuardFootsteps(deltaTime);
     }
 
@@ -175,7 +175,7 @@ void GameControlSystem::Update(float deltaTime)
     }
 }
 
-// 警備員の足音制御
+// �x�����̑�������
 void GameControlSystem::UpdateGuardFootsteps(float deltaTime)
 {
     EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
@@ -192,18 +192,18 @@ void GameControlSystem::UpdateGuardFootsteps(float deltaTime)
         auto& rb = m_coordinator->GetComponent<RigidBodyComponent>(entity);
 
         float speedSq = rb.velocity.x * rb.velocity.x + rb.velocity.z * rb.velocity.z;
-        if (speedSq > 0.1f) { // 動いているか
+        if (speedSq > 0.1f) { // �����Ă��邩
             float distSq = XMVectorGetX(XMVector3LengthSq(XMLoadFloat3(&pTrans.position) - XMLoadFloat3(&gTrans.position)));
             float maxDist = 15.0f;
             float dist = sqrt(distSq);
             if (dist < maxDist) {
-                // 距離による音量減衰
+                // �����ɂ�鉹�ʌ���
                 float volume = 1.0f - (dist / maxDist);
-                volume = std::max(0.0f, volume * 0.5f); // 最大音量0.5
+                volume = std::max(0.0f, volume * 0.5f); // �ő剹��0.5
 
-                // ランダム再生 (約1秒に1回)
+                // �����_���Đ� (��1�b��1��)
                 if (rand() % 60 == 0) {
-                    // ★修正: 停止可能なSEとして再生 (シーン遷移で消えるように)
+                    // ���C��: ��~�\��SE�Ƃ��čĐ� (�V�[���J�ڂŏ�����悤��)
                     PlayStopableSE("SE_RUN", volume);
                 }
             }
@@ -248,13 +248,13 @@ void GameControlSystem::TriggerCaughtSequence(ECS::EntityID guardID)
             camSys->SetFixedCamera(camPos, lookAt);
         }
 
-        // ★修正: 停止可能なSEとして再生 (SE_ALERT)
+        // ���C��: ��~�\��SE�Ƃ��čĐ� (SE_ALERT)
         PlayStopableSE("SE_ALERT", 0.5f);
     }
 }
 
 // ---------------------------------------------------------
-// UI初期化
+// UI������
 // ---------------------------------------------------------
 void GameControlSystem::InitGameUI()
 {
@@ -284,7 +284,7 @@ void GameControlSystem::InitGameUI()
 
     InitVisualEffects();
 
-    // BGM初期化 (トップビューBGM)
+    // BGM������ (�g�b�v�r���[BGM)
     PlayBGM("BGM_TOPVIEW", 0.7f);
 }
 
@@ -300,7 +300,7 @@ void GameControlSystem::InitVisualEffects()
     SafeDestroy(m_crosshair.left); SafeDestroy(m_crosshair.right);
     SafeDestroy(m_cinemaBarTop); SafeDestroy(m_cinemaBarBottom);
 
-    // クロスヘア削除
+    // �N���X�w�A�폜
 
     m_cinemaBarTop = m_coordinator->CreateEntity(
         TransformComponent({ 0,0,0 }, { 0,0,0 }, { 1,1,1 }),
@@ -313,7 +313,7 @@ void GameControlSystem::InitVisualEffects()
 }
 
 // ---------------------------------------------------------
-// UI更新 (演出含む)
+// UI�X�V (���o�܂�)
 // ---------------------------------------------------------
 void GameControlSystem::UpdateGameUI(float deltaTime, ECS::EntityID controllerID)
 {
@@ -422,12 +422,12 @@ void GameControlSystem::UpdateVisualEffects(float deltaTime, ECS::EntityID contr
     if (!m_coordinator->HasComponent<GameStateComponent>(controllerID)) return;
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
-    // 入力チェック
+    // ���̓`�F�b�N
     bool isInputMoving = (IsKeyPress('W') || IsKeyPress('A') || IsKeyPress('S') || IsKeyPress('D'));
     XMFLOAT2 stick = GetLeftStick();
     if (abs(stick.x) > 0.1f || abs(stick.y) > 0.1f) isInputMoving = true;
 
-    // 速度チェック
+    // ���x�`�F�b�N
     bool isVelocityMoving = false;
     EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
     if (playerID != INVALID_ENTITY_ID && m_coordinator->HasComponent<RigidBodyComponent>(playerID)) {
@@ -442,7 +442,7 @@ void GameControlSystem::UpdateVisualEffects(float deltaTime, ECS::EntityID contr
     if (isInputMoving && isVelocityMoving && isAction) {
         m_footstepTimer += deltaTime;
         if (m_footstepTimer > 0.4f) {
-            // ★修正: 停止可能なSEとして再生 (SE_RUN)
+            // ���C��: ��~�\��SE�Ƃ��čĐ� (SE_RUN)
             PlayStopableSE("SE_RUN", 0.3f);
             m_footstepTimer = 0.0f;
         }
@@ -479,7 +479,7 @@ void GameControlSystem::UpdateVisualEffects(float deltaTime, ECS::EntityID contr
 }
 
 // ---------------------------------------------------------
-// ポーズ関連
+// �|�[�Y�֘A
 // ---------------------------------------------------------
 void GameControlSystem::TogglePauseRequest() {
     if (m_pauseState == PauseState::Hidden) {
@@ -509,7 +509,7 @@ ECS::EntityID GameControlSystem::CreateStyledButton(float targetX, float targetY
     m_pauseUIEntities.push_back(lineID);
     ECS::EntityID btnID = m_coordinator->CreateEntity(
         TransformComponent({ targetX - 600.0f, targetY, 0.0f }, { 0.0f, 0.0f, tiltRad }, { w, h, 1.0f }),
-        // ★修正: 色を {1,1,1,1} に設定して画像を表示
+        // ���C��: �F�� {1,1,1,1} �ɐݒ肵�ĉ摜��\��
         UIImageComponent(assetID, 12.0f, true, { 1.0f, 1.0f, 1.0f, 1.0f }),
         UIButtonComponent(ButtonState::Normal, true, onClick)
     );
@@ -519,7 +519,7 @@ ECS::EntityID GameControlSystem::CreateStyledButton(float targetX, float targetY
 }
 
 // ---------------------------------------------------------------------
-// 1. CreateStylePauseUI (CAMERAラベル追加)
+// 1. CreateStylePauseUI (CAMERA���x���ǉ�)
 // ---------------------------------------------------------------------
 void GameControlSystem::CreateStylePauseUI() {
     m_pauseUIEntities.clear(); m_btnBgMap.clear();
@@ -527,21 +527,21 @@ void GameControlSystem::CreateStylePauseUI() {
 
     float tiltRad = XMConvertToRadians(12.0f);
 
-    // --- 1. 背景オーバーレイ ---
+    // --- 1. �w�i�I�[�o�[���C ---
     m_pauseBgOverlayID = m_coordinator->CreateEntity(
         TransformComponent({ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f }, { 0,0,0 }, { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }),
         UIImageComponent("FADE_WHITE", 10.0f, true, { 0.0f, 0.0f, 0.0f, 0.0f })
     );
     m_pauseUIEntities.push_back(m_pauseBgOverlayID);
 
-    // --- 2. 背景帯 ---
+    // --- 2. �w�i�� ---
     m_pauseDecoSlashID = m_coordinator->CreateEntity(
         TransformComponent({ -SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f }, { 0.0f, 0.0f, tiltRad }, { SCREEN_WIDTH * 0.55f, SCREEN_HEIGHT * 2.5f, 1.0f }),
         UIImageComponent("FADE_WHITE", 11.0f, true, { 0.02f, 0.02f, 0.05f, 0.95f })
     );
     m_pauseUIEntities.push_back(m_pauseDecoSlashID);
 
-    // --- 3. 幾何学模様 ---
+    // --- 3. �􉽊w�͗l ---
     for (int i = 0; i < 15; ++i) {
         float rndW = (float)(rand() % 300 + 50);
         float rndH = (float)(rand() % 5 + 1);
@@ -560,14 +560,14 @@ void GameControlSystem::CreateStylePauseUI() {
     );
     m_pauseUIEntities.push_back(frame);
 
-    // --- 4. アクセントライン ---
+    // --- 4. �A�N�Z���g���C�� ---
     m_pauseDecoLineID = m_coordinator->CreateEntity(
         TransformComponent({ -SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f }, { 0.0f, 0.0f, tiltRad }, { 4.0f, SCREEN_HEIGHT * 2.5f, 1.0f }),
         UIImageComponent("FADE_WHITE", 11.1f, true, { 0.0f, 1.0f, 1.0f, 1.0f })
     );
     m_pauseUIEntities.push_back(m_pauseDecoLineID);
 
-    // --- 5. 巨大ポーズシンボル "||" ---
+    // --- 5. ����|�[�Y�V���{�� "||" ---
     {
         float symH = SCREEN_HEIGHT * 0.6f;
         float symW = 60.0f;
@@ -587,7 +587,7 @@ void GameControlSystem::CreateStylePauseUI() {
         m_pauseUIEntities.push_back(bar2);
     }
 
-    // --- 6. セレクター (黄色い長方形・回転演出あり) ---
+    // --- 6. �Z���N�^�[ (���F�������`�E��]���o����) ---
     ECS::EntityID selector = m_coordinator->CreateEntity(
         TransformComponent({ -200.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 30.0f, 30.0f, 1.0f }),
         UIImageComponent("FADE_WHITE", 12.5f, true, { 1.0f, 1.0f, 0.0f, 1.0f })
@@ -599,7 +599,7 @@ void GameControlSystem::CreateStylePauseUI() {
     m_pauseUIEntities.push_back(selector);
     m_pauseUIEntities.push_back(selectorOuter);
 
-    // --- 7. メニューボタン生成 ---
+    // --- 7. ���j���[�{�^������ ---
     float screenRefX = SCREEN_WIDTH * 0.22f;
     float baseY = SCREEN_HEIGHT * 0.25f;
     float gapY = 130.0f;
@@ -633,13 +633,13 @@ void GameControlSystem::CreateStylePauseUI() {
     float sliderY = baseY + gapY * 3.3f;
     float sliderX = GetXForY(sliderY);
 
-    // ★追加: [CAMERA] ラベル
-    // スライダーの少し上 (Y - 40) に配置
+    // ���ǉ�: [CAMERA] ���x��
+    // �X���C�_�[�̏����� (Y - 40) �ɔz�u
     {
         float lblY = sliderY - 40.0f;
         float lblX = GetXForY(lblY);
-        // 画像サイズ 1700x320 -> アスペクト比 約 5.31
-        // 幅を 130 くらいにすると 高さは 24 くらい
+        // �摜�T�C�Y 1700x320 -> �A�X�y�N�g�� �� 5.31
+        // ���� 130 ���炢�ɂ���� ������ 24 ���炢
         ECS::EntityID camLabel = m_coordinator->CreateEntity(
             TransformComponent({ lblX, lblY, 0.0f }, { 0.0f, 0.0f, tiltRad }, { 130.0f, 24.0f, 1.0f }),
             UIImageComponent("UI_CAMERA_POSE", 12.2f, true, { 1.0f, 1.0f, 1.0f, 1.0f })
@@ -669,7 +669,7 @@ void GameControlSystem::CreateStylePauseUI() {
 }
 
 // ---------------------------------------------------------------------
-// 2. UpdatePauseSequence (ラベルのアニメーション対応)
+// 2. UpdatePauseSequence (���x���̃A�j���[�V�����Ή�)
 // ---------------------------------------------------------------------
 void GameControlSystem::UpdatePauseSequence(float deltaTime, ECS::EntityID controllerID) {
     m_pauseTimer += deltaTime;
@@ -680,18 +680,18 @@ void GameControlSystem::UpdatePauseSequence(float deltaTime, ECS::EntityID contr
     ECS::EntityID selectorID = INVALID_ENTITY_ID;
     ECS::EntityID selectorOuterID = INVALID_ENTITY_ID;
 
-    // UI_CAMERA_POSEを持つエンティティを探す（アニメーション用）
+    // UI_CAMERA_POSE�����G���e�B�e�B��T���i�A�j���[�V�����p�j
     ECS::EntityID camLabelID = INVALID_ENTITY_ID;
 
     for (auto id : m_pauseUIEntities) {
         if (!m_coordinator->HasComponent<TransformComponent>(id)) continue;
         auto& t = m_coordinator->GetComponent<TransformComponent>(id);
 
-        // セレクター判定 (サイズ)
+        // �Z���N�^�[���� (�T�C�Y)
         if (t.scale.x == 30.0f && t.scale.y == 30.0f && t.rotation.z != tiltRad) selectorID = id;
         if (t.scale.x == 40.0f && t.scale.y == 40.0f && t.rotation.z != tiltRad) selectorOuterID = id;
 
-        // ラベル判定 (アセットID)
+        // ���x������ (�A�Z�b�gID)
         if (m_coordinator->HasComponent<UIImageComponent>(id)) {
             if (m_coordinator->GetComponent<UIImageComponent>(id).assetID == "UI_CAMERA_POSE") {
                 camLabelID = id;
@@ -728,10 +728,10 @@ void GameControlSystem::UpdatePauseSequence(float deltaTime, ECS::EntityID contr
         if (m_pauseDecoLineID != INVALID_ENTITY_ID)
             m_coordinator->GetComponent<TransformComponent>(m_pauseDecoLineID).position.x = curX + slashW * 0.55f + paraX;
 
-        // ★追加: camLabelID も一緒にスライドさせる
+        // ���ǉ�: camLabelID ���ꏏ�ɃX���C�h������
         std::vector<ECS::EntityID> items = {
             m_pauseItems.btnReverse, m_pauseItems.btnRetry, m_pauseItems.btnStage,
-            camLabelID, // ここに追加
+            camLabelID, // �����ɒǉ�
             m_pauseItems.sliderBar, m_pauseItems.sliderKnob
         };
         auto GetTargetX = [&](float y) { return (SCREEN_WIDTH * 0.22f) - ((y - SCREEN_HEIGHT * 0.5f) * tanf(tiltRad)); };
@@ -823,12 +823,12 @@ void GameControlSystem::UpdatePauseSequence(float deltaTime, ECS::EntityID contr
 
         if (!anyHover) m_lastHoveredID = INVALID_ENTITY_ID;
 
-        // --- セレクター (回転演出) ---
+        // --- �Z���N�^�[ (��]���o) ---
         if (selectorID != INVALID_ENTITY_ID) {
             auto& sTrans = m_coordinator->GetComponent<TransformComponent>(selectorID);
             auto& sUI = m_coordinator->GetComponent<UIImageComponent>(selectorID);
 
-            // 常に回転
+            // ��ɉ�]
             sTrans.rotation.z += 3.0f * deltaTime;
 
             if (anyHover) {
@@ -844,7 +844,7 @@ void GameControlSystem::UpdatePauseSequence(float deltaTime, ECS::EntityID contr
                 auto& soTrans = m_coordinator->GetComponent<TransformComponent>(selectorOuterID);
                 auto& soUI = m_coordinator->GetComponent<UIImageComponent>(selectorOuterID);
                 soTrans.position = sTrans.position;
-                soTrans.rotation.z -= 1.5f * deltaTime; // 逆回転
+                soTrans.rotation.z -= 1.5f * deltaTime; // �t��]
                 soUI.color.w = sUI.color.w * 0.4f;
             }
         }
@@ -882,7 +882,7 @@ void GameControlSystem::UpdatePauseSequence(float deltaTime, ECS::EntityID contr
 }
 
 // ---------------------------------------------------------------------
-// 3. UpdatePauseSliderState (スライダー位置の厳密な補正)
+// 3. UpdatePauseSliderState (�X���C�_�[�ʒu�̌����ȕ␳)
 // ---------------------------------------------------------------------
 void GameControlSystem::UpdatePauseSliderState() {
     if (m_pauseItems.sliderKnob == INVALID_ENTITY_ID || m_pauseItems.sliderBar == INVALID_ENTITY_ID) return;
@@ -892,19 +892,19 @@ void GameControlSystem::UpdatePauseSliderState() {
     auto& barTrans = m_coordinator->GetComponent<TransformComponent>(m_pauseItems.sliderBar);
 
     float barW = barTrans.scale.x;
-    // 傾きを考慮したローカル座標系での左端・右端 (バーの中心からのオフセット)
+    // �X�����l���������[�J�����W�n�ł̍��[�E�E�[ (�o�[�̒��S����̃I�t�Z�b�g)
     float localLeft = -barW * 0.5f;
     float localRight = barW * 0.5f;
 
-    float tiltRad = XMConvertToRadians(12.0f); // 共通の傾き
+    float tiltRad = XMConvertToRadians(12.0f); // ���ʂ̌X��
     float cosT = cosf(tiltRad);
     float sinT = sinf(tiltRad);
 
-    // バーの中心座標
+    // �o�[�̒��S���W
     float barCX = barTrans.position.x;
     float barCY = barTrans.position.y;
 
-    // ワールド座標での左端と右端のX座標
+    // ���[���h���W�ł̍��[�ƉE�[��X���W
     float worldLeftX = barCX + (localLeft * cosT);
     float worldRightX = barCX + (localRight * cosT);
 
@@ -917,11 +917,11 @@ void GameControlSystem::UpdatePauseSliderState() {
             bool isHold = IsMousePress(0) || IsButtonPress(BUTTON_A);
 
             if (isTrigger) {
-                // 当たり判定も傾きを考慮して簡易的にX軸とY軸の距離で見る
+                // �����蔻����X�����l�����ĊȈՓI��X����Y���̋����Ō���
                 float cx = cTrans.position.x;
                 float cy = cTrans.position.y;
 
-                // バー上にあるか判定 (厳密には点と直線の距離だが、簡易的に近傍判定)
+                // �o�[��ɂ��邩���� (�����ɂ͓_�ƒ����̋��������A�ȈՓI�ɋߖT����)
                 float distY = std::abs(cy - (barCY - (cx - barCX) * tanf(tiltRad)));
                 if (cx >= worldLeftX - 40 && cx <= worldRightX + 40 && distY < 60) {
                     m_isDraggingSlider = true;
@@ -934,7 +934,7 @@ void GameControlSystem::UpdatePauseSliderState() {
                 float cx = cTrans.position.x;
                 float newX = std::max(worldLeftX, std::min(worldRightX, cx));
 
-                // 割合t (0.0 ~ 1.0)
+                // ����t (0.0 ~ 1.0)
                 float t = (newX - worldLeftX) / (worldRightX - worldLeftX);
 
                 float minSens = 0.001f, maxSens = 0.02f;
@@ -951,7 +951,7 @@ void GameControlSystem::UpdatePauseSliderState() {
         }
     }
 
-    // 現在値から位置を逆算
+    // ���ݒl����ʒu���t�Z
     float currentSens = 0.005f;
     if (auto camSys = ECS::ECSInitializer::GetSystem<CameraControlSystem>())
         currentSens = camSys->GetMouseSensitivity();
@@ -960,11 +960,11 @@ void GameControlSystem::UpdatePauseSliderState() {
     float t = (currentSens - minSens) / (maxSens - minSens);
     t = std::max(0.0f, std::min(1.0f, t));
 
-    // ノブの位置をバーの傾きに合わせて更新
-    // ローカル座標でのXオフセット
+    // �m�u�̈ʒu���o�[�̌X���ɍ��킹�čX�V
+    // ���[�J�����W�ł�X�I�t�Z�b�g
     float localX = localLeft + (barW * t);
 
-    // ワールド座標へ変換
+    // ���[���h���W�֕ϊ�
     knobTrans.position.x = barCX + (localX * cosT);
     knobTrans.position.y = barCY - (localX * sinT);
 
@@ -1090,7 +1090,7 @@ void GameControlSystem::UpdateLights()
 }
 
 // ---------------------------------------------------------------------
-// ★修正: UpdateTimerAndRules などのリンクエラーになっていた関数群の実装
+// ���C��: UpdateTimerAndRules �Ȃǂ̃����N�G���[�ɂȂ��Ă����֐��Q�̎���
 // ---------------------------------------------------------------------
 
 void GameControlSystem::UpdateTimerAndRules(float deltaTime, ECS::EntityID controllerID) {
@@ -1120,11 +1120,11 @@ void GameControlSystem::HandleInputAndStateSwitch(ECS::EntityID controllerID) {
         state.currentMode = GameMode::SCOUTING_MODE;
         m_hasUsedTopView = true;
 
-        // ★修正: トップビュー遷移時は BGM_TOPVIEW を再生
+        // ���C��: �g�b�v�r���[�J�ڎ��� BGM_TOPVIEW ���Đ�
         PlayBGM("BGM_TOPVIEW", 0.7f);
 
         ApplyModeVisuals(controllerID);
-        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f); // 音量調整
+        ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TOPVIEWSTART", 0.4f); // ���ʒ���
     }
     ApplyModeVisuals(controllerID);
 }
@@ -1134,11 +1134,11 @@ void GameControlSystem::CheckSceneTransition(ECS::EntityID controllerID) {
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
     if (state.isGameOver || state.isGameClear) {
 
-        // ★修正: ゲーム終了時にBGM停止
+        // ���C��: �Q�[���I������BGM��~
         StopBGM();
 
         if (state.isGameOver) {
-            EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_ARREST", 0.5f); // 音量調整
+            EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_ARREST", 0.5f); // ���ʒ���
         }
 
         ResultData data; data.isCleared = state.isGameClear; data.clearTime = state.elapsedTime; data.clearedInTime = (state.elapsedTime <= state.timeLimitStar); data.timeLimitStar = state.timeLimitStar; data.wasSpotted = state.wasSpotted; data.stageID = GameScene::GetStageNo();
@@ -1168,22 +1168,22 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID) {
     auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
     bool showIcons = (state.currentMode == GameMode::SCOUTING_MODE);
 
-    // ★テレポーターのペアに色を割り当て（初回のみ）
+    // ���e���|�[�^�[�̃y�A�ɐF�����蓖�āi����̂݁j
     if (showIcons && m_teleportColorMap.empty()) {
-        // 色のパレット（ペアごとに異なる色）
+        // �F�̃p���b�g�i�y�A���ƂɈقȂ�F�j
         std::vector<DirectX::XMFLOAT4> colorPalette = {
-            {0.0f, 1.0f, 1.0f, 1.0f},    // シアン
-            {1.0f, 0.0f, 1.0f, 1.0f},    // マゼンタ
-            {1.0f, 1.0f, 0.0f, 1.0f},    // 黄色
-            {0.0f, 1.0f, 0.0f, 1.0f},    // 緑
-            {1.0f, 0.5f, 0.0f, 1.0f},    // オレンジ
-            {0.5f, 0.0f, 1.0f, 1.0f},    // 紫
+            {0.0f, 1.0f, 1.0f, 1.0f},    // �V�A��
+            {1.0f, 0.0f, 1.0f, 1.0f},    // �}�[���^
+            {1.0f, 1.0f, 0.0f, 1.0f},    // ���F
+            {0.0f, 1.0f, 0.0f, 1.0f},    // ��
+            {1.0f, 0.5f, 0.0f, 1.0f},    // �I�����W
+            {0.5f, 0.0f, 1.0f, 1.0f},    // ��
         };
 
         int colorIndex = 0;
         std::unordered_set<ECS::EntityID> processed;
 
-        // 全テレポーターを収集
+        // �S�e���|�[�^�[�����W
         std::vector<ECS::EntityID> teleporters;
         for (auto const& entity : m_coordinator->GetActiveEntities()) {
             if (!m_coordinator->HasComponent<TagComponent>(entity)) continue;
@@ -1193,24 +1193,24 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID) {
             }
         }
 
-        // ★修正: TeleportComponentのtargetEntityを基準にペアを判定
+        // ���C��: TeleportComponent��targetEntity����Ƀy�A�𔻒�
         for (size_t i = 0; i < teleporters.size(); ++i) {
             ECS::EntityID teleA = teleporters[i];
             if (processed.count(teleA)) continue;
 
-            // このテレポーターに色を割り当て
+            // ���̃e���|�[�^�[�ɐF�����蓖��
             DirectX::XMFLOAT4 pairColor = colorPalette[colorIndex % colorPalette.size()];
             m_teleportColorMap[teleA] = pairColor;
             processed.insert(teleA);
 
-            // ★TeleportComponentからtargetEntity（実際の接続先）を取得
+            // ��TeleportComponent����targetEntity�i���ۂ̐ڑ���j���擾
             ECS::EntityID linkedTele = ECS::INVALID_ENTITY_ID;
             if (m_coordinator->HasComponent<TeleportComponent>(teleA)) {
                 auto& teleComp = m_coordinator->GetComponent<TeleportComponent>(teleA);
                 linkedTele = teleComp.targetEntity;
             }
 
-            // ペアが見つかったら同じ色を割り当て
+            // �y�A�����������瓯���F�����蓖��
             if (linkedTele != ECS::INVALID_ENTITY_ID && !processed.count(linkedTele)) {
                 m_teleportColorMap[linkedTele] = pairColor;
                 processed.insert(linkedTele);
@@ -1238,8 +1238,8 @@ void GameControlSystem::UpdateTopViewUI(ECS::EntityID controllerID) {
         }
         if (isGuard) { if (showIcons) UpdateIcon(entity, "ICO_TASER", { 1, 1, 1, 1 }); else if (m_iconMap.count(entity)) m_coordinator->GetComponent<UIImageComponent>(m_iconMap[entity]).isVisible = false; }
         if (isTeleporter) {
-            // ★テレポーターの色を個別に設定
-            DirectX::XMFLOAT4 teleportColor = { 0, 1, 1, 1 }; // デフォルト色
+            // ���e���|�[�^�[�̐F���ʂɐݒ�
+            DirectX::XMFLOAT4 teleportColor = { 0, 1, 1, 1 }; // �f�t�H���g�F
             if (m_teleportColorMap.count(entity)) {
                 teleportColor = m_teleportColorMap[entity];
             }
@@ -1288,7 +1288,7 @@ void GameControlSystem::UpdateCaughtSequence(float deltaTime, ECS::EntityID cont
             m_caughtAnimPlayed = true; state.sequenceTimer = 0.0f;
             if (m_coordinator->HasComponent<AnimationComponent>(m_catchingGuardID)) m_coordinator->GetComponent<AnimationComponent>(m_catchingGuardID).Play("A_GUARD_ATTACK", false);
             if (m_coordinator->HasComponent<AnimationComponent>(playerID)) m_coordinator->GetComponent<AnimationComponent>(playerID).Play("A_PLAYER_CAUGHT", false);
-            // 音量調整 (1.0 -> 0.5)
+            // ���ʒ��� (1.0 -> 0.5)
             EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_HIT", 0.5f);
         }
     }
@@ -1405,7 +1405,7 @@ void GameControlSystem::StartEntranceSequence(EntityID controllerID)
         }
         if (m_coordinator->HasComponent<AnimationComponent>(doorID)) m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_OPEN", false);
         if (m_coordinator->HasComponent<CollisionComponent>(doorID)) m_coordinator->GetComponent<CollisionComponent>(doorID).type = COLLIDER_TRIGGER;
-        // ★修正: SE_DOOR_OPEN (停止可能SE)
+        // ���C��: SE_DOOR_OPEN (��~�\SE)
         PlayStopableSE("SE_DOOR", 0.5f);
     }
 }
@@ -1427,7 +1427,7 @@ void GameControlSystem::UpdateEntranceSequence(float deltaTime, EntityID control
             if (doorID != INVALID_ENTITY_ID) {
                 if (m_coordinator->HasComponent<AnimationComponent>(doorID)) m_coordinator->GetComponent<AnimationComponent>(doorID).Play("A_DOOR_CLOSE", false);
                 if (m_coordinator->HasComponent<CollisionComponent>(doorID)) m_coordinator->GetComponent<CollisionComponent>(doorID).type = COLLIDER_STATIC;
-                // ★修正: SE_DOOR_CLOSE (停止可能SE)
+                // ���C��: SE_DOOR_CLOSE (��~�\SE)
                 PlayStopableSE("SE_DOOR", 0.5f);
             }
         }
@@ -1454,7 +1454,7 @@ void GameControlSystem::CheckDoorUnlock(EntityID controllerID) {
                     auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
                     if (sound.assetID == "BGM_TEST" || sound.assetID == "BGM_TEST2") sound.RequestStop();
                 }
-                // 音量調整 (1.0 -> 0.5)
+                // ���ʒ��� (1.0 -> 0.5)
                 PlayStopableSE("SE_DOOR", 0.5f);
                 PlayBGM("BGM_GAME_2");
             }
@@ -1513,7 +1513,7 @@ bool GameControlSystem::IsAABBOverlap(ECS::EntityID a, ECS::EntityID b) {
 }
 
 void GameControlSystem::CheckMapGimmickTrigger(ECS::EntityID controllerID) {
-    // 自動遷移は無効化 (ユーザー指示)
+    // �����J�ڂ͖����� (���[�U�[�w��)
 }
 
 void GameControlSystem::StartMosaicSequence(ECS::EntityID controllerID) {
@@ -1548,7 +1548,7 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
         state.currentMode = GameMode::ACTION_MODE;
         if (m_blackBackID != INVALID_ENTITY_ID) m_coordinator->GetComponent<UIImageComponent>(m_blackBackID).color.w = 1.0f;
 
-        // 音関連
+        // ���֘A
         for (auto const& e : m_coordinator->GetActiveEntities()) {
             if (!m_coordinator->HasComponent<SoundComponent>(e)) continue;
             auto& snd = m_coordinator->GetComponent<SoundComponent>(e);
@@ -1557,7 +1557,7 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
         }
         ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator, "BGM_ACTION", 0.5f);
 
-        // UI非表示処理
+        // UI��\������
         for (auto& pair : m_iconMap) { if (m_coordinator->HasComponent<UIImageComponent>(pair.second)) m_coordinator->GetComponent<UIImageComponent>(pair.second).isVisible = false; }
         for (auto const& e : m_coordinator->GetActiveEntities()) {
             if (m_coordinator->HasComponent<ScanLineComponent>(e) || m_coordinator->HasComponent<SonarComponent>(e)) {
@@ -1566,7 +1566,7 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
         }
         ApplyModeVisuals(controllerID);
 
-        // --- ★ここからカメラ位置修正 ---
+        // --- ����������J�����ʒu�C�� ---
         EntityID playerID = FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
         EntityID doorID = FindEntranceDoor();
 
@@ -1574,7 +1574,7 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
             auto& pTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
             auto& dTrans = m_coordinator->GetComponent<TransformComponent>(doorID);
 
-            // プレイヤー位置をドア前に再配置
+            // �v���C���[�ʒu���h�A�O�ɍĔz�u
             float rad = dTrans.rotation.y;
             float startDist = 5.0f;
             pTrans.position.x = dTrans.position.x - sin(rad) * startDist;
@@ -1585,7 +1585,7 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
                 XMVECTOR doorPos = XMLoadFloat3(&dTrans.position);
                 XMVECTOR doorDir = XMVectorSet(sin(rad), 0.0f, cos(rad), 0.0f);
 
-                // カメラ位置計算 (StartEntranceSequenceと同じ計算式)
+                // �J�����ʒu�v�Z (StartEntranceSequence�Ɠ����v�Z��)
                 XMVECTOR camPosVec = doorPos + (doorDir * 7.5f) + XMVectorSet(0.0f, 3.0f, 0.0f, 0.0f);
                 XMVECTOR lookAtVec = doorPos;
 
@@ -1594,10 +1594,10 @@ void GameControlSystem::UpdateMosaicSequence(float deltaTime, ECS::EntityID cont
                 ::DirectX::XMStoreFloat3(&camPos, camPosVec);
                 ::DirectX::XMStoreFloat3(&lookAt, lookAtVec);
 
-                // 1. システムに固定カメラ設定を通知
+                // 1. �V�X�e���ɌŒ�J�����ݒ��ʒm
                 camSys->SetFixedCamera(camPos, lookAt);
 
-                // 2. ★重要: カメラエンティティの座標を直接書き換えてワープを防止
+                // 2. ���d�v: �J�����G���e�B�e�B�̍��W�𒼐ڏ��������ă��[�v��h�~
                 EntityID camEntity = FindFirstEntityWithComponent<CameraComponent>(m_coordinator);
                 if (camEntity != INVALID_ENTITY_ID) {
                     m_coordinator->GetComponent<TransformComponent>(camEntity).position = camPos;
@@ -1663,7 +1663,7 @@ void GameControlSystem::ApplyModeVisuals(ECS::EntityID controllerID) {
 }
 
 // ==================================================================================
-// テレポートエフェクトの更新
+// �e���|�[�g�G�t�F�N�g�̍X�V
 // ==================================================================================
 // GameControlSystem.cpp
 
@@ -1700,26 +1700,21 @@ void GameControlSystem::UpdateTeleportEffects(float deltaTime, ECS::EntityID con
             isTeleporting = (tp.state == TeleportState::FadingOut);
         }
 
-        // プレイヤーがテレポートを実際に使用した場合のみエフェクトを削除
-        if (isTeleporting) {
-            // このテレポートのエフェクトを削除（わっかは残す）
+        // �v���C���[���e���|�[�g�𓥂񂾏ꍇ
+        if (distSq < 9.0f) {
             if (m_teleportEffectMap.count(entity)) {
                 const auto& fx = m_teleportEffectMap[entity];
 
-                // ★修正: glowだけ削除、teleport（わっか）は残す
                 if (fx.glow != INVALID_ENTITY_ID) {
                     if (m_coordinator->HasComponent<EffectComponent>(fx.glow)) {
                         m_coordinator->DestroyEntity(fx.glow);
                     }
                 }
-                // teleport（わっか）は削除しない
-                /*
                 if (fx.teleport != INVALID_ENTITY_ID) {
                     if (m_coordinator->HasComponent<EffectComponent>(fx.teleport)) {
                         m_coordinator->DestroyEntity(fx.teleport);
                     }
                 }
-                */
 
                 m_teleportEffectMap.erase(entity);
                 m_teleportFxRestartTimer.erase(entity);
@@ -1758,8 +1753,8 @@ void GameControlSystem::UpdateTeleportEffects(float deltaTime, ECS::EntityID con
         // まだ使用されていないテレポート
         else if (shouldShowEffects && !m_usedTeleporters.count(entity)) {
             if (!m_teleportEffectMap.count(entity)) {
-                // ★トップビューで記録した色を取得
-                XMFLOAT4 effectColor = XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f); // デフォルトはシアン
+                // ���g�b�v�r���[�ŋL�^�����F���擾
+                XMFLOAT4 effectColor = XMFLOAT4(0.0f, 1.0f, 1.0f, 1.0f); // �f�t�H���g�̓V�A��
                 if (m_teleportColorMap.count(entity)) {
                     effectColor = m_teleportColorMap[entity];
                 }
@@ -1828,8 +1823,24 @@ void GameControlSystem::UpdateTeleportEffects(float deltaTime, ECS::EntityID con
                 if (m_teleportColorMap.count(entity)) {
                     effectColor = m_teleportColorMap[entity];
                 }
+                // ---------------------------------------------------------
 
-                // RenderComponentがあるはずなので、ここで色が適用される
+                if (fx.glow != INVALID_ENTITY_ID && m_coordinator->HasComponent<EffectComponent>(fx.glow)) {
+                    auto& ec = m_coordinator->GetComponent<EffectComponent>(fx.glow);
+                    ec.useColor = true;
+                    ec.color = effectColor;
+                }
+                if (fx.teleport != INVALID_ENTITY_ID && m_coordinator->HasComponent<EffectComponent>(fx.teleport)) {
+                    auto& ec = m_coordinator->GetComponent<EffectComponent>(fx.teleport);
+                    ec.useColor = true;
+                    ec.color = effectColor;
+                }
+                m_teleportFxRestartTimer[entity] += deltaTime;
+
+                if (m_teleportFxRestartTimer[entity] >= kTeleportFxRestartSec) {
+                    m_teleportFxRestartTimer[entity] = 0.0f;
+
+                // RenderComponent������͂��Ȃ̂ŁA�����ŐF���K�p�����
                 if (fx.glow != INVALID_ENTITY_ID && m_coordinator->HasComponent<RenderComponent>(fx.glow)) {
                     m_coordinator->GetComponent<RenderComponent>(fx.glow).color = effectColor;
                 }
@@ -1853,7 +1864,7 @@ void GameControlSystem::UpdateTeleportEffects(float deltaTime, ECS::EntityID con
                 if (m_teleportFxRestartTimer[entity] >= kTeleportFxRestartSec) {
                     m_teleportFxRestartTimer[entity] = 0.0f;
 
-                    // ★teleport 側だけリスタート（glow はそのまま）
+                    // ��teleport ���������X�^�[�g�iglow �͂��̂܂܁j
                     if (fx.teleport != INVALID_ENTITY_ID) {
                         if (m_coordinator->HasComponent<EffectComponent>(fx.teleport)) {
                             m_coordinator->DestroyEntity(fx.teleport);

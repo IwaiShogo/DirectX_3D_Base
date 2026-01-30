@@ -914,3 +914,19 @@ void ResultScene::CreateNumberDisplay(int number, DirectX::XMFLOAT2 pos)
         ui.uvScale = { uvW, uvH };
     }
 }
+
+void OnStageClear(int clearedStageNo)
+{
+    // 最大解放ステージを更新
+    int nextStage = clearedStageNo + 1;
+
+    if (nextStage <= 18) // 18ステージまで
+    {
+        StageUnlockProgress::UnlockStage(nextStage);
+        StageUnlockProgress::SetPendingRevealStage(nextStage);
+        StageUnlockProgress::Save();
+    }
+
+    // StageSelectSceneに戻ると、自動的に次のステージのページに切り替わり、
+    // カードが出現演出される
+}

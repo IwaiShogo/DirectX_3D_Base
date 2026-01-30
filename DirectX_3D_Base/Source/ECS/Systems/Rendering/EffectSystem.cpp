@@ -36,6 +36,16 @@ static Effekseer::Color ToEffekseerColor(const DirectX::XMFLOAT4& color)
 	return Effekseer::Color(toByte(color.x), toByte(color.y), toByte(color.z), toByte(color.w));
 }
 
+static Effekseer::Color ToEffekseerColor(const DirectX::XMFLOAT4& color)
+{
+	auto toByte = [](float value) -> uint8_t {
+		if (value < 0.0f) value = 0.0f;
+		if (value > 1.0f) value = 1.0f;
+		return static_cast<uint8_t>(value * 255.0f);
+	};
+	return Effekseer::Color(toByte(color.x), toByte(color.y), toByte(color.z), toByte(color.w));
+}
+
 void EffectSystem::Init(ECS::Coordinator* coordinator)
 {
 	m_coordinator = coordinator;
