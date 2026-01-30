@@ -42,18 +42,25 @@ void ResultControlSystem::Update(float deltaTime)
 
         if (isTargetButton)
         {
-            // ここに拡大縮小のロジック（Lerp等）を記述
-            // カーソルが重なっている(Hover)なら拡大、そうでないなら元に戻す
+            // --- ★修正：土台（_Frame付き）はSE判定から除外する ---
+            // tagの末尾が "_Frame" で終わっているかチェック
+            bool isFrame = (tag.size() >= 6 && tag.compare(tag.size() - 6, 6, "_Frame") == 0);
+
             float targetScaleMultiplier = (button.state == ButtonState::Hover) ? 1.1f : 1.0f;
 
-            // originalScaleに対して目標倍率を掛ける
+            // 「Frameではない」かつ「Hoverになった瞬間」だけ鳴らす
+            if (!isFrame && button.state == ButtonState::Hover && trans.scale.x <= button.originalScale.x + 0.01f)
+            {
+                ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_CURSOR", 0.4f);
+            }
+
+            // スケール変更処理は土台・テキスト両方に適用（連動して動かすため）
             DirectX::XMFLOAT3 targetScale = {
                 button.originalScale.x * targetScaleMultiplier,
                 button.originalScale.y * targetScaleMultiplier,
                 1.0f
             };
 
-            // 線形補間(Lerp)で滑らかにサイズを変更する
             trans.scale.x += (targetScale.x - trans.scale.x) * 0.2f;
             trans.scale.y += (targetScale.y - trans.scale.y) * 0.2f;
         }

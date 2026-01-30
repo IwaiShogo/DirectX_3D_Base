@@ -645,6 +645,12 @@ void ResultScene::Init()
             "BGM_GAMEOVER",
             0.8f
         );
+        
+        EntityFactory::CreateOneShotSoundEntity(
+            m_coordinator.get(),
+            "SE_ARREST",
+            0.6f  // リザルト画面なので少し大きめにしても良いかもしれません
+        );
     }
 
     // 下部ボタン
@@ -664,6 +670,17 @@ void ResultScene::Init()
 
 void ResultScene::Uninit()
 {
+
+    for (auto const& entity : m_coordinator->GetActiveEntities()) {
+        if (m_coordinator->HasComponent<SoundComponent>(entity)) {
+            auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+            // assetIDでフィルタリングも可能
+            if (sound.assetID == "SE_ARREST") {
+                sound.RequestStop();
+            }
+        }
+    }
+
     // BGMエンティティの停止リクエスト
     if (m_bgmEntity != ECS::INVALID_ENTITY_ID)
     {
@@ -847,12 +864,13 @@ void ResultScene::CreateButtons()
         { 220.0f, 60.0f },                              // 【文字サイズ】
         { 20.0f, 5.0f },                                 // 【文字のズレ】
         []() {
+            
             ResultScene::isClear = false;
             LoadingScene::SetNextSceneInfo(2.0f, typeid(TitleScene));
             SceneManager::ChangeScene<LoadingScene>();
         }
     );
-
+    
 }
 
 void ResultScene::CreateNumberDisplay(int number, DirectX::XMFLOAT2 pos)
@@ -933,3 +951,5 @@ void OnStageClear(int clearedStageNo)
     // StageSelectSceneに戻ると、自動的に次のステージのページに切り替わり、
     // カードが出現演出される
 }
+
+
