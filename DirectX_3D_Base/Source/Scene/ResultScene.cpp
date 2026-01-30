@@ -817,8 +817,16 @@ void ResultScene::CreateButtons()
         { 260.0f, 120.0f },                             // 【土台サイズ】
         { 220.0f, 60.0f },                              // 【文字サイズ】
         { 0.0f, 5.0f },                                 // 【文字のズレ】
-        []() {
+        [this]() {
             ResultScene::isClear = false;
+
+            // SE再生
+            ECS::EntityID m_DecisionSe = ECS::EntityFactory::CreateOneShotSoundEntity(
+                m_coordinator.get(),
+                "SE_DECISION",
+                1.0f
+            );
+
             SceneManager::ChangeScene<StageSelectScene>();
         }
     );
@@ -830,9 +838,17 @@ void ResultScene::CreateButtons()
         { 260.0f, 120.0f },                             // 【土台サイズ】
         { 220.0f, 60.0f },                              // 【文字サイズ】
         { 20.0f, 5.0f },                                 // 【文字のズレ】
-        []() {
+        [this]() {
             ResultScene::isClear = false;
             GameScene::SetStageNo(ResultScene::s_resultData.stageID);
+            
+            // SE再生
+            ECS::EntityID m_DecisionSe = ECS::EntityFactory::CreateOneShotSoundEntity(
+                m_coordinator.get(),
+                "SE_DECISION",
+                1.0f
+            );
+
             SceneManager::ChangeScene<GameScene>();
         }
     );
@@ -844,9 +860,18 @@ void ResultScene::CreateButtons()
         { 260.0f, 120.0f },                             // 【土台サイズ】
         { 220.0f, 60.0f },                              // 【文字サイズ】
         { 20.0f, 5.0f },                                 // 【文字のズレ】
-        []() {
+        [this]() {
             ResultScene::isClear = false;
+            
+            // SE再生
+            ECS::EntityID m_DecisionSe = ECS::EntityFactory::CreateOneShotSoundEntity(
+                m_coordinator.get(),
+                "SE_DECISION",
+                1.0f
+            );
+
             SceneManager::ChangeScene<TitleScene>();
+            
         }
     );
 
