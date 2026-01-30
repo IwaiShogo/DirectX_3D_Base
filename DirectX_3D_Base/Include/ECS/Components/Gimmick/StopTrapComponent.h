@@ -14,9 +14,13 @@ struct StopTrapComponent
     float stopDuration = 3.0f;   // 停止時間
     bool isConsumed = false;     // 使用済みフラグ
 
+    // ■ SE管理用
+    ECS::EntityID seEntity = ECS::INVALID_ENTITY_ID; // 再生中のSEエンティティ
+    float seTimer = 0.0f;                            // SE停止用のタイマー
+
     // コンストラクタ
     StopTrapComponent(float duration = 3.0f)
-        : stopDuration(duration), isConsumed(false) {
+        : stopDuration(duration), isConsumed(false), seTimer(0.0f) {
     }
 };
 
