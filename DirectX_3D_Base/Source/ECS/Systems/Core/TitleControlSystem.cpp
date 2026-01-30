@@ -92,6 +92,7 @@ void TitleControlSystem::Update(float deltaTime)
 
                 ctrl.state = TitleState::ZoomAnimation;
                 ctrl.animTimer = 0.0f; // 次のステートのためにリセット
+                ctrl.isWindSoundPlayed = false;
             }
             break;
         }
@@ -101,6 +102,7 @@ void TitleControlSystem::Update(float deltaTime)
             ctrl.animTimer += deltaTime;
 
             float alpha = std::max(0.0f, 1.0f - (ctrl.animTimer / TitleTuning::LOGO_FADE_OUT_DURATION));
+            
             auto fadeOutUI = [&](ECS::EntityID id) {
                 if (id != INVALID_ENTITY_ID && m_coordinator->HasComponent<UIImageComponent>(id)) {
                     auto& img = m_coordinator->GetComponent<UIImageComponent>(id);
@@ -111,8 +113,11 @@ void TitleControlSystem::Update(float deltaTime)
             for (auto uiEntity : ctrl.pressStartUIEntities) fadeOutUI(uiEntity);
             fadeOutUI(ctrl.logoEntityID);
 
-            if (ctrl.cardEntityID != INVALID_ENTITY_ID)
-            {
+            if (!ctrl.isWindSoundPlayed && ctrl.animTimer > 0.7f) {
+                ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_WIND", 1.0f);
+                ctrl.isWindSoundPlayed = true; // 再生済みフラグを立てる
+            }
+            if (ctrl.cardEntityID != INVALID_ENTITY_ID){
                 float cardProgress = std::min(1.0f, ctrl.animTimer / TitleTuning::ZOOM_START_DELAY);
                 float t = cardProgress * cardProgress * (3.0f - 2.0f * cardProgress);
                 float easeT = t * t * (3.0f - 2.0f * t);
