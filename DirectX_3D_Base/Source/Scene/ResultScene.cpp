@@ -75,7 +75,7 @@ void ResultScene::SetResultData(const ResultData& data)
                         break;
                     }
                 }
-                return (v >= 1 && v <= 6) ? v : -1;
+                return (v >= 1 && v <= 18) ? v : -1;  // ★修正: 18ステージ対応
             }(s_resultData.stageID);
 
         StageUnlockProgress::UpdateBestTimeIfFaster(clearedStageNo, s_resultData.clearTime);
@@ -232,7 +232,7 @@ void ResultScene::Init()
             UIImageComponent("UI_GAME_CLEAR", -2.0f, true, { 1,1,1,1 })
         );
 
-       
+
 
 
 
@@ -425,7 +425,7 @@ void ResultScene::Init()
                         if (std::string(texSet.iconTex) == "ICO_UNKNOWN") {
                             std::cout << "  -> WARNING: Unknown ID! Check GetItemTextures." << std::endl;
                         }
-                       
+
 
                         float x = positions[i].x;
                         float y = positions[i].y;
@@ -450,7 +450,7 @@ void ResultScene::Init()
                 }
             }
 
-           
+
 
 
             // スタンプ
@@ -491,7 +491,7 @@ void ResultScene::Init()
                 );
             }
         }
-        
+
     }
     else
     {
@@ -550,7 +550,7 @@ void ResultScene::Init()
         // 背景.雲2
         m_coordinator->CreateEntity(
             TransformComponent(
-                { CloudX+1280, SCREEN_HEIGHT * 0.5f, 0 },
+                { CloudX + 1280, SCREEN_HEIGHT * 0.5f, 0 },
                 { 0, 0, 0 },
                 { SCREEN_WIDTH, SCREEN_HEIGHT, 1 }
             ),
@@ -575,14 +575,14 @@ void ResultScene::Init()
         // GAME OVER ロゴ（真ん中で置いていく）
         m_coordinator->CreateEntity(
             TransformComponent(
-                { startX + 800.0f,startY+25 , 0.0f },
+                { startX + 800.0f,startY + 25 , 0.0f },
                 { 0,0,0 },
                 { 460,72,1 }
             ),
             UIImageComponent("UI_GAME_OVER", 1.2f, true, { 1,1,1,1 }),
             TagComponent("RESULT_ANIM_LOGO")
         );
-        
+
 
 
         // ステージ名プレート（ゲームオーバー時も表示）
@@ -659,7 +659,7 @@ void ResultScene::Init()
 
     std::cout << "ResultScene::Init() - completed." << std::endl;
 
-    
+
 }
 
 void ResultScene::Uninit()
@@ -697,7 +697,7 @@ void ResultScene::Update(float deltaTime)
 
 
     // 織田
-    
+
 
 
 
@@ -808,7 +808,7 @@ void ResultScene::CreateButtons()
             m_coordinator->GetComponent<UIButtonComponent>(textEntity).originalScale = { textSize.x, textSize.y, 1.0f };
 
             m_buttons.push_back({ textEntity, frameEntity });
-    };
+        };
 
     // 1. SELECTボタン
     createResultButton(
@@ -849,7 +849,7 @@ void ResultScene::CreateButtons()
             SceneManager::ChangeScene<TitleScene>();
         }
     );
-    
+
 }
 
 void ResultScene::CreateNumberDisplay(int number, DirectX::XMFLOAT2 pos)

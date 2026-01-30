@@ -88,11 +88,11 @@ private:
 		"M_SELECT1",  "M_SELECT2",  "M_SELECT3",
 		"M_SELECT4",  "M_SELECT5",  "M_SELECT6",
 		// Page 2 (2-1 ~ 2-6) ★1ページ目と同じモデルを使用
-		"M_SELECT1",  "M_SELECT2",  "M_SELECT3",
-		"M_SELECT4",  "M_SELECT5",  "M_SELECT6",
+		"M_SELECT7",  "M_SELECT8",  "M_SELECT9",
+		"M_SELECT10",  "M_SELECT11",  "M_SELECT12",
 		// Page 3 (3-1 ~ 3-6) ★1ページ目と同じモデルを使用
-		"M_SELECT1",  "M_SELECT2",  "M_SELECT3",
-		"M_SELECT4",  "M_SELECT5",  "M_SELECT6",
+		"M_SELECT13",  "M_SELECT14",  "M_SELECT15",
+		"M_SELECT16",  "M_SELECT17",  "M_SELECT18",
 	};
 
 	// ============================================================
