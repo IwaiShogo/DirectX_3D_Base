@@ -206,13 +206,14 @@ void TitleScene::Init()
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
                 /* Callback */ [this]() {
-                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 0.5f);
+                    
                     for (auto const& entity : m_coordinator->GetActiveEntities()) {
                         if (m_coordinator->HasComponent<SoundComponent>(entity)) {
                             auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
                             sound.RequestStop();
                         }
                     }
+                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 2.0f);
 
                     // ============================================
                     // はじめから：既存の全リセット関数を呼び出す
@@ -244,13 +245,14 @@ void TitleScene::Init()
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
                 /* Callback */ [this]() {
-                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 0.5f);
+                    
                     for (auto const& entity : m_coordinator->GetActiveEntities()) {
                         if (m_coordinator->HasComponent<SoundComponent>(entity)) {
                             auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
                             sound.RequestStop();
                         }
                     }
+                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 2.0f);
                     // つづきから
                     SceneManager::ChangeScene<StageSelectScene>();
                 },
