@@ -414,16 +414,13 @@ EntityID ECS::EntityFactory::CreateMapSignboard(Coordinator* coordinator, const 
 EntityID ECS::EntityFactory::CreateOneShotSoundEntity(Coordinator* coordinator, const std::string& assetID, float volume)
 {
 	EntityID entity = coordinator->CreateEntity(
-		TagComponent(
-			/* Tag	*/	"SE"
-		),
-		SoundComponent(),
-		OneShotSoundComponent(
-			/* AssetID	*/	assetID,
-			/* Volume	*/	volume
-		)
+		TagComponent("SE"),
+		SoundComponent(assetID, SoundType::SE, volume, 0)
 	);
+	auto& sound = coordinator->GetComponent<SoundComponent>(entity);
+	sound.RequestPlay();
 
+	return entity;
 	return entity;
 }
 

@@ -61,6 +61,7 @@ void AudioSystem::UpdatePersistentSound(ECS::EntityID entity)
 		return;
 	}
 
+
 	// 2. Ä¶—v‹‚Ìˆ—
 	if (soundComp.playRequested)
 	{
