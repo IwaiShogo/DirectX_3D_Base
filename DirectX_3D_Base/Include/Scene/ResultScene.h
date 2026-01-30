@@ -48,7 +48,7 @@ public:
 
     // ʉ̃{^(RETRY / SELECT / TITLE)
     void CreateButtons();
-
+   
     // GameControlSystem  ResultData 󂯎邽߂̑
     static void SetResultData(const ResultData& data);
     // ǉFStageSelect ǂޗp
@@ -70,7 +70,7 @@ private:
     static int                      s_newlyUnlockedStageNo;
 
     ECS::EntityID m_bgmEntity = ECS::INVALID_ENTITY_ID;
-
+    ECS::EntityID m_DecisionSe = ECS::INVALID_ENTITY_ID;
     // DcF{^GeBeB̂߂̕ϐ
 private:
 

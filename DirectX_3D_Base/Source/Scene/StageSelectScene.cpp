@@ -709,6 +709,8 @@ void StageSelectScene::Init()
 				PlayUISelectEffect(m_startBtnEntity, "EFK_SELECTOK", 35.0f);
 				m_inputLocked = true;
 
+				// 2. LoadingSceneのパラメータ設定（2.0秒待機、遷移先はGameScene）
+				LoadingScene::SetNextSceneInfo(2.0f, typeid(GameScene));
 				m_isWaitingForGameStart = true;
 				m_gameStartTimer = 0.0f;
 

@@ -1191,9 +1191,7 @@ void GameControlSystem::CheckSceneTransition(ECS::EntityID controllerID) {
         // ���C��: �Q�[���I������BGM��~
         StopBGM();
 
-        if (state.isGameOver) {
-            EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_ARREST", 0.5f); // ���ʒ���
-        }
+        
 
         ResultData data; data.isCleared = state.isGameClear; data.clearTime = state.elapsedTime; data.clearedInTime = (state.elapsedTime <= state.timeLimitStar); data.timeLimitStar = state.timeLimitStar; data.wasSpotted = state.wasSpotted; data.stageID = GameScene::GetStageNo();
         if (m_coordinator->HasComponent<ItemTrackerComponent>(controllerID)) {
