@@ -55,6 +55,8 @@ public:
 	static ECS::Coordinator* GetCoordinator() { return s_coordinator; }
 
 private:
+	ECS::EntityID m_bgm = (ECS::EntityID)-1;
+
 	// ============================================================
 	// ★18ステージ対応: 定数定義
 	// ============================================================

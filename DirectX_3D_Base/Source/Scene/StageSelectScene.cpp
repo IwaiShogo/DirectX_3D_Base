@@ -1,5 +1,4 @@
-﻿
-#include "Scene/SceneManager.h"
+﻿#include "Scene/SceneManager.h"
 #include "Scene/ResultScene.h"
 #include "Scene/GameScene.h"
 #include "ECS/Systems/Gameplay/MapGenerationSystem.h"  
@@ -13,9 +12,10 @@
 #include "ECS/EntityFactory.h"
 #include "ECS/Systems/Rendering/EffectSystem.h"
 
-// 共通画面遷移（System + Component）
 #include "ECS/Systems/Core/ScreenTransition.h"
 #include "ECS/Components/Rendering/AnimationComponent.h"
+#include "ECS/Components/Core/SoundComponent.h"
+
 #include <DirectXMath.h>
 #include <iostream>
 #include <functional>
@@ -27,12 +27,14 @@
 #include <random>
 #include <cmath>
 
-
-
 using namespace DirectX;
 using namespace ECS;
 
+// クラス外の静的変数は削除し、標準的なメンバ変数アクセスで実装します
 ECS::Coordinator* StageSelectScene::s_coordinator = nullptr;
+
+static ECS::EntityID s_lastHoveredEntity = (ECS::EntityID)-1;
+static float s_animTime = 0.0f;
 
 extern std::string GetItemIconPath(const std::string& itemID);
 
@@ -45,21 +47,17 @@ static float Clamp01(float x)
 
 static DirectX::XMFLOAT3 MakeSelectCardScale(float s)
 {
-	// 反転を無効化（SetCullMode実装後にtrueに変更）
 	return DirectX::XMFLOAT3(-s, s, s);
 }
 
 static DirectX::XMFLOAT3 UIToWorld(float sx, float sy, float zWorld)
 {
-	// 1ワールド単位 = 100px くらいから調整開始（必要なら後で詰める）
 	constexpr float PIXELS_PER_UNIT = 100.0f;
-
 	const float wx = (sx - SCREEN_WIDTH * 0.5f) / PIXELS_PER_UNIT;
-	const float wy = -(sy - SCREEN_HEIGHT * 0.5f) / PIXELS_PER_UNIT; // Y反転（UI↓ / 3D↑）
+	const float wy = -(sy - SCREEN_HEIGHT * 0.5f) / PIXELS_PER_UNIT;
 	return DirectX::XMFLOAT3(wx, wy, zWorld);
 }
 
-// 一覧カードのクリック判定用（透明UI）を確実に「見えないまま」表示/非表示する
 static void SetListCardHitboxVisible(ECS::Coordinator* coord, ECS::EntityID id, bool visible)
 {
 	if (!coord || id == (ECS::EntityID)-1) return;
@@ -68,16 +66,13 @@ static void SetListCardHitboxVisible(ECS::Coordinator* coord, ECS::EntityID id, 
 	{
 		auto& ui = coord->GetComponent<UIImageComponent>(id);
 		ui.isVisible = visible;
-		ui.color.w = 0.0f; // 常に透明
+		ui.color.w = 0.0f;
 	}
 	if (coord->HasComponent<UIButtonComponent>(id))
 	{
-
 		coord->GetComponent<UIButtonComponent>(id).isVisible = visible;
 	}
 }
-
-
 
 static DirectX::XMFLOAT3 Lerp3(const DirectX::XMFLOAT3& a, const DirectX::XMFLOAT3& b, float t)
 {
@@ -121,12 +116,6 @@ static bool IsDetailOnlyUIAsset(const std::string& assetId)
 	return false;
 }
 
-
-// ------------------------------------------------------------
-// UI_FONT helpers (5x3 grid assumed: uvScale=(0.2,0.333))
-// digits 0-9: idx 0..9 (row=idx/5, col=idx%5)
-// symbols: '-'=10 ':'=11 '.'=12  (row=2, col=idx-10)
-// ------------------------------------------------------------
 static bool UIFont_GetIndex(char c, int& outIdx)
 {
 	if (c >= '0' && c <= '9') { outIdx = (int)(c - '0'); return true; }
@@ -160,75 +149,53 @@ static void UIFont_ApplyChar(ECS::Coordinator* coord, ECS::EntityID id, char c)
 
 	ui.uvPos = { col * 0.2f,  r * 0.333f };
 	ui.uvScale = { 0.2f,     0.333f };
-	// isVisible / alpha は呼び出し側で同期する
 }
 
-// ST_001..ST_006 を想定して「1-1 / 1-2 / 1-3 / 2-1 ...」へ変換
 static std::string StageNoToLabelText(int stageNo)
 {
-	// ★World-Sub変換ロジック
-	// Stage 1 (1-1) ~ Stage 18 (6-3)
-	// 基本的に "数字-数字" の3文字になります
 	const int world = (stageNo - 1) / 3 + 1;
 	const int sub = (stageNo - 1) % 3 + 1;
 	return std::to_string(world) + "-" + std::to_string(sub);
 }
 
-/**
- * @brief ステージカード(1～6)の一覧スロット中心座標(UI座標)を返す
- * @param stageNo 1～18
- * @return UI座標（ピクセル）
- */
 DirectX::XMFLOAT3 StageSelectScene::GetListCardSlotCenterPos(int stageNo) const
 {
-	// ★18ステージ対応: ページごとに異なる配置パターン（手書きイメージ準拠）
-	// 背景ボードの外枠に被らないよう内側に配置
-
 	if (stageNo < 1 || stageNo > 18)
 	{
 		return DirectX::XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f);
 	}
 
-	int pageIndex = (stageNo - 1) / 6;  // 0, 1, 2
-	int posIndex = (stageNo - 1) % 6;   // 0-5
+	int pageIndex = (stageNo - 1) / 6;
+	int posIndex = (stageNo - 1) % 6;
 
-	// ★ページ1 (ステージ1-6 = 1-1〜2-3)
-	// 1-1:左上, 1-2:中央上右寄り, 1-3:右上
-	// 2-1:左下, 2-2:中央下右寄り, 2-3:右下
 	static const DirectX::XMFLOAT3 kPosPage1[6] =
 	{
-		{ SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.28f, 0.0f }, // 1-1 (左上)
-		{ SCREEN_WIDTH * 0.49f, SCREEN_HEIGHT * 0.33f, 0.0f }, // 1-2 (中央上、少し右)
-		{ SCREEN_WIDTH * 0.70f, SCREEN_HEIGHT * 0.28f, 0.0f }, // 1-3 (右上)
-		{ SCREEN_WIDTH * 0.30f, SCREEN_HEIGHT * 0.60f, 0.0f }, // 2-1 (左下)
-		{ SCREEN_WIDTH * 0.51f, SCREEN_HEIGHT * 0.65f, 0.0f }, // 2-2 (中央下、右寄り)
-		{ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.64f, 0.0f }, // 2-3 (右下)
+		{ SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.28f, 0.0f },
+		{ SCREEN_WIDTH * 0.49f, SCREEN_HEIGHT * 0.33f, 0.0f },
+		{ SCREEN_WIDTH * 0.70f, SCREEN_HEIGHT * 0.28f, 0.0f },
+		{ SCREEN_WIDTH * 0.30f, SCREEN_HEIGHT * 0.60f, 0.0f },
+		{ SCREEN_WIDTH * 0.51f, SCREEN_HEIGHT * 0.65f, 0.0f },
+		{ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.64f, 0.0f },
 	};
 
-	// ★ページ2 (ステージ7-12 = 3-1〜4-3)
-	// 3-1:左上, 3-2:中央上, 3-3:右上
-	// 4-1:左下, 4-2:中央, 4-3:右下
 	static const DirectX::XMFLOAT3 kPosPage2[6] =
 	{
-		{ SCREEN_WIDTH * 0.28f, SCREEN_HEIGHT * 0.32f, 0.0f }, // 3-1 (左上)
-		{ SCREEN_WIDTH * 0.50f, SCREEN_HEIGHT * 0.28f, 0.0f }, // 3-2 (中央上)
-		{ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.30f, 0.0f }, // 3-3 (右上)
-		{ SCREEN_WIDTH * 0.26f, SCREEN_HEIGHT * 0.65f, 0.0f }, // 4-1 (左下)
-		{ SCREEN_WIDTH * 0.48f, SCREEN_HEIGHT * 0.60f, 0.0f }, // 4-2 (中央)
-		{ SCREEN_WIDTH * 0.70f, SCREEN_HEIGHT * 0.65f, 0.0f }, // 4-3 (右下)
+		{ SCREEN_WIDTH * 0.28f, SCREEN_HEIGHT * 0.32f, 0.0f },
+		{ SCREEN_WIDTH * 0.50f, SCREEN_HEIGHT * 0.28f, 0.0f },
+		{ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.30f, 0.0f },
+		{ SCREEN_WIDTH * 0.26f, SCREEN_HEIGHT * 0.65f, 0.0f },
+		{ SCREEN_WIDTH * 0.48f, SCREEN_HEIGHT * 0.60f, 0.0f },
+		{ SCREEN_WIDTH * 0.70f, SCREEN_HEIGHT * 0.65f, 0.0f },
 	};
 
-	// ★ページ3 (ステージ13-18 = 5-1〜6-3)
-	// 5-1:左上, 5-2:中央, 5-3:右上
-	// 6-1:左(中段), 6-2:中央下, 6-3:右下
 	static const DirectX::XMFLOAT3 kPosPage3[6] =
 	{
-		{ SCREEN_WIDTH * 0.30f, SCREEN_HEIGHT * 0.27f, 0.0f }, // 5-1 (左上)
-		{ SCREEN_WIDTH * 0.50f, SCREEN_HEIGHT * 0.35f, 0.0f }, // 5-2 (中央、少し下)
-		{ SCREEN_WIDTH * 0.74f, SCREEN_HEIGHT * 0.29f, 0.0f }, // 5-3 (右上)
-		{ SCREEN_WIDTH * 0.26f, SCREEN_HEIGHT * 0.63f, 0.0f }, // 6-1 (左、中段)
-		{ SCREEN_WIDTH * 0.47f, SCREEN_HEIGHT * 0.65f, 0.0f }, // 6-2 (中央下)
-		{ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.61f, 0.0f }, // 6-3 (右下)
+		{ SCREEN_WIDTH * 0.30f, SCREEN_HEIGHT * 0.27f, 0.0f },
+		{ SCREEN_WIDTH * 0.50f, SCREEN_HEIGHT * 0.35f, 0.0f },
+		{ SCREEN_WIDTH * 0.74f, SCREEN_HEIGHT * 0.29f, 0.0f },
+		{ SCREEN_WIDTH * 0.26f, SCREEN_HEIGHT * 0.63f, 0.0f },
+		{ SCREEN_WIDTH * 0.47f, SCREEN_HEIGHT * 0.65f, 0.0f },
+		{ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.61f, 0.0f },
 	};
 
 	switch (pageIndex)
@@ -240,12 +207,9 @@ DirectX::XMFLOAT3 StageSelectScene::GetListCardSlotCenterPos(int stageNo) const
 	}
 }
 
-//--------------------------------------------------------------
-// Card Focus Animation
-//--------------------------------------------------------------
 void StageSelectScene::StartCardFocusAnim(ECS::EntityID cardEntity, const DirectX::XMFLOAT3& uiPos)
 {
-	constexpr float kCardZ = 5.0f;        // 少し手前
+	constexpr float kCardZ = 5.0f;
 	constexpr float kStartScale = 0.03f;
 	constexpr float kEndScaleMul = 5.0f;
 	constexpr float kDuration = 1.5f;
@@ -339,9 +303,20 @@ void StageSelectScene::Init()
 	s_coordinator = m_coordinator.get();
 	ECSInitializer::InitECS(m_coordinator);
 
+	// 前のシーンの音を止める
+	for (auto const& entity : m_coordinator->GetActiveEntities()) {
+		if (m_coordinator->HasComponent<SoundComponent>(entity)) {
+			m_coordinator->GetComponent<SoundComponent>(entity).RequestStop();
+		}
+	}
+
+	m_bgm = ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator.get(), "BGM_STAGESELECT", 0.5f);
+
+	s_lastHoveredEntity = (ECS::EntityID)-1;
+	s_animTime = 0.0f;
+
 	LoadStageData();
 
-	// ===== Stage unlock progress =====
 	StageUnlockProgress::Load();
 	m_maxUnlockedStage = StageUnlockProgress::GetMaxUnlockedStage();
 	m_pendingRevealStage = StageUnlockProgress::ConsumePendingRevealStage();
@@ -363,15 +338,8 @@ void StageSelectScene::Init()
 		m_shootingStarTimer = 0.0f;
 	}
 
-	// ============================================================
-	// ★18ステージ対応: ページデータ初期化
-	// ============================================================
 	m_currentPage = 0;
 	m_pages.resize(TOTAL_PAGES);
-
-	// =====================
-	// List UI（一覧）
-	// =====================
 
 	std::vector<std::string> stageIDs;
 	for (int i = 1; i <= TOTAL_STAGES; ++i)
@@ -400,9 +368,6 @@ void StageSelectScene::Init()
 		UIImageComponent("BG_STAGE_SELECT", 0.0f)
 	);
 
-	// ============================================================
-	// ★18ステージ分をループで生成
-	// ============================================================
 	for (int i = 0; i < TOTAL_STAGES; ++i)
 	{
 		int pageIndex = i / STAGES_PER_PAGE;
@@ -413,36 +378,34 @@ void StageSelectScene::Init()
 		float x = startX + (indexInPage % 3) * gapX;
 		float y = startY + (indexInPage / 3) * gapY;
 
-		// --- Card visual (3D model) ---
 		{
 			std::string modelID = kSelectCardModel[i];
 			constexpr float kListCardZ = 4.8f;
 			constexpr float kListCardScale = 0.03f;
 
-			// ★ページごとに異なるカードの傾き（Z軸回転）- 無造作に置かれた雰囲気
 			static const float kCardTiltPage1[6] = {
-				DirectX::XMConvertToRadians(-7.0f),   // 1
-				DirectX::XMConvertToRadians(5.0f),    // 2
-				DirectX::XMConvertToRadians(-10.0f),  // 3
-				DirectX::XMConvertToRadians(8.0f),    // 4
-				DirectX::XMConvertToRadians(-4.0f),   // 5
-				DirectX::XMConvertToRadians(6.0f),    // 6
+				DirectX::XMConvertToRadians(-7.0f),
+				DirectX::XMConvertToRadians(5.0f),
+				DirectX::XMConvertToRadians(-10.0f),
+				DirectX::XMConvertToRadians(8.0f),
+				DirectX::XMConvertToRadians(-4.0f),
+				DirectX::XMConvertToRadians(6.0f),
 			};
 			static const float kCardTiltPage2[6] = {
-				DirectX::XMConvertToRadians(6.0f),    // 7
-				DirectX::XMConvertToRadians(-9.0f),   // 8
-				DirectX::XMConvertToRadians(4.0f),    // 9
-				DirectX::XMConvertToRadians(-6.0f),   // 10
-				DirectX::XMConvertToRadians(10.0f),   // 11
-				DirectX::XMConvertToRadians(-5.0f),   // 12
+				DirectX::XMConvertToRadians(6.0f),
+				DirectX::XMConvertToRadians(-9.0f),
+				DirectX::XMConvertToRadians(4.0f),
+				DirectX::XMConvertToRadians(-6.0f),
+				DirectX::XMConvertToRadians(10.0f),
+				DirectX::XMConvertToRadians(-5.0f),
 			};
 			static const float kCardTiltPage3[6] = {
-				DirectX::XMConvertToRadians(-5.0f),   // 13
-				DirectX::XMConvertToRadians(8.0f),    // 14
-				DirectX::XMConvertToRadians(-8.0f),   // 15
-				DirectX::XMConvertToRadians(5.0f),    // 16
-				DirectX::XMConvertToRadians(-6.0f),   // 17
-				DirectX::XMConvertToRadians(9.0f),    // 18
+				DirectX::XMConvertToRadians(-5.0f),
+				DirectX::XMConvertToRadians(8.0f),
+				DirectX::XMConvertToRadians(-8.0f),
+				DirectX::XMConvertToRadians(5.0f),
+				DirectX::XMConvertToRadians(-6.0f),
+				DirectX::XMConvertToRadians(9.0f),
 			};
 			float tilt = 0.0f;
 			switch (pageIndex) {
@@ -464,7 +427,6 @@ void StageSelectScene::Init()
 			m_listCardModelBaseScale[cardModel] = MakeSelectCardScale(kListCardScale);
 		}
 
-		// --- Hitbox ---
 		const int stageNo = i + 1;
 		EntityID btn = m_coordinator->CreateEntity(
 			TagComponent("list_card_hitbox"),
@@ -476,11 +438,10 @@ void StageSelectScene::Init()
 					if (m_inputLocked || m_isWaitingForTransition) return;
 					if (m_isDetailMode) return;
 
+					EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 0.5f);
+
 					ResetSelectToDetailAnimState(false, true);
 
-					// ★残留対策: 前回ステージの「固有UI（宝箱/アイテム等）」が
-					// 破棄されずに残っていると、次の詳細表示で一緒に復活してしまう。
-					// 戻る処理が失敗したケースも含め、カード選択開始時点で必ず一掃する。
 					ClearStageInfoUI();
 
 					m_selectedStageID = id;
@@ -605,24 +566,16 @@ void StageSelectScene::Init()
 		}
 	}
 
-	// ★一覧カードのステージ番号ラベル（UI_FONT）を生成
 	BuildStageNumberLabels();
 	SyncStageNumberLabels(true);
 
-	// 解放済みステージの並びを「見えている数」に合わせて中央寄せ
 	ReflowUnlockedCardsLayout();
 
-	// ============================================================
-	// ★ナビゲーションボタンとページインジケーター作成
-	// ============================================================
 	CreateNavigationButtons();
 	CreatePageIndicators();
 	UpdateNavigationButtons();
 	UpdatePageIndicators();
 
-	// =====================
-	// Detail UI（詳細）
-	// =====================
 	const float baseDepth = 110000.0f;
 
 	EntityID mapBack = m_coordinator->CreateEntity(
@@ -751,6 +704,7 @@ void StageSelectScene::Init()
 			true,
 			[this]() {
 				if (m_inputLocked) return;
+				EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 0.5f);
 
 				PlayUISelectEffect(m_startBtnEntity, "EFK_SELECTOK", 35.0f);
 				m_inputLocked = true;
@@ -760,7 +714,12 @@ void StageSelectScene::Init()
 
 				ScreenTransition::RequestFadeOutEx(
 					m_coordinator.get(), m_blackTransitionEntity, 0.15f, 0.35f, 0.45f,
-					[this]() { GameScene::SetStageNo(m_selectedStageID); SceneManager::ChangeScene<GameScene>(); },
+					[this]() {
+						m_coordinator->GetComponent<SoundComponent>(m_bgm).RequestStop();
+
+						GameScene::SetStageNo(m_selectedStageID);
+						SceneManager::ChangeScene<GameScene>();
+					},
 					false, nullptr, 0.0f, 0.35f, false, false
 				);
 			}
@@ -921,6 +880,22 @@ void StageSelectScene::ResetSelectToDetailAnimState(bool unlockInput, bool keepF
 }
 void StageSelectScene::Uninit()
 {
+	if (m_coordinator)
+	{
+		for (auto const& entity : m_coordinator->GetActiveEntities()) {
+			if (m_coordinator->HasComponent<SoundComponent>(entity)) {
+				m_coordinator->GetComponent<SoundComponent>(entity).RequestStop();
+			}
+		}
+
+		// ★追加: AudioSystemを強制的に更新し、上記の停止リクエストを即座に処理させる
+		// これを行わないと、リクエストが処理される前にシーンが破棄されて音が残り続けます
+		if (auto audioSystem = ECSInitializer::GetSystem<AudioSystem>())
+		{
+			audioSystem->Update(0.0f);
+		}
+	}
+
 	if (auto effectSystem = ECSInitializer::GetSystem<EffectSystem>())
 	{
 		effectSystem->ClearOverrideCamera();
@@ -947,6 +922,11 @@ void StageSelectScene::Update(float deltaTime)
 	else if (dtSec >= 0.9f && dtSec <= 1.1f)
 	{
 		dtSec = 1.0f / 60.0f;
+	}
+
+	if (!m_isDetailMode && !m_isWaitingForTransition)
+	{
+		s_animTime += dtSec;
 	}
 
 	if (auto effectSystem = ECSInitializer::GetSystem<EffectSystem>())
@@ -1033,11 +1013,37 @@ void StageSelectScene::Update(float deltaTime)
 			ScreenTransition::RequestFadeOutEx(
 				m_coordinator.get(), m_blackTransitionEntity, 0.15f, 0.35f, 0.45f,
 				[this]() {
+					m_coordinator->GetComponent<SoundComponent>(m_bgm).RequestStop();
+
 					GameScene::SetStageNo(m_selectedStageID);
 					SceneManager::ChangeScene<GameScene>();
 				},
 				false, nullptr, 0.0f, 0.35f, false, false
 			);
+		}
+	}
+
+	if (!m_isDetailMode && !m_isWaitingForTransition)
+	{
+		for (int i = 0; i < (int)m_listCardModelEntities.size(); ++i)
+		{
+			ECS::EntityID mdl = m_listCardModelEntities[i];
+			if (mdl == (ECS::EntityID)-1) continue;
+			if (!m_coordinator->HasComponent<TransformComponent>(mdl)) continue;
+			if (!m_coordinator->HasComponent<RenderComponent>(mdl)) continue;
+
+			if (m_coordinator->GetComponent<RenderComponent>(mdl).color.w <= 0.0f) continue;
+
+			const int stageNo = i + 1;
+			DirectX::XMFLOAT3 baseUiPos = GetListCardSlotCenterPos(stageNo);
+			DirectX::XMFLOAT3 baseWorldPos = UIToWorld(baseUiPos.x, baseUiPos.y, 4.8f);
+
+			float phase = s_animTime * 1.5f + (float)i * 0.7f;
+			float floatY = std::sin(phase) * 0.05f;
+
+			auto& tr = m_coordinator->GetComponent<TransformComponent>(mdl);
+			tr.position.y = baseWorldPos.y + floatY;
+			tr.rotation.y = DirectX::XM_PI + std::sin(phase * 0.5f) * 0.05f;
 		}
 	}
 }
@@ -1062,34 +1068,24 @@ void StageSelectScene::Draw()
 	struct VisState { ECS::EntityID id; bool uiVis; bool btnVis; };
 	std::vector<VisState> savedStates;
 
-	// 基本UI要素（一覧ボタンなどは全数入っているが、数が少ないので許容）
 	std::vector<ECS::EntityID> allTargets = m_listUIEntities;
 
-	// ============================================================
-	// ★修正: 描画負荷対策
-	// 全18ステージ分のラベルを毎回処理リストに入れるのではなく、
-	// 「現在のページ」に該当するステージのラベルのみを対象にする。
-	// これにより、非表示（別ページ）の大量の太字エンティティ処理をスキップする。
-	// ============================================================
 	int startIdx = m_currentPage * STAGES_PER_PAGE;
 	int endIdx = startIdx + STAGES_PER_PAGE;
 	if (endIdx > TOTAL_STAGES) endIdx = TOTAL_STAGES;
 
 	for (int i = startIdx; i < endIdx; ++i)
 	{
-		// 通常ラベル
 		if (i < (int)m_listStageLabelEntities.size())
 		{
 			auto& v = m_listStageLabelEntities[i];
 			allTargets.insert(allTargets.end(), v.begin(), v.end());
 		}
-		// 太字ラベル（これが一番重い）
 		if (i < (int)m_listStageLabelBoldEntities.size())
 		{
 			auto& v = m_listStageLabelBoldEntities[i];
 			allTargets.insert(allTargets.end(), v.begin(), v.end());
 		}
-		// 背景
 		if (i < (int)m_listStageLabelBgEntities.size())
 		{
 			ECS::EntityID bgId = m_listStageLabelBgEntities[i];
@@ -1097,13 +1093,11 @@ void StageSelectScene::Draw()
 		}
 	}
 
-	// ★例外: Reveal演出中のステージがあれば、それも追加する
 	for (auto& kv : m_stageReveal)
 	{
 		if (kv.second.active)
 		{
 			int idx = kv.first - 1;
-			// 現在のページ範囲外なら追加
 			if (idx < startIdx || idx >= endIdx)
 			{
 				if (idx < (int)m_listStageLabelEntities.size())
@@ -1125,7 +1119,6 @@ void StageSelectScene::Draw()
 		}
 	}
 
-	// 残りのUI（詳細、カーソル、背景、フェード）
 	allTargets.insert(allTargets.end(), m_detailUIEntities.begin(), m_detailUIEntities.end());
 	if (m_cursorEntity != (ECS::EntityID)-1) allTargets.push_back(m_cursorEntity);
 	if (m_listBgEntity != (ECS::EntityID)-1) allTargets.push_back(m_listBgEntity);
@@ -1164,7 +1157,6 @@ void StageSelectScene::Draw()
 			ui->Render(false);
 		};
 
-	// 1) 背景UI (depth <= 0)
 	for (const auto& s : savedStates)
 	{
 		if (s.id == (ECS::EntityID)-1) continue;
@@ -1178,7 +1170,6 @@ void StageSelectScene::Draw()
 	}
 	DrawUIOnce();
 
-	// 2) 通常UI (0 < depth <= 100,000)
 	for (const auto& s : savedStates)
 	{
 		if (s.id == (ECS::EntityID)-1) continue;
@@ -1197,14 +1188,12 @@ void StageSelectScene::Draw()
 	}
 	DrawUIOnce();
 
-	// 3) 3Dモデル
 	if (rs)
 	{
 		rs->DrawSetup();
 		rs->DrawEntities();
 	}
 
-	// 4) 詳細UIなど (100,000 < depth < 200,000)
 	for (const auto& s : savedStates)
 	{
 		if (s.id == (ECS::EntityID)-1) continue;
@@ -1223,13 +1212,11 @@ void StageSelectScene::Draw()
 	}
 	DrawUIOnce();
 
-	// 5) エフェクト
 	if (fx)
 	{
 		fx->Render();
 	}
 
-	// 6) フェードなど (depth >= 200,000)
 	for (const auto& s : savedStates)
 	{
 		if (s.id == (ECS::EntityID)-1) continue;
@@ -1248,7 +1235,6 @@ void StageSelectScene::Draw()
 	}
 	DrawUIOnce();
 
-	// 復元
 	for (const auto& s : savedStates)
 	{
 		if (s.id == (ECS::EntityID)-1) continue;
@@ -1342,6 +1328,8 @@ void StageSelectScene::UpdateButtonHoverScale(float dt)
 	const float hoverMulBtn = 1.10f;
 	const float hoverMulModel = 1.10f;
 
+	bool anyHovered = false;
+
 	auto updateOne = [&](ECS::EntityID id)
 		{
 			if (id == (ECS::EntityID)-1) return;
@@ -1366,6 +1354,16 @@ void StageSelectScene::UpdateButtonHoverScale(float dt)
 			const float bottom = tr.position.y + base.y * 0.5f;
 
 			const bool hovered = allowHover && (cx >= left && cx <= right && cy >= top && cy <= bottom);
+
+			if (hovered)
+			{
+				anyHovered = true;
+				if (s_lastHoveredEntity != id)
+				{
+					EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_CURSOR", 0.5f);
+					s_lastHoveredEntity = id;
+				}
+			}
 
 			const float targetMul = hovered ? hoverMulBtn : 1.0f;
 			const float curMul = (base.x != 0.0f) ? (tr.scale.x / base.x) : 1.0f;
@@ -1408,6 +1406,16 @@ void StageSelectScene::UpdateButtonHoverScale(float dt)
 
 			const bool hovered = allowHover && (cx >= left && cx <= right && cy >= top && cy <= bottom);
 
+			if (hovered)
+			{
+				anyHovered = true;
+				if (s_lastHoveredEntity != hit)
+				{
+					EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_CURSOR", 0.5f);
+					s_lastHoveredEntity = hit;
+				}
+			}
+
 			auto& mdlTr = m_coordinator->GetComponent<TransformComponent>(mdl);
 			auto itMdlBase = m_listCardModelBaseScale.find(mdl);
 			if (itMdlBase == m_listCardModelBaseScale.end())
@@ -1424,8 +1432,16 @@ void StageSelectScene::UpdateButtonHoverScale(float dt)
 			mdlTr.scale.y = mdlBase.y * newMul;
 			mdlTr.scale.z = mdlBase.z * newMul;
 		}
+
+		if (m_prevPageBtnEntity != (ECS::EntityID)-1) updateOne(m_prevPageBtnEntity);
+		if (m_nextPageBtnEntity != (ECS::EntityID)-1) updateOne(m_nextPageBtnEntity);
 	}
 	for (auto id : m_detailUIEntities) updateOne(id);
+
+	if (!anyHovered)
+	{
+		s_lastHoveredEntity = (ECS::EntityID)-1;
+	}
 }
 
 
@@ -1477,10 +1493,8 @@ void StageSelectScene::SwitchState(bool toDetail)
 
 	ResetSelectToDetailAnimState(false, toDetail);
 
-	// ★一覧に戻る瞬間に、ステージ固有UIを必ず全削除（経路に依存しない）
 	if (!toDetail)
 	{
-		// ★追加: フォーカスカードを確実に破棄
 		DestroyFocusCard();
 
 		ClearStageInfoUI();
@@ -1497,7 +1511,6 @@ void StageSelectScene::SwitchState(bool toDetail)
 		m_starRevealStageId.clear();
 		m_spawnStarOnEnterDetail = false;
 
-		// ★追加: まず全ページを非表示にしてから、現在のページだけを表示する
 		for (int p = 0; p < TOTAL_PAGES; ++p)
 		{
 			HidePage(p);
@@ -1506,10 +1519,8 @@ void StageSelectScene::SwitchState(bool toDetail)
 
 	SetUIVisible(m_listBgEntity, !toDetail);
 
-	// ★修正: 詳細に行く場合は全部非表示、一覧に戻る場合はShowPageに任せる
 	if (toDetail)
 	{
-		// 詳細に行く場合: 全hitboxとカードモデルを非表示
 		for (int i = 0; i < (int)m_listUIEntities.size(); ++i)
 		{
 			SetUIVisible(m_listUIEntities[i], false);
@@ -1518,7 +1529,6 @@ void StageSelectScene::SwitchState(bool toDetail)
 		{
 			SetUIVisible(m_listCardModelEntities[i], false);
 		}
-		// 全ラベルを非表示
 		for (int stageNo = 1; stageNo <= TOTAL_STAGES; ++stageNo)
 		{
 			SetStageNumberLabelVisible(stageNo, false);
@@ -1528,20 +1538,16 @@ void StageSelectScene::SwitchState(bool toDetail)
 	if (!toDetail)
 	{
 		ReflowUnlockedCardsLayout();
-		// ★追加: 現在のページを表示
 		ShowPage(m_currentPage);
-		// ★追加: ナビゲーションボタンとページインジケーターを復元
 		UpdateNavigationButtons();
 		UpdatePageIndicators();
 	}
 
-	// その後、詳細UIの表示/非表示を切り替え
 	for (auto id : m_detailUIEntities)
 	{
 		SetUIVisible(id, toDetail);
 	}
 
-	// ★一覧時は詳細専用UIを強制的に非表示（コンテナ漏れ/別経路生成対策）
 	if (!toDetail)
 	{
 		std::vector<ECS::EntityID> forcedHidden;
@@ -1665,7 +1671,7 @@ void StageSelectScene::UpdateBestTimeDigitsByStageId(const std::string& stageId)
 	const int stageNo = StageIdToStageNo(stageId);
 
 	uint32_t bestMs = 0;
-	if (stageNo >= 1 && stageNo <= 18)  // ★修正: 18ステージ対応
+	if (stageNo >= 1 && stageNo <= 18)
 	{
 		bestMs = StageUnlockProgress::GetBestTimeMs(stageNo);
 	}
@@ -1716,7 +1722,7 @@ void StageSelectScene::UpdateStarIconsByStageId(const std::string& stageId)
 
 	const int stageNo = StageIdToStageNo(stageId);
 	const std::uint8_t mask =
-		(stageNo >= 1 && stageNo <= 18) ? StageUnlockProgress::GetStageStarMask(stageNo) : 0;  // ★修正: 18ステージ対応
+		(stageNo >= 1 && stageNo <= 18) ? StageUnlockProgress::GetStageStarMask(stageNo) : 0;
 
 	for (int i = 0; i < 3; ++i)
 	{
@@ -1734,7 +1740,6 @@ void StageSelectScene::UpdateStarIconsByStageId(const std::string& stageId)
 
 static int ExtractStageNoFromStageId(const std::string& stageId)
 {
-	// ★修正: 18ステージ対応 - 数字を全て抽出して数値に変換
 	int v = 0;
 	bool inDigits = false;
 	for (char c : stageId)
@@ -1755,7 +1760,6 @@ static int ExtractStageNoFromStageId(const std::string& stageId)
 
 std::string StageSelectScene::GetStageMapTextureAssetId(int stageNo) const
 {
-	// ★修正: 全18ステージ個別のUI_STAGE画像を使用（後で画像差し替え可能）
 	switch (stageNo)
 	{
 	case 1:  return "UI_STAGE1";
@@ -1781,18 +1785,13 @@ std::string StageSelectScene::GetStageMapTextureAssetId(int stageNo) const
 }
 
 
-/**
- * @brief ステージ詳細のマップ表示(UI_STAGE1～UI_STAGE6)を差し替える。
- * @details UI_STAGE_MAPBACK の上に重ねるオーバーレイ(m_stageMapOverlayEntity)を作り直して更新する。
- */
 void StageSelectScene::ApplyStageMapTextureByStageId(const std::string& stageId)
 {
 	if (m_stageMapOverlayEntity == (ECS::EntityID)-1) return;
 
-	// ★修正: ExtractStageNoFromStageIdが18ステージ対応になったのでそのまま使用
 	int stageNo = ExtractStageNoFromStageId(stageId);
 
-	const bool valid = (stageNo >= 1 && stageNo <= 18);  // ★修正: 18ステージ対応
+	const bool valid = (stageNo >= 1 && stageNo <= 18);
 
 	const std::string texId = valid ? GetStageMapTextureAssetId(stageNo) : std::string("UI_STAGE1");
 
@@ -1933,11 +1932,6 @@ void StageSelectScene::UpdateDetailAppear(float dt)
 	}
 }
 
-
-
-//--------------------------------------------------------------
-// Stage Unlock / Reveal
-//--------------------------------------------------------------
 void StageSelectScene::BeginStageReveal(int stageNo)
 {
 	if (stageNo < 1 || stageNo > TOTAL_STAGES) return;
@@ -2122,16 +2116,12 @@ void StageSelectScene::ReflowUnlockedCardsLayout()
 		const int idx = stageNo - 1;
 		const bool unlocked = IsStageUnlocked(stageNo);
 
-		// ★追加: 現在のページに属するかチェック
 		const int pageOfStage = (stageNo - 1) / STAGES_PER_PAGE;
 		const bool isCurrentPage = (pageOfStage == m_currentPage);
 
 		const DirectX::XMFLOAT3 uiPos = GetListCardSlotCenterPos(stageNo);
 		const DirectX::XMFLOAT3 wpos = UIToWorld(uiPos.x, uiPos.y, kListCardZ);
 
-		// ----------------------------------------------------------
-		// 1) 3Dカード（見た目）
-		// ----------------------------------------------------------
 		ECS::EntityID cardModel = m_listCardModelEntities[idx];
 
 		const bool needRecreate =
@@ -2159,13 +2149,9 @@ void StageSelectScene::ReflowUnlockedCardsLayout()
 			tr.scale = MakeSelectCardScale(kListCardScale);
 		}
 
-		// ★修正: 現在のページかつ解放済みの場合のみ表示
 		const bool showModel = (!m_isDetailMode) && unlocked && isCurrentPage;
 		SetUIVisible(cardModel, showModel);
 
-		// ----------------------------------------------------------
-		// 2) クリック判定（ヒットボックス）
-		// ----------------------------------------------------------
 		if (idx < (int)m_listUIEntities.size())
 		{
 			const ECS::EntityID hit = m_listUIEntities[idx];
@@ -2179,15 +2165,10 @@ void StageSelectScene::ReflowUnlockedCardsLayout()
 				tr.rotation = DirectX::XMFLOAT3(0.0f, 0.0f, 0.0f);
 			}
 
-			// ★修正: 現在のページかつ解放済みの場合のみ表示
 			const bool showHitbox = (!m_isDetailMode) && unlocked && isCurrentPage;
 			SetUIVisible(hit, showHitbox);
 		}
 
-		// ----------------------------------------------------------
-		// 3) ステージ番号ラベル
-		// ----------------------------------------------------------
-		// ★修正: 現在のページかつ解放済みの場合のみ表示
 		SetStageNumberLabelVisible(stageNo, (!m_isDetailMode) && unlocked && isCurrentPage);
 	}
 
@@ -2245,9 +2226,6 @@ void StageSelectScene::SetUIVisible(ECS::EntityID id, bool visible)
 }
 
 
-// ------------------------------------------------------------
-// Stage number labels ("1-1" etc) : UI_STAGEMOJI* on list cards
-// ------------------------------------------------------------
 static const char* StageMoji_GetAssetId(char c)
 {
 	static const char* kDigits[10] =
@@ -2289,43 +2267,28 @@ struct StageNoOffset
 	float bgOffsetY;
 };
 
-// ★ここに1ページ目の各カード（左上、中上...）の設定値を書くと、
-//   2ページ目、3ページ目の同じ位置にあるカードにも自動的に適用されます。
-//   index 0: ステージ1, 7, 13 (左上)
-//   index 1: ステージ2, 8, 14 (中上)
-//   ...
-// ★変更点: 配列サイズを [6] から [18] に変更し、全ステージ分を定義します
 static const StageNoOffset kStageNoOffsets[18] =
 {
-	// ==========================================
-	// ▼ Page 1 (Stage 1 - 6)
-	// ==========================================
-	{ 100.0f,  10.0f,  -90.0f,  -10.0f },  // Stage 1 (左上)
-	{ 20.0f,   10.0f,   3.0f,  -10.0f },   // Stage 2 (中上)
-	{ 110.0f,  10.0f,   92.0f,  -10.0f },  // Stage 3 (右上)
-	{ -85.0f,  75.0f,   -90.0f,  55.0f },  // Stage 4 (左下)
-	{ 20.0f,   75.0f,   3.0f,  55.0f },    // Stage 5 (中下)
-	{ 110.0f,  75.0f,   92.0f,  55.0f },   // Stage 6 (右下)
+	{ 100.0f,  10.0f,  -90.0f,  -10.0f },
+	{ 20.0f,   10.0f,   3.0f,  -10.0f },
+	{ 110.0f,  10.0f,   92.0f,  -10.0f },
+	{ -85.0f,  75.0f,   -90.0f,  55.0f },
+	{ 20.0f,   75.0f,   3.0f,  55.0f },
+	{ 110.0f,  75.0f,   92.0f,  55.0f },
 
-	// ==========================================
-	// ▼ Page 2 (Stage 7 - 12) ★ここをいじると2ページ目だけ変わります
-	// ==========================================
-	{ 100.0f,  10.0f,  -90.0f,  -10.0f },  // Stage 7 (左上)
-	{ 20.0f,   10.0f,   3.0f,  -10.0f },   // Stage 8 (中上)
-	{ 110.0f,  10.0f,   92.0f,  -10.0f },  // Stage 9 (右上)
-	{ -85.0f,  75.0f,   -90.0f,  55.0f },  // Stage 10 (左下)
-	{ 20.0f,   75.0f,   3.0f,  55.0f },    // Stage 11 (中下)
-	{ 110.0f,  75.0f,   92.0f,  55.0f },   // Stage 12 (右下)
+	{ 100.0f,  10.0f,  -90.0f,  -10.0f },
+	{ 20.0f,   10.0f,   3.0f,  -10.0f },
+	{ 110.0f,  10.0f,   92.0f,  -10.0f },
+	{ -85.0f,  75.0f,   -90.0f,  55.0f },
+	{ 20.0f,   75.0f,   3.0f,  55.0f },
+	{ 110.0f,  75.0f,   92.0f,  55.0f },
 
-	// ==========================================
-	// ▼ Page 3 (Stage 13 - 18) ★ここをいじると3ページ目だけ変わります
-	// ==========================================
-	{ 100.0f,  10.0f,  -90.0f,  -10.0f },  // Stage 13 (左上)
-	{ 20.0f,   10.0f,   3.0f,  -10.0f },   // Stage 14 (中上)
-	{ 110.0f,  10.0f,   92.0f,  -10.0f },  // Stage 15 (右上)
-	{ -85.0f,  75.0f,   -90.0f,  55.0f },  // Stage 16 (左下)
-	{ 20.0f,   75.0f,   3.0f,  55.0f },    // Stage 17 (中下)
-	{ 110.0f,  75.0f,   92.0f,  55.0f },   // Stage 18 (右下)
+	{ 100.0f,  10.0f,  -90.0f,  -10.0f },
+	{ 20.0f,   10.0f,   3.0f,  -10.0f },
+	{ 110.0f,  10.0f,   92.0f,  -10.0f },
+	{ -85.0f,  75.0f,   -90.0f,  55.0f },
+	{ 20.0f,   75.0f,   3.0f,  55.0f },
+	{ 110.0f,  75.0f,   92.0f,  55.0f },
 };
 struct StageNoCharOffset2
 {
@@ -2333,38 +2296,28 @@ struct StageNoCharOffset2
 	float y;
 };
 
-// ★変更点: 配列サイズを [6][3] から [18][3] に変更
 static const StageNoCharOffset2 kStageNoCharOffsets[18][3] =
 {
-	// ==========================================
-	// ▼ Page 1 (Stage 1 - 6)
-	// ==========================================
-	{ { -90.0f, -17.0f }, { -220.0f, -10.0f }, { -190.0f, -17.0f } }, // St 1
-	{ { 80.0f, -17.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },    // St 2
-	{ { 80.0f, -17.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },    // St 3
-	{ { 75.0f, -17.0f }, { -40.0f, -10.0f }, { -10.0f, -17.0f } },    // St 4
-	{ { 65.0f, -17.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },    // St 5
-	{ { 65.0f, -17.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },    // St 6
+	{ { -90.0f, -17.0f }, { -220.0f, -10.0f }, { -190.0f, -17.0f } },
+	{ { 80.0f, -17.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },
+	{ { 80.0f, -17.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },
+	{ { 75.0f, -17.0f }, { -40.0f, -10.0f }, { -10.0f, -17.0f } },
+	{ { 65.0f, -17.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },
+	{ { 65.0f, -17.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },
 
-	// ==========================================
-	// ▼ Page 2 (Stage 7 - 12)
-	// ==========================================
-	{ { -120.0f, -17.0f }, { -220.0f, -10.0f }, { -190.0f, -17.0f } }, // St 7
-	{ { 50.0f, -17.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },    // St 8
-	{ { 50.0f, -17.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },    // St 9
-	{ { 45.0f, -17.0f }, { -40.0f, -10.0f }, { -10.0f, -17.0f } },    // St 10
-	{ { 35.0f, -17.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },    // St 11
-	{ { 35.0f, -17.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },    // St 12
+	{ { -120.0f, -17.0f }, { -220.0f, -10.0f }, { -190.0f, -17.0f } },
+	{ { 50.0f, -17.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },
+	{ { 50.0f, -17.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },
+	{ { 45.0f, -17.0f }, { -40.0f, -10.0f }, { -10.0f, -17.0f } },
+	{ { 35.0f, -17.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },
+	{ { 35.0f, -17.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },
 
-	// ==========================================
-	// ▼ Page 3 (Stage 13 - 18)
-	// ==========================================
-	{ { -150.0f, -17.0f }, { -220.0f, -10.0f }, { -190.0f, -17.0f } }, // St 13
-	{ { 20.0f, -17.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },    // St 14
-	{ { 20.0f, -17.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },    // St 15
-	{ { 95.0f, -77.0f }, { -40.0f, -10.0f }, { -10.0f, -17.0f } },    // St 16
-	{ { 85.0f, -77.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },    // St 17
-	{ { 85.0f, -77.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },    // St 18
+	{ { -150.0f, -17.0f }, { -220.0f, -10.0f }, { -190.0f, -17.0f } },
+	{ { 20.0f, -17.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },
+	{ { 20.0f, -17.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },
+	{ { 95.0f, -77.0f }, { -40.0f, -10.0f }, { -10.0f, -17.0f } },
+	{ { 85.0f, -77.0f }, { -50.0f, -10.0f }, { -30.0f, -17.0f } },
+	{ { 85.0f, -77.0f }, { -50.0f, -10.0f }, { -50.0f, -17.0f } },
 };
 static constexpr float kStageNoGlyphWBase = 80.0f;
 static constexpr float kStageNoGlyphHBase = 75.0f;
@@ -2411,7 +2364,6 @@ void StageSelectScene::BuildStageNumberLabels()
 
 	m_listStageLabelEntities.clear();
 	m_listStageLabelBoldEntities.clear();
-	// ★修正: 18ステージ分確保
 	m_listStageLabelEntities.resize(TOTAL_STAGES);
 	m_listStageLabelBoldEntities.resize(TOTAL_STAGES);
 	m_listStageLabelBgEntities.clear();
@@ -2421,7 +2373,6 @@ void StageSelectScene::BuildStageNumberLabels()
 	const float maxW = kStageNoGlyphWBase * kStageNoScale;
 	const float maxH = kStageNoGlyphHBase * kStageNoScale;
 
-	// ★修正: 18ステージ分生成
 	for (int stageNo = 1; stageNo <= TOTAL_STAGES; ++stageNo)
 	{
 		const std::string text = StageNoToLabelText(stageNo);
@@ -2486,7 +2437,6 @@ void StageSelectScene::BuildStageNumberLabels()
 
 		SyncStageNumberLabel(stageNo);
 
-		// ★修正: ラベルエンティティをページデータに登録
 		int pageIndex = (stageNo - 1) / STAGES_PER_PAGE;
 		if (pageIndex >= 0 && pageIndex < TOTAL_PAGES)
 		{
@@ -2520,13 +2470,11 @@ void StageSelectScene::SetStageNumberLabelVisible(int stageNo, bool visible)
 
 void StageSelectScene::SyncStageNumberLabels(bool force)
 {
-	// ★追加: 詳細モード中または遷移待機中は同期をスキップ（ラベル残留防止）
 	if (!force && (m_isDetailMode || m_isWaitingForTransition))
 	{
 		return;
 	}
 
-	// forceがtrueの場合は全ステージ同期（初期化時やページ遷移時）
 	if (force)
 	{
 		for (int stageNo = 1; stageNo <= TOTAL_STAGES; ++stageNo)
@@ -2536,11 +2484,9 @@ void StageSelectScene::SyncStageNumberLabels(bool force)
 		return;
 	}
 
-	// 通常更新（Updateからの呼び出し）時は、現在のページのステージのみ更新して負荷を下げる
 	int startStage = m_currentPage * STAGES_PER_PAGE + 1;
 	int endStage = startStage + STAGES_PER_PAGE - 1;
 
-	// 範囲チェック
 	if (startStage < 1) startStage = 1;
 	if (endStage > TOTAL_STAGES) endStage = TOTAL_STAGES;
 
@@ -2549,12 +2495,10 @@ void StageSelectScene::SyncStageNumberLabels(bool force)
 		SyncStageNumberLabel(stageNo);
 	}
 
-	// ★例外: もし「Reveal演出（解放アニメーション）」中のステージがあれば、ページ外でも更新する
 	for (auto& kv : m_stageReveal)
 	{
 		if (kv.second.active)
 		{
-			// 現在のページに含まれていなければ追加で更新
 			if (kv.first < startStage || kv.first > endStage)
 			{
 				SyncStageNumberLabel(kv.first);
@@ -2644,10 +2588,7 @@ void StageSelectScene::SyncStageNumberLabel(int stageNo)
 	const float centerX = (l + r) * 0.5f;
 	const float baseX = centerX - totalW * 0.5f;
 
-	// ★修正: % 6 でオフセットを再利用
-	// これにより、ステージ7(idx6)は 6%6=0 となり、ステージ1の設定値を使用します。
-	// ステージ13(idx12)は 12%6=0 となり、やはりステージ1の設定値を使用します。
-	int patternIdx = idx; // % 6 を削除（0～17をそのまま使う）
+	int patternIdx = idx;
 
 	const float stageTextOffsetX = (patternIdx >= 0 && patternIdx < 18) ? kStageNoOffsets[patternIdx].textOffsetX : 0.0f;
 	const float stageTextOffsetY = (patternIdx >= 0 && patternIdx < 18) ? kStageNoOffsets[patternIdx].textOffsetY : 0.0f;
@@ -2668,6 +2609,19 @@ void StageSelectScene::SyncStageNumberLabel(int stageNo)
 		{ -1.0f, -1.0f },
 	};
 
+	float commonWaveOffset = 0.0f;
+	float bgWaveOffset = 0.0f;
+	float bgRoll = 0.0f;
+
+	if (!m_isDetailMode && !m_isWaitingForTransition)
+	{
+		float phase = s_animTime * 2.0f + (float)idx * 0.5f;
+		commonWaveOffset = std::sin(phase) * 3.0f;
+		bgWaveOffset = std::sin(phase - 0.2f) * 3.0f;
+		bgRoll = std::sin(phase * 0.7f) * 0.03f;
+	}
+
+
 	float cursor = 0.0f;
 	for (int i = 0; i < (int)vec.size() && i < (int)text.size(); ++i)
 	{
@@ -2685,14 +2639,20 @@ void StageSelectScene::SyncStageNumberLabel(int stageNo)
 
 		float perCharOffsetX = 0.0f;
 		float perCharOffsetY = 0.0f;
-		if (patternIdx >= 0 && patternIdx < 18 && i >= 0 && i < 3) // 18に変更
+		if (patternIdx >= 0 && patternIdx < 18 && i >= 0 && i < 3)
 		{
 			perCharOffsetX = kStageNoCharOffsets[patternIdx][i].x;
 			perCharOffsetY = kStageNoCharOffsets[patternIdx][i].y;
 		}
 
+		float charWave = 0.0f;
+		if (!m_isDetailMode && !m_isWaitingForTransition)
+		{
+			charWave = std::sin(s_animTime * 3.0f + (float)i * 0.8f + (float)idx) * 2.0f;
+		}
+
 		const float cx = baseX + cursor + w * 0.5f + xOff + stageTextOffsetX + perCharOffsetX;
-		const float cy = (baseY + digitH * 0.5f) + yOff + stageTextOffsetY + perCharOffsetY;
+		const float cy = (baseY + digitH * 0.5f) + yOff + stageTextOffsetY + perCharOffsetY + commonWaveOffset + charWave;
 
 		if (m_coordinator->HasComponent<TransformComponent>(e))
 		{
@@ -2701,6 +2661,7 @@ void StageSelectScene::SyncStageNumberLabel(int stageNo)
 			tr.position.y = cy;
 			tr.position.z = kStageNoBaseZ;
 			tr.scale = DirectX::XMFLOAT3(w, h, 1.0f);
+			tr.rotation.z = bgRoll * 0.5f;
 		}
 
 		if (m_coordinator->HasComponent<UIImageComponent>(e))
@@ -2735,6 +2696,7 @@ void StageSelectScene::SyncStageNumberLabel(int stageNo)
 					trb.position.y = cy + oy;
 					trb.position.z = z;
 					trb.scale = DirectX::XMFLOAT3(w, h, 1.0f);
+					trb.rotation.z = bgRoll * 0.5f;
 				}
 
 				if (m_coordinator->HasComponent<UIImageComponent>(eb))
@@ -2754,7 +2716,7 @@ void StageSelectScene::SyncStageNumberLabel(int stageNo)
 			if (bgId != (ECS::EntityID)-1)
 			{
 				const float bgCenterX = centerX + stageBgOffsetX + kStageNoBgOffsetX;
-				const float bgCenterY = (baseY + digitH * 0.5f) + stageBgOffsetY + kStageNoBgOffsetY;
+				const float bgCenterY = (baseY + digitH * 0.5f) + stageBgOffsetY + kStageNoBgOffsetY + bgWaveOffset;
 
 
 				if (m_coordinator->HasComponent<TransformComponent>(bgId))
@@ -2764,6 +2726,7 @@ void StageSelectScene::SyncStageNumberLabel(int stageNo)
 					tr.position.y = bgCenterY;
 					tr.position.z = kStageNoBaseZ - 0.01f;
 					tr.scale = DirectX::XMFLOAT3(kStageNoBgWidth, kStageNoBgHeight, 1.0f);
+					tr.rotation.z = bgRoll;
 				}
 
 				if (m_coordinator->HasComponent<UIImageComponent>(bgId))
@@ -2778,11 +2741,6 @@ void StageSelectScene::SyncStageNumberLabel(int stageNo)
 }
 
 
-
-/**
- * [void - PlayUISelectEffect]
- * @brief UIエンティティの中心にワンショットエフェクトを出す
- */
 void StageSelectScene::PlayUISelectEffect(ECS::EntityID uiEntity, const std::string& effectId, float scale)
 {
 	if (!m_coordinator) return;
@@ -2820,8 +2778,6 @@ void StageSelectScene::PlayUISelectEffect(ECS::EntityID uiEntity, const std::str
 
 	m_uiSelectFx.push_back({ fx, 1.0f });
 }
-
-// ===== Shooting Star =====
 
 bool StageSelectScene::GetUIRect(ECS::EntityID id, float& left, float& top, float& right, float& bottom) const
 {
@@ -2877,31 +2833,26 @@ void StageSelectScene::UpdateEyeLight(float dt)
 		struct EyePoint { int stageNo; float x; float y; };
 		std::vector<EyePoint> points;
 
-		// ★18ステージ全てに対応した目エフェクトオフセット
-		// 各カードの目の位置に合わせて個別調整（カード中心からの相対位置）
 		static constexpr DirectX::XMFLOAT2 kEyeStageOffset[18] =
 		{
-			// ページ1 (ステージ1-6 = 1-1〜2-3)
-			{ -120.0f, -35.0f },   // Stage 1  (1-1)
-			{ -30.0f, -25.0f },   // Stage 2  (1-2)
-			{ 50.0f, -35.0f },   // Stage 3  (1-3)
-			{ -100.0f, 30.0f },   // Stage 4  (2-1)
-			{ -20.0f, 40.0f },   // Stage 5  (2-2)
-			{ 63.0f, 40.0f },   // Stage 6  (2-3)
-			// ページ2 (ステージ7-12 = 3-1〜4-3)
-			{ -110.0f, -30.0f },   // Stage 7  (3-1)
-			{ -30.0f, -35.0f },   // Stage 8  (3-2)
-			{ 65.0f, -30.0f },   // Stage 9  (3-3)
-			{ -120.0f, 45.0f },   // Stage 10 (4-1)
-			{ -35.0f, 35.0f },   // Stage 11 (4-2)
-			{ 53.0f, 45.0f },   // Stage 12 (4-3)
-			// ページ3 (ステージ13-18 = 5-1〜6-3)
-			{ -75.0f, -40.0f },   // Stage 13 (5-1)
-			{ 0.0f, -25.0f },   // Stage 14 (5-2)
-			{ 90.0f, -35.0f },   // Stage 15 (5-3)
-			{ -90.0f, 35.0f },   // Stage 16 (6-1)
-			{ -10.0f, 40.0f },   // Stage 17 (6-2)
-			{ 70.0f, 30.0f },   // Stage 18 (6-3)
+			{ -120.0f, -35.0f },
+			{ -30.0f, -25.0f },
+			{ 50.0f, -35.0f },
+			{ -100.0f, 30.0f },
+			{ -20.0f, 40.0f },
+			{ 63.0f, 40.0f },
+			{ -110.0f, -30.0f },
+			{ -30.0f, -35.0f },
+			{ 65.0f, -30.0f },
+			{ -120.0f, 45.0f },
+			{ -35.0f, 35.0f },
+			{ 53.0f, 45.0f },
+			{ -75.0f, -40.0f },
+			{ 0.0f, -25.0f },
+			{ 90.0f, -35.0f },
+			{ -90.0f, 35.0f },
+			{ -10.0f, 40.0f },
+			{ 70.0f, 30.0f },
 		};
 		static constexpr float kEyeJitterX = 0.0f;
 		static constexpr float kEyeJitterY = 0.0f;
@@ -2929,7 +2880,6 @@ void StageSelectScene::UpdateEyeLight(float dt)
 		float cx = points[pick].x;
 		float cy = points[pick].y;
 
-		// ステージ番号から直接オフセットを取得（0-17のインデックス）
 		int stageIndex = stageNo - 1;
 		if (stageIndex >= 0 && stageIndex < 18)
 		{
@@ -2990,33 +2940,6 @@ void StageSelectScene::EnsureDebugEffectOnMap()
 	);
 
 	std::cout << "[StageSelect] Debug glow created on map center\n";
-}
-
-static float EaseOutQuad(float t)
-{
-	t = Clamp01(t);
-	return 1.0f - (1.0f - t) * (1.0f - t);
-}
-
-
-
-static DirectX::XMFLOAT2 Bezier2(const DirectX::XMFLOAT2& p0, const DirectX::XMFLOAT2& p1, const DirectX::XMFLOAT2& p2, float t)
-{
-	const float u = 1.0f - t;
-	return {
-		u * u * p0.x + 2.0f * u * t * p1.x + t * t * p2.x,
-		u * u * p0.y + 2.0f * u * t * p1.y + t * t * p2.y
-	};
-}
-
-static DirectX::XMFLOAT2 Bezier2Deriv(const DirectX::XMFLOAT2& p0, const DirectX::XMFLOAT2& p1, const DirectX::XMFLOAT2& p2, float t)
-{
-	// B'(t)=2(1-t)(p1-p0)+2t(p2-p1)
-	const float u = 1.0f - t;
-	return {
-		2.0f * u * (p1.x - p0.x) + 2.0f * t * (p2.x - p1.x),
-		2.0f * u * (p1.y - p0.y) + 2.0f * t * (p2.y - p1.y)
-	};
 }
 
 static float Clamp01_Local(float v)
@@ -3254,11 +3177,9 @@ void StageSelectScene::KillAllShootingStars()
 
 void StageSelectScene::CreateStageInfoUI(const std::string& stageID)
 {
-	// ★修正: 新しいステージ情報UIを作成する前に、必ず前回のUIをクリア
 	std::cout << "[StageSelectScene] CreateStageInfoUI begin stageId=" << stageID << std::endl;
 	ClearStageInfoUI();
 
-	// ★新規: map_config.json からステージ設定を読み込む
 	MapStageConfig config = MapConfigLoader::Load(stageID);
 	const std::vector<std::string>& items = config.items;
 	const size_t itemCount = items.size();
@@ -3271,13 +3192,10 @@ void StageSelectScene::CreateStageInfoUI(const std::string& stageID)
 
 	const float baseDepth = 110000.0f;
 
-	// ★レイアウト計算
-	// アイテム数に応じてサイズと配置を調整
-	float caseSize = 200.0f;    // 宝箱ケースのサイズ
-	float iconSize = 85.0f;     // アイコンのサイズ
-	float spacing = 0.10f;      // アイテム間のスペース（画面幅比率）
+	float caseSize = 200.0f;
+	float iconSize = 85.0f;
+	float spacing = 0.10f;
 
-	// アイテム数が多い場合はサイズを縮小
 	if (itemCount >= 6)
 	{
 		caseSize = 140.0f;
@@ -3297,22 +3215,18 @@ void StageSelectScene::CreateStageInfoUI(const std::string& stageID)
 		spacing = 0.10f;
 	}
 
-	// 全体の幅を計算して中央配置
 	float totalWidth = (itemCount - 1) * spacing;
-	float startX = 0.73f - totalWidth / 2.0f;  // 中央を0.73fとして配置
+	float startX = 0.73f - totalWidth / 2.0f;
 
-	// アイテム数が1の場合は中央固定
 	if (itemCount == 1)
 	{
 		startX = 0.73f;
 	}
 
-	// ★各アイテムのUI生成
 	for (size_t i = 0; i < itemCount; ++i)
 	{
 		float xPos = startX + i * spacing;
 
-		// 宝箱ケース（背景）
 		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
 			TransformComponent(
 				{ SCREEN_WIDTH * xPos, SCREEN_HEIGHT * 0.25f, 0.0f },
@@ -3322,10 +3236,8 @@ void StageSelectScene::CreateStageInfoUI(const std::string& stageID)
 			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
 		));
 
-		// アイコンIDを取得（extern 宣言された GetStageItemIconPath を使用）
 		std::string iconID = GetItemIconPath(items[i]);
 
-		// 宝アイコン
 		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
 			TransformComponent(
 				{ SCREEN_WIDTH * xPos, SCREEN_HEIGHT * 0.21f, 0.0f },
@@ -3336,60 +3248,35 @@ void StageSelectScene::CreateStageInfoUI(const std::string& stageID)
 		));
 	}
 
-	// m_detailUIEntities にも追加（詳細表示時のアニメーション用）
 	for (auto id : m_stageSpecificEntities)
 	{
 		CacheDetailBaseTransform(id);
 		m_detailUIEntities.push_back(id);
 	}
 
-	// 生成ログ（個数とID）
 	std::cout << "[StageSelectScene] CreateStageInfoUI created count=" << m_stageSpecificEntities.size()
 		<< " items=" << itemCount << " ids=";
 	for (auto id : m_stageSpecificEntities) { std::cout << id << " "; }
 	std::cout << std::endl;
 }
 
-// ============================================================
-// 【補足】map_config.json の items 配列と対応するアイコン
-// ============================================================
-// 
-// JSON の items          →  GetStageItemIconPath()  →  アイコンID
-// ─────────────────────────────────────────────────────────────
-// "Takara_Daiya"         →  "ICO_TREASURE1"   (ダイヤ)
-// "Takara_Crystal"       →  "ICO_TREASURE2"   (クリスタル)
-// "Takara_Yubiwa"        →  "ICO_TREASURE3"   (指輪)
-// "Takara_Kaiga1"        →  "ICO_TREASURE4"   (絵画1)
-// "Takara_Kaiga2"        →  "ICO_TREASURE5"   (絵画2)
-// "Takara_Kaiga3"        →  "ICO_TREASURE6"   (絵画3)
-// "Takara_Doki"          →  "ICO_TREASURE7"   (土器)
-// "Takara_Tubo_Blue"     →  "ICO_TREASURE8"   (青いツボ)
-// "Takara_Tubo_Gouyoku"  →  "ICO_TREASURE9"   (紫のツボ)
-// "Takara_Dinosaur"      →  "ICO_TREASURE10"  (恐竜)
-// "Takara_Ammonite"      →  "ICO_TREASURE11"  (アンモナイト)
-// "Takara_Dinosaur_Foot" →  "ICO_TREASURE12"  (恐竜の足跡)
-// ============================================================
 
 void StageSelectScene::ClearStageInfoUI()
 {
-	// ★最終修正: より確実で効率的なクリーンアップ処理
 	if (!m_coordinator)
 	{
 		m_stageSpecificEntities.clear();
 		return;
 	}
 
-	// 破棄ログ（個数とID）
 	std::cout << "[StageSelectScene] ClearStageInfoUI start count=" << m_stageSpecificEntities.size() << " ids=";
 	for (auto id : m_stageSpecificEntities) { std::cout << id << " "; }
 	std::cout << std::endl;
 
-	// 1. まず全てのエンティティを非表示にして、コンポーネントを削除
 	for (auto id : m_stageSpecificEntities)
 	{
 		if (id != (ECS::EntityID)-1)
 		{
-			// 非表示にする
 			if (m_coordinator->HasComponent<UIImageComponent>(id))
 			{
 				auto& ui = m_coordinator->GetComponent<UIImageComponent>(id);
@@ -3407,11 +3294,9 @@ void StageSelectScene::ClearStageInfoUI()
 				rc.type = MESH_NONE;
 			}
 
-			// アニメーションキャッシュ削除
 			m_detailBaseScale.erase(id);
 			m_detailBasePos.erase(id);
 
-			// コンポーネントを削除（描画されないようにする）
 			if (m_coordinator->HasComponent<UIImageComponent>(id)) {
 				m_coordinator->RemoveComponent<UIImageComponent>(id);
 			}
@@ -3428,12 +3313,10 @@ void StageSelectScene::ClearStageInfoUI()
 				m_coordinator->RemoveComponent<AnimationComponent>(id);
 			}
 
-			// エンティティの破棄
 			m_coordinator->DestroyEntity(id);
 		}
 	}
 
-	// 2. m_detailUIEntitiesから該当エンティティを一括削除
 	if (!m_stageSpecificEntities.empty())
 	{
 		m_detailUIEntities.erase(
@@ -3446,7 +3329,6 @@ void StageSelectScene::ClearStageInfoUI()
 		);
 	}
 
-	// 2.5 保険: detailUIコンテナを直接スキャンして残留UIを掃除（コンテナ漏れ/生成経路違い対策）
 	{
 		std::vector<ECS::EntityID> detailPurgeIds;
 		for (auto id : m_detailUIEntities)
@@ -3517,7 +3399,6 @@ void StageSelectScene::ClearStageInfoUI()
 		}
 	}
 
-	// 2.6 保険: AssetIDベースで残留UIを掃除（全アクティブEntity対象）
 	{
 		std::vector<ECS::EntityID> purgeIds;
 		for (auto id : m_coordinator->GetActiveEntities())
@@ -3588,34 +3469,7 @@ void StageSelectScene::ClearStageInfoUI()
 		}
 	}
 
-	// 3. ステージ固有エンティティリストをクリア
 	m_stageSpecificEntities.clear();
-
-	// デバッグ: 残留している宝箱系UIを表示
-	{
-		std::vector<ECS::EntityID> remainIds;
-		for (auto id : m_coordinator->GetActiveEntities())
-		{
-			if (id == (ECS::EntityID)-1) continue;
-			if (!m_coordinator->HasComponent<UIImageComponent>(id)) continue;
-			const auto& ui = m_coordinator->GetComponent<UIImageComponent>(id);
-			if (!ui.isVisible) continue;
-			if (!AssetIdContainsTreasure(ui.assetID)) continue;
-			remainIds.push_back(id);
-		}
-
-		if (!remainIds.empty())
-		{
-			std::cout << "[StageSelectScene] ClearStageInfoUI remain treasure-ui count=" << remainIds.size() << " ids=";
-			for (auto id : remainIds) { std::cout << id << " "; }
-			std::cout << std::endl;
-			for (auto id : remainIds)
-			{
-				const auto& ui = m_coordinator->GetComponent<UIImageComponent>(id);
-				std::cout << "  id=" << id << " asset=" << ui.assetID << " visible=" << (ui.isVisible ? 1 : 0) << std::endl;
-			}
-		}
-	}
 
 	std::cout << "[StageSelectScene] ClearStageInfoUI done" << std::endl;
 }
@@ -3639,7 +3493,6 @@ void StageSelectScene::SwitchToPage(int pageIndex)
 	if (pageIndex < 0 || pageIndex >= TOTAL_PAGES) return;
 	if (pageIndex == m_currentPage) return;
 
-	// ★ページ移動経路でも残留しないように、一覧時は念のため一掃
 	if (!m_isDetailMode)
 	{
 		ClearStageInfoUI();
@@ -3743,8 +3596,6 @@ void StageSelectScene::HidePage(int pageIndex)
 
 void StageSelectScene::CreateNavigationButtons()
 {
-	// ★UI_SELECT_LEFTとUI_SELECT_RIGHTを使用
-	// 左ボタン: 画面左側の縦中央に配置
 	m_prevPageBtnEntity = m_coordinator->CreateEntity(
 		TagComponent("prev_page_btn"),
 		TransformComponent({ 120.0f, SCREEN_HEIGHT * 0.5f, 4.9f }, { 0,0,0 }, { 100, 100, 1 }),
@@ -3754,6 +3605,7 @@ void StageSelectScene::CreateNavigationButtons()
 			[this]() {
 				if (m_inputLocked || m_isDetailMode) return;
 				if (m_currentPage > 0) {
+					EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 0.5f);
 					SwitchToPage(m_currentPage - 1);
 				}
 			}
@@ -3761,7 +3613,6 @@ void StageSelectScene::CreateNavigationButtons()
 		UIImageComponent("UI_SELECT_LEFT", 1.0f)
 	);
 
-	// 右ボタン: 画面右側の縦中央に配置
 	m_nextPageBtnEntity = m_coordinator->CreateEntity(
 		TagComponent("next_page_btn"),
 		TransformComponent({ SCREEN_WIDTH - 120.0f, SCREEN_HEIGHT * 0.5f, 4.9f }, { 0,0,0 }, { 100, 100, 1 }),
@@ -3771,6 +3622,7 @@ void StageSelectScene::CreateNavigationButtons()
 			[this]() {
 				if (m_inputLocked || m_isDetailMode) return;
 				if (m_currentPage < TOTAL_PAGES - 1) {
+					EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 0.5f);
 					SwitchToPage(m_currentPage + 1);
 				}
 			}
@@ -3778,7 +3630,6 @@ void StageSelectScene::CreateNavigationButtons()
 		UIImageComponent("UI_SELECT_RIGHT", 1.0f)
 	);
 
-	// 初期表示状態を設定（ホバーエフェクト用のベーススケールも登録）
 	m_buttonBaseScale[m_prevPageBtnEntity] = { 100, 100, 1 };
 	m_buttonBaseScale[m_nextPageBtnEntity] = { 100, 100, 1 };
 }
@@ -3800,7 +3651,6 @@ void StageSelectScene::UpdateNavigationButtons()
 
 void StageSelectScene::CreatePageIndicators()
 {
-	// ページインジケーターは画面下部中央に配置（左右のナビゲーションボタンと被らない位置）
 	float centerX = SCREEN_WIDTH * 0.5f;
 	float y = SCREEN_HEIGHT - 50.0f;
 	float spacing = 30.0f;

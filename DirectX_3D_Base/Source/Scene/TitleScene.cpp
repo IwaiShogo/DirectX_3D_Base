@@ -284,7 +284,7 @@ void TitleScene::Init()
 
 
     // --- BGM再生 ---
-    ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator.get(), "BGM_TITLE", 0.5f);
+    ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator.get(), "BGM_TITLE", 0.4f);
     std::cout << "TitleScene::Init() - Layout Completed with Correct Reset Call." << std::endl;
 }
 void TitleScene::Uninit()

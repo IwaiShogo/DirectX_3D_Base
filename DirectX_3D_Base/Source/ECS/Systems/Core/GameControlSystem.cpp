@@ -386,7 +386,7 @@ void GameControlSystem::UpdateGameUI(float deltaTime, ECS::EntityID controllerID
     if (m_coordinator->HasComponent<ItemTrackerComponent>(controllerID)) {
         auto& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(controllerID);
         if (tracker.collectedItems > m_prevCollectedCount) {
-            EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_STEAL", 0.4f);
+            EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_STEAL", 0.7f);
             m_prevCollectedCount = tracker.collectedItems;
         }
 
