@@ -1,20 +1,20 @@
 /*****************************************************************//**
  * @file	EffectComponent.h
- * @brief	ƒGƒtƒFƒNƒg
- * 
- * @details	
- * 
+ * @brief	ã‚¨ãƒ•ã‚§ã‚¯ãƒˆ
+ *
+ * @details
+ *
  * ------------------------------------------------------------
  * @author	Iwai Shogo
  * ------------------------------------------------------------
- * 
- * @date	2025/12/07	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁF
- * 
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
- * 
- * @note	iÈ—ª‰Âj
+ *
+ * @date	2025/12/07	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼š
+ *
+ * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- XXï¼š
+ *
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
 
@@ -28,17 +28,17 @@
 
 struct EffectComponent
 {
-	std::string assetID;            // Ä¶‚·‚éƒGƒtƒFƒNƒg‚ÌƒAƒZƒbƒgID
-	Effekseer::Handle handle = -1;  // š–¢Ä¶/I—¹‚Í -1 ‚É“ˆê
+	std::string assetID;            // å†ç”Ÿã™ã‚‹ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã®ã‚¢ã‚»ãƒƒãƒˆID
+	Effekseer::Handle handle = -1;  // â˜…æœªå†ç”Ÿ/çµ‚äº†ã¯ -1 ã«çµ±ä¸€
 
-	bool playOnAwake = true;        // ¶¬‚ÉÄ¶‚·‚é‚©
-	bool isLooping = false;         // ƒ‹[ƒv‚·‚é‚©
+	bool playOnAwake = true;        // ç”Ÿæˆæ™‚ã«å†ç”Ÿã™ã‚‹ã‹
+	bool isLooping = false;         // ãƒ«ãƒ¼ãƒ—ã™ã‚‹ã‹
 	DirectX::XMFLOAT3 offset = { 0,0,0 };
 	float scale = 1.0f;
 	bool useColor = false;
 	DirectX::XMFLOAT4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-	// §Œäƒtƒ‰ƒO
+	// åˆ¶å¾¡ãƒ•ãƒ©ã‚°
 	bool requestPlay = false;
 	bool requestStop = false;
 
@@ -67,4 +67,3 @@ struct EffectComponent
 REGISTER_COMPONENT_TYPE(EffectComponent)
 
 #endif // !___EFFECT_COMPONENT_H___
-

@@ -184,8 +184,8 @@ void CameraControlSystem::Update(float deltaTime)
     // 入力
     XMFLOAT2 rightStick = GetRightStick();
     XMFLOAT2 mouseDelta = GetMouseDelta();
-    float yawInput = rightStick.x * CAMERA_SENSITIVITY_X + mouseDelta.x * m_mouseSensitivity;
-    float pitchInput = rightStick.y * CAMERA_SENSITIVITY_Y - mouseDelta.y * m_mouseSensitivity;
+    float yawInput = rightStick.x * (m_mouseSensitivity * 10.0f)+mouseDelta.x * m_mouseSensitivity;
+    float pitchInput = rightStick.y * (m_mouseSensitivity * 5.0f) - mouseDelta.y * m_mouseSensitivity;
 
     // デバッグカメラ
     if (isDebugMode) {

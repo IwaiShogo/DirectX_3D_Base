@@ -166,3 +166,4 @@ UI_STAGE6,Texture,Assets/Texture/ui_stagemap_castle7.png
 UI_SELECT_LEFT,Texture,Assets/Texture/ui_select_left.png
 UI_SELECT_RIGHT,Texture,Assets/Texture/ui_select_right.png
 STAR_TEXT3,Texture,Assets/Texture/ui_result3_3.png
+BTN_UNDER_KUMO,Texture,Assets/Texture/btm_gameover_cloud.png

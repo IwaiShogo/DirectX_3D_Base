@@ -73,6 +73,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
     <LibraryPath>$(ProjectDir)External\lib;$(LibraryPath)</LibraryPath>
+    <TargetName>記憶のカイトウ</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(ProjectDir);$(IncludePath)</IncludePath>
@@ -298,6 +299,7 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <ClInclude Include="Include\Systems\XAudio2\SoundEffect.h" />
     <ClInclude Include="Include\Systems\XAudio2\SoundEngine.h" />
     <ClInclude Include="Include\Utility\CSVLoader.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.md" />
@@ -308,6 +310,16 @@ xcopy "$(ProjectDir)Assets" "$(OutDir)Assets" /E /I /Y</Command>
     <None Include="Assets\CSV\SoundList.csv" />
     <None Include="Assets\CSV\TextureList.csv" />
     <None Include="Tools\Assets.xlsm" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="DirectX_3D_Base.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Assets\Texture\btn_stage_select.png" />
+    <Image Include="Assets\Texture\icon.ico" />
+    <Image Include="assets\texture\icon2.ico" />
+    <Image Include="assets\texture\icon3.ico" />
+    <Image Include="assets\texture\icon4.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

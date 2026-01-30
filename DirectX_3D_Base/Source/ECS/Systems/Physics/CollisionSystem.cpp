@@ -1,6 +1,6 @@
 /*****************************************************************//**
  * @file	CollisionSystem.cpp
- * @brief	CollisionSystem‚ÌÀ‘•BAABBÕ“ËŒŸo‚ÆŠî–{“I‚È‰“š‚ğˆ—B
+ * @brief	CollisionSystemã®å®Ÿè£…ã€‚AABBè¡çªæ¤œå‡ºã¨åŸºæœ¬çš„ãªå¿œç­”ã‚’å‡¦ç†ã€‚
  *
  * @details
  *
@@ -8,16 +8,16 @@
  * @author	Iwai Shogo
  * ------------------------------------------------------------
  *
- * @date	2025/10/27	‰‰ñì¬“ú
- * 			ì‹Æ“à—eF	- ’Ç‰ÁFAABBÕ“ËŒŸoiCheckCollisionj‚Æ‰“šiResolveCollisionj‚ÌƒƒWƒbƒN‚ğÀ‘•
+ * @date	2025/10/27	åˆå›ä½œæˆæ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- è¿½åŠ ï¼šAABBè¡çªæ¤œå‡ºï¼ˆCheckCollisionï¼‰ã¨å¿œç­”ï¼ˆResolveCollisionï¼‰ã®ãƒ­ã‚¸ãƒƒã‚¯ã‚’å®Ÿè£…
  *
- * @update	2025/xx/xx	ÅIXV“ú
- * 			ì‹Æ“à—eF	- XXF
+ * @update	2025/xx/xx	æœ€çµ‚æ›´æ–°æ—¥
+ * 			ä½œæ¥­å†…å®¹ï¼š	- XXï¼š
  *
- * @note	iÈ—ª‰Âj
+ * @note	ï¼ˆçœç•¥å¯ï¼‰
  *********************************************************************/
 
- // ===== ƒCƒ“ƒNƒ‹[ƒh =====
+ // ===== ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ =====
 #include "ECS/ECS.h"
 #include "ECS/EntityFactory.h"
 #include <algorithm>
@@ -25,63 +25,64 @@
 
 using namespace DirectX;
 
-// ƒwƒ‹ƒp[ŠÖ”‚Ì’è‹` (DirectXMath‚Ì‹@”\Šg’£‚ğ‘z’è)
+// ãƒ˜ãƒ«ãƒ‘ãƒ¼é–¢æ•°ã®å®šç¾© (DirectXMathã®æ©Ÿèƒ½æ‹¡å¼µã‚’æƒ³å®š)
 namespace MathHelper
 {
-	// XMVector3Dot‚Å“àÏ‚ğŒvZ
+	// XMVector3Dotã§å†…ç©ã‚’è¨ˆç®—
 	inline float Dot(DirectX::XMVECTOR v1, DirectX::XMVECTOR v2)
 	{
 		return DirectX::XMVectorGetX(DirectX::XMVector3Dot(v1, v2));
 	}
 }
 
+
 /**
- * @brief AABBŠÔ‚ÌÕ“ËŒŸo‚ÆÅ¬ˆÚ“®ƒxƒNƒgƒ‹(MTV)‚ğŒvZ‚·‚éB
- * @param entityA, entityB - Õ“Ëƒ`ƒFƒbƒN‘ÎÛ‚ÌEntityID
- * @param mtv - ŒvZ‚³‚ê‚½Å¬ˆÚ“®ƒxƒNƒgƒ‹‚ÆÕ“Ë–Ê–@ü
- * @return bool - Õ“Ë‚µ‚Ä‚¢‚éê‡‚Ítrue
+ * @brief AABBé–“ã®è¡çªæ¤œå‡ºã¨æœ€å°ç§»å‹•ãƒ™ã‚¯ãƒˆãƒ«(MTV)ã‚’è¨ˆç®—ã™ã‚‹ã€‚
+ * @param entityA, entityB - è¡çªãƒã‚§ãƒƒã‚¯å¯¾è±¡ã®EntityID
+ * @param mtv - è¨ˆç®—ã•ã‚ŒãŸæœ€å°ç§»å‹•ãƒ™ã‚¯ãƒˆãƒ«ã¨è¡çªé¢æ³•ç·š
+ * @return bool - è¡çªã—ã¦ã„ã‚‹å ´åˆã¯true
  */
 bool CollisionSystem::CheckCollision(ECS::EntityID entityA, ECS::EntityID entityB, XMFLOAT3& mtv)
 {
-	// A: Dynamic Entity (ƒvƒŒƒCƒ„[: AABB‚ğ‘z’è)
+	// A: Dynamic Entity (ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼: AABBã‚’æƒ³å®š)
 	TransformComponent& transA = m_coordinator->GetComponent<TransformComponent>(entityA);
 	CollisionComponent& collA = m_coordinator->GetComponent<CollisionComponent>(entityA);
-	// B: Static Entity (•Ç: OBB‚ğ‘z’è)
+	// B: Static Entity (å£: OBBã‚’æƒ³å®š)
 	TransformComponent& transB = m_coordinator->GetComponent<TransformComponent>(entityB);
 	CollisionComponent& collB = m_coordinator->GetComponent<CollisionComponent>(entityB);
 
-	// AABB‚Ì’†SÀ•W‚ğŒvZ (ƒIƒtƒZƒbƒg‚ğl—¶)
+	// AABBã®ä¸­å¿ƒåº§æ¨™ã‚’è¨ˆç®— (ã‚ªãƒ•ã‚»ãƒƒãƒˆã‚’è€ƒæ…®)
 	XMVECTOR posA = XMLoadFloat3(&transA.position) + XMLoadFloat3(&collA.offset);
-	// OBB‚Ì’†SÀ•W‚ğŒvZ (ƒIƒtƒZƒbƒg‚ğl—¶)
+	// OBBã®ä¸­å¿ƒåº§æ¨™ã‚’è¨ˆç®— (ã‚ªãƒ•ã‚»ãƒƒãƒˆã‚’è€ƒæ…®)
 	XMVECTOR posB = XMLoadFloat3(&transB.position) + XMLoadFloat3(&collB.offset);
 
-	// A, BŠÔ‚Ì’†S‹——£ƒxƒNƒgƒ‹
+	// A, Bé–“ã®ä¸­å¿ƒè·é›¢ãƒ™ã‚¯ãƒˆãƒ«
 	XMVECTOR separation = posB - posA;
 
-	// A, B‚Ìƒn[ƒtƒGƒNƒXƒeƒ“ƒg (ƒTƒCƒY)
+	// A, Bã®ãƒãƒ¼ãƒ•ã‚¨ã‚¯ã‚¹ãƒ†ãƒ³ãƒˆ (ã‚µã‚¤ã‚º)
 	XMFLOAT3 extentsA = collA.size;
 	XMFLOAT3 extentsB = collB.size;
 
 	// =========================================================================
-	// OBB (entityB) ‚Ì²î•ñæ“¾
-	// TransformComponent‚ÌY²‰ñ“] (ƒ‰ƒWƒAƒ“) ‚©‚ç‰ñ“]s—ñ‚ğ\’z‚·‚é
+	// OBB (entityB) ã®è»¸æƒ…å ±å–å¾—
+	// TransformComponentã®Yè»¸å›è»¢ (ãƒ©ã‚¸ã‚¢ãƒ³) ã‹ã‚‰å›è»¢è¡Œåˆ—ã‚’æ§‹ç¯‰ã™ã‚‹
 	// =========================================================================
-	// Y²‰ñ“]¬•ª‚Ì‚İ‚ğæ“¾
+	// Yè»¸å›è»¢æˆåˆ†ã®ã¿ã‚’å–å¾—
 	float rotationY_B = transB.rotation.y;
 
-	// ‰ñ“]s—ñ‚ğ\’z (Y²‰ñ“]‚Ì‚İ)
+	// å›è»¢è¡Œåˆ—ã‚’æ§‹ç¯‰ (Yè»¸å›è»¢ã®ã¿)
 	XMMATRIX rotMatB = XMMatrixRotationY(rotationY_B);
 
-	// OBB‚Ìƒ[ƒJƒ‹²iX, Y, Zj‚ğ’Šo‚·‚é (DirectXMath‚Å‚ÍsƒxƒNƒgƒ‹)
-	XMVECTOR axisBX = rotMatB.r[0]; // B‚Ìƒ[ƒJƒ‹X²
-	XMVECTOR axisBY = rotMatB.r[1]; // B‚Ìƒ[ƒJƒ‹Y²
-	XMVECTOR axisBZ = rotMatB.r[2]; // B‚Ìƒ[ƒJƒ‹Z²
+	// OBBã®ãƒ­ãƒ¼ã‚«ãƒ«è»¸ï¼ˆX, Y, Zï¼‰ã‚’æŠ½å‡ºã™ã‚‹ (DirectXMathã§ã¯è¡Œãƒ™ã‚¯ãƒˆãƒ«)
+	XMVECTOR axisBX = rotMatB.r[0]; // Bã®ãƒ­ãƒ¼ã‚«ãƒ«Xè»¸
+	XMVECTOR axisBY = rotMatB.r[1]; // Bã®ãƒ­ãƒ¼ã‚«ãƒ«Yè»¸
+	XMVECTOR axisBZ = rotMatB.r[2]; // Bã®ãƒ­ãƒ¼ã‚«ãƒ«Zè»¸
 
-	// Õ“Ë”»’è‚Ég—p‚·‚é²iƒ[ƒ‹ƒh² 3–{ + OBB‚Ìƒ[ƒJƒ‹² 3–{ = Œv6–{j
+	// è¡çªåˆ¤å®šã«ä½¿ç”¨ã™ã‚‹è»¸ï¼ˆãƒ¯ãƒ¼ãƒ«ãƒ‰è»¸ 3æœ¬ + OBBã®ãƒ­ãƒ¼ã‚«ãƒ«è»¸ 3æœ¬ = è¨ˆ6æœ¬ï¼‰
 	XMVECTOR axes[] = {
-		XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), // World X (AABB²)
-		XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), // World Y (AABB²)
-		XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), // World Z (AABB²)
+		XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), // World X (AABBè»¸)
+		XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), // World Y (AABBè»¸)
+		XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), // World Z (AABBè»¸)
 		axisBX, // OBB Local X
 		axisBY, // OBB Local Y
 		axisBZ  // OBB Local Z
@@ -95,30 +96,30 @@ bool CollisionSystem::CheckCollision(ECS::EntityID entityA, ECS::EntityID entity
 	{
 		XMVECTOR axis = XMVector3Normalize(axes[i]);
 
-		// ²ã‚Ì’†SŠÔ‚Ì‹——£ (|P_A - P_B| E N)
+		// è»¸ä¸Šã®ä¸­å¿ƒé–“ã®è·é›¢ (|P_A - P_B| ãƒ» N)
 		float centerProjection = std::abs(MathHelper::Dot(separation, axis));
 
-		// A‚Ì“Š‰e”¼Œa (AABB‚ğ²N‚É“Š‰e: |e_AEN_x| + |e_AEN_y| + |e_AEN_z|)
-		// AABB‚Íƒ[ƒ‹ƒh²‚É®—ñ‚µ‚Ä‚¢‚é‚½‚ßAProjection Radius‚ÍŠÈ’P‚ÉŒvZ‚Å‚«‚é
+		// Aã®æŠ•å½±åŠå¾„ (AABBã‚’è»¸Nã«æŠ•å½±: |e_Aãƒ»N_x| + |e_Aãƒ»N_y| + |e_Aãƒ»N_z|)
+		// AABBã¯ãƒ¯ãƒ¼ãƒ«ãƒ‰è»¸ã«æ•´åˆ—ã—ã¦ã„ã‚‹ãŸã‚ã€Projection Radiusã¯ç°¡å˜ã«è¨ˆç®—ã§ãã‚‹
 		float radiusA = std::abs(extentsA.x * MathHelper::Dot(XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f), axis))
 			+ std::abs(extentsA.y * MathHelper::Dot(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), axis))
 			+ std::abs(extentsA.z * MathHelper::Dot(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), axis));
 
-		// B‚Ì“Š‰e”¼Œa (OBB‚ğ²N‚É“Š‰e: B‚Ìƒ[ƒJƒ‹²‚ÆN‚Ì“àÏ‚ğg—p)
+		// Bã®æŠ•å½±åŠå¾„ (OBBã‚’è»¸Nã«æŠ•å½±: Bã®ãƒ­ãƒ¼ã‚«ãƒ«è»¸ã¨Nã®å†…ç©ã‚’ä½¿ç”¨)
 		float radiusB = std::abs(extentsB.x * MathHelper::Dot(axisBX, axis))
 			+ std::abs(extentsB.y * MathHelper::Dot(axisBY, axis))
 			+ std::abs(extentsB.z * MathHelper::Dot(axisBZ, axis));
 
 		float totalRadius = radiusA + radiusB;
 
-		// •ª—£²’è—ƒ`ƒFƒbƒN
+		// åˆ†é›¢è»¸å®šç†ãƒã‚§ãƒƒã‚¯
 		if (centerProjection > totalRadius)
 		{
-			isCollision = false; // •ª—£²‚ªŒ©‚Â‚©‚Á‚½
+			isCollision = false; // åˆ†é›¢è»¸ãŒè¦‹ã¤ã‹ã£ãŸ
 			break;
 		}
 
-		// d‚È‚è‚ğŒvZ‚µAÅ¬d‚È‚è²‚ğXV
+		// é‡ãªã‚Šã‚’è¨ˆç®—ã—ã€æœ€å°é‡ãªã‚Šè»¸ã‚’æ›´æ–°
 		float overlap = totalRadius - centerProjection;
 		if (overlap < minOverlap)
 		{
@@ -129,10 +130,10 @@ bool CollisionSystem::CheckCollision(ECS::EntityID entityA, ECS::EntityID entity
 
 	if (isCollision)
 	{
-		// MTV‚Ì•ûŒü‚ğ SeparationƒxƒNƒgƒ‹iB-Aj‚Æ‚Í‹tA‚·‚È‚í‚¿A‚©‚çB‚ğ‰Ÿ‚µo‚·•ûŒü‚Éİ’è
-		// d = centerA - centerB ‚È‚Ì‚ÅAseparation = centerB - centerA = -d
-		// minAxis‚ª•ª—£ƒxƒNƒgƒ‹(B-A)‚Æ“¯‚¶•ûŒü‚ğŒü‚¢‚Ä‚¢‚ê‚ÎA”½“]‚³‚¹‚é•K—v‚ª‚ ‚é
-		XMVECTOR dV = posA - posB; // Õ“ËŒŸo‚ÌMTV•„†Œˆ’è‚Ég—p
+		// MTVã®æ–¹å‘ã‚’ Separationãƒ™ã‚¯ãƒˆãƒ«ï¼ˆB-Aï¼‰ã¨ã¯é€†ã€ã™ãªã‚ã¡Aã‹ã‚‰Bã‚’æŠ¼ã—å‡ºã™æ–¹å‘ã«è¨­å®š
+		// d = centerA - centerB ãªã®ã§ã€separation = centerB - centerA = -d
+		// minAxisãŒåˆ†é›¢ãƒ™ã‚¯ãƒˆãƒ«(B-A)ã¨åŒã˜æ–¹å‘ã‚’å‘ã„ã¦ã„ã‚Œã°ã€åè»¢ã•ã›ã‚‹å¿…è¦ãŒã‚ã‚‹
+		XMVECTOR dV = posA - posB; // è¡çªæ¤œå‡ºã®MTVç¬¦å·æ±ºå®šã«ä½¿ç”¨
 		if (MathHelper::Dot(minAxis, dV) < 0.0f)
 		{
 			minAxis = -minAxis;
@@ -147,13 +148,13 @@ bool CollisionSystem::CheckCollision(ECS::EntityID entityA, ECS::EntityID entity
 }
 
 /**
- * @brief Õ“Ë‚ª”­¶‚µ‚½ê‡‚Ì‰“šˆ—iˆÊ’uC³‚Æ‘¬“x•ÏXj
- * @param entityA, entityB - Õ“Ë‚µ‚½EntityID
- * @param mtv - Å¬ˆÚ“®ƒxƒNƒgƒ‹
+ * @brief è¡çªãŒç™ºç”Ÿã—ãŸå ´åˆã®å¿œç­”å‡¦ç†ï¼ˆä½ç½®ä¿®æ­£ã¨é€Ÿåº¦å¤‰æ›´ï¼‰
+ * @param entityA, entityB - è¡çªã—ãŸEntityID
+ * @param mtv - æœ€å°ç§»å‹•ãƒ™ã‚¯ãƒˆãƒ«
  */
 void CollisionSystem::ResolveCollision(ECS::EntityID entityA, ECS::EntityID entityB, const XMFLOAT3& mtv)
 {
-	// RigidBody‚ÆTransform‚ğæ“¾
+	// RigidBodyã¨Transformã‚’å–å¾—
 	TransformComponent& transA = m_coordinator->GetComponent<TransformComponent>(entityA);
 	RigidBodyComponent& rigidA = m_coordinator->GetComponent<RigidBodyComponent>(entityA);
 	CollisionComponent& collA = m_coordinator->GetComponent<CollisionComponent>(entityA);
@@ -161,32 +162,32 @@ void CollisionSystem::ResolveCollision(ECS::EntityID entityA, ECS::EntityID enti
 	TransformComponent& transB = m_coordinator->GetComponent<TransformComponent>(entityB);
 	CollisionComponent& collB = m_coordinator->GetComponent<CollisionComponent>(entityB);
 
-	// Ã“I‚ÈƒIƒuƒWƒFƒNƒg(entityB)‚É‚ß‚è‚ñ‚¾“®“I‚ÈƒIƒuƒWƒFƒNƒg(entityA)‚ğC³‚·‚éAƒVƒ“ƒvƒ‹‚È‰“š
+	// é™çš„ãªã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ(entityB)ã«ã‚ã‚Šè¾¼ã‚“ã å‹•çš„ãªã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ(entityA)ã‚’ä¿®æ­£ã™ã‚‹ã€ã‚·ãƒ³ãƒ—ãƒ«ãªå¿œç­”
 	if (collA.type == COLLIDER_DYNAMIC && collB.type == COLLIDER_STATIC)
 	{
-		// 1. ˆÊ’u‚ÌC³ (‚ß‚è‚İ‰ğÁ)
+		// 1. ä½ç½®ã®ä¿®æ­£ (ã‚ã‚Šè¾¼ã¿è§£æ¶ˆ)
 		transA.position.x += mtv.x;
 		transA.position.y += mtv.y;
 		transA.position.z += mtv.z;
 
-		// 2. ‘¬“x‚ÌC³ (”½”­/’â~)
+		// 2. é€Ÿåº¦ã®ä¿®æ­£ (åç™º/åœæ­¢)
 
-		// Õ“Ë–Ê–@ü (mtv‚Ì”ñƒ[ƒ²)
+		// è¡çªé¢æ³•ç·š (mtvã®éã‚¼ãƒ­è»¸)
 		XMFLOAT3 normal = { 0.0f, 0.0f, 0.0f };
 		if (mtv.x != 0.0f) normal.x = mtv.x > 0 ? 1.0f : -1.0f;
 		if (mtv.y != 0.0f) normal.y = mtv.y > 0 ? 1.0f : -1.0f;
 		if (mtv.z != 0.0f) normal.z = mtv.z > 0 ? 1.0f : -1.0f;
 
-		// Õ“Ë–Ê‚É‰ˆ‚Á‚½‘¬“x‚ğƒLƒƒƒ“ƒZƒ‹‚µA”½”­ŒW”‚ğ“K—p
-		// Y²i’n–ÊjÕ“Ë‚Ìê‡
+		// è¡çªé¢ã«æ²¿ã£ãŸé€Ÿåº¦ã‚’ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã—ã€åç™ºä¿‚æ•°ã‚’é©ç”¨
+		// Yè»¸ï¼ˆåœ°é¢ï¼‰è¡çªã®å ´åˆ
 		if (normal.y != 0.0f)
 		{
-			// ‰ºŒü‚«‚Ì‘¬“x (normal.y > 0 ‚ÍA‚ªã‚©‚çÕ“Ë) ‚ğ”½”­‚³‚¹‚é
+			// ä¸‹å‘ãã®é€Ÿåº¦ (normal.y > 0 ã¯AãŒä¸Šã‹ã‚‰è¡çª) ã‚’åç™ºã•ã›ã‚‹
 			if (rigidA.velocity.y * normal.y < 0)
 			{
-				rigidA.velocity.y *= -rigidA.restitution; // Œ¸Š‚ğ”º‚¤”½”­
+				rigidA.velocity.y *= -rigidA.restitution; // æ¸›è¡°ã‚’ä¼´ã†åç™º
 
-				// IsGroundedƒtƒ‰ƒO‚ÌXV (PlayerControlComponent‚ğ‚Âê‡)
+				// IsGroundedãƒ•ãƒ©ã‚°ã®æ›´æ–° (PlayerControlComponentã‚’æŒã¤å ´åˆ)
 				if (m_coordinator->m_entityManager->GetSignature(entityA).test(m_coordinator->GetComponentTypeID<PlayerControlComponent>()))
 				{
 					PlayerControlComponent& playerControl = m_coordinator->GetComponent<PlayerControlComponent>(entityA);
@@ -194,44 +195,44 @@ void CollisionSystem::ResolveCollision(ECS::EntityID entityA, ECS::EntityID enti
 				}
 			}
 
-			// ƒWƒƒƒ“ƒv‰‘¬‚ªd—Í‚É•‰‚¯‚È‚¢‚æ‚¤‚ÉA‘¬“x‚ª”ñí‚É¬‚³‚¢ê‡‚Íƒ[ƒ‚ÉƒNƒŠƒbƒsƒ“ƒO
+			// ã‚¸ãƒ£ãƒ³ãƒ—åˆé€ŸãŒé‡åŠ›ã«è² ã‘ãªã„ã‚ˆã†ã«ã€é€Ÿåº¦ãŒéå¸¸ã«å°ã•ã„å ´åˆã¯ã‚¼ãƒ­ã«ã‚¯ãƒªãƒƒãƒ”ãƒ³ã‚°
 			if (std::abs(rigidA.velocity.y) < 0.1f)
 			{
 				rigidA.velocity.y = 0.0f;
 			}
 		}
 
-		// X²Õ“Ë‚Ìê‡ (•Ç)
+		// Xè»¸è¡çªã®å ´åˆ (å£)
 		if (normal.x != 0.0f && rigidA.velocity.x * normal.x < 0)
 		{
 			rigidA.velocity.x *= -rigidA.restitution;
 		}
 	}
 
-	// TODO: Dynamic vs Dynamic ‚ÌÕ“Ë‰“š‚à•K—v‚É‰‚¶‚Ä’Ç‰Á‚·‚é
+	// TODO: Dynamic vs Dynamic ã®è¡çªå¿œç­”ã‚‚å¿…è¦ã«å¿œã˜ã¦è¿½åŠ ã™ã‚‹
 }
 
 /**
- * @brief Õ“ËŒŸo‚Æ‰“š‚ğs‚¤
+ * @brief è¡çªæ¤œå‡ºã¨å¿œç­”ã‚’è¡Œã†
  */
 void CollisionSystem::Update(float deltaTime)
 {
-	// --- 0. ‰Šú‰»‚ÆƒQ[ƒ€ó‘Ô‚Ìæ“¾ ---
+	// --- 0. åˆæœŸåŒ–ã¨ã‚²ãƒ¼ãƒ çŠ¶æ…‹ã®å–å¾— ---
 	ECS::EntityID controllerID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
 	if (controllerID == ECS::INVALID_ENTITY_ID) return;
 
 	GameStateComponent& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
 
-	// ƒQ[ƒ€‚ªŠù‚ÉI—¹‚µ‚Ä‚¢‚½‚çAÕ“Ëƒ`ƒFƒbƒN‚ğƒXƒLƒbƒv
+	// ã‚²ãƒ¼ãƒ ãŒæ—¢ã«çµ‚äº†ã—ã¦ã„ãŸã‚‰ã€è¡çªãƒã‚§ãƒƒã‚¯ã‚’ã‚¹ã‚­ãƒƒãƒ—
 	if (state.isGameOver || state.isGameClear) return;
 
-	// Deferred destruction list (ƒAƒCƒeƒ€‰ñû‚É‚æ‚é”j‰ó‚Ì’x‰„)
+	// Deferred destruction list (ã‚¢ã‚¤ãƒ†ãƒ å›åã«ã‚ˆã‚‹ç ´å£Šã®é…å»¶)
 	std::vector<ECS::EntityID> entitiesToDestroy;
 
 	ECS::EntityID playerID = ECS::FindFirstEntityWithComponent<PlayerControlComponent>(m_coordinator);
 	if (playerID == ECS::INVALID_ENTITY_ID) return;
 
-	// Static‚ÈEntity‚ÆDynamic‚ÈEntity‚ÌƒŠƒXƒg‚ğì¬
+	// StaticãªEntityã¨DynamicãªEntityã®ãƒªã‚¹ãƒˆã‚’ä½œæˆ
 	std::vector<ECS::EntityID> dynamicEntities;
 	std::vector<ECS::EntityID> staticEntities;
 
@@ -249,10 +250,10 @@ void CollisionSystem::Update(float deltaTime)
 		}
 	}
 
-	// Dynamic Entity‚Æ Static EntityŠÔ‚ÌÕ“Ëƒ`ƒFƒbƒN (Dynamic vs Static)
+	// Dynamic Entityã¨ Static Entityé–“ã®è¡çªãƒã‚§ãƒƒã‚¯ (Dynamic vs Static)
 	for (ECS::EntityID dynamicEntity : dynamicEntities)
 	{
-		// IsGrounded‚ğˆê’UƒŠƒZƒbƒg (Update‚Ìn‚ß‚ÉÀs‚³‚ê‚é‚×‚«‚¾‚ªA‚±‚±‚Å‚ÍÕ“Ë‘O‚ÉƒŠƒZƒbƒg)
+		// IsGroundedã‚’ä¸€æ—¦ãƒªã‚»ãƒƒãƒˆ (Updateã®å§‹ã‚ã«å®Ÿè¡Œã•ã‚Œã‚‹ã¹ãã ãŒã€ã“ã“ã§ã¯è¡çªå‰ã«ãƒªã‚»ãƒƒãƒˆ)
 		if (m_coordinator->m_entityManager->GetSignature(dynamicEntity).test(m_coordinator->GetComponentTypeID<PlayerControlComponent>()))
 		{
 			PlayerControlComponent& playerControl = m_coordinator->GetComponent<PlayerControlComponent>(dynamicEntity);
@@ -270,17 +271,17 @@ void CollisionSystem::Update(float deltaTime)
 		}
 	}
 
-	// ‚±‚±‚Å‚ÍAPlayer‚Æ‘¼‚Ì‚·‚×‚Ä‚ÌÕ“Ë‰Â”\‚ÈƒGƒ“ƒeƒBƒeƒBŠÔ‚ÌÕ“Ë‚ğƒ`ƒFƒbƒN‚µ‚Ü‚·
+	// ã“ã“ã§ã¯ã€Playerã¨ä»–ã®ã™ã¹ã¦ã®è¡çªå¯èƒ½ãªã‚¨ãƒ³ãƒ†ã‚£ãƒ†ã‚£é–“ã®è¡çªã‚’ãƒã‚§ãƒƒã‚¯ã—ã¾ã™
 	for (ECS::EntityID entityB : m_entities)
 	{
 		if (entityB == playerID) continue;
 
 		XMFLOAT3 mtv_dummy = { 0.0f, 0.0f, 0.0f };
 
-		// CheckCollision‚ÍAPhysicsSystem‚ÌÕ“Ë‰ğŒˆ‚Æ‚Í•Ê‚ÉAƒQ[ƒ€ƒƒWƒbƒN‚ÌƒgƒŠƒK[‚Æ‚µ‚Äg—p
+		// CheckCollisionã¯ã€PhysicsSystemã®è¡çªè§£æ±ºã¨ã¯åˆ¥ã«ã€ã‚²ãƒ¼ãƒ ãƒ­ã‚¸ãƒƒã‚¯ã®ãƒˆãƒªã‚¬ãƒ¼ã¨ã—ã¦ä½¿ç”¨
 		if (CheckCollision(playerID, entityB, mtv_dummy))
 		{
-			// Õ“Ë‘Šè‚ÌƒRƒ“ƒ|[ƒlƒ“ƒgƒVƒOƒlƒ`ƒƒiƒ^ƒOj‚ğæ“¾
+			// è¡çªç›¸æ‰‹ã®ã‚³ãƒ³ãƒãƒ¼ãƒãƒ³ãƒˆã‚·ã‚°ãƒãƒãƒ£ï¼ˆã‚¿ã‚°ï¼‰ã‚’å–å¾—
 			auto& tagB = m_coordinator->GetComponent<TagComponent>(entityB);
 
 			// --- 1. GAME OVER TRIGGER (Player vs Guard) ---
@@ -296,29 +297,49 @@ void CollisionSystem::Update(float deltaTime)
 				ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST5");
 
 				state.isGameOver = true;
-				// ƒQ[ƒ€ƒI[ƒo[‚ÍA‚·‚®‚ÉƒŠƒ^[ƒ“‚µA‘¼‚Ìˆ—iƒAƒCƒeƒ€‰ñû‚È‚Çj‚ğ’â~
+				// ã‚²ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼æ™‚ã¯ã€ã™ãã«ãƒªã‚¿ãƒ¼ãƒ³ã—ã€ä»–ã®å‡¦ç†ï¼ˆã‚¢ã‚¤ãƒ†ãƒ å›åãªã©ï¼‰ã‚’åœæ­¢
 				return;
 			}
 
-			// 2. ITEM COLLECTION TRIGGER (Player vs Collectable)
-			if (tagB.tag == "goal")
-			{
-				ItemTrackerComponent& tracker = m_coordinator->GetComponent<ItemTrackerComponent>(controllerID);
-
-				if (tracker.totalItems > 0 && tracker.collectedItems == tracker.totalItems)
-				{
-					ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST4");
-
-					state.isGameClear = true;
-				}
-			}
 			if (tagB.tag == "taser")
 			{
-				ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TEST6");
-				
-				state.isGameOver = true;
-				
+				// GameStateã®å–å¾—ã¨çŠ¶æ…‹ãƒã‚§ãƒƒã‚¯
+				auto& state = m_coordinator->GetComponent<GameStateComponent>(controllerID);
+
+				// æ—¢ã«ãƒˆãƒ©ãƒƒãƒ—ä¸­ãªã‚‰å‡¦ç†ã‚’ã‚¹ã‚­ãƒƒãƒ—
+				if (state.isPlayerTrapped)
+					continue;
+				// 1. GameStateã«ãƒˆãƒ©ãƒƒãƒ—çŠ¶æ…‹ã‚’è¨­å®š
+				state.isPlayerTrapped = true;
+				state.playerTrappedTimer = 3.0f; // ãƒˆãƒ©ãƒƒãƒ—ç¶™ç¶šæ™‚é–“ï¼ˆé©å®œèª¿æ•´ï¼‰
+				// 2. ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®é€Ÿåº¦ã‚’æ­¢ã‚ã‚‹
+				if (m_coordinator->HasComponent<RigidBodyComponent>(playerID))
+				{
+					auto& rb = m_coordinator->GetComponent<RigidBodyComponent>(playerID);
+					rb.velocity.x = 0.0f;
+					rb.velocity.z = 0.0f;
+				}
+				// 3. ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å†ç”Ÿ
+				if (m_coordinator->HasComponent<AnimationComponent>(playerID))
+				{
+					auto& anim = m_coordinator->GetComponent<AnimationComponent>(playerID);
+					anim.Play("A_PLAYER_CAUGHT", false);
+				}
+				// 4. ã‚¨ãƒ•ã‚§ã‚¯ãƒˆå†ç”Ÿï¼ˆãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®ä½ç½®ã§ãƒ«ãƒ¼ãƒ—å†ç”Ÿï¼‰
+				auto& playerTrans = m_coordinator->GetComponent<TransformComponent>(playerID);
+				DirectX::XMFLOAT3 effectPos = playerTrans.position;
+
+				//  ãƒ«ãƒ¼ãƒ—ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã¨ã—ã¦å†ç”Ÿ
+				ECS::EntityID effectEntity = m_coordinator->CreateEntity(
+					TransformComponent(effectPos, { 0,0,0 }, { 1.0f, 1.0f, 1.0f }),
+					EffectComponent("EFK_TASER", true)
+				);
+
+				// 5. SEå†ç”Ÿï¼ˆ1å›ã®ã¿ï¼‰
+				ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator, "SE_TASER", 0.8f);
+
 				return;
+
 			}
 			if (tagB.tag == "TopViewTrigger")
 			{
@@ -333,14 +354,14 @@ void CollisionSystem::Update(float deltaTime)
 	{
 		auto& debug = m_coordinator->GetComponent<DebugComponent>(debugEntityID);
 
-		// “–‚½‚è”»’è‚Ì‰Â‹‰»
+		// å½“ãŸã‚Šåˆ¤å®šã®å¯è¦–åŒ–
 		if (!debug.isCollisionDrawEnabled) return;
 
-		// TransformComponent‚ÆCollisionComponent‚ğ‚ÂEntity‚ğ‘–¸
+		// TransformComponentã¨CollisionComponentã‚’æŒã¤Entityã‚’èµ°æŸ»
 		for (const auto& entity : m_entities)
 		{
-			// CollisionComponent‚ÌŒ`ó‚ÉŠî‚Ã‚«
-			// Geometory::AddLine() ‚ğg—p‚µ‚Äƒqƒbƒgƒ{ƒbƒNƒX‚ÌŠO˜g‚ğ•`‰æ
+			// CollisionComponentã®å½¢çŠ¶ã«åŸºã¥ã
+			// Geometory::AddLine() ã‚’ä½¿ç”¨ã—ã¦ãƒ’ãƒƒãƒˆãƒœãƒƒã‚¯ã‚¹ã®å¤–æ ã‚’æç”»
 		}
 	}
 #endif // _DEBUG

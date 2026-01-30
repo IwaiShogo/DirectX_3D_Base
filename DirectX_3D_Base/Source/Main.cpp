@@ -21,7 +21,7 @@
 // ===== インクルード =====
 // Windows API の基本機能
 #include <windows.h>
-
+#include "resource.h"
 // 自作ヘッダファイル
 #include "Main.h"
 #include "Systems/DirectX/DirectX.h"
@@ -32,6 +32,7 @@
 #include "Systems/AssetManager.h"
 #include "Systems/XAudio2/SoundEngine.h"
 #include "ECS/Systems/Rendering/EffectSystem.h"
+
 
 // Scene
 #include "Scene/SceneManager.h"
@@ -160,10 +161,11 @@ int Init(HINSTANCE hInstance, int nCmdShow)
 	wcex.lpfnWndProc = WndProc;									// ウィンドウプロシージャの設定（関数ポインタ）
 	wcex.style = CS_CLASSDC | CS_DBLCLKS;						// ウィンドウの挙動
 	wcex.cbSize = sizeof(WNDCLASSEX);
-	wcex.hIcon = LoadIcon(NULL, IDI_APPLICATION);				// アプリのアイコン設定
+	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON1)); // ウィンドウのアイコン設定
 	wcex.hIconSm = wcex.hIcon;
 	wcex.hCursor = LoadCursor(NULL, IDC_ARROW);					// マウスのアイコン設定
 	wcex.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);	// 背景の色
+	
 
 	/* ウィンドウクラス情報の登録 */
 	if (!RegisterClassEx(&wcex))

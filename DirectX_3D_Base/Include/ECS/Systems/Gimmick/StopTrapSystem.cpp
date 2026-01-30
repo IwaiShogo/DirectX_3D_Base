@@ -90,7 +90,7 @@ void StopTrapSystem::Update(float deltaTime)
                 float distSq = GetDistanceSqXZ(trapTrans.position, guardTrans.position);
 
                 DirectX::XMFLOAT3 effectPos = guardTrans.position;
-                effectPos.y -= 6.0f;
+               // effectPos.y -= 6.0f;
                 float effectDuration = std::max(0.1f, trapComp.stopDuration - 0.5f);
                 if (distSq <= hitRadius * hitRadius)
                 {
@@ -102,14 +102,13 @@ void StopTrapSystem::Update(float deltaTime)
                     // 2. エフェクト再生
                     EntityFactory::CreateOneShotEffect(
                         m_coordinator,
-                        "EFK_TASER ",
+                        "EFK_TASER",
                         effectPos,
                         effectDuration,
                         1.0f
                     );
 
                     // 3. SE再生
-
                     EntityFactory::CreateOneShotSoundEntity(
                         m_coordinator,
                         "SE_TASER",

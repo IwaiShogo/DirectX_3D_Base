@@ -43,6 +43,7 @@ public:
 
 	/// @brief “ü—Í‚É‰‚¶‚ÄRigidBody‚Ì‘¬“x‚ğXV‚·‚é
 	void Update(float deltaTime) override;
+	static void ResetFadeState();
 };
 
 #endif // !___PLAYER_CONTROL_SYSTEM_H___
