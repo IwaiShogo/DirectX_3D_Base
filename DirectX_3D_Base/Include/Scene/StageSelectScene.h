@@ -1,6 +1,7 @@
 ﻿/*****************************************************************//**
  * @file	StageSelectScene.h
- * @brief	ステージセレクト
+ * @brief	ステージセレクト（18ステージ/3ページ対応版）
+ *          ★2-3ページ目も1ページ目と同じモデルを使用
  *********************************************************************/
 
 #ifndef ___STAGE_SELECT_SCENE_H___
@@ -9,7 +10,7 @@
 #include "Scene/Scene.h"
 #include "ECS/Coordinator.h"
 
-#include <DirectXMath.h>   // ★DirectX::XMFLOAT2 用
+#include <DirectXMath.h>
 
 #include <functional>
 #include <memory>
@@ -31,8 +32,6 @@ struct StageData {
 	};
 	std::vector<GimmickInfo> gimmicks;
 };
-
-// StageSelectScene.h
 
 class StageSelectScene : public Scene
 {
@@ -56,43 +55,96 @@ public:
 	static ECS::Coordinator* GetCoordinator() { return s_coordinator; }
 
 private:
-	// ステージマップのUIアセットID（CSVに登録されてる“正しい名前”に合わせる）
-	static constexpr const char* kStageMapUI[6] =
+	// ============================================================
+	// ★18ステージ対応: 定数定義
+	// ============================================================
+	static constexpr int TOTAL_STAGES = 18;        // 全ステージ数
+	static constexpr int STAGES_PER_PAGE = 6;      // 1ページあたりのステージ数
+	static constexpr int TOTAL_PAGES = (TOTAL_STAGES + STAGES_PER_PAGE - 1) / STAGES_PER_PAGE; // 3ページ
+
+	// ============================================================
+	// ★Asset配列: 18個分定義
+	// ============================================================
+
+	// ステージマップのUIアセットID
+	static constexpr const char* kStageMapUI[TOTAL_STAGES] =
 	{
-		// TextureList.csv の AssetID に合わせる（UI_STAGE1～UI_STAGE6）
-		"UI_STAGE1",
-		"UI_STAGE2",
-		"UI_STAGE3",
-		"UI_STAGE4",
-		"UI_STAGE5",
-		"UI_STAGE6",
+		// Page 1 (1-1 ~ 1-6)
+		"UI_STAGE1",  "UI_STAGE2",  "UI_STAGE3",
+		"UI_STAGE4",  "UI_STAGE5",  "UI_STAGE6",
+		// Page 2 (2-1 ~ 2-6)
+		"UI_STAGE7",  "UI_STAGE8",  "UI_STAGE9",
+		"UI_STAGE10", "UI_STAGE11", "UI_STAGE12",
+		// Page 3 (3-1 ~ 3-6)
+		"UI_STAGE13", "UI_STAGE14", "UI_STAGE15",
+		"UI_STAGE16", "UI_STAGE17", "UI_STAGE18",
 	};
 
-	// ★一覧カード(3D)のモデル AssetID（CSVに登録されてる“正しい名前”に合わせる）
-	static constexpr const char* kSelectCardModel[6] =
+	// ★一覧カード(3D)のモデル AssetID
+	// ★修正: 2ページ目と3ページ目も1ページ目と同じモデルを使用（M_SELECT1～6を繰り返し）
+	static constexpr const char* kSelectCardModel[TOTAL_STAGES] =
 	{
-		"M_SELECT1",
-		"M_SELECT2",
-		"M_SELECT3",
-		"M_SELECT4",
-		"M_SELECT5",
-		"M_SELECT6",
+		// Page 1 (1-1 ~ 1-6)
+		"M_SELECT1",  "M_SELECT2",  "M_SELECT3",
+		"M_SELECT4",  "M_SELECT5",  "M_SELECT6",
+		// Page 2 (2-1 ~ 2-6) ★1ページ目と同じモデルを使用
+		"M_SELECT1",  "M_SELECT2",  "M_SELECT3",
+		"M_SELECT4",  "M_SELECT5",  "M_SELECT6",
+		// Page 3 (3-1 ~ 3-6) ★1ページ目と同じモデルを使用
+		"M_SELECT1",  "M_SELECT2",  "M_SELECT3",
+		"M_SELECT4",  "M_SELECT5",  "M_SELECT6",
 	};
 
-	// 一覧カードの見た目（3Dモデル）
-	std::vector<ECS::EntityID> m_listCardModelEntities;
-	// Hover拡大用：一覧カード(3D)の基準スケール
+	// ============================================================
+	// ★ページング関連のメンバ変数
+	// ============================================================
+	int m_currentPage = 0;  // 現在のページ (0=Page1, 1=Page2, 2=Page3)
+
+	// ページごとのエンティティを管理
+	struct PageData {
+		std::vector<ECS::EntityID> cardModelEntities;      // 3Dカード
+		std::vector<ECS::EntityID> hitboxEntities;         // ヒットボックス
+		std::vector<std::vector<ECS::EntityID>> labelEntities;     // ステージ番号ラベル
+		std::vector<std::vector<ECS::EntityID>> labelBoldEntities; // ボールドラベル
+		std::vector<ECS::EntityID> labelBgEntities;        // ラベル背景
+	};
+	std::vector<PageData> m_pages;  // 3ページ分
+
+	// ページ切り替え関連
+	void SwitchToPage(int pageIndex);
+	void UpdatePageNavigation(float dt);
+	void ShowPage(int pageIndex);
+	void HidePage(int pageIndex);
+	int GetStageIndexInCurrentPage(int stageNo) const;  // ステージ番号→現在ページ内インデックス
+	int GetAbsoluteStageIndex(int stageNo) const;       // ステージ番号→全体インデックス(0-17)
+
+	// ページインジケーター
+	ECS::EntityID m_pageIndicatorEntities[TOTAL_PAGES] = { (ECS::EntityID)-1 };
+	void CreatePageIndicators();
+	void UpdatePageIndicators();
+
+	// ナビゲーションボタン (← →)
+	ECS::EntityID m_prevPageBtnEntity = (ECS::EntityID)-1;
+	ECS::EntityID m_nextPageBtnEntity = (ECS::EntityID)-1;
+	void CreateNavigationButtons();
+	void UpdateNavigationButtons();
+
+	// ============================================================
+	// 既存のメンバ変数（ページング対応のため一部修正）
+	// ============================================================
+
+	// 一覧カードの見た目（3Dモデル）- ページ統合管理用
+	std::vector<ECS::EntityID> m_listCardModelEntities;  // 全18個分
 	std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_listCardModelBaseScale;
 
 	ECS::EntityID m_lastHiddenListCardModelEntity = (ECS::EntityID)-1;
 	int m_lastHiddenListStageNo = -1;
 
-
-	// ===== UI Select FX（OK / BACK）=====
+	// UI Select FX（OK / BACK）
 	struct UISelectFxInstance
 	{
 		ECS::EntityID entity = (ECS::EntityID)-1;
-		float remaining = 0.0f; // 手動寿命（秒）
+		float remaining = 0.0f;
 	};
 	std::vector<UISelectFxInstance> m_uiSelectFx;
 
@@ -100,7 +152,7 @@ private:
 	void UpdateButtonHoverScale(float dt);
 	std::unordered_map<ECS::EntityID, DirectX::XMFLOAT3> m_buttonBaseScale;
 
-	// ===== Card Focus Animation =====
+	// Card Focus Animation
 	struct CardFocusAnim
 	{
 		bool active = false;
@@ -145,9 +197,7 @@ private:
 	std::vector<ECS::EntityID> m_listUIEntities;
 
 	std::vector<std::vector<ECS::EntityID>> m_listStageLabelEntities;
-	// 擬似ボールド用：重ね描きの追加スプライト群（文字数*(pass-1)）
 	std::vector<std::vector<ECS::EntityID>> m_listStageLabelBoldEntities;
-	// ★ステージ番号の背景（UI_STAGE_NUMBER）
 	std::vector<ECS::EntityID> m_listStageLabelBgEntities;
 	void BuildStageNumberLabels();
 	void SyncStageNumberLabels(bool force = false);
@@ -193,7 +243,7 @@ private:
 
 	void  KillAllShootingStars();
 
-	// ★StageMap
+	// StageMap
 	ECS::EntityID m_stageMapEntity = (ECS::EntityID)-1;
 	ECS::EntityID m_stageMapOverlayEntity = (ECS::EntityID)-1;
 	int StageIdToStageNo(const std::string& stageId) const;
@@ -201,7 +251,7 @@ private:
 	std::string GetStageMapTextureAssetId(int stageNo) const;
 	void ApplyStageMapTextureByStageId(const std::string& stageId);
 
-	// ===== Shooting Star =====
+	// Shooting Star
 	struct ShootingStarInstance
 	{
 		ECS::EntityID star = (ECS::EntityID)-1;
@@ -219,7 +269,7 @@ private:
 
 	bool m_isDetailMode = false;
 
-	// ===== Unlock / Reveal =====
+	// Unlock / Reveal
 	int m_maxUnlockedStage = 1;
 	int m_pendingRevealStage = -1;
 	int   m_scheduledRevealStage = -1;

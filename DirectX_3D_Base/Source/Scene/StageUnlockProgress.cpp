@@ -1,4 +1,8 @@
-﻿#include "Scene/StageUnlockProgress.h"
+﻿// ============================================================
+// StageUnlockProgress.cpp - 18ステージ対応版
+// ============================================================
+
+#include "Scene/StageUnlockProgress.h"
 
 #include <algorithm>
 #include <cctype>
@@ -10,19 +14,21 @@
 #if defined(_WIN32)
 #define NOMINMAX
 #include <Windows.h>
+#include <shlobj.h>
 #endif
 
 namespace
 {
-	constexpr int kMaxStages = 6;
+	// ★18ステージに対応
+	constexpr int kMaxStages = 18;  // 6 → 18 に変更
 	constexpr int kMinStages = 1;
 	constexpr const char* kSaveFileName = "stage_unlock_progress.txt";
 
 	int  g_maxUnlocked = 1;
 	bool g_loaded = false;
 	int  g_pendingReveal = -1;
-	uint32_t g_bestTimeMs[kMaxStages + 1] = {};           // 1..6, 0=未記録
-	std::uint8_t g_stageStarMask[kMaxStages + 1] = {};    // 1..6, 0=未取得(3bit)
+	uint32_t g_bestTimeMs[kMaxStages + 1] = {};           // 1..18, 0=未記録
+	std::uint8_t g_stageStarMask[kMaxStages + 1] = {};    // 1..18, 0=未取得(3bit)
 
 	int ClampStage(int v)
 	{
@@ -54,38 +60,99 @@ namespace
 	std::string GetExeDirectory()
 	{
 #if defined(_WIN32)
-		char modulePath[MAX_PATH] = {};
-		const DWORD len = ::GetModuleFileNameA(nullptr, modulePath, MAX_PATH);
-		if (len == 0 || len >= MAX_PATH)
+		char path[MAX_PATH] = {};
+		GetModuleFileNameA(nullptr, path, MAX_PATH);
+		std::string exePath(path);
+		size_t pos = exePath.find_last_of("\\/");
+		if (pos != std::string::npos)
 		{
-			return std::string();
+			return exePath.substr(0, pos);
 		}
-
-		std::string path(modulePath, modulePath + len);
-		const size_t slash = path.find_last_of("\\/");
-		if (slash == std::string::npos) return std::string();
-
-		return path.substr(0, slash + 1);
+		return "";
 #else
-		return std::string();
+		return ".";
 #endif
 	}
 
 	std::string GetSaveFilePath()
 	{
-		// exe の隣に固定して、作業ディレクトリ依存を避ける
-		const std::string exeDir = GetExeDirectory();
-		if (!exeDir.empty())
+		std::string dir = GetExeDirectory();
+		if (!dir.empty())
 		{
-			return exeDir + kSaveFileName;
+			return dir + "\\" + kSaveFileName;
 		}
-		return std::string(kSaveFileName);
+		return kSaveFileName;
 	}
 
 	bool FileExists(const std::string& path)
 	{
+		std::ifstream f(path);
+		return f.good();
+	}
+
+	void LoadFromFile()
+	{
+		std::string path = GetSaveFilePath();
+		if (!FileExists(path))
+		{
+			g_maxUnlocked = 1;
+			for (int i = 0; i <= kMaxStages; i++)
+			{
+				g_bestTimeMs[i] = 0;
+				g_stageStarMask[i] = 0;
+			}
+			return;
+		}
+
 		std::ifstream ifs(path);
-		return ifs.is_open();
+		if (!ifs.is_open())
+		{
+			g_maxUnlocked = 1;
+			return;
+		}
+
+		ifs >> g_maxUnlocked;
+		g_maxUnlocked = ClampStage(g_maxUnlocked);
+
+		for (int i = 1; i <= kMaxStages; i++)
+		{
+			uint32_t t = 0;
+			ifs >> t;
+			g_bestTimeMs[i] = t;
+		}
+
+		for (int i = 1; i <= kMaxStages; i++)
+		{
+			int m = 0;
+			ifs >> m;
+			g_stageStarMask[i] = static_cast<std::uint8_t>(m & 0x7);
+		}
+	}
+
+	void SaveToFile()
+	{
+		std::string path = GetSaveFilePath();
+		std::ofstream ofs(path);
+		if (!ofs.is_open())
+		{
+			return;
+		}
+
+		ofs << g_maxUnlocked << "\n";
+
+		for (int i = 1; i <= kMaxStages; i++)
+		{
+			ofs << g_bestTimeMs[i];
+			if (i < kMaxStages) ofs << " ";
+		}
+		ofs << "\n";
+
+		for (int i = 1; i <= kMaxStages; i++)
+		{
+			ofs << static_cast<int>(g_stageStarMask[i]);
+			if (i < kMaxStages) ofs << " ";
+		}
+		ofs << "\n";
 	}
 }
 
@@ -94,63 +161,19 @@ namespace StageUnlockProgress
 	void Load()
 	{
 		if (g_loaded) return;
+		LoadFromFile();
 		g_loaded = true;
+	}
 
-		// --- 起動ごと初期化（未記録/未取得） ---
-		for (int i = 1; i <= kMaxStages; ++i)
+	void ResetToNewGame()
+	{
+		g_maxUnlocked = 1;
+		for (int i = 0; i <= kMaxStages; i++)
 		{
 			g_bestTimeMs[i] = 0;
 			g_stageStarMask[i] = 0;
 		}
-		g_pendingReveal = -1;
-
-		std::ifstream ifs(GetSaveFilePath());
-		if (!ifs.is_open())
-		{
-			g_maxUnlocked = 1;
-			return;
-		}
-
-		int v = 1;
-		ifs >> v;
-		if (!ifs.fail())
-		{
-			g_maxUnlocked = ClampStage(v);
-		}
-		else
-		{
-			g_maxUnlocked = 1;
-		}
-
-		// ベストタイム(ms)
-		for (int i = 1; i <= kMaxStages; ++i)
-		{
-			uint32_t t = 0;
-			ifs >> t;
-			if (ifs.fail()) break;
-			g_bestTimeMs[i] = t;
-		}
-
-		// スター(3bit)（古いファイルなら無いので 0 のまま）
-		for (int i = 1; i <= kMaxStages; ++i)
-		{
-			int s = 0;
-			ifs >> s;
-			if (ifs.fail()) break;
-			g_stageStarMask[i] = static_cast<std::uint8_t>(s & 0x7);
-		}
-	}
-
-	/**
-	 * @brief 「はじめから」：進捗を完全初期化して保存する
-	 * - 解放ステージ: 1 (1-1のみ)
-	 * - ベストタイム: 全て 0
-	 * - スター: 全て 0
-	 * - 解放演出の保留もクリア
-	 */
-	void ResetToNewGame()
-	{
-		ResetAllAndSave();
+		g_loaded = true;
 	}
 
 	void ForceReload()
@@ -159,58 +182,70 @@ namespace StageUnlockProgress
 		Load();
 	}
 
-	bool HasSaveFile()
+	void Save()
 	{
-		return FileExists(GetSaveFilePath());
+		if (!g_loaded)
+		{
+			Load();
+		}
+		SaveToFile();
 	}
 
 	void ResetAllAndSave()
 	{
-		// 既にロード済みでも確実に初期化する
-		g_loaded = true;
 		g_maxUnlocked = 1;
-		g_pendingReveal = -1;
-
-		for (int i = 1; i <= kMaxStages; ++i)
+		for (int i = 0; i <= kMaxStages; i++)
 		{
 			g_bestTimeMs[i] = 0;
 			g_stageStarMask[i] = 0;
 		}
-
-		Save(); // ファイルも上書きして「次回起動」でも最初からになる
+		g_loaded = true;
+		SaveToFile();
 	}
 
-	void Save()
+	bool HasSaveFile()
 	{
-		g_loaded = true;
-
-		std::ofstream ofs(GetSaveFilePath(), std::ios::trunc);
-		if (!ofs.is_open()) return;
-
-		// v2形式:
-		// 1行目: maxUnlocked
-		// 2行目: bestTimeMs[1..6]
-		// 3行目: stageStarMask[1..6]
-		ofs << ClampStage(g_maxUnlocked) << "\n";
-
-		for (int i = 1; i <= kMaxStages; ++i)
-		{
-			ofs << g_bestTimeMs[i];
-			if (i != kMaxStages) ofs << ' ';
-		}
-		ofs << "\n";
-
-		for (int i = 1; i <= kMaxStages; ++i)
-		{
-			ofs << static_cast<int>(g_stageStarMask[i] & 0x7);
-			if (i != kMaxStages) ofs << ' ';
-		}
+		return FileExists(GetSaveFilePath());
 	}
 
 	int GetMaxUnlockedStage()
 	{
 		Load();
 		return g_maxUnlocked;
+	}
+
+	// ★新規追加: 指定したステージを解放する関数
+	void UnlockStage(int stageNo)
+	{
+		Load();
+
+		if (stageNo < kMinStages || stageNo > kMaxStages) return;
+
+		// すでに解放済みなら何もしない
+		if (stageNo <= g_maxUnlocked) return;
+
+		g_maxUnlocked = ClampStage(stageNo);
+		Save();
+	}
+
+	int UnlockNextStageFromClearedStageID(const std::string& clearedStageID)
+	{
+		Load();
+
+		int cleared = ParseStageNo(clearedStageID);
+		if (cleared < 1 || cleared >= kMaxStages)
+		{
+			return -1;
+		}
+
+		int next = cleared + 1;
+		if (next > g_maxUnlocked)
+		{
+			g_maxUnlocked = next;
+			Save();
+			return next;
+		}
+		return -1;
 	}
 
 	uint32_t GetBestTimeMs(int stageNo)
@@ -224,25 +259,23 @@ namespace StageUnlockProgress
 	{
 		Load();
 		if (stageNo < 1 || stageNo > kMaxStages) return false;
-		if (!(clearTimeSec > 0.05f)) return false;
+		if (clearTimeSec <= 0.0f) return false;
 
-		const uint32_t newMs = static_cast<uint32_t>(clearTimeSec * 1000.0f + 0.5f);
-		if (newMs == 0) return false;
+		uint32_t newMs = static_cast<uint32_t>(clearTimeSec * 1000.0f);
+		uint32_t old = g_bestTimeMs[stageNo];
 
-		const uint32_t oldMs = g_bestTimeMs[stageNo];
-		if (oldMs != 0 && newMs >= oldMs) return false;
-
-		g_bestTimeMs[stageNo] = newMs;
-		Save();
-		return true;
+		if (old == 0 || newMs < old)
+		{
+			g_bestTimeMs[stageNo] = newMs;
+			Save();
+			return true;
+		}
+		return false;
 	}
 
 	int ExtractStageNo(const std::string& stageID)
 	{
-		Load();
-		const int v = ParseStageNo(stageID);
-		if (v < 1 || v > kMaxStages) return -1;
-		return v;
+		return ParseStageNo(stageID);
 	}
 
 	std::uint8_t GetStageStarMask(int stageNo)
@@ -256,28 +289,14 @@ namespace StageUnlockProgress
 	{
 		Load();
 		if (stageNo < 1 || stageNo > kMaxStages) return;
-		addMask &= 0x7;
-		g_stageStarMask[stageNo] = static_cast<std::uint8_t>(g_stageStarMask[stageNo] | addMask);
-		Save(); // ★星も永続化する
-	}
 
-	int UnlockNextStageFromClearedStageID(const std::string& clearedStageID)
-	{
-		Load();
-
-		const int cleared = ParseStageNo(clearedStageID);
-		if (cleared < 1) return -1;
-
-		const int next = std::min(kMaxStages, cleared + 1);
-		if (next <= g_maxUnlocked) return -1;
-
-		g_maxUnlocked = ClampStage(next);
+		g_stageStarMask[stageNo] |= (addMask & 0x7);
 		Save();
-		return g_maxUnlocked;
 	}
 
 	void SetPendingRevealStage(int stageNo)
 	{
+		// ★18ステージ対応
 		if (stageNo < 2 || stageNo > kMaxStages)
 		{
 			g_pendingReveal = -1;
@@ -293,8 +312,8 @@ namespace StageUnlockProgress
 
 	int ConsumePendingRevealStage()
 	{
-		const int v = g_pendingReveal;
+		int result = g_pendingReveal;
 		g_pendingReveal = -1;
-		return v;
+		return result;
 	}
 }
