@@ -147,8 +147,8 @@ static void UIFont_ApplyChar(ECS::Coordinator* coord, ECS::EntityID id, char c)
 	const int r = (idx <= 9) ? (idx / 5) : 2;
 	const int col = (idx <= 9) ? (idx % 5) : (idx - 10);
 
-	ui.uvPos = { col * 0.2f,  r * 0.333f };
-	ui.uvScale = { 0.2f,     0.333f };
+	ui.uvPos = { col * 0.2f + 0.003f,  r * 0.333f + 0.01f };
+	ui.uvScale = { 0.19f, 0.31f };
 }
 
 static std::string StageNoToLabelText(int stageNo)
@@ -618,7 +618,7 @@ void StageSelectScene::Init()
 		const float y = SCREEN_HEIGHT * 0.83f;
 		const float labelCenterX = SCREEN_WIDTH * 0.16f;
 		const float labelW = 200.0f;
-		const float startX = (labelCenterX + labelW * 0.5f + 20.0f);
+		const float startX = (labelCenterX + labelW * 0.5f + 20.0f);  // 20.0f→8.0fに変更して左寄せ
 
 		for (int i = 0; i < 7; ++i)
 		{
@@ -633,8 +633,8 @@ void StageSelectScene::Init()
 			else if (i == 5) idx = 12;
 			const int r = (idx <= 9) ? (idx / 5) : 2;
 			const int c = (idx <= 9) ? (idx % 5) : (idx - 10);
-			ui.uvPos = { c * 0.2f,  r * 0.333f };
-			ui.uvScale = { 0.2f,     0.333f };
+			ui.uvPos = { c * 0.2f + 0.003f,  r * 0.333f + 0.01f };
+			ui.uvScale = { 0.19f, 0.31f };
 
 			if (i >= 5) ui.isVisible = false;
 
@@ -1709,8 +1709,8 @@ void StageSelectScene::UpdateBestTimeDigitsByStageId(const std::string& stageId)
 		const int idx = digits[i];
 		const int r = (idx <= 9) ? (idx / 5) : 2;
 		const int c = (idx <= 9) ? (idx % 5) : (idx - 10);
-		ui.uvPos = { c * 0.2f,  r * 0.333f };
-		ui.uvScale = { 0.2f,     0.333f };
+		ui.uvPos = { c * 0.2f + 0.003f,  r * 0.333f + 0.01f };
+		ui.uvScale = { 0.19f, 0.31f };
 
 		if (i >= 5) ui.isVisible = showDecimal;
 		else ui.isVisible = true;
