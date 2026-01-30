@@ -755,12 +755,14 @@ void StageSelectScene::Init()
 				PlayUISelectEffect(m_startBtnEntity, "EFK_SELECTOK", 35.0f);
 				m_inputLocked = true;
 
+				// 2. LoadingSceneのパラメータ設定（2.0秒待機、遷移先はGameScene）
+				LoadingScene::SetNextSceneInfo(2.0f, typeid(GameScene));
 				m_isWaitingForGameStart = true;
 				m_gameStartTimer = 0.0f;
 
 				ScreenTransition::RequestFadeOutEx(
 					m_coordinator.get(), m_blackTransitionEntity, 0.15f, 0.35f, 0.45f,
-					[this]() { GameScene::SetStageNo(m_selectedStageID); SceneManager::ChangeScene<GameScene>(); },
+					[this]() { GameScene::SetStageNo(m_selectedStageID); SceneManager::ChangeScene<LoadingScene>(); },
 					false, nullptr, 0.0f, 0.35f, false, false
 				);
 			}

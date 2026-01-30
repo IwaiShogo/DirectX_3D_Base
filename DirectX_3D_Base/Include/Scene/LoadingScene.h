@@ -26,7 +26,11 @@ public:
     void Uninit() override;
     void Update(float deltaTime) override;
     void Draw() override;
-
+    // ---遷移パラメータ設定用静的関数 ---
+    static void SetNextSceneInfo(float minTime, std::type_index nextType) {
+        s_minDisplaySec = minTime;
+        s_nextSceneType = nextType;
+    }
 private:
     /**
      * @brief CreateEntity() の戻り型を推論して保持（ECS::Entity が無い環境向け）
@@ -71,6 +75,12 @@ private:
     static constexpr int kTotalFrames = kCols * kRows;
 
     static constexpr float kAnimFPS = 60.0f;
+private:
+    // --- 追加: 遷移パラメータ保持用変数 ---
+    static float s_minDisplaySec;
+    static std::type_index s_nextSceneType;
+
+
 };
 
 #endif // !___LOADING_SCENE_H___

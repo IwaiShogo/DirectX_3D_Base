@@ -819,7 +819,8 @@ void ResultScene::CreateButtons()
         { 0.0f, 5.0f },                                 // 【文字のズレ】
         []() {
             ResultScene::isClear = false;
-            SceneManager::ChangeScene<StageSelectScene>();
+            LoadingScene::SetNextSceneInfo(2.0f, typeid(StageSelectScene));
+            SceneManager::ChangeScene<LoadingScene>();
         }
     );
 
@@ -833,7 +834,8 @@ void ResultScene::CreateButtons()
         []() {
             ResultScene::isClear = false;
             GameScene::SetStageNo(ResultScene::s_resultData.stageID);
-            SceneManager::ChangeScene<GameScene>();
+            LoadingScene::SetNextSceneInfo(1.0f, typeid(GameScene));
+            SceneManager::ChangeScene<LoadingScene>();
         }
     );
 
@@ -846,7 +848,8 @@ void ResultScene::CreateButtons()
         { 20.0f, 5.0f },                                 // 【文字のズレ】
         []() {
             ResultScene::isClear = false;
-            SceneManager::ChangeScene<TitleScene>();
+            LoadingScene::SetNextSceneInfo(2.0f, typeid(TitleScene));
+            SceneManager::ChangeScene<LoadingScene>();
         }
     );
 

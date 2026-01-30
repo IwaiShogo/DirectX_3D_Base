@@ -221,8 +221,8 @@ void TitleScene::Init()
                     // 以前の実装「Reset(); Save();」はエラーなので廃止。
                     // 代わりに、StageUnlockProgress内に既に実装済みの ResetAllAndSave() を使用
                     StageUnlockProgress::ResetAllAndSave();
-
-                    SceneManager::ChangeScene<OpeningScene>();
+                    LoadingScene::SetNextSceneInfo(2.0f, typeid(OpeningScene));
+                    SceneManager::ChangeScene<LoadingScene>();
                 },
                 /* HitScale */ hitScale
             )
@@ -254,7 +254,8 @@ void TitleScene::Init()
                     }
                     ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 2.0f);
                     // つづきから
-                    SceneManager::ChangeScene<StageSelectScene>();
+                    LoadingScene::SetNextSceneInfo(1.5f, typeid(StageSelectScene));
+                    SceneManager::ChangeScene<LoadingScene>();
                 },
                 /* HitScale */ hitScale
             )
