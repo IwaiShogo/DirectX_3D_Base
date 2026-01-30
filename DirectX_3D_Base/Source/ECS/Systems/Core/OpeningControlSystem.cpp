@@ -352,7 +352,8 @@ void OpeningControlSystem::Update(float deltaTime)
                 {
                     // ÅŒã‚Ü‚Ås‚Á‚½‚Æ‚«‚¾‚¯ƒV[ƒ“‘JˆÚ
                     if (!s_moveBackward)
-                        SceneManager::ChangeScene<StageSelectScene>();
+                        LoadingScene::SetNextSceneInfo(1.0f, typeid(StageSelectScene));
+                        SceneManager::ChangeScene<LoadingScene>();
                 }
 
                 s_moveBackward = false;

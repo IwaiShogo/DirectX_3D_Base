@@ -9,11 +9,14 @@
 
 #include "ECS/ECSInitializer.h"
 #include "ECS/Systems/UI/UIRenderSystem.h"
+#include "ECS/Systems/Core/ScreenTransition.h"
 
 #include "Main.h" // SCREEN_WIDTH / SCREEN_HEIGHT
 
 #include <cmath> // 追加: sin, abs
-
+ // ★実体定義（ファイルの冒頭、namespaceの外などに配置）
+float LoadingScene::s_minDisplaySec = 1.0f;
+std::type_index LoadingScene::s_nextSceneType = typeid(TitleScene);
 namespace
 {
     int ClampInt(int v, int lo, int hi)
@@ -170,6 +173,24 @@ void LoadingScene::Init()
         // 初期フレームを適用（最初の1コマ）
         SetLoadAnimFrame(m_loadAnimFrame);
     }
+    // ============================================================
+       // ★ここに追加：起動時のフェードイン処理
+       // 前のシーンから真っ暗な状態で遷移してくるため、ここから明るくします。
+       // ============================================================
+    ECS::EntityID fadeEffect = ScreenTransition::CreateOverlay(
+        m_coordinator.get(),
+        "UI_STAGE_FADE", // 黒いテクスチャ
+        SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f,
+        static_cast<float>(SCREEN_WIDTH * 2), static_cast<float>(SCREEN_HEIGHT * 2)
+    );
+
+    if (m_coordinator->HasComponent<UIImageComponent>(fadeEffect))
+    {
+        auto& ui = m_coordinator->GetComponent<UIImageComponent>(fadeEffect);
+        ui.color = { 0.0f, 0.0f, 0.0f, 1.0f }; // 最初は真っ黒
+        ui.depth = 500000.0f;                 // 何よりも手前に置く
+    }
+    ScreenTransition::RequestFadeInEx(m_coordinator.get(), fadeEffect, 0.5f);
 }
 
 void LoadingScene::Uninit()
@@ -228,9 +249,21 @@ void LoadingScene::Update(float deltaTime)
         }
     }
 
-    if (m_elapsed >= m_minDisplaySec)
+    if (m_elapsed >= s_minDisplaySec)
     {
-        SceneManager::ChangeScene<TitleScene>();
+        // 登録されている型に基づいて SceneManager で遷移
+        if (s_nextSceneType == typeid(OpeningScene)) {
+            SceneManager::ChangeScene<OpeningScene>();
+        }
+        else if (s_nextSceneType == typeid(StageSelectScene)) {
+            SceneManager::ChangeScene<StageSelectScene>();
+        }
+        else if (s_nextSceneType == typeid(GameScene)) {
+            SceneManager::ChangeScene<GameScene>();
+        }
+        else {
+            SceneManager::ChangeScene<TitleScene>(); // フォールバック
+        }
     }
 }
 

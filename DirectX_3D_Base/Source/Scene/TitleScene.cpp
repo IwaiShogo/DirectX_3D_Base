@@ -206,13 +206,14 @@ void TitleScene::Init()
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
                 /* Callback */ [this]() {
-                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 0.5f);
+                    
                     for (auto const& entity : m_coordinator->GetActiveEntities()) {
                         if (m_coordinator->HasComponent<SoundComponent>(entity)) {
                             auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
                             sound.RequestStop();
                         }
                     }
+                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 2.0f);
 
                     // ============================================
                     // はじめから：既存の全リセット関数を呼び出す
@@ -220,8 +221,8 @@ void TitleScene::Init()
                     // 以前の実装「Reset(); Save();」はエラーなので廃止。
                     // 代わりに、StageUnlockProgress内に既に実装済みの ResetAllAndSave() を使用
                     StageUnlockProgress::ResetAllAndSave();
-
-                    SceneManager::ChangeScene<OpeningScene>();
+                    LoadingScene::SetNextSceneInfo(2.0f, typeid(OpeningScene));
+                    SceneManager::ChangeScene<LoadingScene>();
                 },
                 /* HitScale */ hitScale
             )
@@ -244,15 +245,17 @@ void TitleScene::Init()
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
                 /* Callback */ [this]() {
-                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 0.5f);
+                    
                     for (auto const& entity : m_coordinator->GetActiveEntities()) {
                         if (m_coordinator->HasComponent<SoundComponent>(entity)) {
                             auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
                             sound.RequestStop();
                         }
                     }
+                    ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 2.0f);
                     // つづきから
-                    SceneManager::ChangeScene<StageSelectScene>();
+                    LoadingScene::SetNextSceneInfo(1.5f, typeid(StageSelectScene));
+                    SceneManager::ChangeScene<LoadingScene>();
                 },
                 /* HitScale */ hitScale
             )

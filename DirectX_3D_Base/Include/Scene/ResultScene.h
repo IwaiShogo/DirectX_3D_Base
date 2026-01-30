@@ -48,7 +48,7 @@ public:
 
     // ʉ̃{^(RETRY / SELECT / TITLE)
     void CreateButtons();
-
+   
     // GameControlSystem  ResultData 󂯎邽߂̑
     static void SetResultData(const ResultData& data);
     // ǉFStageSelect ǂޗp
