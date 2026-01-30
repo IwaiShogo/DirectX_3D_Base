@@ -53,6 +53,8 @@ struct TitleControllerComponent
 	DirectX::XMFLOAT3 cardEndPos;
 	DirectX::XMFLOAT3 cardStartScale;
 	DirectX::XMFLOAT3 cardEndScale;
+
+	bool isWindSoundPlayed;
 	struct ActiveLamp
 	{
 		ECS::EntityID id;
@@ -80,6 +82,7 @@ struct TitleControllerComponent
 		, isCardEnabled(true)
 		, startRotZ(0.0f)
 		, endRotZ(0.0f)
+		, isWindSoundPlayed(false)
 
 	{
 	}
