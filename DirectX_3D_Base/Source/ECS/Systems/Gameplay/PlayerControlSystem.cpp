@@ -185,31 +185,29 @@ void PlayerControlSystem::Update(float deltaTime)
 
 	ECS::EntityID gameControllerID = ECS::FindFirstEntityWithComponent<GameStateComponent>(m_coordinator);
 
-	if (gameControllerID != ECS::INVALID_ENTITY_ID)
+	if (gameControllerID == ECS::INVALID_ENTITY_ID)return;
+
+	// 条件: 
+	// 1. 偵察モード (SCOUTING_MODE) の場合
+	// 2. プレイ中 (Playing) ではない場合 (Entering:入場演出, Exiting:脱出演出)
+	bool isScouting = (state.currentMode == GameMode::SCOUTING_MODE);
+	bool isCutscene = (state.sequenceState != GameSequenceState::Playing);
+	bool pressedSpace = IsKeyTrigger(VK_SPACE);
+	bool pressedA = IsButtonTriggered(BUTTON_A);
+	if (isScouting || isCutscene)
 	{
-		auto& state = m_coordinator->GetComponent<GameStateComponent>(gameControllerID);
-
-		// 条件: 
-		// 1. 偵察モード (SCOUTING_MODE) の場合
-		// 2. プレイ中 (Playing) ではない場合 (Entering:入場演出, Exiting:脱出演出)
-		bool isScouting = (state.currentMode == GameMode::SCOUTING_MODE);
-		bool isCutscene = (state.sequenceState != GameSequenceState::Playing);
-
-		if (isScouting || isCutscene)
+		// プレイヤーエンティティ全ての動きを止める
+		for (auto const& entity : m_entities)
 		{
-			// プレイヤーエンティティ全ての動きを止める
-			for (auto const& entity : m_entities)
-			{
-				auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(entity);
-				// 慣性で滑らないように速度をゼロにする
-				rigidBody.velocity.x = 0.0f;
-				rigidBody.velocity.z = 0.0f;
-				// rigidBody.velocity.y = 0.0f; // 重力落下はさせたい場合はYは触らない
-			}
-
-			// ここでリターンして、以降のキー入力処理を行わない
-			return;
+			auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(entity);
+			// 慣性で滑らないように速度をゼロにする
+			rigidBody.velocity.x = 0.0f;
+			rigidBody.velocity.z = 0.0f;
+			// rigidBody.velocity.y = 0.0f; // 重力落下はさせたい場合はYは触らない
 		}
+
+		// ここでリターンして、以降のキー入力処理を行わない
+		return;
 	}
 
 	// =====================================
@@ -267,6 +265,60 @@ void PlayerControlSystem::Update(float deltaTime)
 		auto& rigidBody = m_coordinator->GetComponent<RigidBodyComponent>(entity);
 		auto& playerControl = m_coordinator->GetComponent<PlayerControlComponent>(entity);
 		auto& animComp = m_coordinator->GetComponent<AnimationComponent>(entity);
+
+		// --- ギミック判定 ＋ 入力判定 ---
+		if (pressedSpace || pressedA)
+		{
+			auto const& allEntities = m_coordinator->GetActiveEntities();
+			for (auto const& otherEntity : allEntities)
+			{
+				if (otherEntity == entity) continue;
+				if (!m_coordinator->HasComponent<TagComponent>(otherEntity)) continue;
+
+				auto& tagComp = m_coordinator->GetComponent<TagComponent>(otherEntity);
+
+				if (tagComp.tag == "TopViewTrigger")
+				{
+					auto& otherTransform = m_coordinator->GetComponent<TransformComponent>(otherEntity);
+
+					// 板のサイズ（Scale）の半分を取得
+					float halfW = otherTransform.scale.x * 0.5f;
+					float halfD = otherTransform.scale.z * 0.5f;
+
+					// プレイヤーと板の中心座標の差を計算
+					float diffX = std::abs(transform.position.x - otherTransform.position.x);
+					float diffZ = std::abs(transform.position.z - otherTransform.position.z);
+
+					// ? 判定：板の範囲内（遊びとして+0.5fの余裕を持たせる）にプレイヤーがいれば実行
+					if (diffX <= (halfW + 0.5f) && diffZ <= (halfD + 0.5f))
+					{
+						// モード切替
+						state.currentMode = GameMode::SCOUTING_MODE;
+
+						// カメラの設定
+						cameraSystem->m_currentPitch = -1.57f; // 真下を向く
+						cameraSystem->m_currentYaw = 0.0f;
+
+						// 見た目をトップビュー用に一新
+						auto gameControlSystem = ECS::ECSInitializer::GetSystem<GameControlSystem>();
+						if (gameControlSystem) {
+							gameControlSystem->ApplyModeVisuals(gameControllerID);
+						}
+
+						// ★削除またはコメントアウトしてください★
+						// ギミックを消す（もし一度きりにしたいなら）
+						// m_coordinator->DestroyEntity(otherEntity); 
+						// ↑ ここを消すことで、何度でもアクセス可能になります
+
+						std::cout << "[SUCCESS] Scouting Mode ON!" << std::endl;
+						return; // 処理完了
+					}
+				}
+			}
+		}
+
+		// トップビューに切り替わった直後なら移動をスキップ
+		if (isScouting) continue;
 
 		// =====================================
 		// 1. 移動 (カメラ基準での移動)

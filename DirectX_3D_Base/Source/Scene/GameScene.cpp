@@ -387,7 +387,11 @@ void GameScene::Init()
     // --- 3. JSONRtBOgĈꌂI ---
     ECS::EntityFactory::GenerateStageFromConfig(m_coordinator.get(), s_StageNo);
 
-
+    for (auto const& entity : m_coordinator->GetActiveEntities()) {
+        if (!m_coordinator->HasComponent<SoundComponent>(entity)) continue;
+        auto& sound = m_coordinator->GetComponent<SoundComponent>(entity);
+        sound.RequestStop();
+    }
 
     // --- 4. ̑̋Entity̍쐬 ---
     //ECS::EntityFactory::CreateAllDemoEntities(m_coordinator.get());
