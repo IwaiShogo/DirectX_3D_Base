@@ -118,6 +118,19 @@ void TitleScene::Init()
         )
     );
 
+    titleCtrl.TitlekaigaEntityID = m_coordinator->CreateEntity(
+        TransformComponent(
+            /* Position */{ SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f },
+            /* Rotation */{ 1.0f, 0.0f, 0.0f },
+            /* Scale    */ TitleLayout::TITLE_KAIGA_SCALE
+        ),
+        UIImageComponent(
+            /* AssetID */ "UI_TITLE_KAIGA",
+            /* Depth   */ 0.0f,
+            /* Visible */ true,
+            /* Color   */{ 1.0f, 1.0f, 1.0f, 0.0f }
+        )
+    );
 
     // ガラスケース
     m_coordinator->CreateEntity(
@@ -192,7 +205,7 @@ void TitleScene::Init()
             UIButtonComponent(
                 /* State    */ ButtonState::Normal,
                 /* Selected */ false,
-                /* Callback */ [this]() { 
+                /* Callback */ [this]() {
                     ECS::EntityFactory::CreateOneShotSoundEntity(m_coordinator.get(), "SE_DECISION", 0.5f);
                     for (auto const& entity : m_coordinator->GetActiveEntities()) {
                         if (m_coordinator->HasComponent<SoundComponent>(entity)) {
@@ -200,8 +213,16 @@ void TitleScene::Init()
                             sound.RequestStop();
                         }
                     }
-                    
-                    SceneManager::ChangeScene<OpeningScene>(); },//StageSelectScene
+
+                    // ============================================
+                    // はじめから：既存の全リセット関数を呼び出す
+                    // ============================================
+                    // 以前の実装「Reset(); Save();」はエラーなので廃止。
+                    // 代わりに、StageUnlockProgress内に既に実装済みの ResetAllAndSave() を使用
+                    StageUnlockProgress::ResetAllAndSave();
+
+                    SceneManager::ChangeScene<OpeningScene>();
+                },
                 /* HitScale */ hitScale
             )
         );
@@ -230,7 +251,9 @@ void TitleScene::Init()
                             sound.RequestStop();
                         }
                     }
-                    SceneManager::ChangeScene<StageSelectScene>(); },
+                    // つづきから
+                    SceneManager::ChangeScene<StageSelectScene>();
+                },
                 /* HitScale */ hitScale
             )
         );
@@ -259,10 +282,10 @@ void TitleScene::Init()
         UICursorComponent()
     );
 
-   
-	// --- BGM再生 ---
+
+    // --- BGM再生 ---
     ECS::EntityFactory::CreateLoopSoundEntity(m_coordinator.get(), "BGM_TITLE", 0.5f);
-    std::cout << "TitleScene::Init() - Layout Completed with Commented Parameters." << std::endl;
+    std::cout << "TitleScene::Init() - Layout Completed with Correct Reset Call." << std::endl;
 }
 void TitleScene::Uninit()
 {

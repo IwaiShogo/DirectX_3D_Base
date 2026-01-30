@@ -43,6 +43,12 @@ std::string GetItemIconPath(const std::string& itemID)
     return "ICO_TREASURE";
 }
 
+// StageSelectScene から呼び出される別名（互換性のため）
+std::string GetStageItemIconPath(const std::string& itemID)
+{
+    return GetItemIconPath(itemID);
+}
+
 // ---------------------------------------------------------
 // �T�E���h�w���p�[�֐�
 // ---------------------------------------------------------

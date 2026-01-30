@@ -2,6 +2,7 @@
 #include "Scene/SceneManager.h"
 #include "Scene/ResultScene.h"
 #include "Scene/GameScene.h"
+#include "ECS/Systems/Gameplay/MapGenerationSystem.h"  
 
 #include "Scene/StageSelectScene.h"
 
@@ -33,7 +34,7 @@ using namespace ECS;
 
 ECS::Coordinator* StageSelectScene::s_coordinator = nullptr;
 
-extern std::string GetStageItemIconPath(const std::string& itemID);
+extern std::string GetItemIconPath(const std::string& itemID);
 
 static float Clamp01(float x)
 {
@@ -180,32 +181,63 @@ static std::string StageNoToLabelText(int stageNo)
  */
 DirectX::XMFLOAT3 StageSelectScene::GetListCardSlotCenterPos(int stageNo) const
 {
-	// ★18ステージ対応: ステージ番号を1-6のパターンに変換
-	// ステージ1,7,13  → パターン1 (左上)
-	// ステージ2,8,14  → パターン2 (中上)
-	// ...
+	// ★18ステージ対応: ページごとに異なる配置パターン（手書きイメージ準拠）
+	// 背景ボードの外枠に被らないよう内側に配置
 
 	if (stageNo < 1 || stageNo > 18)
 	{
 		return DirectX::XMFLOAT3(SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f, 0.0f);
 	}
 
-	// ステージ番号を1-6のインデックスに変換（1-6 → 0-5, 7-12 → 0-5, 13-18 → 0-5）
-	int posIndex = (stageNo - 1) % 6;
+	int pageIndex = (stageNo - 1) / 6;  // 0, 1, 2
+	int posIndex = (stageNo - 1) % 6;   // 0-5
 
-	// ★1-6の配置パターン（UI座標）
-	// この座標がカードの中心になります。数字ラベルはこの座標を基準にオフセットされます。
-	static const DirectX::XMFLOAT3 kPos[6] =
+	// ★ページ1 (ステージ1-6 = 1-1〜2-3)
+	// 1-1:左上, 1-2:中央上右寄り, 1-3:右上
+	// 2-1:左下, 2-2:中央下右寄り, 2-3:右下
+	static const DirectX::XMFLOAT3 kPosPage1[6] =
 	{
-		{ SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.32f, 0.0f }, // 1, 7, 13 (左上)
-		{ SCREEN_WIDTH * 0.50f, SCREEN_HEIGHT * 0.32f, 0.0f }, // 2, 8, 14 (中上)
-		{ SCREEN_WIDTH * 0.75f, SCREEN_HEIGHT * 0.32f, 0.0f }, // 3, 9, 15 (右上)
-		{ SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.62f, 0.0f }, // 4, 10, 16 (左下)
-		{ SCREEN_WIDTH * 0.50f, SCREEN_HEIGHT * 0.62f, 0.0f }, // 5, 11, 17 (中下)
-		{ SCREEN_WIDTH * 0.75f, SCREEN_HEIGHT * 0.62f, 0.0f }, // 6, 12, 18 (右下)
+		{ SCREEN_WIDTH * 0.25f, SCREEN_HEIGHT * 0.28f, 0.0f }, // 1-1 (左上)
+		{ SCREEN_WIDTH * 0.49f, SCREEN_HEIGHT * 0.33f, 0.0f }, // 1-2 (中央上、少し右)
+		{ SCREEN_WIDTH * 0.70f, SCREEN_HEIGHT * 0.28f, 0.0f }, // 1-3 (右上)
+		{ SCREEN_WIDTH * 0.30f, SCREEN_HEIGHT * 0.60f, 0.0f }, // 2-1 (左下)
+		{ SCREEN_WIDTH * 0.51f, SCREEN_HEIGHT * 0.65f, 0.0f }, // 2-2 (中央下、右寄り)
+		{ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.64f, 0.0f }, // 2-3 (右下)
 	};
 
-	return kPos[posIndex];
+	// ★ページ2 (ステージ7-12 = 3-1〜4-3)
+	// 3-1:左上, 3-2:中央上, 3-3:右上
+	// 4-1:左下, 4-2:中央, 4-3:右下
+	static const DirectX::XMFLOAT3 kPosPage2[6] =
+	{
+		{ SCREEN_WIDTH * 0.28f, SCREEN_HEIGHT * 0.32f, 0.0f }, // 3-1 (左上)
+		{ SCREEN_WIDTH * 0.50f, SCREEN_HEIGHT * 0.28f, 0.0f }, // 3-2 (中央上)
+		{ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.30f, 0.0f }, // 3-3 (右上)
+		{ SCREEN_WIDTH * 0.26f, SCREEN_HEIGHT * 0.65f, 0.0f }, // 4-1 (左下)
+		{ SCREEN_WIDTH * 0.48f, SCREEN_HEIGHT * 0.60f, 0.0f }, // 4-2 (中央)
+		{ SCREEN_WIDTH * 0.70f, SCREEN_HEIGHT * 0.65f, 0.0f }, // 4-3 (右下)
+	};
+
+	// ★ページ3 (ステージ13-18 = 5-1〜6-3)
+	// 5-1:左上, 5-2:中央, 5-3:右上
+	// 6-1:左(中段), 6-2:中央下, 6-3:右下
+	static const DirectX::XMFLOAT3 kPosPage3[6] =
+	{
+		{ SCREEN_WIDTH * 0.30f, SCREEN_HEIGHT * 0.27f, 0.0f }, // 5-1 (左上)
+		{ SCREEN_WIDTH * 0.50f, SCREEN_HEIGHT * 0.35f, 0.0f }, // 5-2 (中央、少し下)
+		{ SCREEN_WIDTH * 0.74f, SCREEN_HEIGHT * 0.29f, 0.0f }, // 5-3 (右上)
+		{ SCREEN_WIDTH * 0.26f, SCREEN_HEIGHT * 0.63f, 0.0f }, // 6-1 (左、中段)
+		{ SCREEN_WIDTH * 0.47f, SCREEN_HEIGHT * 0.65f, 0.0f }, // 6-2 (中央下)
+		{ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.61f, 0.0f }, // 6-3 (右下)
+	};
+
+	switch (pageIndex)
+	{
+	case 0: return kPosPage1[posIndex];
+	case 1: return kPosPage2[posIndex];
+	case 2: return kPosPage3[posIndex];
+	default: return kPosPage1[posIndex];
+	}
 }
 
 //--------------------------------------------------------------
@@ -387,9 +419,41 @@ void StageSelectScene::Init()
 			constexpr float kListCardZ = 4.8f;
 			constexpr float kListCardScale = 0.03f;
 
+			// ★ページごとに異なるカードの傾き（Z軸回転）- 無造作に置かれた雰囲気
+			static const float kCardTiltPage1[6] = {
+				DirectX::XMConvertToRadians(-7.0f),   // 1
+				DirectX::XMConvertToRadians(5.0f),    // 2
+				DirectX::XMConvertToRadians(-10.0f),  // 3
+				DirectX::XMConvertToRadians(8.0f),    // 4
+				DirectX::XMConvertToRadians(-4.0f),   // 5
+				DirectX::XMConvertToRadians(6.0f),    // 6
+			};
+			static const float kCardTiltPage2[6] = {
+				DirectX::XMConvertToRadians(6.0f),    // 7
+				DirectX::XMConvertToRadians(-9.0f),   // 8
+				DirectX::XMConvertToRadians(4.0f),    // 9
+				DirectX::XMConvertToRadians(-6.0f),   // 10
+				DirectX::XMConvertToRadians(10.0f),   // 11
+				DirectX::XMConvertToRadians(-5.0f),   // 12
+			};
+			static const float kCardTiltPage3[6] = {
+				DirectX::XMConvertToRadians(-5.0f),   // 13
+				DirectX::XMConvertToRadians(8.0f),    // 14
+				DirectX::XMConvertToRadians(-8.0f),   // 15
+				DirectX::XMConvertToRadians(5.0f),    // 16
+				DirectX::XMConvertToRadians(-6.0f),   // 17
+				DirectX::XMConvertToRadians(9.0f),    // 18
+			};
+			float tilt = 0.0f;
+			switch (pageIndex) {
+			case 0: tilt = kCardTiltPage1[indexInPage]; break;
+			case 1: tilt = kCardTiltPage2[indexInPage]; break;
+			case 2: tilt = kCardTiltPage3[indexInPage]; break;
+			}
+
 			ECS::EntityID cardModel = m_coordinator->CreateEntity(
 				TagComponent("list_card_model"),
-				TransformComponent(UIToWorld(x, y, kListCardZ), { 0.0f, DirectX::XM_PI, 0.0f }, MakeSelectCardScale(kListCardScale)),
+				TransformComponent(UIToWorld(x, y, kListCardZ), { 0.0f, DirectX::XM_PI, tilt }, MakeSelectCardScale(kListCardScale)),
 				RenderComponent(MESH_MODEL, { 1.0f, 1.0f, 1.0f, 1.0f }, CullMode::Front),
 				ModelComponent(modelID, 5.0f, Model::None)
 			);
@@ -647,12 +711,12 @@ void StageSelectScene::Init()
 			float y = baseY + i * gapY;
 
 			m_detailUIEntities.push_back(m_coordinator->CreateEntity(
-				TransformComponent({ captionX, y, 0.0f }, { 0,0,0 }, { 420.0f, 75.0f, 1.0f }),
+				TransformComponent({ captionX, y, 0.0f }, { 0,0,0 }, { 520.0f, 95.0f, 1.0f }),
 				UIImageComponent(conditionTex[i], baseDepth + 5.0f, true, { 1,1,1,1 })
 			));
 
-			float offSize = (i == 0) ? 50.0f : 34.0f;
-			float onSize = (i == 0) ? 50.0f : 34.0f;
+			float offSize = (i == 0) ? 70.0f : 55.0f;
+			float onSize = (i == 0) ? 70.0f : 55.0f;
 
 			m_detailUIEntities.push_back(m_coordinator->CreateEntity(
 				TransformComponent({ starX, y, 0.0f }, { 0,0,0 }, { offSize, offSize, 1.0f }),
@@ -1601,7 +1665,7 @@ void StageSelectScene::UpdateBestTimeDigitsByStageId(const std::string& stageId)
 	const int stageNo = StageIdToStageNo(stageId);
 
 	uint32_t bestMs = 0;
-	if (stageNo >= 1 && stageNo <= 6)
+	if (stageNo >= 1 && stageNo <= 18)  // ★修正: 18ステージ対応
 	{
 		bestMs = StageUnlockProgress::GetBestTimeMs(stageNo);
 	}
@@ -1652,7 +1716,7 @@ void StageSelectScene::UpdateStarIconsByStageId(const std::string& stageId)
 
 	const int stageNo = StageIdToStageNo(stageId);
 	const std::uint8_t mask =
-		(stageNo >= 1 && stageNo <= 6) ? StageUnlockProgress::GetStageStarMask(stageNo) : 0;
+		(stageNo >= 1 && stageNo <= 18) ? StageUnlockProgress::GetStageStarMask(stageNo) : 0;  // ★修正: 18ステージ対応
 
 	for (int i = 0; i < 3; ++i)
 	{
@@ -1670,21 +1734,50 @@ void StageSelectScene::UpdateStarIconsByStageId(const std::string& stageId)
 
 static int ExtractStageNoFromStageId(const std::string& stageId)
 {
+	// ★修正: 18ステージ対応 - 数字を全て抽出して数値に変換
+	int v = 0;
+	bool inDigits = false;
 	for (char c : stageId)
 	{
-		if (c >= '1' && c <= '6') return (c - '0');
+		if (c >= '0' && c <= '9')
+		{
+			inDigits = true;
+			v = v * 10 + (c - '0');
+		}
+		else if (inDigits)
+		{
+			break;
+		}
 	}
-	return 0;
+	return (v >= 1 && v <= 18) ? v : 0;
 }
 
 
 std::string StageSelectScene::GetStageMapTextureAssetId(int stageNo) const
 {
-	if (stageNo >= 1 && stageNo <= 6)
+	// ★修正: 全18ステージ個別のUI_STAGE画像を使用（後で画像差し替え可能）
+	switch (stageNo)
 	{
-		return kStageMapUI[stageNo - 1];
+	case 1:  return "UI_STAGE1";
+	case 2:  return "UI_STAGE2";
+	case 3:  return "UI_STAGE3";
+	case 4:  return "UI_STAGE4";
+	case 5:  return "UI_STAGE5";
+	case 6:  return "UI_STAGE6";
+	case 7:  return "UI_STAGE1";
+	case 8:  return "UI_STAGE2";
+	case 9:  return "UI_STAGE3";
+	case 10: return "UI_STAGE4";
+	case 11: return "UI_STAGE5";
+	case 12: return "UI_STAGE6";
+	case 13: return "UI_STAGE1";
+	case 14: return "UI_STAGE2";
+	case 15: return "UI_STAGE3";
+	case 16: return "UI_STAGE4";
+	case 17: return "UI_STAGE5";
+	case 18: return "UI_STAGE6";
+	default: return "UI_STAGE1";
 	}
-	return kStageMapUI[0];
 }
 
 
@@ -1696,18 +1789,10 @@ void StageSelectScene::ApplyStageMapTextureByStageId(const std::string& stageId)
 {
 	if (m_stageMapOverlayEntity == (ECS::EntityID)-1) return;
 
+	// ★修正: ExtractStageNoFromStageIdが18ステージ対応になったのでそのまま使用
 	int stageNo = ExtractStageNoFromStageId(stageId);
 
-	for (char c : stageId)
-	{
-		if (c >= '1' && c <= '6')
-		{
-			stageNo = (c - '0');
-			break;
-		}
-	}
-
-	const bool valid = (stageNo >= 1 && stageNo <= 6);
+	const bool valid = (stageNo >= 1 && stageNo <= 18);  // ★修正: 18ステージ対応
 
 	const std::string texId = valid ? GetStageMapTextureAssetId(stageNo) : std::string("UI_STAGE1");
 
@@ -2792,16 +2877,31 @@ void StageSelectScene::UpdateEyeLight(float dt)
 		struct EyePoint { int stageNo; float x; float y; };
 		std::vector<EyePoint> points;
 
-		static constexpr float kEyeGlobalOffsetX = 0.0f;
-		static constexpr float kEyeGlobalOffsetY = 0.0f;
-		static constexpr DirectX::XMFLOAT2 kEyeStageOffset[6] =
+		// ★18ステージ全てに対応した目エフェクトオフセット
+		// 各カードの目の位置に合わせて個別調整（カード中心からの相対位置）
+		static constexpr DirectX::XMFLOAT2 kEyeStageOffset[18] =
 		{
-			{ -120.0f, -30.0f }, // stage 1, 7, 13 (左上)
-			{ -30.0f, -30.0f },  // stage 2, 8, 14 (中上)
-			{ 70.0f, -30.0f },   // stage 3, 9, 15 (右上)
-			{ -120.0f, 38.0f },  // stage 4, 10, 16 (左下)
-			{ -30.0f, 38.0f },   // stage 5, 11, 17 (中下)
-			{ 70.0f, 38.0f },    // stage 6, 12, 18 (右下)
+			// ページ1 (ステージ1-6 = 1-1〜2-3)
+			{ -120.0f, -35.0f },   // Stage 1  (1-1)
+			{ -30.0f, -25.0f },   // Stage 2  (1-2)
+			{ 50.0f, -35.0f },   // Stage 3  (1-3)
+			{ -100.0f, 30.0f },   // Stage 4  (2-1)
+			{ -20.0f, 40.0f },   // Stage 5  (2-2)
+			{ 63.0f, 40.0f },   // Stage 6  (2-3)
+			// ページ2 (ステージ7-12 = 3-1〜4-3)
+			{ -110.0f, -30.0f },   // Stage 7  (3-1)
+			{ -30.0f, -35.0f },   // Stage 8  (3-2)
+			{ 65.0f, -30.0f },   // Stage 9  (3-3)
+			{ -120.0f, 45.0f },   // Stage 10 (4-1)
+			{ -35.0f, 35.0f },   // Stage 11 (4-2)
+			{ 53.0f, 45.0f },   // Stage 12 (4-3)
+			// ページ3 (ステージ13-18 = 5-1〜6-3)
+			{ -75.0f, -40.0f },   // Stage 13 (5-1)
+			{ 0.0f, -25.0f },   // Stage 14 (5-2)
+			{ 90.0f, -35.0f },   // Stage 15 (5-3)
+			{ -90.0f, 35.0f },   // Stage 16 (6-1)
+			{ -10.0f, 40.0f },   // Stage 17 (6-2)
+			{ 70.0f, 30.0f },   // Stage 18 (6-3)
 		};
 		static constexpr float kEyeJitterX = 0.0f;
 		static constexpr float kEyeJitterY = 0.0f;
@@ -2829,10 +2929,13 @@ void StageSelectScene::UpdateEyeLight(float dt)
 		float cx = points[pick].x;
 		float cy = points[pick].y;
 
-		int patternIndex = (stageNo - 1) % 6;
-
-		cx += kEyeGlobalOffsetX + kEyeStageOffset[patternIndex].x;
-		cy += kEyeGlobalOffsetY + kEyeStageOffset[patternIndex].y;
+		// ステージ番号から直接オフセットを取得（0-17のインデックス）
+		int stageIndex = stageNo - 1;
+		if (stageIndex >= 0 && stageIndex < 18)
+		{
+			cx += kEyeStageOffset[stageIndex].x;
+			cy += kEyeStageOffset[stageIndex].y;
+		}
 
 		if (kEyeJitterX != 0.0f || kEyeJitterY != 0.0f)
 		{
@@ -3155,285 +3258,117 @@ void StageSelectScene::CreateStageInfoUI(const std::string& stageID)
 	std::cout << "[StageSelectScene] CreateStageInfoUI begin stageId=" << stageID << std::endl;
 	ClearStageInfoUI();
 
-	int stageNo = StageIdToStageNo(stageID);
+	// ★新規: map_config.json からステージ設定を読み込む
+	MapStageConfig config = MapConfigLoader::Load(stageID);
+	const std::vector<std::string>& items = config.items;
+	const size_t itemCount = items.size();
+
+	if (itemCount == 0)
+	{
+		std::cout << "[StageSelectScene] CreateStageInfoUI: No items for stageId=" << stageID << std::endl;
+		return;
+	}
 
 	const float baseDepth = 110000.0f;
 
-	switch (stageNo)
-	{
-	case 1:
-	{
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE3", baseDepth + 3.2f)
-		));
-		break;
+	// ★レイアウト計算
+	// アイテム数に応じてサイズと配置を調整
+	float caseSize = 200.0f;    // 宝箱ケースのサイズ
+	float iconSize = 85.0f;     // アイコンのサイズ
+	float spacing = 0.10f;      // アイテム間のスペース（画面幅比率）
 
-	}
-	case 2:
+	// アイテム数が多い場合はサイズを縮小
+	if (itemCount >= 6)
 	{
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE3", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE1", baseDepth + 3.2f)
-		));
-		break;
+		caseSize = 140.0f;
+		iconSize = 55.0f;
+		spacing = 0.07f;
 	}
-	case 3:
+	else if (itemCount >= 5)
 	{
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE3", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE1", baseDepth + 3.2f)
-		));
-		break;
+		caseSize = 170.0f;
+		iconSize = 70.0f;
+		spacing = 0.085f;
 	}
-	case 4:
+	else if (itemCount >= 4)
 	{
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
-		));
-		break;
-	}
-	case 5:
-	{
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
-		));
-		break;
-	}
-	case 6:
-	{
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.63f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.73f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.83f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
-		));
-		break;
-	}
-	case 7:
-	{
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.58f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.88f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 200, 200, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.58f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.68f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.78f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.88f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 85, 85, 1 }),
-			UIImageComponent("ICO_TREASURE10", baseDepth + 3.2f)
-		));
-		break;
-	}
-	case 8:
-	{
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.560f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.645f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.730f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.815f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.900f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 170, 170, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.560f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
-			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.645f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
-			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.730f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
-			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.815f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
-			UIImageComponent("ICO_TREASURE10", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.900f, SCREEN_HEIGHT * 0.21f, 0.0f }, { 0,0,0 }, { 70, 70, 1 }),
-			UIImageComponent("ICO_TREASURE11", baseDepth + 3.2f)
-		));
-		break;
-	}
-	case 9:
-	{
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.555f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.625f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.695f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.765f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.835f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.905f, SCREEN_HEIGHT * 0.25f, 0.0f }, { 0,0,0 }, { 140, 140, 1 }),
-			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.555f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
-			UIImageComponent("ICO_TREASURE7", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.625f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
-			UIImageComponent("ICO_TREASURE8", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.695f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
-			UIImageComponent("ICO_TREASURE9", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.765f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
-			UIImageComponent("ICO_TREASURE10", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.835f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
-			UIImageComponent("ICO_TREASURE11", baseDepth + 3.2f)
-		));
-		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
-			TransformComponent({ SCREEN_WIDTH * 0.905f, SCREEN_HEIGHT * 0.22f, 0.0f }, { 0,0,0 }, { 55, 55, 1 }),
-			UIImageComponent("ICO_TREASURE12", baseDepth + 3.2f)
-		));
-		break;
-	}
+		caseSize = 170.0f;
+		iconSize = 70.0f;
+		spacing = 0.10f;
 	}
 
-	for (auto id : m_stageSpecificEntities) {
+	// 全体の幅を計算して中央配置
+	float totalWidth = (itemCount - 1) * spacing;
+	float startX = 0.73f - totalWidth / 2.0f;  // 中央を0.73fとして配置
+
+	// アイテム数が1の場合は中央固定
+	if (itemCount == 1)
+	{
+		startX = 0.73f;
+	}
+
+	// ★各アイテムのUI生成
+	for (size_t i = 0; i < itemCount; ++i)
+	{
+		float xPos = startX + i * spacing;
+
+		// 宝箱ケース（背景）
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent(
+				{ SCREEN_WIDTH * xPos, SCREEN_HEIGHT * 0.25f, 0.0f },
+				{ 0, 0, 0 },
+				{ caseSize, caseSize, 1 }
+			),
+			UIImageComponent("UI_TRESURE_CASE", baseDepth + 3.1f)
+		));
+
+		// アイコンIDを取得（extern 宣言された GetStageItemIconPath を使用）
+		std::string iconID = GetItemIconPath(items[i]);
+
+		// 宝アイコン
+		m_stageSpecificEntities.push_back(m_coordinator->CreateEntity(
+			TransformComponent(
+				{ SCREEN_WIDTH * xPos, SCREEN_HEIGHT * 0.21f, 0.0f },
+				{ 0, 0, 0 },
+				{ iconSize, iconSize, 1 }
+			),
+			UIImageComponent(iconID, baseDepth + 3.2f)
+		));
+	}
+
+	// m_detailUIEntities にも追加（詳細表示時のアニメーション用）
+	for (auto id : m_stageSpecificEntities)
+	{
 		CacheDetailBaseTransform(id);
 		m_detailUIEntities.push_back(id);
 	}
 
 	// 生成ログ（個数とID）
-	std::cout << "[StageSelectScene] CreateStageInfoUI created count=" << m_stageSpecificEntities.size() << " ids=";
+	std::cout << "[StageSelectScene] CreateStageInfoUI created count=" << m_stageSpecificEntities.size()
+		<< " items=" << itemCount << " ids=";
 	for (auto id : m_stageSpecificEntities) { std::cout << id << " "; }
 	std::cout << std::endl;
 }
+
+// ============================================================
+// 【補足】map_config.json の items 配列と対応するアイコン
+// ============================================================
+// 
+// JSON の items          →  GetStageItemIconPath()  →  アイコンID
+// ─────────────────────────────────────────────────────────────
+// "Takara_Daiya"         →  "ICO_TREASURE1"   (ダイヤ)
+// "Takara_Crystal"       →  "ICO_TREASURE2"   (クリスタル)
+// "Takara_Yubiwa"        →  "ICO_TREASURE3"   (指輪)
+// "Takara_Kaiga1"        →  "ICO_TREASURE4"   (絵画1)
+// "Takara_Kaiga2"        →  "ICO_TREASURE5"   (絵画2)
+// "Takara_Kaiga3"        →  "ICO_TREASURE6"   (絵画3)
+// "Takara_Doki"          →  "ICO_TREASURE7"   (土器)
+// "Takara_Tubo_Blue"     →  "ICO_TREASURE8"   (青いツボ)
+// "Takara_Tubo_Gouyoku"  →  "ICO_TREASURE9"   (紫のツボ)
+// "Takara_Dinosaur"      →  "ICO_TREASURE10"  (恐竜)
+// "Takara_Ammonite"      →  "ICO_TREASURE11"  (アンモナイト)
+// "Takara_Dinosaur_Foot" →  "ICO_TREASURE12"  (恐竜の足跡)
+// ============================================================
 
 void StageSelectScene::ClearStageInfoUI()
 {
@@ -3809,10 +3744,10 @@ void StageSelectScene::HidePage(int pageIndex)
 void StageSelectScene::CreateNavigationButtons()
 {
 	// ★UI_SELECT_LEFTとUI_SELECT_RIGHTを使用
-	// 左ボタン: 画面左下に配置（他のUIと被らないように）
+	// 左ボタン: 画面左側の縦中央に配置
 	m_prevPageBtnEntity = m_coordinator->CreateEntity(
 		TagComponent("prev_page_btn"),
-		TransformComponent({ 120.0f, SCREEN_HEIGHT - 120.0f, 4.9f }, { 0,0,0 }, { 100, 100, 1 }),
+		TransformComponent({ 120.0f, SCREEN_HEIGHT * 0.5f, 4.9f }, { 0,0,0 }, { 100, 100, 1 }),
 		UIButtonComponent(
 			ButtonState::Normal,
 			true,
@@ -3826,10 +3761,10 @@ void StageSelectScene::CreateNavigationButtons()
 		UIImageComponent("UI_SELECT_LEFT", 1.0f)
 	);
 
-	// 右ボタン: 画面右下に配置（他のUIと被らないように）
+	// 右ボタン: 画面右側の縦中央に配置
 	m_nextPageBtnEntity = m_coordinator->CreateEntity(
 		TagComponent("next_page_btn"),
-		TransformComponent({ SCREEN_WIDTH - 120.0f, SCREEN_HEIGHT - 120.0f, 4.9f }, { 0,0,0 }, { 100, 100, 1 }),
+		TransformComponent({ SCREEN_WIDTH - 120.0f, SCREEN_HEIGHT * 0.5f, 4.9f }, { 0,0,0 }, { 100, 100, 1 }),
 		UIButtonComponent(
 			ButtonState::Normal,
 			true,
